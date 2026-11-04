@@ -35,6 +35,15 @@ class FakeVault:
 def tunnel_server(request: httpx.Request):
     if request.headers.get("Authorization") != "Bearer " + TOKEN:
         return httpx.Response(401)
+    if request.url.path == "/v1/health":
+        return httpx.Response(200, json={
+            "protocol": "noble-worker-v1", "engine_status": "ready",
+            "active_requests": 0, "completed_requests": 2, "failed_requests": 1,
+            "last_ttft_ms": 112.3, "avg_ttft_ms": 115.0,
+            "avg_duration_ms": 1800.0,
+            "gpu": [{"index": 0, "name": "Mock GPU", "vram_total_mb": 16384,
+                     "vram_used_mb": 5120, "utilization_percent": 30}],
+        })
     if request.url.path == "/v1/models":
         return httpx.Response(200, json={"data": [{"id": "gpu-remote-gguf"}]})
     if request.url.path == "/v1/chat/completions":
@@ -82,6 +91,9 @@ class WorkerTests(unittest.TestCase):
         probe = self.client.get("/api/v1/workers/" + worker_id + "/probe").json()
         self.assertTrue(probe["online"], probe)
         self.assertEqual(probe["models"], ["gpu-remote-gguf"])
+        self.assertGreaterEqual(probe["latency_ms"], 0)
+        self.assertEqual(probe["health"]["gpu"][0]["vram_used_mb"], 5120)
+        self.assertEqual(probe["health"]["last_ttft_ms"], 112.3)
         selected = self.client.post("/api/v1/workers/" + worker_id + "/activate",
                                     json={"model": "gpu-remote-gguf"})
         self.assertEqual(selected.status_code, 200, selected.text)
@@ -127,6 +139,19 @@ class WorkerTests(unittest.TestCase):
             self.assertEqual(result.status_code, 200, result.text)
             self.assertIn("Desde la GPU remota.", result.text)
             self.assertEqual(c.get("/admin", headers=headers).status_code, 404)
+            health = c.get("/v1/health", headers=headers)
+            self.assertEqual(health.status_code, 200)
+            self.assertEqual(health.json()["protocol"], "noble-worker-v1")
+            self.assertEqual(health.json()["completed_requests"], 1)
+            self.assertEqual(health.json()["failed_requests"], 0)
+            self.assertIsNotNone(health.json()["last_ttft_ms"])
+            self.assertEqual(c.get("/v1/health").status_code, 401)
+            bad = c.post("/v1/chat/completions", headers=headers,
+                json={"messages": "not-a-list", "model": "bad"})
+            self.assertEqual(bad.status_code, 422)
+            too_large = c.post("/v1/chat/completions", headers=headers,
+                content=b" " * (1024 * 1024 + 1))
+            self.assertEqual(too_large.status_code, 413)
 
 
 if __name__ == "__main__":

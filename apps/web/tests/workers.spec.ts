@@ -25,7 +25,15 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await page.route('**/api/v1/workers/*/probe', async route => {
     requests.push('GET /probe');
     await route.fulfill({ status: 200, json: { id, online: true,
-      models: ['fixture-gguf:4b'], role: 'llm' } });
+      models: ['fixture-gguf:4b'], role: 'llm', latency_ms: 231.5,
+      health: {
+        engine_status: 'ready', active_requests: 0, completed_requests: 3,
+        failed_requests: 0, last_ttft_ms: 175.2, avg_ttft_ms: 170.5,
+        avg_duration_ms: 1200,
+        gpu: [{ index: 0, name: 'NVIDIA T4 fixture', vram_total_mb: 15360,
+          vram_used_mb: 4100, utilization_percent: 45 }],
+      },
+    } });
   });
   await page.route('**/api/v1/workers/*/activate', async route => {
     requests.push('POST /activate');
@@ -67,6 +75,8 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await page.getByRole('button', { name: 'Probar conexión' }).click();
   await expect(page.getByText('Worker disponible y autenticado')).toBeVisible();
   await expect(page.getByLabel('Modelo remoto')).toHaveValue('fixture-gguf:4b');
+  await expect(page.getByText('NVIDIA T4 fixture')).toBeVisible();
+  await expect(page.getByText('VRAM 4100 / 15360 MB · GPU 45%')).toBeVisible();
   await page.getByRole('button', { name: 'Usar modelo remoto como narrador' }).click();
   await expect(page.getByText(/Narrador remoto activado: fixture-gguf:4b/)).toBeVisible();
 
