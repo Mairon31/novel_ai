@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "setup_completed": false,
+  "global": {
+    "language": "es-419",
+    "model_directory": null,
+    "hardware_profile": "auto",
+    "default_device": "auto",
+    "tts_enabled": false,
+    "tts_autoread": false
+  },
+  "roles": {
+    "narrator": null,
+    "world_state": null,
+    "scene_image": null,
+    "character_image": null,
+    "speech": null
+  },
+  "story_overrides": {}
+}

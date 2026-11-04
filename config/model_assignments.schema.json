@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mairon31/novel_ai/blob/master/config/model_assignments.schema.json",
+  "title": "Noble AI — model role assignment and settings v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "setup_completed",
+    "global",
+    "roles"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "setup_completed": {
+      "type": "boolean"
+    },
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "language",
+        "model_directory",
+        "hardware_profile",
+        "default_device",
+        "tts_enabled",
+        "tts_autoread"
+      ],
+      "properties": {
+        "language": {
+          "type": "string",
+          "default": "es-419"
+        },
+        "model_directory": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "hardware_profile": {
+          "enum": [
+            "auto",
+            "minimum_12gb",
+            "recommended_16gb",
+            "cpu_fallback"
+          ],
+          "default": "auto"
+        },
+        "default_device": {
+          "enum": [
+            "auto",
+            "cpu",
+            "cuda",
+            "vulkan",
+            "metal",
+            "rocm"
+          ],
+          "default": "auto"
+        },
+        "tts_enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "tts_autoread": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/assignment"
+      },
+      "properties": {
+        "narrator": {
+          "$ref": "#/$defs/assignment"
+        },
+        "world_state": {
+          "$ref": "#/$defs/assignment"
+        },
+        "scene_image": {
+          "$ref": "#/$defs/assignment"
+        },
+        "character_image": {
+          "$ref": "#/$defs/assignment"
+        },
+        "speech": {
+          "$ref": "#/$defs/assignment"
+        }
+      }
+    },
+    "story_overrides": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/$defs/assignment"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "assignment": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "provider_id",
+        "model_id",
+        "device",
+        "settings"
+      ],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device": {
+          "enum": [
+            "auto",
+            "cpu",
+            "cuda",
+            "vulkan",
+            "metal",
+            "rocm"
+          ]
+        },
+        "settings": {
+          "type": "object",
+          "description": "Provider capability-validated settings; not directly trusted by runtime."
+        },
+        "installed_model_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "preset_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

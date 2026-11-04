@@ -1,108 +1,101 @@
-# Noble AI — roadmap, backlog y Definition of Done
+# Noble AI — Roadmap APP-FIRST y Definition of Done
 
-Versionado: 2026-11-04 · **Sin implementación de runtime aún**. Las fases son dependencias, no plazos ficticios. Actualizar `PROGRESO.md` al verificar cada tarea.
+Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: **diseño y documentación; sin app funcional**. El orden de dependencias ha cambiado: el **Model Hub/Onboarding precede al núcleo narrativo**; Colab es diagnóstico opcional, no interfaz principal.
 
-## Issues de implementación
+## Principios de trabajo
 
-[Colab #1](https://github.com/Mairon31/novel_ai/issues/1) · [Reuso OSS #2](https://github.com/Mairon31/novel_ai/issues/2) · [Backend #3](https://github.com/Mairon31/novel_ai/issues/3) · [LLM #4](https://github.com/Mairon31/novel_ai/issues/4) · [Frontend #5](https://github.com/Mairon31/novel_ai/issues/5) · [ComfyUI #6](https://github.com/Mairon31/novel_ai/issues/6) · [TTS #7](https://github.com/Mairon31/novel_ai/issues/7) · [GPU #8](https://github.com/Mairon31/novel_ai/issues/8).
+1. Ensamblar herramientas open source donde sea conveniente, evaluar licencias/costos.
+2. El usuario final **nunca** debe necesitar editar configuración, instalar pesos por consola o ejecutar notebook para usar el producto.
+3. UI y API deben ser funcionales desde el primer incremento; los mock providers son solo de pruebas.
+4. Todas las funciones se certifican con tests CPU, integraciones reales cuando correspondan, QA visual desktop/móvil y logs.
+5. Narración persiste; imagen/TTS opcionales nunca bloquean; 12/16GB sin afirmaciones no medidas.
+6. Cambios de arquitectura requieren ADR y actualización de progreso, junto con evidencia.
 
-## Principios de ejecución
+## Fase P0 — investigación de reusable code y contratos (DOCUMENTADA)
 
-- Integrar herramientas existentes antes de construir alternativas.
-- Cada fase debe entregar software probada con pruebas automatizadas **y** visuales si cambia UX.
-- No declarar "PASS" sin salida, GPU, versión, commit y artefactos enlazados.
-- No introducir placeholders presentados como funcionalidad completada. Los fixtures y mocks de **prueba** se etiquetan como tales y se diferencian de los proveedores reales.
-- Mantener funcionamiento de narración aunque imagen/TTS fallen.
-- Dejar las tareas, deudas, errores conocidos y decisiones registrados.
+- [x] README, GDD, arquitectura, memoria, API y QA iniciales.
+- [x] Inventario de herramientas OSS y licencias.
+- [x] Investigación técnica de Urakatsu MIT y Koharu dual MIT/Apache, rutas de código y modelo manager documentadas.
+- [x] ADR-002 app-first y specs de Model Hub, UI wizard, escritorio.
+- [x] Prueba CI de documentos básica; **no GPU/LLM**.
+- [ ] Spike de reuso del catálogo Urakatsu vs `huggingface_hub`, evaluación del coste real y atribución.
+- [ ] Selección y revisión exacta de versión/base de componentes reusables.
+- **Gate P0:** contratos y licencias claros; todo lo no probado identificado.
 
-## P0 — investigación / especificación / Colab diagnóstico
+## Fase P0.5 — aplicación visual y Model Hub (PRIMER OBJETIVO EJECUTABLE)
 
-- [x] Inicializar repo, README y documentación de arquitectura.
-- [x] Definir diseño GDD, contratos API y estado.
-- [x] Catalogar repos/servicios y sus licencias observadas.
-- [x] Definir política de imágenes progresivas y TTS opt-in.
-- [x] Definir hardware 12/16GB y gates de validación.
-- [ ] Ejecutar notebook de diagnóstico en una sesión **real** de Colab; adjuntar resultados.
-- [ ] Elegir modelo narrativo GGUF inicial con versión/hash, licencia y benchmark plan.
-- [ ] Spike Open Dungeon: comparar reutilización contra frontend propio con esfuerzo medido.
-- [ ] ADR-002: confirmar alcance de reuso y componentes fijos.
-- **Gate P0:** notebook ejecutado con diagnóstico y evidencia; elecciones documentadas y catálogo de licencias revisado.
+[Issue #9](https://github.com/Mairon31/novel_ai/issues/9) · [Issue #10](https://github.com/Mairon31/novel_ai/issues/10)
 
-## P1 — vertical slice narrativo sin imágenes/TTS
+- [ ] Crear `apps/web` React/Vite/TS con rutas Biblioteca, Model Hub, Descargas, Settings, Wizard y Diagnóstico.
+- [ ] Crear `apps/api` FastAPI con `/health`, detección GPU/CPU, disco, registry de providers/runtimes y settings persistentes.
+- [ ] Wizard reanudable, elegir directorio de modelos, política de descarga y dispositivo; no requiere modelo para abrir UI.
+- [ ] Buscar modelos reales en HF, metadata/revision/quant/ficheros/licencias y adaptador catálogo.
+- [ ] Estimar compatibilidad 12/16 GB con incertidumbre explícita y filtros por función.
+- [ ] Descargas durables verificadas con jobs, pausa/reanudar/cancelar, importación local, registros instalados; UI con estados reales.
+- [ ] Model assignment `narrator/image/tts` y parámetros por rol/capacidades, presets globales y overrides por historia.
+- [ ] Sin descarga/ejecución automática de TTS al abrir configuraciones.
+- [ ] Pruebas contract, integración descarga pequeña real, Playwright 390x844 y 1440x900, capturas.
+- **Gate P0.5:** abrir app sin modelo, instalar/importar peso, reabrir y seleccionar desde UI con tests y logs reales.
 
-- [ ] Crear `apps/api` FastAPI, Alembic, SQLAlchemy, schemas OpenAPI y service health.
-- [ ] Crear `apps/web` Vite/React/TS con reproductor VN adaptativo.
-- [ ] Implementar story CRUD, personajes, eventos, revisión optimista y branch/retry/edit.
-- [ ] Implementar adaptador KoboldCpp (stream/chat/cancel/health) y Ollama alternativo.
-- [ ] Implementar ensamblador de contexto y validación de cambios de canon.
-- [ ] Persistir/reabrir historias; mostrar streaming/Hacer/Decir/Narrar/Continuar.
-- [ ] Contract tests, integration con LLM **real** en Colab cuando hardware lo permita.
-- [ ] Playwright móvil y escritorio local/CI sin GPU.
-- **Gate P1:** 10 turnos con modelo real, retry/branch, persistence y zero duplicate commits, capturas funcionales.
+## Fase P1 — narrator engine y persistencia jugable
 
-## P2 — imagen progresiva, identidad y caché
+[Backend #3](https://github.com/Mairon31/novel_ai/issues/3), [LLM #4](https://github.com/Mairon31/novel_ai/issues/4), [Runtimes #11](https://github.com/Mairon31/novel_ai/issues/11)
 
-- [ ] Diseñar workflow ComfyUI API versionado, sin nodos personalizados no inventariados.
-- [ ] Implementar adapter ComfyUI `/prompt`, WS, history, asset store SHA.
-- [ ] Asset planner distingue cambio de lugar/identidad de diálogo ordinario.
-- [ ] Scheduler GPU con lease, prioridades, OOM/timeout/cancel.
-- [ ] Fondos/sprites cacheados y manifests por escena/versión.
-- [ ] Introducir canon visual y evaluaciones de coherencia.
-- [ ] Pruebas: 10 diálogos = 0 imágenes; cambio de escena = 1; cache hit = 0.
-- **Gate P2:** imagen real tras evento/solicitud, caché y recuperación comprobados, sin bloquear texto.
+- [ ] Integrar KoboldCpp/Ollama y API compatible; instalar/conectar motores desde configuración.
+- [ ] Supervisor start/stop/swap con GPU/CPU/offload, prueba de salud, rollback y logs.
+- [ ] SQLite/Alembic: historias, personajes, canon, eventos, memorias y branching/retry.
+- [ ] Historia nueva, narración streaming, input libre, Continuar/Reintentar/Editar y reabrir después de reinicio.
+- [ ] UI VN real con fondo y personajes (puede funcionar sin imagen), móvil y escritorio.
+- [ ] 10 turnos con LLM real, estado consistente y recuperación de errores/dupes.
+- **Gate P1:** desde UI seleccionar LLM, iniciar, generar historia, guardar/reintentar con evidencia real.
 
-## P3 — TTS bajo solicitud
+## Fase P2 — ComfyUI, identidad y recursos visuales progresivos
 
-- [ ] Adapter Chatterbox y worker lazy load, idioma ES-LA, voice_id estable.
-- [ ] Botón Escuchar, detener, audio por personaje y caché.
-- [ ] Autolectura solo habilitable explícitamente por usuario, por defecto OFF.
-- [ ] Medición de calidad/VRAM y failover a texto; evaluar Qwen3-TTS.
-- [ ] Tests de invocación 0 sin permiso, reintento y rama activa.
-- **Gate P3:** audio real manual, ninguna invocación previa y narración conservada si TTS falla.
+[Issue #6](https://github.com/Mairon31/novel_ai/issues/6)
+- [ ] Selección checkpoint/workflow/LoRA/seed/sampler/steps/CFG/resolución desde UI con capacidades reales.
+- [ ] ComfyUI job API, validación de workflow, cache/manifest, GPU leases, fallback.
+- [ ] Generación por cambio visual material de escena o click; no una imagen por cada turno.
+- [ ] Consistencia personaje con identity profile, versiones de vestuario y QA de 10 escenas.
+- [ ] Prueba 10 diálogos en misma escena ⇒ 0 imágenes; cambio de escena ⇒ máximo 1 job.
+- **Gate P2:** escena real generada, reutilizada y asociada a rama correcta sin bloquear narración.
 
-## P4 — experiencia y editores
+## Fase P3 — TTS configurable bajo demanda
 
-- [ ] Creador de mundos/personajes, biblioteca, galería y fichas.
-- [ ] Gestor de capítulos/escenas/ramas, versiones visuales, preferencias por historia.
-- [ ] Modo pantalla completa VN y controles táctiles/escritorio; accesibilidad/QA visual.
-- [ ] Import/export con integridad e historial; búsqueda/recuperación de memoria.
-- [ ] Selector de modelos/configuraciones y diagnóstico de conexión/VRAM.
-- **Gate P4:** juego completo de comienzo a fin con interfaz móvil/PC, restauración de estado y captura/registro QA.
+[Issue #7](https://github.com/Mairon31/novel_ai/issues/7)
+- [ ] Seleccionar motor/voz/idioma/CPU/GPU/Auto desde ajustes si el motor lo soporta.
+- [ ] Lazy worker, audio por personaje y caché por texto/voz/versiones.
+- [ ] OFF por defecto, escuchar manual, autolectura solo opt-in.
+- [ ] 50 turnos OFF ⇒ 0 llamadas a TTS; síntesis real y rendimiento registrados.
+- **Gate P3:** audio real manual, controles funcionan y errores no afectan texto.
 
-## P5 — Colab→Windows y optimización
+## Fase P4 — UI completa y empaquetado Windows
 
-- [ ] Repetir contract/integration/end-to-end Colab en máquinas GPU disponibles.
-- [ ] Benchmarks 12 GB físicos y 16 GB RTX 5060 Ti, sin inferir compatibilidad de 12GB a partir de 16GB.
-- [ ] Empaquetado/start scripts Windows, instalación guiada, healthchecks.
-- [ ] GPU profiles reales, retry/resume ante OOM, migraciones seguras.
-- [ ] CI lint, typechecks, unit/integration/e2e, safety, licencia/atribuciones.
-- [ ] Release candidata con notas, limitaciones reales, guía de usuario.
-- **Gate P5:** demo reproducible Windows 16GB y validación explícita de 12GB o límite documentado.
+[Frontend #5](https://github.com/Mairon31/novel_ai/issues/5), [Desktop #12](https://github.com/Mairon31/novel_ai/issues/12)
+- [ ] Biblioteca, editor visual de historias/personajes, galería, import/export.
+- [ ] Tauri 2 (candidato) con sidecar FastAPI y launcher, instalación sin consola, datos en carpeta personalizable.
+- [ ] Verificación de updates, permisos, LAN opt-in segura y fallos de proceso.
+- [ ] QA visual mobile/desktop y pruebas reales del instalador/ejecutable.
+- **Gate P4:** abrir app de escritorio y terminar un capítulo sin editar archivos a mano.
 
-## Backlog priorizado (orden de decisión)
+## Fase P5 — mediciones reales de memoria y portabilidad
 
-| Prioridad | Tarea | Evidencia de terminado |
-|---|---|---|
-| P0 | Notebook Colab ejecutado en GPU disponible | log JSON + commit + modelo |
-| P0 | Spike Open Dungeon reuso | comparativa, ADR, código referenciado |
-| P0 | Spike KoboldCpp/Ollama | 1 inferencia real + metrics |
-| P1 | SQLite events + branch | 100 % tests de invariantes |
-| P1 | API story/turn SSE | OpenAPI + 10 turnos + idempotencia |
-| P1 | Frontend VN responsive | Playwright escritorio/móvil + capturas |
-| P2 | ComfyUI adapter | output PNG + workflow/sha + error test |
-| P2 | Asset planner/cache | test 10 diálogos/1 escena |
-| P2 | GPU scheduler | VRAM telemetry + cancel/timeout/oom |
-| P3 | Chatterbox manual | archivo audio + 0 llamadas no solicitadas |
-| P4 | Editor/historia portable | roundtrip export/import |
-| P5 | Windows RTX 5060 Ti | informe de benchmark reproducible |
+[GPU #8](https://github.com/Mairon31/novel_ai/issues/8), [Colab #1](https://github.com/Mairon31/novel_ai/issues/1)
+- [ ] Medir equipos NVIDIA 12 GB y RTX 5060 Ti 16 GB con modelos/versión/hashes exactos.
+- [ ] Ensayar secuencia texto→imagen→voz, offload, OOM, RAM/VRAM/p95 y persistencia.
+- [ ] Colab **opcional** para diagnósticos y modelos de laboratorio; no exigirlo para instalar/usar.
+- [ ] CI de app, contract/integration/e2e, restauración, performance, documentación y licencias.
+- **Gate P5:** informe reproducible 12/16GB y limitaciones; no marcar soporte sin hardware correspondiente.
 
-## Plantilla Definition of Done para PR
+## Definition of Done por issue/PR
 
-1. Implementación y archivos afectados listados.
-2. Tests locales con comandos **y resultados reales**.
-3. Capturas/QA visual de frontend cuando aplica.
-4. Pruebas 12/16GB o declaración explícita 'sin probar' si afecta GPU.
-5. Contratos, documentación, changelog, bitácora y ADR actualizados.
-6. Licencias/auditoría de dependencias con source/commit.
-7. No secretos/pesos/archivos generados en Git.
-8. No degradar el flujo narrativa si falla imagen o voz.
+- Código real, API/estados validados y test plan explícito.
+- Comandos y resultados reales; capturas Playwright desktop/móvil para UI.
+- Hash de pesos y revisión de proveedor; atribución de fuentes si reusamos código.
+- Confirmar estados de botones y errores: no controles visuales vacíos.
+- Verificar que no se carguen modelos por navegar Settings/Model Hub.
+- En tests GPU indicar equipo, driver, backend, preset y pico VRAM.
+- Actualizar README, ADR, `docs/PROGRESO.md`, mapa de issues; no ocultar FAIL.
+
+## Enlaces
+
+[Model Hub](MODEL_HUB.md) · [Onboarding](ONBOARDING_Y_UI.md) · [Referencias Urakatsu/Koharu](REFERENCIAS_URAKATSU_KOHARU.md) · [App desktop](DESKTOP_Y_DESPLIEGUE.md) · [Issues](https://github.com/Mairon31/novel_ai/issues)

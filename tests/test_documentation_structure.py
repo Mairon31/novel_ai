@@ -13,6 +13,10 @@ REQUIRED = [
     "docs/QA_Y_ACEPTACION.md", "docs/SEGURIDAD_Y_LICENCIAS.md",
     "docs/ESTADO_Y_MEMORIA.md", "docs/adr/0001-stack-modular.md",
     "notebooks/noble_ai_colab_smoke.ipynb",
+    "docs/MODEL_HUB.md", "docs/ONBOARDING_Y_UI.md",
+    "docs/DESKTOP_Y_DESPLIEGUE.md", "docs/REFERENCIAS_URAKATSU_KOHARU.md",
+    "docs/adr/0002-app-first-model-hub.md",
+    "config/model_assignments.schema.json", "config/model_assignments.example.json",
     "config/gpu_profiles.json", "config/model_manifest.example.json",
 ]
 
@@ -39,6 +43,21 @@ class DocumentationStructureTests(unittest.TestCase):
         notebook = json.loads((ROOT / "notebooks/noble_ai_colab_smoke.ipynb").read_text(encoding="utf-8"))
         self.assertEqual(notebook["nbformat"], 4)
         self.assertTrue(any(c["cell_type"] == "code" for c in notebook["cells"]))
+
+    def test_app_first_defaults_and_role_schema(self):
+        defaults = json.loads((ROOT / "config/model_assignments.example.json").read_text(encoding="utf-8"))
+        schema = json.loads((ROOT / "config/model_assignments.schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(defaults["schema_version"], 1)
+        self.assertFalse(defaults["setup_completed"])
+        self.assertFalse(defaults["global"]["tts_enabled"])
+        self.assertFalse(defaults["global"]["tts_autoread"])
+        self.assertEqual(set(defaults["roles"]), {"narrator", "world_state", "scene_image", "character_image", "speech"})
+        self.assertTrue(all(v is None for v in defaults["roles"].values()))
+        self.assertIn("global", schema["properties"])
+        self.assertIn("$defs", schema)
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("APP-FIRST", readme.upper())
+        self.assertIn("Colab", readme)
 
     def test_media_policies_are_documented(self):
         image_doc = (ROOT / "docs/IMAGENES.md").read_text(encoding="utf-8")

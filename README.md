@@ -1,54 +1,70 @@
 # Noble AI
 
-**Noble AI** es un laboratorio abierto de arquitectura para una novela visual / RPG narrativo interactivo **local-first**, con personajes persistentes, historias editables, ilustraciones bajo demanda y voces opcionales.
+**Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> Estado: **P0 — planificación técnica e investigación**. La documentación define diseño y criterios de aceptación; **no implica que el motor, los conectores o las pruebas de GPU ya estén implementados**.
+> **Estado:** fase P0/P0.5 — arquitectura y especificación **app-first**, investigación de Urakatsu/Koharu, pruebas estructurales. **Todavía no existe una aplicación jugable**, un Model Hub funcionando ni instalador de Windows. Ninguna prueba de GPU/LLM real de Noble AI está verificada.
 
-## Principios de producto
+## Experiencia final propuesta
 
-- **Ensamblar antes de reescribir**: motores existentes para LLM, imágenes y TTS; el código propio se concentra en orquestación, estado y experiencia de usuario.
-- **Una historia puede comenzar sin imágenes**; cada escena nueva evalúa si necesita fondo/sprite/CG, reutiliza assets anteriores y solo genera bajo demanda.
-- **TTS desactivado por defecto**: únicamente al solicitarlo explícitamente (pulsación o ajuste de autolectura activado por el usuario).
-- **LLM siempre disponible** mientras dure la sesión: servicio iniciado y modelo residente cuando sea viable; uso de offload y cola de GPU sin perder el contexto narrativo.
-- **Hardware objetivo**: GPU NVIDIA de **12 GB** como mínimo de diseño y **16 GB** recomendado; RAM, contexto y tamaños de modelos determinan el perfil real. Almacenamiento no es un límite de producto.
-- **Colab primero** para pruebas reproducibles en cuaderno; **Windows/NVIDIA después** con la misma API/contratos. La disponibilidad de GPU de Colab no está garantizada.
-- **Español latinoamericano natural** como idioma inicial; arquitectura preparada para localización.
-- **No se da por hecho el funcionamiento**: cada componente se marca como propuesto, integrado, verificado o bloqueado, con pruebas reproducibles.
+1. **Instalar y abrir Noble AI**: app web local con futuro paquete Windows `.exe`, sin que el usuario final tenga que editar `.env` ni descargar modelos a mano.
+2. **Asistente de configuración inicial**: idioma, detección CPU/GPU y VRAM, carpeta de modelos/proyectos, modelos/proveedores opcionales.
+3. **Model Hub integrado**: descubrir modelos en Hugging Face, comparar cuantizaciones, ver licencias y compatibilidad estimada, descargar con progreso/reanudar, importar archivos locales, elegir modelo para narración, imágenes y TTS.
+4. **Personalizar cada proveedor**: KoboldCpp/Ollama/API compatible; ComfyUI y checkpoints/LoRAs/workflows; Chatterbox y otras voces, CPU/GPU/Auto **si el backend lo permite**; perfiles por defecto y por historia.
+5. **Crear y jugar**: biblioteca, editor de mundo/personajes, pantalla VN con sprites, fondo, historia, Hacer/Decir/Narrar, Continuar, Reintentar, historial y ramas.
+6. **Medios progresivos**: las ilustraciones se crean cuando cambia una escena/identidad o se solicitan y se reutilizan; **TTS OFF por defecto** y sin carga hasta que el usuario pulse Escuchar/active conscientemente la autolectura.
+7. **Usar sin Internet** una vez obtenidos modelos y dependencias compatibles; Colab queda para benchmarks y experimentos opcionales, **no como entorno principal del producto**.
+
+## Arquitectura
+
+```text
+Noble AI UI (React/Vite/TS)
+  ├─ Biblioteca / Studio / Novela visual
+  ├─ Asistente inicial / Model Hub / Descargas / Ajustes
+  └─ Diagnóstico CPU/GPU y proveedores
+           │ REST + SSE / localhost
+           ▼
+FastAPI Orchestrator + SQLite + Model Registry + Download Queue
+  ├─ Story Engine, event log, canon, ramas, memoria
+  ├─ Model Hub (Hugging Face/archivos locales/licencias/compatibilidad)
+  ├─ Runtime supervisor (dispositivos, arranque/parada, cambio seguro)
+  ├─ Narrador: KoboldCpp / Ollama / server compatible (texto interactivo)
+  ├─ Imágenes: ComfyUI (por evento de escena / explícito, caché)
+  └─ TTS: Chatterbox / otros (solo opt-in, lazy)
+           │
+  Tauri 2 (candidato futuro de .exe; shell/sidecar, NO implementado)
+```
+
+Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB recomendado**; compatibility real depende del modelo/configuración/offload, y se validará con benchmarks registrados, sin inventar rendimiento.
 
 ## Documentación
 
-| Documento | Finalidad |
+| Archivo | Contenido |
 |---|---|
-| [GDD técnico](docs/GDD_TECNICO.md) | Juego, UX, reglas de historia y requisitos |
-| [Arquitectura](docs/ARQUITECTURA.md) | Módulos, colas, eventos y despliegue |
-| [Catálogo de repositorios](docs/REPOSITORIOS_OPEN_SOURCE.md) | Herramientas, licencias, enlaces, decisiones y pruebas pendientes |
-| [ADR-001: stack](docs/adr/0001-stack-modular.md) | Selección inicial y alternativas |
-| [Contratos API](docs/CONTRATOS_API.md) | Endpoints y esquemas acordados |
-| [Estado y memoria](docs/ESTADO_Y_MEMORIA.md) | Persistencia, episodios, continuidad y regresión |
-| [Imágenes bajo demanda](docs/IMAGENES.md) | Activación, identidad y políticas de caché |
-| [TTS opt-in](docs/TTS.md) | Reglas, voces, caché, consentimiento |
-| [Perfiles GPU](docs/PERFILES_GPU.md) | Presupuestos orientativos 12/16 GB |
-| [Colab a local](docs/COLAB_A_LOCAL.md) | Estrategia reproducible y límites |
-| [Pruebas y aceptación](docs/QA_Y_ACEPTACION.md) | Matriz de pruebas, métricas y criterios |
-| [Seguridad y licencias](docs/SEGURIDAD_Y_LICENCIAS.md) | Aislamiento de servicios y obligaciones |
-| [Plan por fases](docs/ROADMAP.md) | Hitos, tareas y definiciones de terminado |
-| [Bitácora](docs/PROGRESO.md) | Hechos verificables, pendientes y bloqueos |
-| [Guía para agentes](AGENTS.md) | Convenciones de implementación y documentación |
+| [GDD técnico](docs/GDD_TECNICO.md) | Qué es el juego, gameplay/UX y criterios |
+| [Arquitectura](docs/ARQUITECTURA.md) | Servicios, estado, colas y contratos |
+| [Model Hub](docs/MODEL_HUB.md) | Catálogo, variantes, descargas, registros, proveedores, parámetros y API |
+| [Primer inicio e interfaz](docs/ONBOARDING_Y_UI.md) | Wizard, Model Hub y diseño VN |
+| [Urakatsu y Koharu](docs/REFERENCIAS_URAKATSU_KOHARU.md) | Análisis de código/licencias/reuso |
+| [Empaquetado escritorio/web](docs/DESKTOP_Y_DESPLIEGUE.md) | React, FastAPI, Tauri sidecar y estrategia |
+| [Repositorio OSS](docs/REPOSITORIOS_OPEN_SOURCE.md) | Catálogo completo de componentes existentes |
+| [API](docs/CONTRATOS_API.md) | Endpoints y eventos |
+| [Estado y memoria](docs/ESTADO_Y_MEMORIA.md) | Historias, continuidad, ramas |
+| [Imágenes](docs/IMAGENES.md) · [TTS](docs/TTS.md) | Políticas media |
+| [Perfiles GPU](docs/PERFILES_GPU.md) | 12/16GB, VRAM y límites |
+| [Colab diagnóstico](docs/COLAB_A_LOCAL.md) | Pruebas opcionales, no UI |
+| [QA](docs/QA_Y_ACEPTACION.md) · [Seguridad](docs/SEGURIDAD_Y_LICENCIAS.md) | Criterios y límites |
+| [Roadmap](docs/ROADMAP.md) · [Progreso](docs/PROGRESO.md) | Hitos, evidencia y problemas |
+| [ADR-001](docs/adr/0001-stack-modular.md) · [ADR-002](docs/adr/0002-app-first-model-hub.md) | Decisiones |
+| [AGENTS.md](AGENTS.md) | Instrucciones de implementación por agentes |
 
-## Probar en Google Colab
+**Backlog GitHub:** [Issues #1–#12](https://github.com/Mairon31/novel_ai/issues). Prioridades nuevas: [Model Hub #9](https://github.com/Mairon31/novel_ai/issues/9), [Onboarding #10](https://github.com/Mairon31/novel_ai/issues/10), [Runtimes #11](https://github.com/Mairon31/novel_ai/issues/11), [Desktop #12](https://github.com/Mairon31/novel_ai/issues/12).
 
-[**Abrir notebook P0 en Google Colab**](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_smoke.ipynb)
+## Próximo resultado comprobable
 
-La prueba P0 inspecciona hardware, ejecuta tests de documentación y puede descargar Qwen3-1.7B para una **inferencia real de diagnóstico**. No certifica todavía el motor Noble AI, SDXL ni TTS. La GPU y los recursos de Colab son variables. [Ver instrucciones](docs/COLAB_A_LOCAL.md).
+Una UI de configuración inicial + Model Hub operativa que, usando API real, detecte hardware, busque modelos de Hugging Face, descargue/importa un pequeño GGUF **con verificación**, lo asigne a narración y pueda iniciar un turno de prueba **sin editar scripts**. Después conectar escena VN, imágenes progresivas y TTS opt-in.
 
-**Seguimiento:** [Issues de Noble AI](https://github.com/Mairon31/novel_ai/issues) · [CI P0](https://github.com/Mairon31/novel_ai/actions/workflows/p0-docs.yml)
+## Laboratorio opcional de Colab
 
-## Primera meta tangible
+[Notebook de diagnóstico P0](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_smoke.ipynb). **No es el producto**: solo diagnóstico, tests de documentación y posibilidad de una inferencia real pequeña por separado.
 
-Un **vertical slice** reproducible: iniciar una historia, escribir como protagonista, recibir texto en streaming, persistir eventos/estado, continuar o reintentar sin contradicciones y generar **solo a pedido** una ilustración de escena; TTS únicamente si el usuario pulsa escuchar. Todo con un único endpoint de aplicación y adaptadores intercambiables, primero probado en Colab y luego en Windows.
-
-## Repositorio
-
-Origen: https://github.com/Mairon31/novel_ai
-
-Ningún modelo pesado ni archivo sensible se incorpora a Git; los pesos se descargan por separado. El inventario de terceros no equivale a permiso para copiar su código ni a validación de sus modelos.
+No se incluyen checkpoints pesados, credenciales ni datos privados en Git. Respeta copyright/licencias de fuentes, modelos y recursos.
