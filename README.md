@@ -87,3 +87,7 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 [Notebook de diagnóstico P0](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_smoke.ipynb). **No es el producto**: solo diagnóstico, tests de documentación y posibilidad de una inferencia real pequeña por separado.
 
 No se incluyen checkpoints pesados, credenciales ni datos privados en Git. Respeta copyright/licencias de fuentes, modelos y recursos.
+
+### Google Colab: laboratorio integral QA
+
+Abre el [notebook integral v1.2 con logs y progreso en vivo](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_2.ipynb). Despliega Noble AI en localhost, prueba backend/navegador, ensaya GGUF con GPU si existe y descarga un ZIP con métricas, evidencias y logs. Si interrumpes una etapa, la celda de exportación permite recuperar un informe parcial. No publica túneles ni demuestra por sí sola rendimiento en GPU antes de ejecutarlo.
