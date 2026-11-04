@@ -6,7 +6,7 @@ import type { NarrativeConfig, ProviderModels } from './types';
 const defaultConfig: NarrativeConfig = {
   provider: 'ollama', base_url: 'http://127.0.0.1:11434', model: '',
   temperature: 0.7, top_p: 0.9, max_tokens: 450, num_ctx: 4096, device: 'auto',
-  top_k: 40, repetition_penalty: 1.0, reasoning_mode: 'auto',
+  top_k: 40, repetition_penalty: 1.0, reasoning_mode: 'auto', worker_id: '',
 };
 
 export function NarrativeSettings() {
