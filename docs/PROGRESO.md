@@ -78,12 +78,13 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 - [x] Frontend React/Vite con wizard, catálogo, detalles, instalaciones, descargas, ajustes, diagnóstico.
 - [x] Python API unit/integration **simulados** PASS (incluye descarga parcial/reanudación y SHA).
 - [x] Frontend Vite/TypeScript build PASS.
-- [x] Playwright **2 PASS**: desktop 1440x900 y móvil 390x844, backend real, pruebas de navegación y capturas.
-- [ ] Instalación pública de GGUF/LLM y búsqueda live verificada en la máquina destino.
+- [x] Playwright **4 PASS**: 2 recorridos desktop/móvil con backend real, 2 pruebas de tarjetas/detalle con catálogo simulado para QA visual (no confundir con respuestas HF live). Capturas inspeccionadas.
+- [x] **Búsqueda LIVE** en la API pública de Hugging Face y lectura del detalle: script `scripts/probe_hf_catalog.py`, **PASS** en [CI #41901149116](https://github.com/Mairon31/novel_ai/actions/runs/41901149116). Consulta `Qwen` devolvió 6 repositorios, con revisión y 1 variante GGUF inspeccionada del primer resultado.
+- [ ] Descarga completa de GGUF público a un equipo y ejecución LLM con hardware real.
 - [ ] Importar archivos locales y estimar RAM/VRAM, menú completo de parámetros, runtime KoboldCpp/Ollama.
 - [ ] Integración imagen/TTS y novela jugable, ejecutable Windows.
 
-**CI auditada:** [#41899833728](https://github.com/Mairon31/novel_ai/actions/runs/41899833728) API/frontend PASS; [#41900062946](https://github.com/Mairon31/novel_ai/actions/runs/41900062946) API/frontend + **2 e2e PASS** con artefactos de capturas.
+**CI auditada:** [#41901149116](https://github.com/Mairon31/novel_ai/actions/runs/41901149116) API/frontend + HF live probe + **4 e2e PASS**, [#41901267472](https://github.com/Mairon31/novel_ai/actions/runs/41901267472) CI final API/frontend/Playwright PASS. Artefactos `noble-ai-visual-qa` con capturas desktop/móvil. No equivale a inferencia ni descarga real de pesos.
 
 **Defectos detectados y corregidos:** regex GGUF, transacción SQLite, cantidad de columnas en INSERT, ruta raíz de la aplicación, expression GitHub Actions, carrera de reanudación.
 
