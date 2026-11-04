@@ -14,7 +14,6 @@ import asyncio
 import json
 import math
 import os
-import statistics
 import time
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -57,7 +56,8 @@ async def snapshot(client: httpx.AsyncClient, base: str, headers: dict) -> dict 
 
 
 async def benchmark(base: str, token: str, runs: int, timeout: int,
-                    monitor_interval: float = 0.5) -> dict:
+                    monitor_interval: float = 0.5,
+                    transport: httpx.AsyncBaseTransport | None = None) -> dict:
     headers = {"Authorization": "Bearer " + token}
     report: dict = {
         "schema": 1, "tool": "Noble AI worker benchmark",
@@ -68,7 +68,7 @@ async def benchmark(base: str, token: str, runs: int, timeout: int,
     gpu_memory: list[int] = []
     gpu_utilization: list[int] = []
 
-    async with httpx.AsyncClient(trust_env=False,
+    async with httpx.AsyncClient(trust_env=False, transport=transport,
                                  timeout=httpx.Timeout(timeout, connect=15)) as client:
         # A tunnel to an unprotected server is a configuration error.
         bad = await client.get(
