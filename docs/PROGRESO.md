@@ -121,6 +121,28 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 3. Añadir branching/Retry/Edit y memoria de personajes/canon; continuar hacia ComfyUI para generación de escena progresiva.
 4. QA visual recurrente de los nuevos paneles y estabilidad móvil.
 
+## 2026-11-04 · P1.1 — continuación, lector inmersivo y worker remoto
+
+**Recuperación:** la sesión anterior terminó en \`5d6a08a\` con Python en verde y frontend fallido por contrato \`worker_id\` faltante. Se corrigió la definición frontend y el selector de la prueba visual. No se ocultaron las ejecuciones con fallos: [Actions](https://github.com/Mairon31/novel_ai/actions).
+
+### Implementación publicada
+
+- [x] Configuración de salida de idioma y estilo narrativo en SQLite; OpenRouter mediante clave de almacén del sistema o entorno, y parámetros específicos del proveedor.
+- [x] Centro de configuración organizado: idiomas, apariencia, proveedor, runtimes de solo lectura, atajos, red, About y consulta de canales stable/beta/nightly. La instalación/rollback de builds y runtimes continúa sin implementar.
+- [x] Lector inmersivo: panel visual de escena, cuerpo narrativo con diálogos destacados, panel lateral Resumen/Historial/Galería/UI-UX, modo responsive móvil y creación en dos etapas (mundo y nombre de protagonista).
+- [x] Importación segura PNG/JPG/WebP como WebP local por historia, sin generación de difusión ni descarga de imágenes no solicitadas.
+- [x] Worker GPU remoto: URL HTTPS Cloudflare validada, token fuera de SQLite, test de autenticación, descubrimiento de modelos y selección para narrador.
+- [x] Proxy autenticado con dos rutas OpenAI compatibles. Solamente se conecta a un upstream loopback.
+- [x] Panel de workers: registrar, comprobar, seleccionar y activar modelo o eliminar credencial.
+- [x] Tests Python de persistencia, proxy y media con motores simulados; corrección de selector Playwright obsoleto.
+- [ ] Ejecutar y medir worker real con un LLM real en Colab o segunda PC.
+- [ ] Worker automático que inicie Colab, instalación cloudflared y recuperación de desconexión.
+- [ ] TTS, ComfyUI y generación progresiva de escenas: pendientes.
+- [ ] Compartir el servidor Noble AI con otros dispositivos mediante autenticación de sesiones: pendiente.
+- [ ] Instalar/aplicar releases stable/beta/nightly desde un binario empaquetado: pendiente.
+
+**Referencia operativa:** [WORKERS.md](WORKERS.md). Registrar siempre evidencia CI del commit final; no declarar PASS hasta el estado final de GitHub Actions.
+
 ## Plantilla para futuras entradas
 
 ```md

@@ -2,7 +2,7 @@
 
 **Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> **Estado: P1 — primer lector narrativo funcional en web local.** Model Hub + descarga GGUF, conexión con Ollama/KoboldCpp, historias en SQLite, streaming de turnos y lanzador KoboldCpp con selección CPU/GPU. **El backend y la UI están implementados y probados con motores simulados.** Todavía no se ha verificado una inferencia de un LLM real en la RTX 5060 Ti, ni existen memoria/canon avanzados, imágenes ComfyUI, voces TTS o instalador Windows.
+> **Estado: P1.1 experimental.** Model Hub, lectura narrativa con presentación visual, identidad del protagonista, ilustración manual por historia, Ollama/KoboldCpp/OpenRouter y worker LLM GPU remoto con proxy autenticado. Configuración organizada por idioma, apariencia, proveedores, runtimes, atajos, red y actualizaciones. **El código y las pruebas automáticas no demuestran inferencia real con GPU, generación de imágenes/TTS, Colab administrado ni actualizador instalado.**
 
 ## Ejecutar prototipo en Windows (sin Colab)
 
@@ -68,6 +68,7 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 | [Imágenes](docs/IMAGENES.md) · [TTS](docs/TTS.md) | Políticas media |
 | [Perfiles GPU](docs/PERFILES_GPU.md) | 12/16GB, VRAM y límites |
 | [Colab diagnóstico](docs/COLAB_A_LOCAL.md) | Pruebas opcionales, no UI |
+| [Workers GPU remotos](docs/WORKERS.md) | Proxy autenticado, Cloudflare, conexión desde otras PC/Colab y limitaciones |
 | [QA](docs/QA_Y_ACEPTACION.md) · [Seguridad](docs/SEGURIDAD_Y_LICENCIAS.md) | Criterios y límites |
 | [Roadmap](docs/ROADMAP.md) · [Progreso](docs/PROGRESO.md) | Hitos, evidencia y problemas |
 | [ADR-001](docs/adr/0001-stack-modular.md) · [ADR-002](docs/adr/0002-app-first-model-hub.md) | Decisiones |

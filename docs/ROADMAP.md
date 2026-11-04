@@ -49,6 +49,20 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [ ] 10 turnos con LLM real en GPU; tests de proveedor **simulados** pasan; idempotencia y recuperación probadas con mocks.
 - **Gate P1:** desde UI seleccionar LLM, iniciar, generar historia, guardar/reintentar con evidencia real.
 
+## Fase P1.1 — ajustes completos, lectura visual y LLM remoto (IMPLEMENTACIÓN EXPERIMENTAL)
+
+- [x] Configuración persistente de idioma objetivo, traducción del prompt, estilo narrativo y apariencia.
+- [x] Adaptador OpenRouter con clave no guardada en SQLite.
+- [x] Identidad del protagonista, reader con escena e inspector, carga de imagen manual validada.
+- [x] Diagnóstico de runtimes y comprobación de publicaciones stable/beta/nightly.
+- [x] Registro de worker LLM Cloudflare, proxy Bearer token, activación de modelo remoto, UI y pruebas simuladas.
+- [ ] QA final sin fallos del lector y del panel de workers en desktop/móvil.
+- [ ] Colab real: GPU, túnel, latencia, reconexión y transferencia de contexto con tamaño seguro.
+- [ ] Cliente LAN autenticado (el backend principal continúa solo loopback).
+- [ ] Worker de imágenes y TTS con reserva de GPU y protocolos separados.
+- [ ] Instalación de runtimes y actualizador de aplicación firmado/rollback.
+- **Gate P1.1:** CI PASS y una inferencia remota real reproducible (aún no alcanzado).
+
 ## Fase P2 — ComfyUI, identidad y recursos visuales progresivos
 
 [Issue #6](https://github.com/Mairon31/novel_ai/issues/6)
