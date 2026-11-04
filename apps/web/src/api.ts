@@ -12,6 +12,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       : failure.detail;
     throw new Error(message || ('Error HTTP ' + response.status));
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 function json(data: object): RequestInit {
