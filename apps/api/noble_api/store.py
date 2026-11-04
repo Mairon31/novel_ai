@@ -137,7 +137,7 @@ class Store:
             if previous:
                 return previous["id"]
             conn.execute(
-                "INSERT INTO installed VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO installed (id,repo_id,revision,filename,size_bytes,sha256,integrity_status,filepath,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                 (model_id, job["repo_id"], job["revision"], job["filename"],
                  path.stat().st_size, digest, integrity, str(path), time.time()),
             )
