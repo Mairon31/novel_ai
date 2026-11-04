@@ -2,14 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
-  HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu, Monitor,
+  HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu,
   Pause, Play, RefreshCw, Search, Settings2,
-  ShieldCheck, SlidersHorizontal, Sparkles, Volume2, X,
+  ShieldCheck, SlidersHorizontal, Sparkles, X,
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
-import { NarrativeSettings } from './NarrativeSettings';
-import { RuntimeManager } from './RuntimeManager';
 import { StoryStudio } from './StoryStudio';
+import { WorkspaceSettings } from './WorkspaceSettings';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
   ModelRole, Page, Settings,
@@ -333,35 +332,13 @@ export default function App() {
 
         {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}/>}
 
-        {page === 'ajustes' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> PREFERENCIAS</div>
-            <h1>Configuración<span className="title-dot">.</span></h1>
-            <p>Opciones guardadas localmente en la base de datos Noble AI.</p></div>
-          <NarrativeSettings key={narrativeRevision}/>
-          <RuntimeManager onActivated={() => setNarrativeRevision(v => v + 1)}/>
-          <div className="settings-panel">
-            <section><div className="setting-icon"><Database size={21}/></div>
-              <div className="setting-main"><strong>Almacenamiento de modelos</strong>
-                <p>Ruta administrada por el backend. El selector de carpetas llegará con la integración de escritorio.</p>
-                <code>{settings?.models_dir || 'Sin conexión'}</code></div></section>
-            <section><div className="setting-icon"><Image size={21}/></div>
-              <div className="setting-main"><strong>Ilustraciones automáticas</strong>
-                <p>Define cómo se crearán nuevas escenas cuando se conecte ComfyUI.</p>
-                <select aria-label="Política de imágenes" value={imageMode}
-                  onChange={e => void saveImageMode(e.target.value as 'scene' | 'manual' | 'off')}>
-                  <option value="scene">Cuando cambia una escena</option><option value="manual">Solo al solicitarla</option>
-                  <option value="off">Desactivadas</option>
-                </select></div></section>
-            <section><div className="setting-icon"><Volume2 size={21}/></div>
-              <div className="setting-main"><strong>Voces y narración TTS</strong>
-                <p>El sistema TTS todavía no está integrado. No se cargará ni ejecutará ningún modelo de voz. En próximas fases se podrá elegir CPU/GPU, motor y voz.</p>
-                <span className="muted-tag">Desactivado · Integración pendiente</span></div></section>
-            <section><div className="setting-icon"><Monitor size={21}/></div>
-              <div className="setting-main"><strong>Aplicación de escritorio</strong>
-                <p>Esta interfaz web será la base del futuro programa de Windows. El empaquetado Tauri está pendiente.</p>
-                <span className="muted-tag">Web local · P0.5</span></div></section>
-          </div>
-        </section>}
+        {page === 'ajustes' && <WorkspaceSettings
+          modelsDir={settings?.models_dir || ''}
+          imageMode={imageMode}
+          onImageMode={mode => { void saveImageMode(mode); }}
+          narrativeRevision={narrativeRevision}
+          onNarratorActivated={() => setNarrativeRevision(v => v + 1)}
+        />}
 
         {page === 'diagnostico' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SISTEMA</div><h1>Diagnóstico<span className="title-dot">.</span></h1>
