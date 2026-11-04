@@ -45,7 +45,7 @@ export type Health = {
 };
 
 export type NarrativeConfig = {
-  provider: 'ollama' | 'koboldcpp' | 'openrouter';
+  provider: 'ollama' | 'koboldcpp' | 'openrouter' | 'worker';
   base_url: string;
   model: string;
   temperature: number;
@@ -56,6 +56,7 @@ export type NarrativeConfig = {
   top_k: number;
   repetition_penalty: number;
   reasoning_mode: 'auto' | 'off';
+  worker_id: string;
 };
 export type ProviderModels = {
   online: boolean; provider: string; models: string[];
@@ -123,3 +124,11 @@ export type NetworkCapabilities = {
   cors_management: string; message: string;
 };
 export type ProviderCredentialStatus = { provider: string; configured: boolean; storage: string };
+
+export type RemoteWorker = {
+  id: string; name: string; url: string; role: string; created_at: number;
+};
+export type WorkerProbe = {
+  id: string; online: boolean; models: string[];
+  role: string; error?: string;
+};

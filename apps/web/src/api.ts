@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -45,6 +45,15 @@ export const api = {
   updates: (force = false) => request<Updates>('/updates' + (force ? '?force=true' : '')),
   runtimeDiagnostics: () => request<RuntimeDiagnostics>('/runtime/diagnostics'),
   networkCapabilities: () => request<NetworkCapabilities>('/network/capabilities'),
+  workers: () => request<{ workers: RemoteWorker[]; supported_role: string }>('/workers'),
+  registerWorker: (name: string, url: string, token: string) => request<RemoteWorker>(
+    '/workers', { method: 'POST', body: JSON.stringify({ name, url, token }) }),
+  probeWorker: (id: string) => request<WorkerProbe>('/workers/' + encodeURIComponent(id) + '/probe'),
+  activateWorker: (id: string, model: string) => request<NarrativeConfig>(
+    '/workers/' + encodeURIComponent(id) + '/activate',
+    { method: 'POST', body: JSON.stringify({ model }) }),
+  removeWorker: (id: string) => request<void>(
+    '/workers/' + encodeURIComponent(id), { method: 'DELETE' }),
   openRouterCredential: () => request<ProviderCredentialStatus>('/provider-credentials/openrouter'),
   saveOpenRouterCredential: (api_key: string) => request<ProviderCredentialStatus>(
     '/provider-credentials/openrouter', { method: 'PUT', body: JSON.stringify({ api_key }) }),
