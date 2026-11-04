@@ -51,8 +51,8 @@ export function NarrativeSettings() {
   return <section className="narrative-settings" aria-labelledby="narrative-settings-heading">
     <div className="narrative-section-title">
       <span className="setting-icon"><BookOpen size={22}/></span>
-      <div><h2 id="narrative-settings-heading">Motor narrativo local</h2>
-        <p>Selecciona un motor local o OpenRouter. Ajusta parámetros según las capacidades reales del proveedor.</p></div>
+      <div><h2 id="narrative-settings-heading">Motor narrativo</h2>
+        <p>Selecciona un motor local, OpenRouter o un worker GPU autenticado. Ajusta parámetros según las capacidades reales del proveedor.</p></div>
     </div>
     {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Leyendo configuración...</div> : <>
       <div className="narrative-settings-grid">
@@ -61,16 +61,17 @@ export function NarrativeSettings() {
             const provider = e.target.value as NarrativeConfig['provider'];
             setStatus(null);
             setConfig(current => ({ ...current, provider, device: 'auto',
-              base_url: provider === 'ollama' ? 'http://127.0.0.1:11434' : provider === 'koboldcpp' ? 'http://127.0.0.1:5001' : 'https://openrouter.ai/api/v1', model: '' }));
+              base_url: provider === 'ollama' ? 'http://127.0.0.1:11434' : provider === 'koboldcpp' ? 'http://127.0.0.1:5001' : 'https://openrouter.ai/api/v1', worker_id: '', model: '' }));
           }}>
             <option value="ollama">Ollama (API local)</option>
             <option value="koboldcpp">KoboldCpp (API compatible)</option>
             <option value="openrouter">OpenRouter (modelos por API)</option>
+            <option value="worker" disabled={!config.worker_id}>Worker GPU remoto (Red y workers)</option>
           </select>
         </label>
         <label>Dirección del proveedor
           <input aria-label="Dirección del servidor LLM" value={config.base_url}
-            readOnly={config.provider === "openrouter"}
+            readOnly={config.provider === "openrouter" || config.provider === "worker"}
             onChange={e => update('base_url', e.target.value)} spellCheck={false}/>
         </label>
         <label className="settings-span">Modelo del motor
@@ -91,7 +92,7 @@ export function NarrativeSettings() {
         </label>
         <label>Top-K <span className="field-value">{config.top_k}</span>
           <input type="range" min={0} max={200} step={5} value={config.top_k}
-            disabled={config.provider === 'koboldcpp'}
+            disabled={config.provider === 'koboldcpp' || config.provider === 'worker'}
             onChange={e => update('top_k', Number(e.target.value))}/>
         </label>
         <label>Penalización de repetición <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
@@ -128,6 +129,7 @@ export function NarrativeSettings() {
         KoboldCpp establece sus capas GPU desde el panel de runtime. Top-K, penalizaciones y razonamiento adicionales no están disponibles a través del adaptador actual.
       </p>}
       {config.provider === 'openrouter' && <p className="narrative-helper">Las solicitudes saldrán del equipo hacia OpenRouter y pueden generar costos. Guarda tu clave desde Configuración → Proveedores; visión y razonamiento específicos dependen del modelo remoto.</p>}
+      {config.provider === 'worker' && <p className="narrative-helper">Este modelo se ha activado desde Red y workers. El servidor remoto decide el hardware; Noble AI envía únicamente la petición narrativa autenticada.</p>}
       {status && <div className={'narrative-connect ' + (status.online ? 'connected' : 'disconnected')}>
         <Cpu size={17}/>
         <span>{status.online ? 'Servidor disponible' : 'Sin conexión con el servidor'}
@@ -144,7 +146,7 @@ export function NarrativeSettings() {
           onClick={() => void persist(false)}><Save size={16}/> Guardar parámetros</button>
       </div>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
-        necesitan un runtime local para su ejecución. Ollama puede cargar su propio modelo al generar; KoboldCpp puede arrancarse desde Noble AI. OpenRouter usa su infraestructura remota.</p>
+        necesitan un runtime local para su ejecución. Ollama puede cargar su propio modelo al generar; KoboldCpp puede arrancarse desde Noble AI. OpenRouter usa su infraestructura remota y los workers utilizan una GPU externa autenticada.</p>
     </>}
   </section>;
 }
