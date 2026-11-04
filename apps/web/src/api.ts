@@ -63,8 +63,23 @@ export const api = {
   koboldActivate: () => request<NarrativeConfig>(
     '/runtime/kobold/activate', { method: 'POST' }),
   stories: () => request<{ stories: Story[] }>('/stories'),
-  createStory: (title: string, premise: string) => request<Story>(
-    '/stories', { method: 'POST', body: JSON.stringify({ title, premise }) }),
+  createStory: (title: string, premise: string, protagonist_name = 'Protagonista') => request<Story>(
+    '/stories', { method: 'POST', body: JSON.stringify({ title, premise, protagonist_name }) }),
+  renameProtagonist: (storyId: string, name: string) => request<Story>(
+    '/stories/' + encodeURIComponent(storyId) + '/protagonist',
+    { method: 'PATCH', body: JSON.stringify({ name }) }),
+  async uploadSceneImage(storyId: string, file: File): Promise<Story> {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) + '/scene-image', {
+      method: 'POST', body: form,
+    });
+    if (!response.ok) {
+      const payload: { detail?: string } = await response.json().catch(() => ({}));
+      throw new Error(payload.detail || 'Error al importar la ilustración');
+    }
+    return response.json() as Promise<Story>;
+  },
   storyTurns: (storyId: string) => request<{ turns: StoryTurn[] }>(
     '/stories/' + encodeURIComponent(storyId) + '/turns'),
   async streamTurn(

@@ -63,6 +63,7 @@ export type ProviderModels = {
 };
 export type Story = {
   id: string; title: string; premise: string;
+  protagonist_name: string; scene_image_url: string | null;
   created_at: number; updated_at: number;
 };
 export type StoryTurn = {
