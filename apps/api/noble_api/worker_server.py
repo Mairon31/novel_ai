@@ -13,11 +13,14 @@ from __future__ import annotations
 import hmac
 import json
 import os
+import time
 from urllib.parse import urlsplit
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from .worker_telemetry import WorkerTelemetry, gpu_snapshot
 
 
 def validate_upstream(url: str) -> str:
@@ -38,6 +41,7 @@ def create_worker_app(token: str, upstream: str,
     if len(token) < 24:
         raise ValueError("NOBLE_WORKER_TOKEN requiere 24 caracteres como mínimo")
     base = validate_upstream(upstream)
+    telemetry = WorkerTelemetry()
     service = FastAPI(title="Noble AI Authenticated Worker", version="0.1")
 
     @service.middleware("http")
@@ -47,6 +51,26 @@ def create_worker_app(token: str, upstream: str,
         if not hmac.compare_digest(provided.encode(), expected.encode()):
             return JSONResponse({"detail": "Token de worker inválido"}, status_code=401)
         return await call_next(request)
+
+    @service.get("/v1/health")
+    async def health():
+        # Remains authenticated by the middleware; exposes no prompts or tokens.
+        data = telemetry.snapshot()
+        data.update({"protocol": "noble-worker-v1", "gpu": gpu_snapshot()})
+        started = time.perf_counter()
+        try:
+            async with httpx.AsyncClient(transport=transport, trust_env=False,
+                                         timeout=5) as client:
+                response = await client.get(base + "/v1/models", follow_redirects=False)
+                response.raise_for_status()
+                payload = response.json()
+                data["models_count"] = len(payload.get("data", []))
+                data["engine_status"] = "ready"
+        except (httpx.HTTPError, ValueError, KeyError, AttributeError):
+            data["engine_status"] = "unavailable"
+            data["models_count"] = 0
+        data["engine_latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
+        return data
 
     @service.get("/v1/models")
     async def models():
@@ -64,11 +88,12 @@ def create_worker_app(token: str, upstream: str,
 
     @service.post("/v1/chat/completions")
     async def completions(request: Request):
-        if int(request.headers.get("content-length", "0") or 0) > 1024 * 1024:
-            raise HTTPException(413, "El prompt supera el límite de 1 MB")
-        body = await request.body()
-        if len(body) > 1024 * 1024:
-            raise HTTPException(413, "El prompt supera el límite de 1 MB")
+        # Enforce a hard byte cap even for chunked transfer encoding.
+        body = bytearray()
+        async for part in request.stream():
+            body.extend(part)
+            if len(body) > 1024 * 1024:
+                raise HTTPException(413, "El prompt supera el límite de 1 MB")
         try:
             payload = json.loads(body)
         except (ValueError, UnicodeError):
@@ -92,12 +117,22 @@ def create_worker_app(token: str, upstream: str,
             await client.aclose()
             raise HTTPException(502, "No se pudo contactar el motor local") from exc
 
+        start = telemetry.begin()
+
         async def relay():
+            first_chunk_ms = None
+            stream_bytes = 0
+            complete = False
             try:
                 async for chunk in response.aiter_bytes():
                     if chunk:
+                        if first_chunk_ms is None:
+                            first_chunk_ms = round((time.perf_counter() - start) * 1000, 1)
+                        stream_bytes += len(chunk)
                         yield chunk
+                complete = True
             finally:
+                telemetry.finish(start, first_chunk_ms, stream_bytes, complete)
                 await response.aclose()
                 await client.aclose()
 
