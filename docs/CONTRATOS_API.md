@@ -31,3 +31,22 @@ Los bloques anteriores describen **diseño futuro**, no deben confundirse con im
 No se suministran URLs/ejecutables arbitrarios. La narrativa limita el endpoint a HTTP loopback con puerto, el runtime acepta binarios con nombre KoboldCpp, y los GGUF deben existir en el directorio administrado. La conexión no exige GPU. La API del juego usa historial reciente y no implementa aún eventos estructurados ni revision/branch. Esos contratos anteriores permanecen como objetivos futuros.
 
 Ver [Quickstart](QUICKSTART.md), [Progreso](PROGRESO.md) y pruebas `tests/test_narrative.py` y `tests/test_runtime.py`.
+
+## Endpoints reales P1.1: workers y preferencias
+
+| Método | Ruta | Función |
+|---|---|---|
+| GET/POST | `/api/v1/workers` | Lista o registra worker LLM |
+| GET | `/api/v1/workers/{uuid}/probe` | Verifica token y anuncia modelos |
+| POST | `/api/v1/workers/{uuid}/activate` | Elige el modelo del narrador |
+| DELETE | `/api/v1/workers/{uuid}` | Elimina metadatos y token |
+| GET/PATCH | `/api/v1/workspace/preferences` | Idioma, lectura, apariencia y atajos |
+| GET | `/api/v1/about` | Versión fuente, commit, carpetas |
+| GET | `/api/v1/runtime/diagnostics` | Paquetes/binarios, solo lectura |
+| GET | `/api/v1/updates` | Consulta de releases; no instala |
+| GET | `/api/v1/network/capabilities` | Red principal loopback; límites |
+| GET/PUT/DELETE | `/api/v1/provider-credentials/openrouter` | Gestión de clave sin lectura del secreto |
+| PATCH | `/api/v1/stories/{uuid}/protagonist` | Nombre del protagonista |
+| GET/POST | `/api/v1/stories/{uuid}/scene-image` | Leer/importar ilustración |
+
+**Proxy remoto separado:** `GET /v1/models` y `POST /v1/chat/completions`, ambos requieren Bearer. No hay servicio remoto para archivos, procesos, imágenes o TTS. El backend principal sigue limitado a loopback. Ver [WORKERS.md](WORKERS.md).

@@ -59,3 +59,12 @@ Antes de una release: SBOM, verificación de dependencias, NOTICE/attribution, a
 - Importar modelos externos no concede derecho de borrar carpeta de origen; uninstall solo borra assets administrados por Noble y verifica referencias.
 - El launcher de escritorio usa token de sesión/loopback, puerto controlado y lifecycle de procesos propios, no habilita LAN sin consentimiento/credenciales. WebView no ejecuta comandos por contenido de novela.
 - Respetar licencias del **modelo** y de las voces además del código; una etiqueta `uncensored` es metadato del modelo, no permiso de infringir términos ni una garantía del comportamiento.
+
+## Seguridad de túneles remotos P1.1
+
+- La API principal Noble AI se conserva exclusivamente en 127.0.0.1. No publiques su puerto por un túnel.
+- El worker requiere token Bearer, almacenado en keyring local; no se devuelve por API ni se almacena en SQLite. No hay fallback a un fichero plano.
+- Los hosts de túnel se limitan a HTTPS con dominio trycloudflare.com; redirects deshabilitados.
+- El proxy remoto solo admite listado de modelos y chat completions con streaming, no acciones sobre archivos o procesos.
+- Los prompts narrativos salen del equipo principal y se transmiten por Cloudflare, por lo que no son completamente locales.
+- Autenticación de usuarios para LAN, permisos de lectura de historias, CORS por origen y actualización segura de builds permanecen sin implementar. La interfaz no debe sugerir que el workspace completo se puede compartir todavía.
