@@ -132,6 +132,15 @@ class WorkerRegistry:
                     endpoint + "/v1/models",
                     headers={"Authorization": "Bearer " + token}, follow_redirects=False)
                 response.raise_for_status()
+                # A tunnel to a naked inference server might ignore Bearer tokens.
+                # Reject it: any person with the URL could otherwise use the GPU.
+                invalid_token = "noble-invalid-" + uuid.uuid4().hex
+                forbidden = await client.get(
+                    endpoint + "/v1/models",
+                    headers={"Authorization": "Bearer " + invalid_token},
+                    follow_redirects=False)
+                if forbidden.status_code not in (401, 403):
+                    raise ValueError("El worker no valida credenciales Bearer; configura un proxy autenticado")
                 data = response.json()
                 models = [row.get("id") for row in data.get("data", [])
                           if isinstance(row, dict) and isinstance(row.get("id"), str)]
