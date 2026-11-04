@@ -71,6 +71,24 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 
 **Siguiente tarea prioritaria:** implementar Model Hub y wizard desde UI (issues #9 y #10), comenzando por `/health`, `/hardware`, `/models/search` real, registros y contratos. Colab ya no bloquea P0.5.
 
+## 2026-11-04 · P0.5 — primer Model Hub ejecutable
+
+- [x] Backend FastAPI real: health, hardware NVIDIA/CPU, settings, catálogo Hugging Face, detalle GGUF, instalación/descargas, roles.
+- [x] Gestor SQLite: registro de modelos, jobs, reanudación HTTP Range, SHA-256 contra metadata cuando disponible.
+- [x] Frontend React/Vite con wizard, catálogo, detalles, instalaciones, descargas, ajustes, diagnóstico.
+- [x] Python API unit/integration **simulados** PASS (incluye descarga parcial/reanudación y SHA).
+- [x] Frontend Vite/TypeScript build PASS.
+- [x] Playwright **2 PASS**: desktop 1440x900 y móvil 390x844, backend real, pruebas de navegación y capturas.
+- [ ] Instalación pública de GGUF/LLM y búsqueda live verificada en la máquina destino.
+- [ ] Importar archivos locales y estimar RAM/VRAM, menú completo de parámetros, runtime KoboldCpp/Ollama.
+- [ ] Integración imagen/TTS y novela jugable, ejecutable Windows.
+
+**CI auditada:** [#41899833728](https://github.com/Mairon31/novel_ai/actions/runs/41899833728) API/frontend PASS; [#41900062946](https://github.com/Mairon31/novel_ai/actions/runs/41900062946) API/frontend + **2 e2e PASS** con artefactos de capturas.
+
+**Defectos detectados y corregidos:** regex GGUF, transacción SQLite, cantidad de columnas en INSERT, ruta raíz de la aplicación, expression GitHub Actions, carrera de reanudación.
+
+**No afirmar como verificado:** carga de modelos reales, throughput, GPU 12/16GB, calidad de historias, ComfyUI o TTS.
+
 ## Plantilla para futuras entradas
 
 ```md

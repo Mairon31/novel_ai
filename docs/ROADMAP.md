@@ -26,10 +26,10 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 
 [Issue #9](https://github.com/Mairon31/novel_ai/issues/9) · [Issue #10](https://github.com/Mairon31/novel_ai/issues/10)
 
-- [ ] Crear `apps/web` React/Vite/TS con rutas Biblioteca, Model Hub, Descargas, Settings, Wizard y Diagnóstico.
-- [ ] Crear `apps/api` FastAPI con `/health`, detección GPU/CPU, disco, registry de providers/runtimes y settings persistentes.
+- [x] Crear frontend React/Vite/TS inicial con Biblioteca (aún no jugable), Model Hub, Descargas, Settings, Wizard y Diagnóstico.
+- [x] Crear FastAPI y detección de hardware, disco y settings. **Supervisor de runtimes pendiente.**
 - [ ] Wizard reanudable, elegir directorio de modelos, política de descarga y dispositivo; no requiere modelo para abrir UI.
-- [ ] Buscar modelos reales en HF, metadata/revision/quant/ficheros/licencias y adaptador catálogo.
+- [x] Implementar búsqueda HF/metadata GGUF/variantes. **Validación live pendiente.**
 - [ ] Estimar compatibilidad 12/16 GB con incertidumbre explícita y filtros por función.
 - [ ] Descargas durables verificadas con jobs, pausa/reanudar/cancelar, importación local, registros instalados; UI con estados reales.
 - [ ] Model assignment `narrator/image/tts` y parámetros por rol/capacidades, presets globales y overrides por historia.

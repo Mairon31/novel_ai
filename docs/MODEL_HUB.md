@@ -136,3 +136,13 @@ Separar **catalog ID** (modelo remoto, quizá no instalado), **installed ID** (a
 **MH-6** instalación Windows y acabado de navegación.
 
 **Issues:** [#9](https://github.com/Mairon31/novel_ai/issues/9), [#10](https://github.com/Mairon31/novel_ai/issues/10), [#11](https://github.com/Mairon31/novel_ai/issues/11).
+
+## Implementación disponible — P0.5 (2026-11-04)
+
+Código: `apps/api/noble_api/{main,catalog,hardware,store,downloads}.py`, `apps/web/src`, `apps/web/tests`. [Guía de ejecución](QUICKSTART.md).
+
+**Funcionando en el prototipo:** API de catálogo HF, búsqueda/variantes GGUF, instalador de un único archivo GGUF, descargas en segundo plano con pausa/reanudación y SHA-256, SQLite, selector de narrador instalado, wizard sin modelos y vistas de diagnóstico. UI compilada por Vite; FastAPI sirve `apps/web/dist`.
+
+**No disponible:** carga/ejecución LLM, compatibilidad VRAM calculada, importador de GGUF local, instalación de image/TTS, multiarchivo GGUF, modelos gated, launcher .exe. Las pruebas HTTP de descarga son deterministas con un origen simulado; no se ha medido un modelo público ni GPU.
+
+CI: [Python/TypeScript/Playwright PASS](https://github.com/Mairon31/novel_ai/actions/runs/41900062946).

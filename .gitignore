@@ -35,3 +35,7 @@ noble_ai_probe_results.json
 .idea/
 .DS_Store
 Thumbs.db
+
+# Playwright local outputs
+apps/web/test-results/
+apps/web/playwright-report/

@@ -2,7 +2,23 @@
 
 **Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> **Estado:** fase P0/P0.5 — arquitectura y especificación **app-first**, investigación de Urakatsu/Koharu, pruebas estructurales. **Todavía no existe una aplicación jugable**, un Model Hub funcionando ni instalador de Windows. Ninguna prueba de GPU/LLM real de Noble AI está verificada.
+> **Estado: P0.5, Model Hub ejecutable.** Backend FastAPI + React, búsqueda Hugging Face, descargas GGUF individuales con progreso/reanudación, registro SQLite, asistente inicial y selección del narrador. **Aún no hay ejecución de LLM, juego narrativo, ComfyUI/TTS ni instalador Windows.** Tests API offline y pruebas Playwright desktop/móvil aprobados; uso real de GPU pendiente.
+
+## Ejecutar prototipo en Windows (sin Colab)
+
+Requiere Python 3.11+, Node.js 22+ y Git. Abre PowerShell:
+
+```powershell
+git clone https://github.com/Mairon31/novel_ai.git
+cd novel_ai
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r apps\api\requirements.txt
+npm --prefix apps\web install
+npm --prefix apps\web run build
+.\.venv\Scripts\python.exe -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
+```
+
+Abre **http://127.0.0.1:8000**. Las descargas y ajustes se hacen desde la interfaz; no se instala automáticamente ningún peso. [Guía detallada](docs/QUICKSTART.md).
 
 ## Experiencia final propuesta
 
@@ -61,7 +77,7 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 
 ## Próximo resultado comprobable
 
-Una UI de configuración inicial + Model Hub operativa que, usando API real, detecte hardware, busque modelos de Hugging Face, descargue/importa un pequeño GGUF **con verificación**, lo asigne a narración y pueda iniciar un turno de prueba **sin editar scripts**. Después conectar escena VN, imágenes progresivas y TTS opt-in.
+**Siguiente hito:** verificar búsqueda y descarga pública real, mejorar importación/compatibilidad y conectar KoboldCpp/Ollama para generar el primer turno narrativo desde la interfaz. Los tests actuales de transferencia usan un servidor simulado y hash verificable; no representan un checkpoint real en la GPU.
 
 ## Laboratorio opcional de Colab
 
