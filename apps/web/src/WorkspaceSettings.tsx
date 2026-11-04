@@ -80,6 +80,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
     try {
       const next = await api.patchWorkspacePreferences({ [field]: value });
       setPrefs(next);
+      window.dispatchEvent(new CustomEvent('noble-shortcuts-changed', { detail: next.shortcuts_enabled }));
       if (field === 'accent' || field === 'font_scale' || field === 'reader_layout')
         applyAppearance(next);
       if (field === 'update_channel') setRelease(null);

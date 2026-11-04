@@ -89,6 +89,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const update = (event: Event) => {
+      const value = (event as CustomEvent<boolean>).detail;
+      setKeyboardActive(value);
+    };
+    window.addEventListener('noble-shortcuts-changed', update);
+    return () => window.removeEventListener('noble-shortcuts-changed', update);
+  }, []);
+
+  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!keyboardActive || e.isComposing) return;
       if (e.key === 'Escape') { setDetail(null); setNavOpen(false); return; }

@@ -267,7 +267,11 @@ class NarrativeService:
         instruction = ("Idioma de salida obligatorio: " + language +
                        ". Estilo narrativo: " + styles.get(preferences.get("narration_style"), "natural") + ".")
         if preferences.get("translation_mode") == "target_output":
-            instruction += " Si el contexto entrante está en otro idioma, conserva su significado y escribe la respuesta únicamente en el idioma de salida."
+            source = preferences.get("source_language", "auto")
+            instruction += (" Idioma de entrada: " +
+                            ("detecta automáticamente" if source == "auto" else source) +
+                            ". Conserva el significado del contenido entrante y "
+                            "escribe la respuesta únicamente en el idioma de salida.")
         messages = [{"role": "system", "content": PROMPT + "\n" + instruction +
                      "\nPremisa: " + story["premise"] + "\nProtagonista: " + story.get("protagonist_name", "Protagonista")}]
         for t in self.turns(story["id"], limit=16):
