@@ -30,9 +30,11 @@ class SimulatedLocalEngine:
         if path == "/api/chat":
             if self.fail_generation:
                 return httpx.Response(500, text="engine unavailable")
-            content = ("{"message":{"content":"La bibliotecaria "},"done":false}\n"
-                       "{"message":{"content":"abre la puerta."},"done":false}\n"
-                       "{"done":true}\n")
+            content = "\\n".join(json.dumps(item) for item in [
+                {"message": {"content": "La bibliotecaria "}, "done": False},
+                {"message": {"content": "abre la puerta."}, "done": False},
+                {"done": True},
+            ]) + "\\n"
             return httpx.Response(200, content=content,
                                   headers={"content-type":"application/x-ndjson"})
         if path == "/v1/chat/completions":
