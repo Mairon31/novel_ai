@@ -64,11 +64,14 @@ class DownloadManager:
             try:
                 future = self.pool.submit(self._run, job_id)
                 self._future[job_id] = future
-                future.add_done_callback(lambda _: self._restart_queued(job_id))
             except RuntimeError:
                 # The controller is shutting down; the job can resume next run.
                 self.store.update_download(job_id, status="paused",
                                            error="La aplicación se está cerrando")
+                return
+        # Register after releasing the lock: a finished future invokes callbacks
+        # immediately, which otherwise risks reentrant deadlock.
+        future.add_done_callback(lambda _: self._restart_queued(job_id))
 
     def _restart_queued(self, job_id):
         # Pause/resume may race a worker that is still stopping. Requeue safely
