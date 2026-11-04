@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -42,6 +42,14 @@ export const api = {
   saveNarrativeConfig: (config: NarrativeConfig) => request<NarrativeConfig>(
     '/narrative/config', { method: 'PUT', body: JSON.stringify(config) }),
   narrativeModels: () => request<ProviderModels>('/narrative/models'),
+  koboldStatus: () => request<KoboldStatus>('/runtime/kobold/status'),
+  koboldInstalled: () => request<{ models: KoboldInstalled[] }>('/runtime/kobold/installed'),
+  koboldStart: (payload: KoboldLaunch) => request<KoboldStatus>(
+    '/runtime/kobold/start', { method: 'POST', body: JSON.stringify(payload) }),
+  koboldStop: () => request<KoboldStatus>(
+    '/runtime/kobold/stop', { method: 'POST' }),
+  koboldActivate: () => request<NarrativeConfig>(
+    '/runtime/kobold/activate', { method: 'POST' }),
   stories: () => request<{ stories: Story[] }>('/stories'),
   createStory: (title: string, premise: string) => request<Story>(
     '/stories', { method: 'POST', body: JSON.stringify({ title, premise }) }),

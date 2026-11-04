@@ -72,3 +72,15 @@ export type GenerationEvent =
   | { event: 'delta'; data: { text: string } }
   | { event: 'done'; data: { turn: StoryTurn; replayed: boolean } }
   | { event: 'error'; data: { message: string } };
+
+export type KoboldStatus = {
+  status: 'stopped' | 'starting' | 'ready' | 'exited';
+  owns_process: boolean; pid?: number; exit_code?: number | null;
+  port?: number; model_filename?: string; gpu_layers?: number;
+  base_url?: string;
+};
+export type KoboldInstalled = { id: string; filename: string; size_bytes: number };
+export type KoboldLaunch = {
+  executable: string; installed_id: string; gpu_layers: number;
+  contextsize: number; port: number;
+};
