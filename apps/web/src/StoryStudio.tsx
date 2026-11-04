@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  ArrowRight, BookOpen, CheckCircle2, ChevronRight, CircleAlert, Cpu,
-  Feather, LoaderCircle, MessageSquareText, Plus, Send, Sparkles, X,
-} from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X } from 'lucide-react';
 import { api } from './api';
+import { VisualReader } from './VisualReader';
 import type { GenerationEvent, Story, StoryTurn } from './types';
 
 const modes = [
@@ -22,6 +20,8 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [premise, setPremise] = useState('');
+  const [protagonistName, setProtagonistName] = useState('');
+  const [createStep, setCreateStep] = useState<'story' | 'protagonist'>('story');
   const [mode, setMode] = useState<StoryTurn['mode']>('do');
   const [draft, setDraft] = useState('');
   const [streamText, setStreamText] = useState('');
@@ -30,7 +30,6 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
   const controller = useRef<AbortController | null>(null);
-  const tail = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -51,16 +50,15 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     }
     return () => { alive = false; };
   }, [active?.id]);
-  useEffect(() => { tail.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [turns, streamText]);
 
   async function createStory() {
-    if (title.trim().length < 2 || premise.trim().length < 10) return;
+    if (title.trim().length < 2 || premise.trim().length < 10 || !protagonistName.trim()) return;
     setError(''); setLoading(true);
     try {
-      const story = await api.createStory(title.trim(), premise.trim());
+      const story = await api.createStory(title.trim(), premise.trim(), protagonistName.trim());
       setStories(previous => [story, ...previous]);
       setActive(story);
-      setCreating(false); setTitle(''); setPremise(''); setNotice('Historia creada. Puedes comenzar cuando quieras.');
+      setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice('Historia creada. Puedes comenzar cuando quieras.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setLoading(false); }
   }
@@ -104,97 +102,71 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     setDraft(''); setActive(story); setCreating(false);
   }
 
-  const inputLabel = mode === 'say' ? 'Escribe lo que dice tu personaje...' :
-    mode === 'story' ? 'Indica cómo continúa la historia...' :
-    'Describe lo que hace tu personaje...';
 
   return <section className="story-studio">
     <div className="page-heading"><div className="eyebrow"><Feather size={14}/> NOBLE STORY ENGINE</div>
       <h1>Biblioteca<span className="title-dot">.</span></h1>
       <p>Historias interactivas guardadas localmente. El narrador responde desde tu motor Ollama o KoboldCpp.</p>
     </div>
-    <div className="story-grid">
-      <aside className="story-list">
-        <div className="story-list-header"><strong>Mis historias</strong>
-          <button aria-label="Crear historia" title="Crear historia" onClick={() => setCreating(true)}><Plus size={19}/></button></div>
-        {loading && <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando...</div>}
-        {stories.map(s => <button key={s.id} className={'story-link ' + (active?.id === s.id ? 'current' : '')}
+    <div className="noble-library-strip">
+      <div className="noble-library-strip-heading"><BookOpen size={18}/><strong>Mis historias</strong>
+        <span>{stories.length}</span></div>
+      <div className="noble-library-story-options">
+        {loading && <div className="loading"><LoaderCircle className="rotating" size={16}/> Cargando...</div>}
+        {stories.map(s => <button key={s.id}
+          className={'noble-library-story ' + (active?.id === s.id ? 'selected' : '')}
           onClick={() => selectStory(s)} disabled={generating}>
-          <BookOpen size={19}/><span><strong>{s.title}</strong><small>{s.premise}</small></span><ChevronRight size={15}/>
-        </button>)}
-        {!loading && stories.length === 0 && <p className="story-empty-note">Todavía no hay historias. Crea una para comenzar.</p>}
-        <button className="story-create-small" onClick={() => setCreating(true)}><Plus size={16}/> Nueva historia</button>
-      </aside>
-      <article className="story-reader">
-        {active ? <>
-          <header className="story-reader-header"><div><span className="overline">HISTORIA LOCAL</span>
-            <h2>{active.title}</h2></div><button className="story-settings-button"
-              title="Configurar narrador" onClick={onOpenSettings}><Cpu size={17}/> Modelo</button></header>
-          <div className="story-scroll" aria-live="polite">
-            <div className="story-premise"><Sparkles size={17}/><p>{active.premise}</p></div>
-            {turns.map((turn, index) => <div className="story-turn" key={turn.id}>
-              <div className="story-turn-index">ESCENA {String(index + 1).padStart(2, '0')}</div>
-              <div className="story-player"><span>{turn.mode === 'say' ? 'DICES' :
-                turn.mode === 'do' ? 'HACES' : turn.mode === 'continue' ? 'CONTINUAR' : 'DIRECCIÓN'}</span>
-                <p>{turn.input_text || 'La historia continúa...'}</p></div>
-              <div className="story-narration"><MessageSquareText size={17}/><p>{turn.assistant_text}</p></div>
-              <div className="turn-model">{turn.model}</div>
-            </div>)}
-            {generating && <div className="story-generation">
-              <span><LoaderCircle className="rotating" size={15}/> El narrador está escribiendo...</span>
-              <p>{streamText || 'Conectando con el motor local...'}</p></div>}
-            {!generating && turns.length === 0 && <div className="story-empty-page">
-              <BookOpen size={30}/><h3>El primer capítulo está por escribirse.</h3>
-              <p>Describe una acción, una frase o pulsa Continuar para que el narrador comience.</p>
-            </div>}
-            <div ref={tail}/>
-          </div>
-          <footer className="story-input">
-            {notice && <p className="story-notice"><CheckCircle2 size={15}/>{notice}</p>}
-            {error && <div className="story-error" role="alert"><CircleAlert size={16}/>{error}
-              <button title="Configurar servidor" onClick={onOpenSettings}>Configurar modelo <ArrowRight size={13}/></button></div>}
-            <div className="story-mode-row">
-              <label>Modo de entrada <select aria-label="Modo de narración"
-                value={mode} disabled={generating}
-                onChange={e => setMode(e.target.value as StoryTurn['mode'])}>
-                {modes.filter(m => m.id !== 'continue').map(m => <option value={m.id} key={m.id}>{m.label}</option>)}
-              </select></label>
-              <span>Texto e historial guardados en SQLite</span>
-            </div>
-            <textarea aria-label="Tu intervención en la historia" disabled={generating}
-              value={draft} onChange={e => setDraft(e.target.value)}
-              placeholder={inputLabel} maxLength={3000} rows={3}/>
-            <div className="story-submit-row">
-              <button className="secondary-button" disabled={generating} onClick={() => void submit(true)}>
-                <Sparkles size={16}/> Continuar</button>
-              <button className="primary-button" disabled={generating || !draft.trim()}
-                onClick={() => void submit(false)}>
-                {generating ? <LoaderCircle className="rotating" size={16}/> : <Send size={16}/>}
-                {generating ? 'Generando...' : 'Enviar intervención'}</button>
-            </div>
-          </footer>
-        </> : <div className="story-start-screen"><div className="story-start-icon"><BookOpen size={34}/></div>
-          <h2>Una historia por descubrir.</h2><p>Crea tu propio mundo, define una premisa y deja que el narrador local genere las siguientes escenas.</p>
-          <button className="primary-button" onClick={() => setCreating(true)}><Plus size={17}/> Crear mi primera historia</button>
-        </div>}
-      </article>
+          <span>{s.title}</span><small>{s.protagonist_name || 'Protagonista'}</small>
+          <ChevronRight size={14}/></button>)}
+        <button className="noble-library-new" onClick={() => { setCreating(true); setCreateStep('story'); }}>
+          <Plus size={16}/> Nueva historia</button>
+      </div>
     </div>
+    <VisualReader active={active} turns={turns}
+      mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
+      streamText={streamText} generating={generating} notice={notice} error={error}
+      onSubmit={continueOnly => void submit(continueOnly)}
+      onCreate={() => { setCreateStep('story'); setCreating(true); }}
+      onSettings={onOpenSettings}
+      onUpdateStory={next => {
+        setActive(next);
+        setStories(old => old.map(item => item.id === next.id ? next : item));
+      }}/>
     {creating && <div className="welcome-scrim"><section className="welcome-panel" role="dialog"
       aria-modal="true" aria-label="Crear una nueva historia">
       <div className="story-create-heading"><div className="welcome-icon"><Feather size={29}/></div>
         <button aria-label="Cerrar creador" className="icon-button" onClick={() => setCreating(false)}><X size={19}/></button></div>
-      <span className="overline">NOBLE STORY STUDIO</span><h2>Empieza una nueva historia.</h2>
-      <p>Escribe un nombre y una premisa. El narrador usará este contexto durante los turnos de la historia.</p>
-      <label className="form-label" htmlFor="story-title">Título</label>
-      <input id="story-title" className="story-create-input" maxLength={100} value={title}
-        onChange={e => setTitle(e.target.value)} placeholder="Por ejemplo: El bosque de los espíritus"/>
-      <label className="form-label" htmlFor="story-premise">Premisa del mundo</label>
-      <textarea id="story-premise" className="story-create-input" value={premise}
-        onChange={e => setPremise(e.target.value)} rows={5} maxLength={4000}
-        placeholder="Dónde sucede, quién eres, qué reglas tiene este mundo y cómo comienza..."/>
+      <span className="overline">{createStep === 'story' ? 'PASO 1 / 2 · EL MUNDO' : 'PASO 2 / 2 · TU PERSONAJE'}</span>
+      {createStep === 'story' ? <>
+        <h2>Empieza una nueva historia.</h2>
+        <p>Define el escenario inicial. No se crearán imágenes ni voces hasta que las solicites.</p>
+        <label className="form-label" htmlFor="story-title">Título</label>
+        <input id="story-title" className="story-create-input" maxLength={100} value={title}
+          onChange={e => setTitle(e.target.value)} placeholder="Por ejemplo: El bosque de los espíritus"/>
+        <label className="form-label" htmlFor="story-premise">Premisa del mundo</label>
+        <textarea id="story-premise" className="story-create-input" value={premise}
+          onChange={e => setPremise(e.target.value)} rows={5} maxLength={4000}
+          placeholder="Dónde sucede, cómo es este mundo y cómo comienza tu aventura..."/>
+      </> : <>
+        <div className="noble-create-character"><div className="noble-create-avatar"><Feather size={33}/></div>
+          <span>ESTÁS JUGANDO COMO...</span></div>
+        <h2>¿Cómo te llamas en esta historia?</h2>
+        <p>Este será el nombre del personaje que tú controlas. El narrador respetará sus decisiones.</p>
+        <label className="form-label" htmlFor="story-protagonist">Nombre del protagonista</label>
+        <input id="story-protagonist" className="story-create-input noble-name-input"
+          value={protagonistName} maxLength={60} autoFocus
+          onChange={e => setProtagonistName(e.target.value)} placeholder="Elige el nombre de tu personaje"/>
+      </>}
       {error && <p className="narrative-error" role="alert">{error}</p>}
-      <button className="primary-button full" disabled={loading || title.trim().length < 2 || premise.trim().length < 10}
-        onClick={() => void createStory()}><ArrowRight size={17}/> Crear historia</button>
+      {createStep === 'story' ? <button className="primary-button full"
+        disabled={loading || title.trim().length < 2 || premise.trim().length < 10}
+        onClick={() => setCreateStep('protagonist')}>
+        <ArrowRight size={17}/> Elegir protagonista</button> :
+        <div className="noble-create-actions">
+          <button className="secondary-button" onClick={() => setCreateStep('story')}>Volver</button>
+          <button className="primary-button" disabled={loading || !protagonistName.trim()}
+            onClick={() => void createStory()}><ArrowRight size={17}/> Empezar historia</button>
+        </div>}
     </section></div>}
   </section>;
 }
