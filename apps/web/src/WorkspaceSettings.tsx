@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  ArrowUpRight, Bell, Check, Cpu, Download, ExternalLink, Globe2,
+  ArrowUpRight, Check, Cpu, Download, ExternalLink, Globe2,
   KeyRound, Keyboard, Languages, LoaderCircle, LockKeyhole, MonitorCog,
   MoonStar, Palette, RefreshCcw, Server, Settings2, ShieldCheck,
   SlidersHorizontal, Trash2, Volume2,
