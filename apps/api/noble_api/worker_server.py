@@ -102,6 +102,7 @@ def create_worker_app(token: str, upstream: str,
                 or not isinstance(payload.get("messages"), list)):
             raise HTTPException(422, "El modelo y los mensajes son obligatorios")
         # Remote client cannot override the upstream URL or add arbitrary proxy routes.
+        start = telemetry.begin()
         client = httpx.AsyncClient(transport=transport, trust_env=False,
                                    timeout=httpx.Timeout(240, connect=5, read=240, write=20, pool=5))
         try:
@@ -112,12 +113,12 @@ def create_worker_app(token: str, upstream: str,
                 status = response.status_code
                 await response.aclose()
                 await client.aclose()
+                telemetry.finish(start, None, 0, False)
                 raise HTTPException(502, "El motor local respondió HTTP " + str(status))
         except (OSError, httpx.HTTPError) as exc:
             await client.aclose()
+            telemetry.finish(start, None, 0, False)
             raise HTTPException(502, "No se pudo contactar el motor local") from exc
-
-        start = telemetry.begin()
 
         async def relay():
             first_chunk_ms = None
