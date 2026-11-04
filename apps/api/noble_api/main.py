@@ -22,6 +22,7 @@ from .narrative import LlmSettings, NarrativeService, mount_narrative_routes
 from .runtime import KoboldManager, RuntimeFailure
 from .control import ControlPlane, mount_control_routes
 from .secrets import Secrets
+from .media import mount_media_routes
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -193,6 +194,7 @@ def create_app(
         return catalog.details(repo_id)
 
     mount_narrative_routes(service, narrative)
+    mount_media_routes(service, narrative)
     mount_control_routes(service, control)
 
     @service.get("/api/v1/provider-credentials/openrouter")
