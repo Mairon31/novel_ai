@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "documentation": "docs/PERFILES_GPU.md",
+  "profiles": {
+    "minimum_12gb": {
+      "min_vram_mb": 12288,
+      "narrative_model_hint": "Qwen3-8B-GGUF-Q4_K_M",
+      "context_tokens_initial": 4096,
+      "gpu_reserve_mb": 1800,
+      "max_image_jobs": 1,
+      "max_tts_jobs": 1,
+      "llm_service_always_available": true,
+      "image_generation": "sequential-or-offloaded",
+      "tts_lazy": true,
+      "verified": false
+    },
+    "recommended_16gb": {
+      "min_vram_mb": 16384,
+      "narrative_model_hint": "Qwen3-8B-GGUF-Q5_K_M",
+      "context_tokens_initial": 8192,
+      "gpu_reserve_mb": 1800,
+      "max_image_jobs": 1,
+      "max_tts_jobs": 1,
+      "llm_service_always_available": true,
+      "image_generation": "sequential-or-offloaded",
+      "tts_lazy": true,
+      "verified": false
+    },
+    "colab_probe": {
+      "min_vram_mb": null,
+      "narrative_model_hint": "Qwen/Qwen3-1.7B (probe only)",
+      "context_tokens_initial": 2048,
+      "gpu_reserve_mb": 1000,
+      "max_image_jobs": 1,
+      "max_tts_jobs": 1,
+      "llm_service_always_available": false,
+      "tts_lazy": true,
+      "verified": false
+    }
+  }
+}

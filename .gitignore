@@ -1,0 +1,37 @@
+# Entornos y dependencias
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+node_modules/
+dist/
+build/
+__pycache__/
+.pytest_cache/
+.coverage
+*.py[cod]
+.ipynb_checkpoints/
+# Datos locales, inferencias, checkpoint, claves y resultados privados
+data/
+outputs/
+reports/raw/
+noble_ai_probe_results.json
+*.gguf
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.bak
+*.log
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

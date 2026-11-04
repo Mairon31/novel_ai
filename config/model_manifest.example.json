@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "note": "Completar con pesos locales descargados de origen verificado; no subir los pesos, verificar licencias y hashes.",
+  "models": [
+    {
+      "id": "narrator",
+      "kind": "llm",
+      "provider": "koboldcpp",
+      "repository": "https://huggingface.co/Qwen/Qwen3-8B",
+      "file": null,
+      "sha256": null,
+      "license": "apache-2.0 (modelo base; verificar quant específica)",
+      "verified": false
+    },
+    {
+      "id": "image",
+      "kind": "image",
+      "provider": "comfyui",
+      "repository": null,
+      "file": null,
+      "sha256": null,
+      "license": null,
+      "verified": false
+    },
+    {
+      "id": "voice",
+      "kind": "tts",
+      "provider": "chatterbox",
+      "repository": "https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam",
+      "file": null,
+      "sha256": null,
+      "license": null,
+      "verified": false
+    }
+  ]
+}
