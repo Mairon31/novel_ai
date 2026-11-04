@@ -76,3 +76,14 @@
 @media(max-width:1100px){.story-grid{grid-template-columns:210px minmax(0,1fr)}}
 @media(max-width:870px){.story-grid{grid-template-columns:1fr}.story-list{display:flex;flex-wrap:wrap;align-items:center}.story-list-header{width:100%;border-bottom:1px solid #2e3348}.story-link{width:50%;border-right:1px solid #2e3348}.story-create-small{width:auto;margin-left:12px}.story-scroll{max-height:580px}}
 @media(max-width:520px){.narrative-settings{padding:17px}.narrative-settings-grid{grid-template-columns:1fr}.story-list{display:flex}.story-link{width:100%}.story-grid{gap:12px;margin-top:24px}.story-reader-header{padding:17px}.story-reader-header h2{font-size:19px}.story-settings-button{padding:9px;font-size:11px}.story-scroll{padding:18px 15px;min-height:250px;max-height:530px}.story-premise p{font-size:12px}.story-narration p{font-size:13px}.story-input{padding:15px}.story-mode-row>span{display:none}.story-submit-row>button{flex:1;padding:11px 9px;font-size:11px}.story-error{flex-wrap:wrap}.story-error button{margin-left:22px}}
+
+/* Managed KoboldCpp runtime UI */
+.kobold-manager{background:linear-gradient(145deg,#1c2438,#201d35)}
+.runtime-indicator{display:flex;align-items:center;gap:10px;padding:12px 15px;margin:14px 0 21px;border:1px solid #393d58;background:#171b2d;border-radius:10px;flex-wrap:wrap}
+.runtime-indicator strong{font-size:12px;color:#ececfa}
+.runtime-indicator small{font-size:11px;color:#a7aeca;overflow-wrap:anywhere}
+.runtime-indicator .icon-button{margin-left:auto}
+.runtime-led{width:9px;height:9px;border-radius:50%;background:#af8794;box-shadow:0 0 0 4px #a45a6d26}
+.runtime-led.runtime-green{background:#71dbad;box-shadow:0 0 0 4px #6cdaaa27}
+.kobold-manager .narrative-settings-grid label span{display:flex;align-items:center;gap:6px}
+.kobold-manager .settings-buttons{margin-top:22px}

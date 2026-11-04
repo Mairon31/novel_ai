@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
 import { NarrativeSettings } from './NarrativeSettings';
+import { RuntimeManager } from './RuntimeManager';
 import { StoryStudio } from './StoryStudio';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
@@ -44,6 +45,7 @@ function Loading() {
 
 export default function App() {
   const [page, setPage] = useState<Page>('modelos');
+  const [narrativeRevision, setNarrativeRevision] = useState(0);
   const [navOpen, setNavOpen] = useState(false);
   const [tab, setTab] = useState<'discover' | 'installed'>('discover');
   const [role, setRole] = useState<ModelRole>('narrator');
@@ -335,7 +337,8 @@ export default function App() {
           <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> PREFERENCIAS</div>
             <h1>Configuración<span className="title-dot">.</span></h1>
             <p>Opciones guardadas localmente en la base de datos Noble AI.</p></div>
-          <NarrativeSettings/>
+          <NarrativeSettings key={narrativeRevision}/>
+          <RuntimeManager onActivated={() => setNarrativeRevision(v => v + 1)}/>
           <div className="settings-panel">
             <section><div className="setting-icon"><Database size={21}/></div>
               <div className="setting-main"><strong>Almacenamiento de modelos</strong>
