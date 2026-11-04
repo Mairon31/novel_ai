@@ -196,9 +196,9 @@ def mount_control_routes(app, control: ControlPlane):
     def network():
         return {
             "mode": "loopback_only", "shared_workspace": False,
-            "cloudflare_tunnel": "planned",
-            "remote_workers": "planned",
+            "cloudflare_tunnel": "external_worker_connection_only",
+            "remote_workers": "openai_compatible_llm_tunnels",
             "api_key_auth": "not_implemented",
             "cors_management": "not_implemented",
-            "message": "La versión actual no expone la API a la red. La autenticación y la autorización deben implementarse antes del acceso LAN/túnel.",
+            "message": "El servidor Noble AI sigue limitado a loopback. Puedes registrar un worker externo HTTPS, pero compartir el workspace por LAN/túnel requiere autenticación propia.",
         }

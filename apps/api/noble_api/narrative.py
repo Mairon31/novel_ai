@@ -34,6 +34,7 @@ DEFAULT_LLM = {
     "top_k": 40,
     "repetition_penalty": 1.0,
     "reasoning_mode": "auto",
+    "worker_id": "",
 }
 
 PROMPT = (
@@ -73,6 +74,7 @@ class LlmSettings(BaseModel):
     top_k: int = Field(default=40, ge=0, le=200)
     repetition_penalty: float = Field(default=1.0, ge=0.5, le=2.0)
     reasoning_mode: str = "auto"
+    worker_id: str = ""
 
 
 class CreateStory(BaseModel):
@@ -93,9 +95,10 @@ def encode_event(event: str, payload: dict) -> str:
 
 class NarrativeService:
     def __init__(self, store: Store, transport: httpx.AsyncBaseTransport | None = None,
-                 secrets: Secrets | None = None, preferences=None):
+                 secrets: Secrets | None = None, preferences=None, workers=None):
         self.store = store
         self.secrets = secrets or Secrets()
+        self.workers = workers
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
@@ -131,7 +134,7 @@ class NarrativeService:
 
     def configure(self, settings: LlmSettings) -> dict:
         data = settings.model_dump()
-        if data["provider"] not in ("ollama", "koboldcpp", "openrouter"):
+        if data["provider"] not in ("ollama", "koboldcpp", "openrouter", "worker"):
             raise ValueError("El proveedor debe ser Ollama, KoboldCpp u OpenRouter")
         if data["reasoning_mode"] not in ("auto", "off"):
             raise ValueError("Modo de razonamiento no admitido")
@@ -143,6 +146,13 @@ class NarrativeService:
             if data["device"] != "auto":
                 raise ValueError("OpenRouter administra el hardware en la nube")
             data["base_url"] = "https://openrouter.ai/api/v1"
+        elif data["provider"] == "worker":
+            if self.workers is None or not data["worker_id"]:
+                raise ValueError("Selecciona primero un worker registrado")
+            endpoint, _ = self.workers.endpoint(data["worker_id"])
+            if data["device"] != "auto":
+                raise ValueError("El worker configura sus propios recursos de GPU")
+            data["base_url"] = endpoint
         else:
             data["base_url"] = validate_endpoint(data["base_url"])
         data["model"] = data["model"].strip()
@@ -163,6 +173,13 @@ class NarrativeService:
 
     async def available_models(self) -> dict:
         cfg = self.config()
+        if cfg["provider"] == "worker":
+            if self.workers is None:
+                return {"online": False, "provider": "worker", "models": [],
+                        "selected": cfg["model"], "error": "No existe registro de workers"}
+            result = await self.workers.probe(cfg["worker_id"])
+            return {"online": result["online"], "provider": "worker", "models": result["models"],
+                    "selected": cfg["model"], "device": "auto", "error": result.get("error")}
         remote = cfg["provider"] == "openrouter"
         base = "https://openrouter.ai/api/v1" if remote else validate_endpoint(cfg["base_url"])
         route = "/api/tags" if cfg["provider"] == "ollama" else "/models" if remote else "/v1/models"
@@ -267,8 +284,14 @@ class NarrativeService:
         if not model:
             raise ValueError("Selecciona un modelo disponible en el proveedor antes de generar")
         remote = config["provider"] == "openrouter"
-        base = "https://openrouter.ai/api/v1" if remote else validate_endpoint(config["base_url"])
-        token = self.secrets.read() if remote else ""
+        worker = config["provider"] == "worker"
+        if worker:
+            if self.workers is None:
+                raise ValueError("No existe un registro de workers")
+            base, token = self.workers.endpoint(config["worker_id"])
+        else:
+            base = "https://openrouter.ai/api/v1" if remote else validate_endpoint(config["base_url"])
+            token = self.secrets.read() if remote else ""
         if remote and not token:
             raise ValueError("Falta la clave de OpenRouter. Configúrala en Ajustes.")
         if config["provider"] == "ollama":
@@ -295,7 +318,7 @@ class NarrativeService:
         async with httpx.AsyncClient(transport=self.transport, trust_env=False,
                                      timeout=timeout) as client:
             async with client.stream("POST", base + path, json=payload,
-                                     headers={"Authorization": "Bearer " + token} if remote else None,
+                                     headers={"Authorization": "Bearer " + token} if (remote or worker) else None,
                                      follow_redirects=False) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():

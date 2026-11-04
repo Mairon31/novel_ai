@@ -23,6 +23,7 @@ from .runtime import KoboldManager, RuntimeFailure
 from .control import ControlPlane, mount_control_routes
 from .secrets import Secrets
 from .media import mount_media_routes
+from .workers import WorkerRegistry, mount_worker_routes
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -62,6 +63,8 @@ def create_app(
     catalog_transport: httpx.BaseTransport | None = None,
     llm_transport: httpx.AsyncBaseTransport | None = None,
     control_transport: httpx.BaseTransport | None = None,
+    worker_transport: httpx.AsyncBaseTransport | None = None,
+    worker_vault=None,
 ) -> FastAPI:
     """Injectable data directory and HF transport make contract tests offline."""
     directory = Path(data_dir or os.getenv("NOBLE_DATA_DIR") or ROOT / "data")
@@ -70,8 +73,9 @@ def create_app(
     downloads = DownloadManager(store, catalog)
     control = ControlPlane(store, transport=control_transport)
     secrets = Secrets()
+    workers = WorkerRegistry(store, transport=worker_transport, vault=worker_vault)
     narrative = NarrativeService(store, transport=llm_transport, secrets=secrets,
-                                 preferences=control.preferences)
+                                 preferences=control.preferences, workers=workers)
     kobold = KoboldManager(store)
 
     @asynccontextmanager
@@ -94,6 +98,7 @@ def create_app(
     service.state.downloads = downloads
     service.state.catalog = catalog
     service.state.control = control
+    service.state.workers = workers
     service.state.narrative = narrative
     service.state.kobold = kobold
 
@@ -195,6 +200,7 @@ def create_app(
 
     mount_narrative_routes(service, narrative)
     mount_media_routes(service, narrative)
+    mount_worker_routes(service, workers, narrative)
     mount_control_routes(service, control)
 
     @service.get("/api/v1/provider-credentials/openrouter")
