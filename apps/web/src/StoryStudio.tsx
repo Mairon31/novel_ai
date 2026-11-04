@@ -4,11 +4,6 @@ import { api } from './api';
 import { VisualReader } from './VisualReader';
 import type { GenerationEvent, Story, StoryTurn } from './types';
 
-const modes = [
-  { id: 'do', label: 'Hacer' }, { id: 'say', label: 'Decir' },
-  { id: 'story', label: 'Dirigir la historia' }, { id: 'continue', label: 'Continuar' },
-] as const;
-
 interface StoryStudioProps {
   onOpenSettings: () => void;
 }

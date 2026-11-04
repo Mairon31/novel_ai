@@ -19,7 +19,9 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await creator.getByLabel('Premisa del mundo').fill(
     'En una biblioteca encantada, una hechicera protege el mapa perdido de los reinos.'
   );
-  await creator.getByRole('button', { name: 'Crear historia' }).click();
+  await creator.getByRole('button', { name: 'Elegir protagonista' }).click();
+  await creator.getByLabel('Nombre del protagonista').fill('Joel');
+  await creator.getByRole('button', { name: 'Empezar historia' }).click();
   await expect(creator).toBeHidden();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
 
