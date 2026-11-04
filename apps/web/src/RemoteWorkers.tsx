@@ -139,6 +139,35 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <button className="primary-button" disabled={busy || !model} onClick={() => void activate()}>
         <Cpu size={16}/> Usar modelo remoto como narrador</button>
     </div>}
+    {probe?.online && <div className="noble-worker-health">
+      <h4>Estado del worker remoto</h4>
+      <div className="noble-worker-health-stats">
+        <div><span>Conexión</span><strong>{probe.latency_ms === undefined
+          ? 'No disponible' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
+        <div><span>Motor</span><strong>{probe.health?.engine_status === 'ready'
+          ? 'Disponible' : probe.health?.engine_status === 'unavailable'
+            ? 'Sin respuesta' : 'Sin telemetría'}</strong></div>
+        <div><span>Tiempo hasta primer byte</span><strong>
+          {probe.health?.last_ttft_ms == null
+            ? 'Sin datos' : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
+        </strong></div>
+        <div><span>Solicitudes completadas / fallidas</span><strong>
+          {probe.health ? probe.health.completed_requests + ' / ' +
+            probe.health.failed_requests : 'Sin datos'}
+        </strong></div>
+      </div>
+      {probe.health?.gpu?.map(gpu => <div className="noble-worker-gpu" key={gpu.index}>
+        <span><Cpu size={15}/> {gpu.name}</span>
+        <strong>VRAM {gpu.vram_used_mb} / {gpu.vram_total_mb} MB · GPU {gpu.utilization_percent}%</strong>
+        <div className="noble-worker-vram-meter"><span style={{
+          width: Math.min(100, 100 * gpu.vram_used_mb / Math.max(1, gpu.vram_total_mb)) + '%',
+        }}/></div>
+      </div>)}
+      <p className="noble-worker-health-note">
+        Las métricas reflejan el momento de la comprobación, no un benchmark continuo.
+        Actualízalas con «Probar conexión».
+      </p>
+    </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}
     {message && <p role="status" className="narrative-saved"><CheckCircle2 size={15}/>{message}</p>}
     <div className="workspace-note"><ShieldCheck size={17}/>

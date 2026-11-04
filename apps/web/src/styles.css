@@ -312,3 +312,18 @@
  .noble-worker-controls{align-items:stretch}
  .noble-worker-controls-actions>*{flex:1}
 }
+
+/* Optional worker GPU diagnostics; compact on small screens. */
+.noble-worker-health{margin:15px 0 8px;background:#141e2f;border:1px solid #39485f;border-radius:11px;padding:15px}
+.noble-worker-health h4{font:700 13px 'Outfit',sans-serif;color:#e9e8f5;margin:0 0 15px}
+.noble-worker-health-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.noble-worker-health-stats>div{background:#222b40;border-radius:8px;padding:10px 11px;min-width:0}
+.noble-worker-health-stats span{display:block;font-size:10px;color:#acb4cd}
+.noble-worker-health-stats strong{font-size:12px;color:#e5e2fa;display:block;margin-top:7px}
+.noble-worker-gpu{border-top:1px solid #424b62;margin-top:14px;padding-top:12px;font-size:11px}
+.noble-worker-gpu>span{display:flex;align-items:center;gap:8px;color:#d3d6e8}
+.noble-worker-gpu strong{display:block;font-weight:600;color:#babfd5;margin-top:6px}
+.noble-worker-vram-meter{height:6px;overflow:hidden;border-radius:6px;background:#34354c;margin-top:11px}
+.noble-worker-vram-meter span{display:block;height:100%;background:var(--noble-accent)}
+.noble-worker-health-note{font-size:10px!important;color:#a6adbe!important;margin:10px 0 0!important}
+@media(max-width:450px){.noble-worker-health-stats{grid-template-columns:1fr}}

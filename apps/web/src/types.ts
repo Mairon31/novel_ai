@@ -128,7 +128,18 @@ export type ProviderCredentialStatus = { provider: string; configured: boolean; 
 export type RemoteWorker = {
   id: string; name: string; url: string; role: string; created_at: number;
 };
+export type WorkerGpu = {
+  index: number; name: string; vram_total_mb: number;
+  vram_used_mb: number; utilization_percent: number;
+};
+export type WorkerHealth = {
+  engine_status: string; active_requests: number;
+  completed_requests: number; failed_requests: number;
+  last_ttft_ms: number | null; avg_ttft_ms: number | null;
+  avg_duration_ms: number | null; gpu: WorkerGpu[];
+};
 export type WorkerProbe = {
   id: string; online: boolean; models: string[];
-  role: string; error?: string;
+  role: string; error?: string; latency_ms?: number;
+  health?: WorkerHealth | null;
 };
