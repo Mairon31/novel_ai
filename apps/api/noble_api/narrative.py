@@ -19,6 +19,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from .store import Store
+from .secrets import Secrets
 
 
 DEFAULT_LLM = {
@@ -30,6 +31,9 @@ DEFAULT_LLM = {
     "max_tokens": 450,
     "num_ctx": 4096,
     "device": "auto",
+    "top_k": 40,
+    "repetition_penalty": 1.0,
+    "reasoning_mode": "auto",
 }
 
 PROMPT = (
@@ -66,6 +70,9 @@ class LlmSettings(BaseModel):
     max_tokens: int = Field(default=450, ge=50, le=2048)
     num_ctx: int = Field(default=4096, ge=512, le=32768)
     device: str = "auto"  # Ollama supports cpu via num_gpu=0
+    top_k: int = Field(default=40, ge=0, le=200)
+    repetition_penalty: float = Field(default=1.0, ge=0.5, le=2.0)
+    reasoning_mode: str = "auto"
 
 
 class CreateStory(BaseModel):
@@ -84,8 +91,11 @@ def encode_event(event: str, payload: dict) -> str:
 
 
 class NarrativeService:
-    def __init__(self, store: Store, transport: httpx.AsyncBaseTransport | None = None):
+    def __init__(self, store: Store, transport: httpx.AsyncBaseTransport | None = None,
+                 secrets: Secrets | None = None, preferences=None):
         self.store = store
+        self.secrets = secrets or Secrets()
+        self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
         with store._conn() as db:
@@ -113,27 +123,34 @@ class NarrativeService:
     def config(self) -> dict:
         with self.store._conn() as db:
             row = db.execute("SELECT settings_json FROM llm_preferences WHERE id=1").fetchone()
-            return json.loads(row[0])
+            return {**DEFAULT_LLM, **json.loads(row[0])}
 
     def configure(self, settings: LlmSettings) -> dict:
         data = settings.model_dump()
-        if data["provider"] not in ("ollama", "koboldcpp"):
-            raise ValueError("El proveedor debe ser Ollama o KoboldCpp")
+        if data["provider"] not in ("ollama", "koboldcpp", "openrouter"):
+            raise ValueError("El proveedor debe ser Ollama, KoboldCpp u OpenRouter")
+        if data["reasoning_mode"] not in ("auto", "off"):
+            raise ValueError("Modo de razonamiento no admitido")
         if data["device"] not in ("auto", "cpu"):
             raise ValueError("Dispositivo no soportado; Auto o CPU")
         if data["provider"] == "koboldcpp" and data["device"] != "auto":
             raise ValueError("KoboldCpp configura GPU/CPU al iniciar el ejecutable, no por API")
-        data["base_url"] = validate_endpoint(data["base_url"])
+        if data["provider"] == "openrouter":
+            if data["device"] != "auto":
+                raise ValueError("OpenRouter administra el hardware en la nube")
+            data["base_url"] = "https://openrouter.ai/api/v1"
+        else:
+            data["base_url"] = validate_endpoint(data["base_url"])
         data["model"] = data["model"].strip()
         with self.store._conn() as db:
             db.execute("UPDATE llm_preferences SET settings_json=? WHERE id=1",
                        (json.dumps(data),))
         return self.config()
 
-    async def _get_json(self, url: str) -> dict:
+    async def _get_json(self, url: str, headers: dict | None = None) -> dict:
         async with httpx.AsyncClient(transport=self.transport, trust_env=False,
                                      timeout=httpx.Timeout(8)) as client:
-            res = await client.get(url, follow_redirects=False)
+            res = await client.get(url, headers=headers, follow_redirects=False)
             res.raise_for_status()
             data = res.json()
             if not isinstance(data, dict):
@@ -142,15 +159,22 @@ class NarrativeService:
 
     async def available_models(self) -> dict:
         cfg = self.config()
-        base = validate_endpoint(cfg["base_url"])
-        route = "/api/tags" if cfg["provider"] == "ollama" else "/v1/models"
+        remote = cfg["provider"] == "openrouter"
+        base = "https://openrouter.ai/api/v1" if remote else validate_endpoint(cfg["base_url"])
+        route = "/api/tags" if cfg["provider"] == "ollama" else "/models" if remote else "/v1/models"
+        token = self.secrets.read() if remote else ""
+        if remote and not token:
+            return {"online": False, "provider": "openrouter", "models": [],
+                    "selected": cfg["model"], "device": "auto",
+                    "error": "Configura una clave OpenRouter antes de consultar modelos"}
         try:
-            data = await self._get_json(base + route)
+            data = await self._get_json(base + route,
+                headers={"Authorization": "Bearer " + token} if remote else None)
             raw = data.get("models", []) if cfg["provider"] == "ollama" else data.get("data", [])
             names = [m.get("name" if cfg["provider"] == "ollama" else "id")
                      for m in raw if isinstance(m, dict)]
             names = [str(m) for m in names if isinstance(m, str) and m]
-            return {"online": True, "provider": cfg["provider"], "models": names,
+            return {"online": True, "provider": cfg["provider"], "models": names[:150],
                     "selected": cfg["model"], "device": cfg["device"]}
         except (httpx.HTTPError, ValueError, OSError) as exc:
             return {"online": False, "provider": cfg["provider"], "models": [],
@@ -203,7 +227,16 @@ class NarrativeService:
         return self.previous(story_id, request_id)
 
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
-        messages = [{"role": "system", "content": PROMPT + "\nPremisa: " + story["premise"]}]
+        preferences = self.preferences()
+        language = preferences.get("target_language", "es-419")
+        styles = {"natural": "natural y conversacional", "literary": "literario y descriptivo",
+                  "concise": "breve y dinámico"}
+        instruction = ("Idioma de salida obligatorio: " + language +
+                       ". Estilo narrativo: " + styles.get(preferences.get("narration_style"), "natural") + ".")
+        if preferences.get("translation_mode") == "target_output":
+            instruction += " Si el contexto entrante está en otro idioma, conserva su significado y escribe la respuesta únicamente en el idioma de salida."
+        messages = [{"role": "system", "content": PROMPT + "\n" + instruction +
+                     "\nPremisa: " + story["premise"]}]
         for t in self.turns(story["id"], limit=16):
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
@@ -217,31 +250,43 @@ class NarrativeService:
         model = config["model"].strip()
         if not model:
             raise ValueError("Selecciona un modelo disponible en el proveedor antes de generar")
-        base = validate_endpoint(config["base_url"])
+        remote = config["provider"] == "openrouter"
+        base = "https://openrouter.ai/api/v1" if remote else validate_endpoint(config["base_url"])
+        token = self.secrets.read() if remote else ""
+        if remote and not token:
+            raise ValueError("Falta la clave de OpenRouter. Configúrala en Ajustes.")
         if config["provider"] == "ollama":
             path = "/api/chat"
             options = {"temperature": config["temperature"], "top_p": config["top_p"],
-                       "num_ctx": config["num_ctx"], "num_predict": config["max_tokens"]}
+                       "num_ctx": config["num_ctx"], "num_predict": config["max_tokens"],
+                       "top_k": config.get("top_k", 40),
+                       "repeat_penalty": config.get("repetition_penalty", 1.0)}
             if config["device"] == "cpu":
                 options["num_gpu"] = 0
             payload = {"model": model, "messages": messages, "stream": True,
                        "options": options, "keep_alive": "30m"}
+            if config.get("reasoning_mode") == "off":
+                payload["think"] = False
         else:
-            path = "/v1/chat/completions"
+            path = "/chat/completions" if remote else "/v1/chat/completions"
             payload = {"model": model, "messages": messages, "stream": True,
                        "temperature": config["temperature"],
                        "top_p": config["top_p"], "max_tokens": config["max_tokens"]}
+            if remote:
+                payload["top_k"] = config.get("top_k", 40)
+                payload["repetition_penalty"] = config.get("repetition_penalty", 1.0)
         timeout = httpx.Timeout(240, connect=5, read=240, write=20, pool=5)
         async with httpx.AsyncClient(transport=self.transport, trust_env=False,
                                      timeout=timeout) as client:
             async with client.stream("POST", base + path, json=payload,
+                                     headers={"Authorization": "Bearer " + token} if remote else None,
                                      follow_redirects=False) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
                     line = line.strip()
                     if not line:
                         continue
-                    if config["provider"] == "koboldcpp":
+                    if config["provider"] != "ollama":
                         if not line.startswith("data:"):
                             continue
                         line = line.removeprefix("data:").strip()
