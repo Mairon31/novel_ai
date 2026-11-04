@@ -26,6 +26,10 @@ from .secrets import Secrets
 ROOT = Path(__file__).resolve().parents[3]
 
 
+class KeyInput(BaseModel):
+    api_key: str = Field(min_length=12, max_length=4096)
+
+
 class InstallBody(BaseModel):
     repo_id: str = Field(min_length=3, max_length=195)
     revision: str
@@ -190,9 +194,6 @@ def create_app(
 
     mount_narrative_routes(service, narrative)
     mount_control_routes(service, control)
-
-    class KeyInput(BaseModel):
-        api_key: str = Field(min_length=12, max_length=4096)
 
     @service.get("/api/v1/provider-credentials/openrouter")
     def key_status():
