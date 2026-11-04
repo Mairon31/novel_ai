@@ -50,3 +50,11 @@ Ver [Quickstart](QUICKSTART.md), [Progreso](PROGRESO.md) y pruebas `tests/test_n
 | GET/POST | `/api/v1/stories/{uuid}/scene-image` | Leer/importar ilustración |
 
 **Proxy remoto separado:** `GET /v1/models` y `POST /v1/chat/completions`, ambos requieren Bearer. No hay servicio remoto para archivos, procesos, imágenes o TTS. El backend principal sigue limitado a loopback. Ver [WORKERS.md](WORKERS.md).
+
+## P1.2 — generación corta de benchmark desde interfaz
+
+`POST /api/v1/workers/{uuid}/benchmark` recibe `{"model":"id-anunciado"}`. Realiza una única inferencia explícita con prompt de prueba, **no** un turno de historia. Devuelve éxito/fracaso, TTFT, duración total y caracteres, con GPU disponible en el sondeo de salud. No devuelve ni persiste el texto generado; el servidor exige worker ya registrado, autenticado, online y modelo anunciado.
+
+`GET /v1/health` en el **proxy remoto** devuelve contadores agregados y GPU/VRAM (best-effort), y también exige Bearer. El endpoint principal `GET /api/v1/workers/{uuid}/probe` recoge esa telemetría si está disponible sin fallar frente a una versión vieja de worker.
+
+La prueba no es una medición p95 ni una certificación de compatibilidad GPU. Ver [WORKERS.md](WORKERS.md).

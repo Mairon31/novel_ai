@@ -155,6 +155,10 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 - [ ] Verificar desconexión de túnel real, OOM, latencia de contexto largo y 12/16 GB.
 - [ ] Implementar adaptadores de imagen (ComfyUI) y TTS con roles de worker propios.
 
+- [x] Prueba de resiliencia simulada: corte de túnel después de un fragmento, cero turnos parciales persistidos y reintento con el mismo request_id.
+- [x] Botón de prueba explícita **Medir respuesta real** desde UI con resultado TTFT/duración/caracteres, sin persistir texto de ensayo.
+- [ ] Ejecutar este botón conectado a un Colab verdadero y comparar con el benchmark CLI.
+
 **Importante:** herramientas y tests automatizados no equivalen a un benchmark físico; registrar el CI del commit final y la futura sesión real por separado.
 
 ## Plantilla para futuras entradas

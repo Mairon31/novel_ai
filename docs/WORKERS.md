@@ -118,3 +118,17 @@ En PowerShell establece `$env:NOBLE_WORKER_TOKEN = "TOKEN_LOCAL"` antes del segu
 - En Colab la sesión GPU puede desconectarse. El producto principal seguirá conservando la historia localmente.
 
 Los tests CI de este incremento usan mocks del protocolo y comprueban la sintaxis de las celdas. **No son una prueba real de GPU**.
+
+## Prueba rápida desde la propia interfaz
+
+Después de registrar, verificar y seleccionar un modelo remoto en **Configuración → Red y workers**, puedes pulsar **Medir respuesta real**. Esta acción ejecuta **una generación corta y explícita** con el modelo de la GPU remota, sin añadir texto a una historia ni guardarlo en SQLite.
+
+Devuelve:
+- tiempo del primer fragmento de contenido (TTFT cliente → túnel → GPU),
+- tiempo total de la petición y cantidad de caracteres recibidos,
+- GPU reconocida durante la comprobación previa (si existe telemetría),
+- un estado de error claro si falla la inferencia.
+
+Esta medición representa **una única generación**, no un promedio ni un pico exacto de VRAM. Para múltiples repeticiones P50/P95, VRAM muestreada y evidencia en JSON utiliza el notebook de Colab o `tools/worker_benchmark.py`.
+
+Si una conexión falla después de empezar a transmitir, el turno incompleto **no se confirma** en el historial. La siguiente intervención puede reintentarse después de recuperar la conexión. Esa recuperación está probada con una desconexión simulada; no sustituye ensayos de red reales.
