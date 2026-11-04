@@ -18,6 +18,8 @@
 - [x] Perfiles GPU 12/16GB **teóricos** y estrategia Colab→Windows.
 - [x] Roadmap, QA, seguridad y guía para agentes de implementación.
 - [x] Notebook de diagnóstico Colab y checks de documentación agregados al repositorio (cuando se confirme su commit).
+- [x] GitHub Actions de integridad documental **PASS**, ejecución [#41894085644](https://github.com/Mairon31/novel_ai/actions/runs/41894085644) para commit `9d87341d` (esto **no** prueba GPU/LLM).
+- [x] Backlog registrado en GitHub Issues [#1–#8](https://github.com/Mairon31/novel_ai/issues).
 - [ ] Ejecutar notebook en Colab con GPU real.
 - [ ] Prueba real de KoboldCpp / Ollama.
 - [ ] Prueba real de ComfyUI.

@@ -2,6 +2,10 @@
 
 Versionado: 2026-11-04 · **Sin implementación de runtime aún**. Las fases son dependencias, no plazos ficticios. Actualizar `PROGRESO.md` al verificar cada tarea.
 
+## Issues de implementación
+
+[Colab #1](https://github.com/Mairon31/novel_ai/issues/1) · [Reuso OSS #2](https://github.com/Mairon31/novel_ai/issues/2) · [Backend #3](https://github.com/Mairon31/novel_ai/issues/3) · [LLM #4](https://github.com/Mairon31/novel_ai/issues/4) · [Frontend #5](https://github.com/Mairon31/novel_ai/issues/5) · [ComfyUI #6](https://github.com/Mairon31/novel_ai/issues/6) · [TTS #7](https://github.com/Mairon31/novel_ai/issues/7) · [GPU #8](https://github.com/Mairon31/novel_ai/issues/8).
+
 ## Principios de ejecución
 
 - Integrar herramientas existentes antes de construir alternativas.

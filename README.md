@@ -35,6 +35,14 @@
 | [Bitácora](docs/PROGRESO.md) | Hechos verificables, pendientes y bloqueos |
 | [Guía para agentes](AGENTS.md) | Convenciones de implementación y documentación |
 
+## Probar en Google Colab
+
+[**Abrir notebook P0 en Google Colab**](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_smoke.ipynb)
+
+La prueba P0 inspecciona hardware, ejecuta tests de documentación y puede descargar Qwen3-1.7B para una **inferencia real de diagnóstico**. No certifica todavía el motor Noble AI, SDXL ni TTS. La GPU y los recursos de Colab son variables. [Ver instrucciones](docs/COLAB_A_LOCAL.md).
+
+**Seguimiento:** [Issues de Noble AI](https://github.com/Mairon31/novel_ai/issues) · [CI P0](https://github.com/Mairon31/novel_ai/actions/workflows/p0-docs.yml)
+
 ## Primera meta tangible
 
 Un **vertical slice** reproducible: iniciar una historia, escribir como protagonista, recibir texto en streaming, persistir eventos/estado, continuar o reintentar sin contradicciones y generar **solo a pedido** una ilustración de escena; TTS únicamente si el usuario pulsa escuchar. Todo con un único endpoint de aplicación y adaptadores intercambiables, primero probado en Colab y luego en Windows.
