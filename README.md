@@ -2,7 +2,7 @@
 
 **Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> **Estado: P0.5, Model Hub ejecutable.** Backend FastAPI + React, búsqueda Hugging Face, descargas GGUF individuales con progreso/reanudación, registro SQLite, asistente inicial y selección del narrador. **Aún no hay ejecución de LLM, juego narrativo, ComfyUI/TTS ni instalador Windows.** Tests API offline y pruebas Playwright desktop/móvil aprobados; uso real de GPU pendiente.
+> **Estado: P1 — primer lector narrativo funcional en web local.** Model Hub + descarga GGUF, conexión con Ollama/KoboldCpp, historias en SQLite, streaming de turnos y lanzador KoboldCpp con selección CPU/GPU. **El backend y la UI están implementados y probados con motores simulados.** Todavía no se ha verificado una inferencia de un LLM real en la RTX 5060 Ti, ni existen memoria/canon avanzados, imágenes ComfyUI, voces TTS o instalador Windows.
 
 ## Ejecutar prototipo en Windows (sin Colab)
 
@@ -18,7 +18,7 @@ npm --prefix apps\web run build
 .\.venv\Scripts\python.exe -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 ```
 
-Abre **http://127.0.0.1:8000**. Las descargas y ajustes se hacen desde la interfaz; no se instala automáticamente ningún peso. [Guía detallada](docs/QUICKSTART.md).
+Abre **http://127.0.0.1:8000**. Busca y descarga un GGUF desde Model Hub; en **Configuración** puedes iniciar KoboldCpp con ese archivo o conectar Ollama, y en **Biblioteca** crear y continuar una historia. Todavía hay que suministrar el ejecutable de KoboldCpp o un servidor Ollama existente. [Guía detallada P1](docs/QUICKSTART.md).
 
 ## Experiencia final propuesta
 
@@ -77,7 +77,7 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 
 ## Próximo resultado comprobable
 
-**Siguiente hito:** verificar búsqueda y descarga pública real, mejorar importación/compatibilidad y conectar KoboldCpp/Ollama para generar el primer turno narrativo desde la interfaz. Los tests actuales de transferencia usan un servidor simulado y hash verificable; no representan un checkpoint real en la GPU.
+**Siguiente hito:** ejecutar la primera inferencia real con un GGUF en la RTX 5060 Ti, registrar tiempo hasta el primer token y VRAM pico, mejorar importación y configuración de runtimes, y después implementar memoria de canon, reintento/ramas e ilustraciones progresivas. Los tests de motores utilizan simuladores de protocolos; una prueba real de GPU sigue pendiente.
 
 ## Laboratorio opcional de Colab
 

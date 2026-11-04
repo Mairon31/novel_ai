@@ -90,6 +90,37 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 
 **No afirmar como verificado:** carga de modelos reales, throughput, GPU 12/16GB, calidad de historias, ComfyUI o TTS.
 
+## 2026-11-04 · P1 — primer lector narrativo y runtime local
+
+**Objetivo:** conectar modelos existentes y generar turnos de historias desde Noble AI, con persistencia sin duplicar respuestas.
+
+### Implementado
+
+- [x] Adaptador Ollama `/api/tags` y `/api/chat` NDJSON, adaptador KoboldCpp `/v1/models` y `/v1/chat/completions` SSE.
+- [x] Configuración narrador persistente por UI: proveedor, modelo, URL loopback, temperatura, top-p, contexto, tokens, Auto/CPU para Ollama.
+- [x] Nuevas tablas SQLite `llm_preferences`, `stories`, `story_turns` con idempotencia por historia/request_id.
+- [x] API de creación/listado de historias, historial y generación `POST /stories/{id}/generate` como SSE (`delta`, `done`, `error`).
+- [x] Lector frontend responsive: biblioteca, creador de historia, premisa, Hacer/Decir/Dirigir, Continuar, streaming de texto y recuperación del historial.
+- [x] Lanzador KoboldCpp administrado con archivo instalado, ruta al ejecutable seleccionada por usuario, capas GPU `-1 / 0 / N`, contexto, puerto y host 127.0.0.1; detener proceso **solo si fue iniciado por Noble** y activar narrador.
+- [x] Endpoints de runtime: status, modelos registrados, start/stop/activate.
+- [x] **21 pruebas Python PASS** (motor y proceso simulados, DB real SQLite, stream, error, persistencia, validaciones), **6 Playwright PASS** (desktop/móvil, rutas y lector con respuesta LLM ficticia).
+- [x] Capturas reales frontend desktop/móvil generadas por Playwright.
+- [ ] Probar KoboldCpp/Ollama con un **modelo realmente cargado** en RTX 5060 Ti; aún no existe benchmark 12/16 GB.
+- [ ] Installer de runtime/ejecutable desde la UI, auto detección de GPU/layers, importación local, supervisor robusto con recuperación de OOM.
+- [ ] Branching/Retry/Edit, memoria estructurada, canon y eventos; ComfyUI/TTS.
+- [ ] Instalador Windows .exe y Tauri sidecar.
+
+**Evidencias:** [GitHub Actions #41905069185](https://github.com/Mairon31/novel_ai/actions/runs/41905069185) — Python y build web PASS; Playwright 6/6 PASS, capturas en artefacto `noble-ai-visual-qa`. **No confundir** adapter simulado, binario mock y UI renderizada con inferencia real.
+
+**Errores corregidos durante esta etapa:** fixture NDJSON mal escapado producía SyntaxError; tests de runtime modificaban por error `socket.socket` global e interrumpían el event loop de TestClient; se aisló el chequeo de puerto. No se dejan suites fallando en commit final validado.
+
+### Próxima prioridad
+
+1. Ejecutar P1 **en GPU real** con GGUF seleccionado; medir y guardar parámetros/hash, VRAM/RAM pico, latencias y captura del resultado.
+2. Integrar importador de modelos locales / descarga de runtime desde UI y recuperación de fallo de proceso.
+3. Añadir branching/Retry/Edit y memoria de personajes/canon; continuar hacia ComfyUI para generación de escena progresiva.
+4. QA visual recurrente de los nuevos paneles y estabilidad móvil.
+
 ## Plantilla para futuras entradas
 
 ```md

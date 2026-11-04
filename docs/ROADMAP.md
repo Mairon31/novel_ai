@@ -1,6 +1,6 @@
 # Noble AI — Roadmap APP-FIRST y Definition of Done
 
-Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: **diseño y documentación; sin app funcional**. El orden de dependencias ha cambiado: el **Model Hub/Onboarding precede al núcleo narrativo**; Colab es diagnóstico opcional, no interfaz principal.
+Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: **P1 — Model Hub y prototipo narrativo ejecutables; sin pruebas de inferencia GPU real**. El orden de dependencias ha cambiado: el **Model Hub/Onboarding precede al núcleo narrativo**; Colab es diagnóstico opcional, no interfaz principal.
 
 ## Principios de trabajo
 
@@ -41,12 +41,12 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 
 [Backend #3](https://github.com/Mairon31/novel_ai/issues/3), [LLM #4](https://github.com/Mairon31/novel_ai/issues/4), [Runtimes #11](https://github.com/Mairon31/novel_ai/issues/11)
 
-- [ ] Integrar KoboldCpp/Ollama y API compatible; instalar/conectar motores desde configuración.
-- [ ] Supervisor start/stop/swap con GPU/CPU/offload, prueba de salud, rollback y logs.
+- [x] Integrar **adaptadores** KoboldCpp/Ollama y conectar motores existentes desde Configuración. Instalador automático del motor pendiente.
+- [x] Lanzador KoboldCpp básico con start/stop, health y GPU layers (incl. CPU). **Swap/rollback, descarga runtime y OOM pendiente**.
 - [ ] SQLite/Alembic: historias, personajes, canon, eventos, memorias y branching/retry.
-- [ ] Historia nueva, narración streaming, input libre, Continuar/Reintentar/Editar y reabrir después de reinicio.
-- [ ] UI VN real con fondo y personajes (puede funcionar sin imagen), móvil y escritorio.
-- [ ] 10 turnos con LLM real, estado consistente y recuperación de errores/dupes.
+- [x] Historia nueva, streaming, intervención libre, Continuar y reabrir después de reinicio. **Reintentar/Editar/ramas pendientes**.
+- [x] Lector VN de texto responsive móvil/escritorio sin arte obligatorio. **Sprites/fondo pendiente P2**.
+- [ ] 10 turnos con LLM real en GPU; tests de proveedor **simulados** pasan; idempotencia y recuperación probadas con mocks.
 - **Gate P1:** desde UI seleccionar LLM, iniciar, generar historia, guardar/reintentar con evidencia real.
 
 ## Fase P2 — ComfyUI, identidad y recursos visuales progresivos
