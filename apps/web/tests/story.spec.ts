@@ -1,0 +1,54 @@
+import { expect, test } from '@playwright/test';
+
+test('create a story and render SSE turn with the real UI (mocked LLM response)', async ({ page }) => {
+  await page.goto('/');
+  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  if (await setup.isVisible()) {
+    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+  }
+  if (test.info().project.name === 'mobile') {
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+  }
+  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Biblioteca/ })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Nueva historia' }).click();
+  const creator = page.getByRole('dialog', { name: 'Crear una nueva historia' });
+  const title = 'Prueba visual de la torre';
+  await creator.getByLabel('Título').fill(title);
+  await creator.getByLabel('Premisa del mundo').fill(
+    'En una biblioteca encantada, una hechicera protege el mapa perdido de los reinos.'
+  );
+  await creator.getByRole('button', { name: 'Crear historia' }).click();
+  await expect(creator).toBeHidden();
+  await expect(page.getByRole('heading', { name: title })).toBeVisible();
+
+  await page.route('**/api/v1/stories/*/generate', async route => {
+    const path = new URL(route.request().url()).pathname;
+    const storyId = path.split('/')[4];
+    const input = route.request().postDataJSON() as {
+      input_text: string; request_id: string; mode: 'do';
+    };
+    const text = 'Una hechicera abre la puerta y señala un libro antiguo.';
+    const turn = {
+      id: 'd4dff873-461d-4ccd-b5e4-fad14cadcafe',
+      story_id: storyId, request_id: input.request_id,
+      mode: input.mode, input_text: input.input_text,
+      assistant_text: text, model: 'visual-qa-fixture', created_at: 1793820000,
+    };
+    await route.fulfill({
+      status: 200, contentType: 'text/event-stream',
+      body: 'event: delta\ndata: ' + JSON.stringify({ text }) +
+        '\n\nevent: done\ndata: ' + JSON.stringify({ turn, replayed: false }) + '\n\n',
+    });
+  });
+  await page.getByRole('textbox', { name: 'Tu intervención en la historia' })
+    .fill('Abro el libro que hay sobre el mostrador.');
+  await page.getByRole('button', { name: 'Enviar intervención' }).click();
+  await expect(page.getByText('Una hechicera abre la puerta y señala un libro antiguo.')).toBeVisible();
+  await expect(page.getByText('Abro el libro que hay sobre el mostrador.')).toBeVisible();
+  await page.screenshot({
+    path: 'test-results/' + test.info().project.name + '-story-reader.png',
+    fullPage: true,
+  });
+});
