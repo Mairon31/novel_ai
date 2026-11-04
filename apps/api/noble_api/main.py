@@ -18,7 +18,8 @@ from .catalog import CatalogError, HfCatalog, ROLES
 from .downloads import DownloadManager
 from .hardware import snapshot
 from .store import Store
-from .narrative import NarrativeService, mount_narrative_routes
+from .narrative import LlmSettings, NarrativeService, mount_narrative_routes
+from .runtime import KoboldManager, RuntimeFailure
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -31,6 +32,14 @@ class InstallBody(BaseModel):
 
 class AssignBody(BaseModel):
     installed_id: str
+
+
+class LaunchKobold(BaseModel):
+    executable: str = Field(min_length=4, max_length=4096)
+    installed_id: str
+    gpu_layers: int = Field(default=-1, ge=-1, le=256)
+    contextsize: int = Field(default=4096, ge=512, le=32768)
+    port: int = Field(default=5001, ge=1024, le=65535)
 
 
 class SetupBody(BaseModel):
@@ -52,11 +61,13 @@ def create_app(
     catalog = HfCatalog(transport=catalog_transport)
     downloads = DownloadManager(store, catalog)
     narrative = NarrativeService(store, transport=llm_transport)
+    kobold = KoboldManager(store)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         yield
         downloads.shutdown()
+        kobold.stop()
         catalog.close()
 
     service = FastAPI(title="Noble AI Model Hub", version="0.1.0",
@@ -72,6 +83,7 @@ def create_app(
     service.state.downloads = downloads
     service.state.catalog = catalog
     service.state.narrative = narrative
+    service.state.kobold = kobold
 
     @service.exception_handler(CatalogError)
     async def catalog_exception(_request, exc: CatalogError):
@@ -169,6 +181,36 @@ def create_app(
         return catalog.details(repo_id)
 
     mount_narrative_routes(service, narrative)
+
+    @service.get("/api/v1/runtime/kobold/status")
+    def kobold_status():
+        return kobold.status()
+
+    @service.get("/api/v1/runtime/kobold/installed")
+    def kobold_candidates():
+        return {"models": kobold.installed_models()}
+
+    @service.post("/api/v1/runtime/kobold/start", status_code=202)
+    def kobold_start(body: LaunchKobold):
+        try:
+            return kobold.start(body.executable, body.installed_id,
+                                body.gpu_layers, body.contextsize, body.port)
+        except RuntimeFailure as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @service.post("/api/v1/runtime/kobold/stop")
+    def kobold_stop():
+        return kobold.stop()
+
+    @service.post("/api/v1/runtime/kobold/activate")
+    def kobold_activate():
+        try:
+            selected = kobold.activate_model()
+            config = narrative.config()
+            config.update(selected)
+            return narrative.configure(LlmSettings.model_validate(config))
+        except (ValueError, RuntimeFailure) as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     # A Vite-built frontend can be served from the same FastAPI origin.
     ui_dist = ROOT / "apps" / "web" / "dist"
