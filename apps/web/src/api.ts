@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -38,6 +38,65 @@ export const api = {
     request<{ roles: Record<string, string>; message: string; runtime_connected: boolean }>(
       '/model-roles/' + role, { method: 'PUT', body: JSON.stringify({ installed_id: installedId }) }),
   providers: () => request<{ available: Array<{ id: string; kind: string; status: string }> }>('/providers'),
+  narrativeConfig: () => request<NarrativeConfig>('/narrative/config'),
+  saveNarrativeConfig: (config: NarrativeConfig) => request<NarrativeConfig>(
+    '/narrative/config', { method: 'PUT', body: JSON.stringify(config) }),
+  narrativeModels: () => request<ProviderModels>('/narrative/models'),
+  stories: () => request<{ stories: Story[] }>('/stories'),
+  createStory: (title: string, premise: string) => request<Story>(
+    '/stories', { method: 'POST', body: JSON.stringify({ title, premise }) }),
+  storyTurns: (storyId: string) => request<{ turns: StoryTurn[] }>(
+    '/stories/' + encodeURIComponent(storyId) + '/turns'),
+  async streamTurn(
+    storyId: string,
+    body: { mode: StoryTurn['mode']; input_text: string; request_id: string },
+    signal: AbortSignal,
+    onEvent: (data: GenerationEvent) => void,
+  ): Promise<void> {
+    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) + '/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body), signal,
+    });
+    if (!response.ok) {
+      let error = 'Error HTTP ' + response.status;
+      try {
+        const payload = await response.json() as { detail?: string };
+        error = payload.detail || error;
+      } catch { /* Response may not be JSON. */ }
+      throw new Error(error);
+    }
+    if (!response.body) throw new Error('El proveedor no envió un flujo de datos.');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    function dispatch(packet: string) {
+      let name = '';
+      let data = '';
+      for (const line of packet.split('\n')) {
+        if (line.startsWith('event:')) name = line.slice(6).trim();
+        if (line.startsWith('data:')) data += line.slice(5).trim();
+      }
+      if (name && data && (name === 'delta' || name === 'done' || name === 'error')) {
+        onEvent({ event: name, data: JSON.parse(data) } as GenerationEvent);
+      }
+    }
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        buffer += decoder.decode(value, { stream: !done }).replace(/\r\n/g, '\n');
+        let i = buffer.indexOf('\n\n');
+        while (i !== -1) {
+          dispatch(buffer.slice(0, i));
+          buffer = buffer.slice(i + 2);
+          i = buffer.indexOf('\n\n');
+        }
+        if (done) {
+          if (buffer.trim()) dispatch(buffer.trim());
+          break;
+        }
+      }
+    } finally { reader.releaseLock(); }
+  },
 };
 export function size(bytes?: number | null): string {
   if (bytes == null) return 'Tamaño desconocido';

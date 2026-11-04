@@ -43,3 +43,32 @@ export type Health = {
   status: string; version: string; model_hub: string;
   llm_runtime: string; image_runtime: string; tts_runtime: string;
 };
+
+export type NarrativeConfig = {
+  provider: 'ollama' | 'koboldcpp';
+  base_url: string;
+  model: string;
+  temperature: number;
+  top_p: number;
+  max_tokens: number;
+  num_ctx: number;
+  device: 'auto' | 'cpu';
+};
+export type ProviderModels = {
+  online: boolean; provider: string; models: string[];
+  selected: string; device: string; error?: string;
+};
+export type Story = {
+  id: string; title: string; premise: string;
+  created_at: number; updated_at: number;
+};
+export type StoryTurn = {
+  id: string; story_id: string; request_id: string;
+  mode: 'say' | 'do' | 'story' | 'continue';
+  input_text: string; assistant_text: string;
+  model: string; created_at: number;
+};
+export type GenerationEvent =
+  | { event: 'delta'; data: { text: string } }
+  | { event: 'done'; data: { turn: StoryTurn; replayed: boolean } }
+  | { event: 'error'; data: { message: string } };
