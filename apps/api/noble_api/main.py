@@ -20,6 +20,8 @@ from .hardware import snapshot
 from .store import Store
 from .narrative import LlmSettings, NarrativeService, mount_narrative_routes
 from .runtime import KoboldManager, RuntimeFailure
+from .control import ControlPlane, mount_control_routes
+from .secrets import Secrets
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -60,7 +62,10 @@ def create_app(
     store = Store(directory)
     catalog = HfCatalog(transport=catalog_transport)
     downloads = DownloadManager(store, catalog)
-    narrative = NarrativeService(store, transport=llm_transport)
+    control = ControlPlane(store)
+    secrets = Secrets()
+    narrative = NarrativeService(store, transport=llm_transport, secrets=secrets,
+                                 preferences=control.preferences)
     kobold = KoboldManager(store)
 
     @asynccontextmanager
@@ -82,6 +87,7 @@ def create_app(
     service.state.store = store
     service.state.downloads = downloads
     service.state.catalog = catalog
+    service.state.control = control
     service.state.narrative = narrative
     service.state.kobold = kobold
 
@@ -121,6 +127,7 @@ def create_app(
                 {"id": "huggingface", "kind": "catalog", "status": "ready"},
                 {"id": "koboldcpp", "kind": "llm", "status": "connectable_external"},
                 {"id": "ollama", "kind": "llm", "status": "connectable_external"},
+                {"id": "openrouter", "kind": "llm", "status": "configured" if secrets.read() else "needs_key"},
                 {"id": "comfyui", "kind": "image", "status": "pending_integration"},
                 {"id": "chatterbox", "kind": "tts", "status": "pending_integration"},
             ]
@@ -181,6 +188,28 @@ def create_app(
         return catalog.details(repo_id)
 
     mount_narrative_routes(service, narrative)
+    mount_control_routes(service, control)
+
+    class KeyInput(BaseModel):
+        api_key: str = Field(min_length=12, max_length=4096)
+
+    @service.get("/api/v1/provider-credentials/openrouter")
+    def key_status():
+        return secrets.status()
+
+    @service.put("/api/v1/provider-credentials/openrouter")
+    def set_key(body: KeyInput):
+        try:
+            return secrets.set(body.api_key)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @service.delete("/api/v1/provider-credentials/openrouter")
+    def delete_key():
+        try:
+            return secrets.delete()
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @service.get("/api/v1/runtime/kobold/status")
     def kobold_status():

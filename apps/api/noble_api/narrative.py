@@ -37,8 +37,8 @@ DEFAULT_LLM = {
 }
 
 PROMPT = (
-    "Eres el narrador de una novela visual interactiva. Escribe únicamente "
-    "en español latinoamericano natural (es-419). Mantén continuidad, "
+    "Eres el narrador de una novela visual interactiva. Respeta siempre "
+    "el idioma de salida establecido en las preferencias. Mantén continuidad, "
     "personalidades y consecuencias de la historia. Narra acciones de NPC, "
     "escenarios y sus diálogos; nunca decidas lo que hará, sentirá o dirá "
     "el protagonista controlado por el jugador. No repitas ni resumas "
