@@ -18,7 +18,6 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*.py' -v
   frontend:
     runs-on: ubuntu-latest
-    if: hashFiles('apps/web/package.json') != ''
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -43,7 +43,7 @@ export function size(bytes?: number | null): string {
   if (bytes == null) return 'Tamaño desconocido';
   if (bytes < 1024) return String(bytes) + ' B';
   const unit = Math.floor(Math.log(bytes) / Math.log(1024));
-  return (bytes / Math.pow(1024, unit)).toFixed(1) + ' ' + ['B', 'KB', 'GB', 'TB'][unit === 2 ? 2 : unit === 1 ? 1 : unit === 3 ? 3 : 0];
+  return (bytes / Math.pow(1024, unit)).toFixed(1) + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][unit];
 }
 export function downloads(n: CatalogEntry): string {
   return new Intl.NumberFormat('es-CR', { notation: 'compact' }).format(n.downloads);

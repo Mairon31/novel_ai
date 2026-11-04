@@ -106,7 +106,7 @@ class Store:
                 "expected_sha256,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
                 (job_id, repo_id, revision, filename, size, sha, "queued", now, now),
             )
-            return self.download(job_id), True
+        return self.download(job_id), True
 
     def update_download(self, job_id, **fields):
         allowed = {"status", "received_bytes", "error"}

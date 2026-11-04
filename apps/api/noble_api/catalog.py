@@ -17,7 +17,7 @@ ROLES = {"narrator", "image", "tts"}
 ROLE_FILTERS = {"narrator": "gguf", "image": "text-to-image", "tts": "text-to-speech"}
 REPO_PART = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$")
 REVISION = re.compile(r"^[a-fA-F0-9]{40}$")
-FILENAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+()-]{0,250}\\.gguf$", re.IGNORECASE)
+FILENAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+()-]{0,250}\.gguf$", re.IGNORECASE)
 HEX_SHA256 = re.compile(r"^[a-fA-F0-9]{64}$")
 
 
@@ -138,7 +138,7 @@ class HfCatalog:
                 "filename": filename,
                 "size_bytes": item.get("size") or lfs.get("size") or None,
                 "sha256": oid.lower() if HEX_SHA256.fullmatch(oid) else None,
-                "supported": not bool(re.search(r"-\\d{5}-of-\\d{5}\\.gguf$", filename, re.I)),
+                "supported": not bool(re.search(r"-\d{5}-of-\d{5}\.gguf$", filename, re.I)),
             })
         return {"repo_id": repo_id, "revision": revision,
                 "license": (data.get("cardData") or {}).get("license") or "sin verificar",

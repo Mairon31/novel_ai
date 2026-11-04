@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ArrowDownToLine, ArrowLeft, ArrowRight, BookOpen, Check, CheckCircle2,
+  ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
   HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu, Monitor,
-  MoreHorizontal, Pause, Play, Plus, RefreshCw, Search, Settings2,
+  Pause, Play, RefreshCw, Search, Settings2,
   ShieldCheck, SlidersHorizontal, Sparkles, Volume2, WandSparkles, X,
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
