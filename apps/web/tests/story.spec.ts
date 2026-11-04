@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('create a story and render SSE turn with the real UI (mocked LLM response)', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
   if (await setup.isVisible()) {
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
@@ -23,7 +24,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await creator.getByLabel('Nombre del protagonista').fill('Joel');
   await creator.getByRole('button', { name: 'Empezar historia' }).click();
   await expect(creator).toBeHidden();
-  await expect(page.getByRole('heading', { name: title })).toBeVisible();
+  await expect(page.locator('.noble-reader-chapter')).toContainText(title);
 
   await page.route('**/api/v1/stories/*/generate', async route => {
     const path = new URL(route.request().url()).pathname;

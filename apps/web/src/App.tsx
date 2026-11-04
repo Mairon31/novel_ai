@@ -264,7 +264,7 @@ export default function App() {
           <button className="icon-button" title="Actualizar" aria-label="Actualizar datos" onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
         </div>
       </header>
-      <main className="content">
+      <main className="content" data-ready={ready ? "yes" : "no"}>
         {releaseNotice && <div className="notice-banner noble-update-notice">
           <RefreshCw size={17}/>
           <span>Hay una publicación para tu canal: {releaseNotice.name}. La actualización automática aún no está disponible en la versión fuente.</span>

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('setup, model browser, downloads and diagnostics in the real UI', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const wizard = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
   if (await wizard.isVisible()) {
     await expect(wizard.getByText('Tu estudio de historias empieza aquí.')).toBeVisible();
@@ -24,7 +25,8 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
   }
   await page.getByRole('button', { name: 'Configuración' }).click();
   await expect(page.getByRole('heading', { name: /Configuración/ })).toBeVisible();
-  await expect(page.getByText('Almacenamiento de modelos')).toBeVisible();
+  await page.getByRole('button', { name: 'Sobre y actualizaciones' }).click();
+  await expect(page.getByText('Sobre Noble AI')).toBeVisible();
 
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Abrir menú' }).click();

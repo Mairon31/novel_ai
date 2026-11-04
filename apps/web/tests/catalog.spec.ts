@@ -24,6 +24,7 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
         sha256: 'f'.repeat(64), supported: true }] }),
   }));
   await page.goto('/');
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
   if (await setup.isVisible()) {
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
