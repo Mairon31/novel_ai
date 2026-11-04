@@ -78,6 +78,7 @@ class LlmSettings(BaseModel):
 class CreateStory(BaseModel):
     title: str = Field(min_length=2, max_length=100)
     premise: str = Field(min_length=10, max_length=4000)
+    protagonist_name: str = Field(default="Protagonista", min_length=1, max_length=60)
 
 
 class TurnRequest(BaseModel):
@@ -117,6 +118,9 @@ class NarrativeService:
             CREATE INDEX IF NOT EXISTS idx_story_turns_story
                 ON story_turns(story_id, created_at, id);
             """)
+            fields = [row[1] for row in db.execute("PRAGMA table_info(stories)")]
+            if "protagonist_name" not in fields:
+                db.execute("ALTER TABLE stories ADD COLUMN protagonist_name TEXT NOT NULL DEFAULT 'Protagonista'")
             db.execute("INSERT OR IGNORE INTO llm_preferences VALUES (1,?)",
                        (json.dumps(DEFAULT_LLM),))
 
@@ -181,22 +185,34 @@ class NarrativeService:
                     "selected": cfg["model"], "device": cfg["device"],
                     "error": str(exc)[:240]}
 
-    def create_story(self, title: str, premise: str) -> dict:
+    def create_story(self, title: str, premise: str, protagonist_name: str = "Protagonista") -> dict:
         story_id, now = str(uuid.uuid4()), time.time()
         with self.store._conn() as db:
-            db.execute("INSERT INTO stories VALUES (?,?,?,?,?)",
-                       (story_id, title.strip(), premise.strip(), now, now))
+            db.execute("INSERT INTO stories (id,title,premise,created_at,updated_at,protagonist_name) VALUES (?,?,?,?,?,?)",
+                       (story_id, title.strip(), premise.strip(), now, now, protagonist_name.strip()))
         return self.get_story(story_id)
 
     def stories(self) -> list[dict]:
         with self.store._conn() as db:
-            return [dict(r) for r in db.execute(
+            return [self.with_art(dict(r)) for r in db.execute(
                 "SELECT * FROM stories ORDER BY updated_at DESC, id LIMIT 250")]
 
     def get_story(self, story_id: str) -> dict | None:
         with self.store._conn() as db:
             row = db.execute("SELECT * FROM stories WHERE id=?", (story_id,)).fetchone()
-            return dict(row) if row else None
+            return self.with_art(dict(row)) if row else None
+
+    def with_art(self, story: dict) -> dict:
+        art = self.store.root / "story-assets" / story["id"] / "scene.webp"
+        story["scene_image_url"] = ("/api/v1/stories/" + story["id"] +
+                                    "/scene-image") if art.is_file() else None
+        return story
+
+    def set_protagonist(self, story_id: str, name: str) -> dict:
+        with self.store._conn() as db:
+            db.execute("UPDATE stories SET protagonist_name=?,updated_at=? WHERE id=?",
+                       (name.strip(), time.time(), story_id))
+        return self.get_story(story_id)
 
     def turns(self, story_id: str, limit: int = 100) -> list[dict]:
         with self.store._conn() as db:
@@ -236,7 +252,7 @@ class NarrativeService:
         if preferences.get("translation_mode") == "target_output":
             instruction += " Si el contexto entrante está en otro idioma, conserva su significado y escribe la respuesta únicamente en el idioma de salida."
         messages = [{"role": "system", "content": PROMPT + "\n" + instruction +
-                     "\nPremisa: " + story["premise"]}]
+                     "\nPremisa: " + story["premise"] + "\nProtagonista: " + story.get("protagonist_name", "Protagonista")}]
         for t in self.turns(story["id"], limit=16):
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
@@ -359,7 +375,7 @@ def mount_narrative_routes(app, narrative: NarrativeService):
 
     @app.post("/api/v1/stories", status_code=201)
     def new_story(body: CreateStory):
-        return narrative.create_story(body.title, body.premise)
+        return narrative.create_story(body.title, body.premise, body.protagonist_name)
 
     @app.get("/api/v1/stories/{story_id}")
     def get_story(story_id: uuid.UUID):
