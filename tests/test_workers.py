@@ -82,6 +82,16 @@ def broken_tunnel(request: httpx.Request):
     return tunnel_server(request)
 
 
+def truncated_tunnel(request: httpx.Request):
+    if request.headers.get("authorization") != "Bearer " + TOKEN:
+        return httpx.Response(401)
+    if request.url.path == "/v1/chat/completions":
+        # Simulates a tunnel that closes cleanly but omits the SSE final marker.
+        return httpx.Response(
+            200, text='data: {"choices":[{"delta":{"content":"Texto parcial"}}]}\n\n')
+    return tunnel_server(request)
+
+
 class WorkerTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -160,6 +170,33 @@ class WorkerTests(unittest.TestCase):
         turns = self.client.get("/api/v1/stories/" + story["id"] + "/turns").json()
         self.assertEqual(len(turns["turns"]), 1)
         self.assertEqual(turns["turns"][0]["assistant_text"], "Desde la GPU remota.")
+
+    def test_graceful_eof_without_done_is_not_committed(self):
+        worker = self.client.post("/api/v1/workers", json={
+            "name": "Truncated GPU", "url": "https://truncated.trycloudflare.com",
+            "token": TOKEN}).json()
+        self.assertEqual(self.client.post(
+            "/api/v1/workers/" + worker["id"] + "/activate",
+            json={"model": "gpu-remote-gguf"}).status_code, 200)
+        story = self.client.post("/api/v1/stories", json={
+            "title": "El último capítulo",
+            "premise": "Una viajera se encuentra con un secreto dentro de un castillo."}).json()
+        payload = {"request_id": str(uuid.uuid4()), "input_text": "",
+                   "mode": "continue"}
+        self.app.state.narrative.transport = httpx.MockTransport(truncated_tunnel)
+        response = self.client.post(
+            "/api/v1/stories/" + story["id"] + "/generate", json=payload)
+        self.assertIn("event: delta", response.text)
+        self.assertIn("event: error", response.text)
+        self.assertNotIn("event: done", response.text)
+        self.assertEqual(
+            self.client.get("/api/v1/stories/" + story["id"] + "/turns").json()["turns"], [])
+        self.app.state.narrative.transport = httpx.MockTransport(tunnel_server)
+        again = self.client.post(
+            "/api/v1/stories/" + story["id"] + "/generate", json=payload)
+        self.assertIn("event: done", again.text)
+        self.assertEqual(len(
+            self.client.get("/api/v1/stories/" + story["id"] + "/turns").json()["turns"]), 1)
 
     def test_refuse_dangerous_or_unauthenticated_tunnels(self):
         for url in ["http://127.0.0.1:8000", "https://evil.example.com",
