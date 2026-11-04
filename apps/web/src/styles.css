@@ -285,3 +285,30 @@
   .noble-reader-actions button{flex:1}
   .noble-reader-mode span{font-size:10px}
 }
+
+/* Authenticated workers management — settings / network */
+.noble-worker-manager { margin-top: 18px; }
+.noble-worker-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; margin-top: 16px; align-items: end; }
+.noble-worker-form>.workspace-pref-field:nth-child(3){grid-column:1/-1}
+.noble-worker-form>.secondary-button{justify-self:start;min-height:40px}
+.noble-worker-controls{display:flex;align-items:end;gap:12px;justify-content:space-between;flex-wrap:wrap;border-top:1px solid #393c56;padding-top:18px;margin-top:19px}
+.noble-worker-controls>.workspace-pref-field{flex:1;min-width:180px}
+.noble-worker-controls-actions{display:flex;gap:9px;flex-wrap:wrap}
+.noble-worker-controls-actions .secondary-button{min-height:41px}
+.noble-worker-info{display:flex;align-items:center;flex-wrap:wrap;gap:9px;background:#12192a;color:#c2c9dc;border-radius:9px;padding:11px;margin-top:13px;font-size:11px}
+.noble-worker-info>span:nth-child(2){min-width:0;overflow-wrap:anywhere;flex:1}
+.noble-worker-select-model{border:1px solid #375b54;background:#162723;padding:14px;border-radius:10px;margin-top:15px}
+.noble-worker-select-model .narrative-connect{margin:0 0 12px}
+.noble-worker-select-model .primary-button{margin-top:12px}
+.noble-worker-guide{display:flex;align-items:flex-start;gap:9px}
+.noble-worker-guide svg{flex:none}
+.noble-worker-guide a{display:inline-flex;align-items:center;gap:3px;color:var(--noble-accent);font-weight:700}
+.noble-update-notice{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.noble-update-notice>a{color:#d6c3ff;font-size:12px;text-decoration:underline}
+.noble-update-notice>button{margin-left:auto;color:#bec2d4;background:transparent;display:grid;place-items:center}
+@media(max-width:680px){
+ .noble-worker-form{grid-template-columns:1fr}
+ .noble-worker-form>.workspace-pref-field:nth-child(3){grid-column:auto}
+ .noble-worker-controls{align-items:stretch}
+ .noble-worker-controls-actions>*{flex:1}
+}
