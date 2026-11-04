@@ -12,6 +12,7 @@ import type {
 } from './types';
 import { NarrativeSettings } from './NarrativeSettings';
 import { RuntimeManager } from './RuntimeManager';
+import { RemoteWorkers } from './RemoteWorkers';
 
 type Tab = 'narration' | 'languages' | 'providers' | 'appearance' |
   'runtimes' | 'shortcuts' | 'network' | 'about';
@@ -271,10 +272,11 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             {network ? <p>{network.message}</p> : <p>Consultando disponibilidad...</p>}
             <div className="workspace-service-row"><strong>Servidor local</strong><span>127.0.0.1:8000</span><b>Activo</b></div>
             <div className="workspace-service-row"><strong>Acceso desde móviles en LAN</strong><span>Autenticación y TLS pendientes</span><b>Bloqueado</b></div>
-            <div className="workspace-service-row"><strong>Workers Colab / otras PC</strong><span>Registro, token y protocolo de capacidades pendientes</span><b>Planeado</b></div>
-            <div className="workspace-service-row"><strong>Túnel Cloudflare</strong><span>Se habilitará después del control de acceso</span><b>Planeado</b></div>
-            <div className="workspace-note"><ShieldCheck size={17}/> Los túneles de Cloudflare requieren un servicio de acceso autenticado: compartir una URL sin autorización expondría historias, claves y archivos.</div>
+            <div className="workspace-service-row"><strong>Workers Colab / otras PC</strong><span>LLM remoto compatible con OpenAI</span><b>Registro disponible</b></div>
+            <div className="workspace-service-row"><strong>Túnel Cloudflare</strong><span>Conexión a túneles externos con token Bearer</span><b>Conectable</b></div>
+            <div className="workspace-note"><ShieldCheck size={17}/> El servidor principal sigue siendo local. Solo se conecta a un proxy de worker protegido mediante token; publicar el workspace completo en Internet continúa deshabilitado.</div>
           </div>
+          <RemoteWorkers onActivated={onNarratorActivated}/>
         </>}
 
         {tab === 'about' && prefs && <>
