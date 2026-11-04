@@ -124,8 +124,10 @@ class WorkerRegistry:
         record = self.info(worker_id)
         if not record:
             raise ValueError("Worker inexistente")
+        started = time.perf_counter()
         try:
             endpoint, token = self.endpoint(worker_id)
+            health = None
             async with httpx.AsyncClient(transport=self.transport, trust_env=False,
                                          timeout=12) as client:
                 response = await client.get(
@@ -144,8 +146,31 @@ class WorkerRegistry:
                 data = response.json()
                 models = [row.get("id") for row in data.get("data", [])
                           if isinstance(row, dict) and isinstance(row.get("id"), str)]
+                # The telemetry endpoint is optional for older worker versions.
+                try:
+                    measured = await client.get(
+                        endpoint + "/v1/health",
+                        headers={"Authorization": "Bearer " + token},
+                        follow_redirects=False, timeout=5)
+                    if measured.status_code == 200:
+                        raw = measured.json()
+                        if isinstance(raw, dict) and raw.get("protocol") == "noble-worker-v1":
+                            gpus = raw.get("gpu", [])
+                            health = {
+                                "engine_status": raw.get("engine_status"),
+                                "active_requests": raw.get("active_requests"),
+                                "completed_requests": raw.get("completed_requests"),
+                                "failed_requests": raw.get("failed_requests"),
+                                "last_ttft_ms": raw.get("last_ttft_ms"),
+                                "avg_ttft_ms": raw.get("avg_ttft_ms"),
+                                "avg_duration_ms": raw.get("avg_duration_ms"),
+                                "gpu": gpus[:8] if isinstance(gpus, list) else [],
+                            }
+                except (httpx.HTTPError, ValueError, TypeError):
+                    pass
             return {"id": worker_id, "online": True, "models": models[:100],
-                    "role": "llm"}
+                    "role": "llm", "latency_ms": round(
+                        (time.perf_counter() - started) * 1000, 1), "health": health}
         except (ValueError, httpx.HTTPError, KeyError) as exc:
             return {"id": worker_id, "online": False, "models": [],
                     "role": "llm", "error": str(exc)[:220]}
