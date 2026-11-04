@@ -213,7 +213,7 @@ export default function App() {
               ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB de VRAM'
               : 'Diagnóstico disponible'}</small></div>
         </div>
-        <p className="sidebar-footer">PROTOTIPO P0.5 <span>·</span> LOCAL-FIRST</p>
+        <p className="sidebar-footer">PROTOTIPO P1 <span>·</span> LOCAL-FIRST</p>
       </div>
     </aside>
     {navOpen && <button aria-label="Cerrar navegación" className="mobile-overlay" onClick={() => setNavOpen(false)}/>}
