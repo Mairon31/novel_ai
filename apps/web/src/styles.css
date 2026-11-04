@@ -87,3 +87,76 @@
 .runtime-led.runtime-green{background:#71dbad;box-shadow:0 0 0 4px #6cdaaa27}
 .kobold-manager .narrative-settings-grid label span{display:flex;align-items:center;gap:6px}
 .kobold-manager .settings-buttons{margin-top:22px}
+
+
+/* P1.1 — settings inspired by modular runtime/tool controls, not third-party assets. */
+:root {
+  --noble-accent: #a795fa;
+  --noble-accent-soft: #282545;
+  --noble-reader-scale: 1;
+}
+:root[data-noble-accent="rose"] { --noble-accent: #f1a5c5; --noble-accent-soft: #382333; }
+:root[data-noble-accent="teal"] { --noble-accent: #7cded2; --noble-accent-soft: #19373b; }
+.brand-mark, .primary-button { background: linear-gradient(135deg, var(--noble-accent), #5e63b1); }
+.nav-active { box-shadow: inset 3px 0 0 var(--noble-accent); }
+.nav-active svg, .title-dot, .eyebrow, .overline { color: var(--noble-accent); }
+.category-tabs button.selected, .variant-active { border-color: var(--noble-accent); }
+.workspace-settings-shell{display:grid;grid-template-columns:minmax(200px,250px) minmax(0,1fr);border:1px solid #313752;border-radius:18px;background:#111626;margin-top:28px;overflow:hidden;min-height:530px}
+.workspace-settings-tabs{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:15px 10px;border-right:1px solid #33374e;background:#161a2b}
+.workspace-settings-tabs button{display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:10px;text-align:left;color:#a1aac7;font-size:12px;font-weight:700;background:transparent;transition:background .15s;line-height:1.5}
+.workspace-settings-tabs button svg{flex:none}
+.workspace-settings-tabs button:hover{background:#292c45}
+.workspace-settings-tabs button.selected{background:var(--noble-accent-soft);color:#f1eefa;box-shadow:inset 3px 0 0 var(--noble-accent)}
+.workspace-settings-body{padding:26px;min-width:0}
+.setting-section-intro{margin-bottom:23px}.setting-section-intro h2{font:700 24px 'Outfit',sans-serif;margin:0 0 8px}
+.setting-section-intro p{color:#9fa7c0;line-height:1.75;font-size:12px;max-width:700px;margin:0}
+.workspace-settings .narrative-settings{margin-top:14px;padding:18px}
+.workspace-settings .narrative-section-title h2{font-size:17px}
+.workspace-panel{border:1px solid #343a55;background:linear-gradient(145deg,#1c2135,#161b2d);padding:20px;border-radius:13px;margin:16px 0;min-width:0}
+.workspace-panel h3{display:flex;align-items:center;gap:9px;font:700 15px 'Outfit',sans-serif;color:#eeecfb;margin:0 0 11px}
+.workspace-panel>p{font-size:12px;line-height:1.8;color:#a2aac5;margin:9px 0 20px}
+.workspace-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.workspace-pref-field{font-size:12px;color:#d3d6eb;font-weight:700;display:flex;flex-direction:column;gap:10px;min-width:0}
+.workspace-pref-field>select,.workspace-pref-field>input{width:100%;min-width:0;background:#101627;border-radius:9px;border:1px solid #424863;padding:11px 12px;color:#f0eefd;outline:0;font:500 12px 'DM Sans',sans-serif}
+.workspace-pref-field>select:focus,.workspace-pref-field>input:focus{border-color:var(--noble-accent)}
+.workspace-pref-field input[type=range]{padding:0;accent-color:var(--noble-accent);border:0;margin-top:10px}
+.workspace-pref-toggle{display:flex;justify-content:space-between;align-items:center;gap:17px;padding:11px 0;color:#d2d6e9;font-size:12px;font-weight:600}
+.workspace-pref-toggle input{width:17px;height:17px;accent-color:var(--noble-accent)}
+.workspace-note{display:flex;align-items:flex-start;gap:11px;background:#22253e;border:1px solid #484765;color:#b8bdd9;border-radius:9px;padding:13px;font-size:11px;line-height:1.7;margin-top:20px}
+.workspace-note svg{color:var(--noble-accent);flex:none;margin-top:2px}
+.workspace-service-row{display:grid;grid-template-columns:95px minmax(0,1fr) auto;gap:15px;align-items:center;border-top:1px solid #353b53;padding:14px 0;font-size:11px}
+.workspace-service-row>strong{color:#ecedf8}.workspace-service-row>span{color:#9ba3bc;line-height:1.5}
+.workspace-service-row>b{color:#b8c2d5;font-size:10px;background:#2b3045;border:1px solid #3f465d;border-radius:20px;padding:4px 7px;white-space:nowrap;font-weight:600}
+.workspace-muted-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.workspace-muted-grid>span{display:block;border:1px solid #383d59;border-radius:9px;padding:12px;color:#ccd0e5;font-size:11px}
+.workspace-muted-grid small{display:block;color:#949db9;margin-top:8px;line-height:1.45}
+.workspace-provider-head{display:flex;gap:14px;align-items:center;margin-bottom:15px}
+.workspace-provider-head>div:nth-child(2){flex:1}
+.workspace-provider-head h3{margin:0 0 5px}
+.workspace-provider-head p{font-size:11px;color:#a1a9c7;margin:0;line-height:1.5}
+.provider-icon{display:grid;place-items:center;width:45px;height:45px;border-radius:12px;background:#353a55;color:#cabdff;font-weight:800;font-size:14px;flex:none}
+.provider-ready,.provider-missing{padding:5px 8px;border-radius:7px;background:#1a3a31;color:#a5e9ce;font-size:10px;font-weight:700;white-space:nowrap}
+.provider-missing{color:#e9c3a7;background:#423529}
+.workspace-external,.workspace-release-card a{display:inline-flex;align-items:center;gap:6px;color:#c8bbff;text-decoration:none;font-size:11px;font-weight:700;padding:9px}
+.workspace-external:hover,.workspace-release-card a:hover{text-decoration:underline}
+.workspace-reader-preview{background:linear-gradient(130deg,#24243e,#161d31);border-radius:13px;border:1px solid #424662;padding:24px;margin:18px 0}
+.workspace-reader-preview h3{color:#f2f0ff;font:700 20px 'Outfit',sans-serif;margin:18px 0 8px}
+.workspace-reader-preview p{font-size:calc(14px * var(--noble-reader-scale));color:#ccd0e3;line-height:1.85;margin:0;max-width:650px}
+.workspace-reader-preview em{font-style:normal;color:var(--noble-accent)}
+.workspace-diagnostics-list{display:grid;gap:0;margin:12px 0 25px}
+.workspace-diagnostics-list>div{display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #333a53;padding:10px 0;font-size:11px}
+.workspace-diagnostics-list>div>span{color:#bdc2da;flex:none}
+.workspace-diagnostics-list code{background:#11182a;border-radius:6px;color:#afa5dd;padding:7px 9px;overflow-wrap:anywhere;text-align:right;min-width:0;max-width:70%;font-size:10px}
+.workspace-shortcut-row{display:flex;align-items:center;justify-content:space-between;gap:17px;padding:13px 0;border-bottom:1px solid #363b54}
+.workspace-shortcut-row:last-child{border-bottom:0}
+.workspace-shortcut-row kbd{font-size:12px;color:#dedaf3;font-family:'DM Sans',sans-serif;border:1px solid #57506d;border-radius:7px;padding:7px 10px;background:#292842;font-weight:700}
+.workspace-shortcut-row>span{font-size:12px;color:#aeb8d0}
+.workspace-about-title{display:flex;align-items:center;gap:13px;margin-bottom:19px;color:#beaaff}
+.workspace-about-title strong{display:block;color:#f3f0ff;font:700 21px 'Outfit',sans-serif}
+.workspace-about-title span{color:#929bb8;font-size:10px;letter-spacing:1.5px}
+.workspace-release-card{background:#141a2b;border:1px solid #3d4861;border-radius:9px;padding:12px 14px;display:flex;align-items:flex-start;flex-direction:column;gap:7px;margin:15px 0;color:#aeb4ce;font-size:11px;line-height:1.6}
+.workspace-release-card strong{color:#f2effa;font-size:13px}
+.workspace-release-card a{padding:0}
+@media(max-width:1150px){.workspace-settings-shell{grid-template-columns:minmax(160px,195px) minmax(0,1fr)}.workspace-settings-body{padding:20px}.workspace-service-row{grid-template-columns:75px minmax(0,1fr)}.workspace-service-row>b{grid-column:2;justify-self:start}}
+@media(max-width:750px){.workspace-settings-shell{grid-template-columns:1fr}.workspace-settings-tabs{display:flex;flex-direction:row;overflow-x:auto;scrollbar-width:thin;border-right:0;border-bottom:1px solid #383e58;gap:5px;padding:10px}.workspace-settings-tabs button{flex:none;font-size:11px;padding:10px}.workspace-settings-body{padding:16px}.workspace-field-grid{grid-template-columns:1fr}.workspace-panel{padding:17px}.workspace-muted-grid{grid-template-columns:1fr}.workspace-service-row{grid-template-columns:72px minmax(0,1fr)}}
+@media(max-width:440px){.workspace-settings-tabs button{font-size:10px;padding:8px}.workspace-settings-tabs button svg{width:15px}.workspace-about-title strong{font-size:18px}.workspace-settings .narrative-settings{padding:13px}.workspace-diagnostics-list code{font-size:9px}.workspace-provider-head{flex-wrap:wrap}.workspace-provider-head>span:last-child{margin-left:58px}}
