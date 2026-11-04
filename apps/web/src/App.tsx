@@ -46,7 +46,7 @@ export default function App() {
   const [page, setPage] = useState<Page>('modelos');
   const [narrativeRevision, setNarrativeRevision] = useState(0);
   const [keyboardActive, setKeyboardActive] = useState(true);
-  const [releaseNotice, setReleaseNotice] = useState<{ name: string; url: string } | null>(null);
+  const [releaseNotice, setReleaseNotice] = useState<{ name: string; url: string; label: string } | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const [tab, setTab] = useState<'discover' | 'installed'>('discover');
   const [role, setRole] = useState<ModelRole>('narrator');
@@ -80,10 +80,10 @@ export default function App() {
       document.documentElement.style.setProperty('--noble-reader-scale', String(p.font_scale / 100));
       if (!p.check_updates_on_start) return;
       const u = await api.updates();
-      if (!alive || !u.release?.url) return;
+      if (!alive || !u.update_available || !u.release?.url) return;
       const label = u.channel + ':' + u.release.version;
       if (localStorage.getItem('noble-seen-release') !== label)
-        setReleaseNotice({ name: u.release.name, url: u.release.url });
+        setReleaseNotice({ name: u.release.name, url: u.release.url, label });
     }).catch(() => { /* startup must not depend on GitHub availability */ });
     return () => { alive = false; };
   }, []);
@@ -271,7 +271,7 @@ export default function App() {
           <a href={releaseNotice.url} target="_blank" rel="noreferrer">Ver en GitHub</a>
           <button aria-label="Cerrar aviso de versión" onClick={() => {
             setReleaseNotice(null);
-            localStorage.setItem('noble-seen-release', releaseNotice.url.split('/').pop() || releaseNotice.name);
+            localStorage.setItem('noble-seen-release', releaseNotice.label);
           }}><X size={16}/></button>
         </div>}
         {error && <ErrorNote message={error} close={() => setError('')}/>}
