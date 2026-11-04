@@ -4,9 +4,11 @@ import {
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
   HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu, Monitor,
   Pause, Play, RefreshCw, Search, Settings2,
-  ShieldCheck, SlidersHorizontal, Sparkles, Volume2, WandSparkles, X,
+  ShieldCheck, SlidersHorizontal, Sparkles, Volume2, X,
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
+import { NarrativeSettings } from './NarrativeSettings';
+import { StoryStudio } from './StoryStudio';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
   ModelRole, Page, Settings,
@@ -327,21 +329,13 @@ export default function App() {
           </div>
         </section>}
 
-        {page === 'inicio' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><BookOpen size={14}/> NOBLE STORY ENGINE</div>
-            <h1>Tu biblioteca<span className="title-dot">.</span></h1>
-            <p>Aquí vivirán tus historias, personajes y capítulos persistentes.</p></div>
-          <div className="hero-panel"><div className="hero-art"><WandSparkles size={39}/><span>V 0.1 · MODEL HUB</span></div>
-            <div><span className="overline">SIGUIENTE HITO · MOTOR NARRATIVO</span>
-              <h2>Las historias comienzan con un buen modelo.</h2>
-              <p>La biblioteca y el lector visual aún no están implementados. En esta entrega puedes descubrir, descargar y asignar el narrador que utilizarán.</p>
-              <button className="primary-button" onClick={() => changePage('modelos')}>Configurar narrador <ArrowRight size={17}/></button></div></div>
-        </section>}
+        {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}/>}
 
         {page === 'ajustes' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> PREFERENCIAS</div>
             <h1>Configuración<span className="title-dot">.</span></h1>
             <p>Opciones guardadas localmente en la base de datos Noble AI.</p></div>
+          <NarrativeSettings/>
           <div className="settings-panel">
             <section><div className="setting-icon"><Database size={21}/></div>
               <div className="setting-main"><strong>Almacenamiento de modelos</strong>
