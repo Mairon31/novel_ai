@@ -23,5 +23,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install API dependencies for UI smoke
+        run: python -m pip install -r apps/api/requirements.txt
       - name: Install and build frontend
         run: cd apps/web && npm install --no-audit --no-fund && npm run build
+      - name: Install Playwright Chromium
+        run: cd apps/web && npx playwright install chromium --with-deps
+      - name: Browser smoke (real Noble API, desktop and mobile)
+        run: |
+          python -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000 >/tmp/noble-api.log 2>&1 &
+          API_PID=$!
+          npm --prefix apps/web run dev >/tmp/noble-web.log 2>&1 &
+          WEB_PID=$!
+          trap 'kill $API_PID $WEB_PID 2>/dev/null || true' EXIT
+          curl --fail --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:8000/api/v1/health
+          cd apps/web
+          npm run test:e2e
+      - name: Upload browser screenshots and traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noble-ai-visual-qa
+          path: apps/web/test-results/
+          retention-days: 7
+
