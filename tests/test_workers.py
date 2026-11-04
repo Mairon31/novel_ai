@@ -45,6 +45,17 @@ def tunnel_server(request: httpx.Request):
     return httpx.Response(404)
 
 
+def local_inference(request: httpx.Request):
+    if request.url.path == "/v1/models":
+        return httpx.Response(200, json={"data": [{"id": "gpu-remote-gguf"}]})
+    if request.url.path == "/v1/chat/completions":
+        return httpx.Response(200, text=(
+            'data: {"choices":[{"delta":{"content":"Desde la GPU remota."}}]}\n\n'
+            'data: [DONE]\n\n'
+        ))
+    return httpx.Response(404)
+
+
 class WorkerTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -105,7 +116,7 @@ class WorkerTests(unittest.TestCase):
             module = importlib.import_module("noble_api.worker_server")
         proxy = module.create_worker_app(
             TOKEN, "http://127.0.0.1:5001",
-            transport=httpx.MockTransport(tunnel_server))
+            transport=httpx.MockTransport(local_inference))
         with TestClient(proxy) as c:
             self.assertEqual(c.get("/v1/models").status_code, 401)
             headers = {"Authorization": "Bearer " + TOKEN}
