@@ -18,6 +18,7 @@ from .catalog import CatalogError, HfCatalog, ROLES
 from .downloads import DownloadManager
 from .hardware import snapshot
 from .store import Store
+from .narrative import NarrativeService, mount_narrative_routes
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -43,12 +44,14 @@ class SetupBody(BaseModel):
 def create_app(
     data_dir: Path | None = None,
     catalog_transport: httpx.BaseTransport | None = None,
+    llm_transport: httpx.AsyncBaseTransport | None = None,
 ) -> FastAPI:
     """Injectable data directory and HF transport make contract tests offline."""
     directory = Path(data_dir or os.getenv("NOBLE_DATA_DIR") or ROOT / "data")
     store = Store(directory)
     catalog = HfCatalog(transport=catalog_transport)
     downloads = DownloadManager(store, catalog)
+    narrative = NarrativeService(store, transport=llm_transport)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -68,6 +71,7 @@ def create_app(
     service.state.store = store
     service.state.downloads = downloads
     service.state.catalog = catalog
+    service.state.narrative = narrative
 
     @service.exception_handler(CatalogError)
     async def catalog_exception(_request, exc: CatalogError):
@@ -77,7 +81,7 @@ def create_app(
     @service.get("/api/v1/health")
     def health():
         return {"status": "ok", "version": "0.1.0",
-                "model_hub": "available", "llm_runtime": "not_implemented",
+                "model_hub": "available", "llm_runtime": "external_provider_adapter",
                 "image_runtime": "not_implemented", "tts_runtime": "not_implemented"}
 
     @service.get("/api/v1/hardware")
@@ -103,7 +107,8 @@ def create_app(
         return {
             "available": [
                 {"id": "huggingface", "kind": "catalog", "status": "ready"},
-                {"id": "koboldcpp", "kind": "llm", "status": "pending_integration"},
+                {"id": "koboldcpp", "kind": "llm", "status": "connectable_external"},
+                {"id": "ollama", "kind": "llm", "status": "connectable_external"},
                 {"id": "comfyui", "kind": "image", "status": "pending_integration"},
                 {"id": "chatterbox", "kind": "tts", "status": "pending_integration"},
             ]
@@ -162,6 +167,8 @@ def create_app(
     @service.get("/api/v1/models/{repo_id:path}")
     def model_details(repo_id: str):
         return catalog.details(repo_id)
+
+    mount_narrative_routes(service, narrative)
 
     # A Vite-built frontend can be served from the same FastAPI origin.
     ui_dist = ROOT / "apps" / "web" / "dist"
