@@ -4,12 +4,13 @@ import {
   Server, ShieldCheck, Trash2,
 } from 'lucide-react';
 import { api } from './api';
-import type { RemoteWorker, WorkerProbe } from './types';
+import type { RemoteWorker, WorkerProbe, WorkerBenchmark } from './types';
 
 export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
   const [workers, setWorkers] = useState<RemoteWorker[]>([]);
   const [selected, setSelected] = useState('');
   const [probe, setProbe] = useState<WorkerProbe | null>(null);
+  const [benchmark, setBenchmark] = useState<WorkerBenchmark | null>(null);
   const [model, setModel] = useState('');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -52,7 +53,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
 
   async function verify() {
     if (!selected) return;
-    setBusy(true); setError(''); setMessage(''); setProbe(null); setModel('');
+    setBusy(true); setError(''); setMessage(''); setProbe(null); setModel(''); setBenchmark(null);
     try {
       const status = await api.probeWorker(selected);
       setProbe(status);
@@ -73,6 +74,17 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       const result = await api.activateWorker(selected, model);
       onActivated();
       setMessage('Narrador remoto activado: ' + result.model + '. Abre Biblioteca para usarlo.');
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  async function measure() {
+    if (!selected || !model) return;
+    setBusy(true); setError(''); setMessage(''); setBenchmark(null);
+    try {
+      const result = await api.benchmarkWorker(selected, model);
+      setBenchmark(result);
+      if (!result.success) setError(result.error || 'Error al medir el worker');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -138,6 +150,20 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
         </select></label>
       <button className="primary-button" disabled={busy || !model} onClick={() => void activate()}>
         <Cpu size={16}/> Usar modelo remoto como narrador</button>
+      <button className="secondary-button" disabled={busy || !model}
+        onClick={() => void measure()}>
+        {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCw size={16}/>}
+        Medir respuesta real</button>
+      {benchmark && <div className="noble-worker-benchmark" role="status">
+        <strong>{benchmark.success ? 'Prueba de generación completada' : 'Prueba fallida'}</strong>
+        <span>Primer texto: {benchmark.ttft_ms == null
+          ? 'Sin datos' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
+        <span>Duración total: {benchmark.duration_ms.toFixed(0)} ms</span>
+        <span>Caracteres de salida: {benchmark.output_characters}</span>
+        <small>Es un único turno de prueba. Para estadísticas P50/P95 y VRAM muestreada
+          utiliza el benchmark del notebook Colab.</small>
+      </div>}
+
     </div>}
     {probe?.online && <div className="noble-worker-health">
       <h4>Estado del worker remoto</h4>

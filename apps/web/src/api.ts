@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -50,6 +50,9 @@ export const api = {
   registerWorker: (name: string, url: string, token: string) => request<RemoteWorker>(
     '/workers', { method: 'POST', body: JSON.stringify({ name, url, token }) }),
   probeWorker: (id: string) => request<WorkerProbe>('/workers/' + encodeURIComponent(id) + '/probe'),
+  benchmarkWorker: (id: string, model: string) => request<WorkerBenchmark>(
+    '/workers/' + encodeURIComponent(id) + '/benchmark',
+    { method: 'POST', body: JSON.stringify({ model }) }),
   activateWorker: (id: string, model: string) => request<NarrativeConfig>(
     '/workers/' + encodeURIComponent(id) + '/activate',
     { method: 'POST', body: JSON.stringify({ model }) }),

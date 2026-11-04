@@ -143,3 +143,9 @@ export type WorkerProbe = {
   role: string; error?: string; latency_ms?: number;
   health?: WorkerHealth | null;
 };
+
+export type WorkerBenchmark = {
+  success: boolean; model: string; duration_ms: number;
+  ttft_ms: number | null; output_characters: number;
+  error?: string; gpu?: WorkerGpu[]; note?: string;
+};
