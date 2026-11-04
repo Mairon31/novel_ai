@@ -95,7 +95,8 @@ class PreferencesTests(unittest.TestCase):
             story = self.client.post("/api/v1/stories", json={
                 "title": "Nube", "premise": "Una maga llega a la escuela."}).json()
             self.client.patch("/api/v1/workspace/preferences", json={
-                "target_language": "ja", "narration_style": "literary"})
+                "target_language": "ja", "narration_style": "literary",
+                "source_language": "en", "translation_mode": "target_output"})
             result = self.client.post(f'/api/v1/stories/{story["id"]}/generate',
                 json={"mode": "continue", "input_text": "",
                       "request_id": str(uuid.uuid4())})
@@ -104,6 +105,8 @@ class PreferencesTests(unittest.TestCase):
             self.assertEqual(upstream.headers["Authorization"], "Bearer test-secret-not-for-users")
             body = json.loads(upstream.content)
             self.assertIn("ja", body["messages"][0]["content"])
+            self.assertIn("en", body["messages"][0]["content"])
+            self.assertIn("Idioma de entrada:", body["messages"][0]["content"])
             self.assertEqual(body["model"], "demo/model")
             self.assertNotIn("test-secret-not-for-users", self.client.get(
                 "/api/v1/workspace/preferences").text)
