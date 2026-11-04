@@ -327,3 +327,8 @@
 .noble-worker-vram-meter span{display:block;height:100%;background:var(--noble-accent)}
 .noble-worker-health-note{font-size:10px!important;color:#a6adbe!important;margin:10px 0 0!important}
 @media(max-width:450px){.noble-worker-health-stats{grid-template-columns:1fr}}
+
+.noble-worker-benchmark{display:flex;flex-wrap:wrap;gap:10px;background:#181c31;border:1px solid #4a5266;padding:13px;border-radius:9px;margin-top:12px}
+.noble-worker-benchmark strong{width:100%;font-size:12px;color:#e9e8f7}
+.noble-worker-benchmark span{font-size:11px;color:#ced4e7;background:#283047;padding:7px;border-radius:7px}
+.noble-worker-benchmark small{font-size:10px;color:#aeb5cc;line-height:1.6}

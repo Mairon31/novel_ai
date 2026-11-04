@@ -35,6 +35,14 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
       },
     } });
   });
+  await page.route('**/api/v1/workers/*/benchmark', async route => {
+    requests.push('POST /benchmark');
+    expect(route.request().postDataJSON()).toEqual({ model: 'fixture-gguf:4b' });
+    await route.fulfill({ status: 200, json: {
+      success: true, model: 'fixture-gguf:4b',
+      ttft_ms: 220.5, duration_ms: 940, output_characters: 87,
+    } });
+  });
   await page.route('**/api/v1/workers/*/activate', async route => {
     requests.push('POST /activate');
     expect(route.request().postDataJSON()).toEqual({ model: 'fixture-gguf:4b' });
@@ -77,6 +85,9 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await expect(page.getByLabel('Modelo remoto')).toHaveValue('fixture-gguf:4b');
   await expect(page.getByText('NVIDIA T4 fixture')).toBeVisible();
   await expect(page.getByText('VRAM 4100 / 15360 MB · GPU 45%')).toBeVisible();
+  await page.getByRole('button', { name: 'Medir respuesta real' }).click();
+  await expect(page.getByText('Prueba de generación completada')).toBeVisible();
+  await expect(page.getByText('Primer texto: 221 ms')).toBeVisible();
   await page.getByRole('button', { name: 'Usar modelo remoto como narrador' }).click();
   await expect(page.getByText(/Narrador remoto activado: fixture-gguf:4b/)).toBeVisible();
 
@@ -88,5 +99,6 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await expect(page.getByText('Worker eliminado. Su token guardado fue retirado.')).toBeVisible();
   expect(requests).toContain('GET /probe');
   expect(requests).toContain('POST /activate');
+  expect(requests).toContain('POST /benchmark');
   expect(requests).toContain('DELETE /worker');
 });

@@ -115,6 +115,12 @@ class WorkerTests(unittest.TestCase):
                                     json={"model": "gpu-remote-gguf"})
         self.assertEqual(selected.status_code, 200, selected.text)
         self.assertEqual(selected.json()["provider"], "worker")
+        smoke = self.client.post("/api/v1/workers/" + worker_id + "/benchmark",
+                                 json={"model": "gpu-remote-gguf"})
+        self.assertEqual(smoke.status_code, 200, smoke.text)
+        self.assertTrue(smoke.json()["success"], smoke.json())
+        self.assertEqual(smoke.json()["output_characters"], len("Desde la GPU remota."))
+        self.assertIsNotNone(smoke.json()["ttft_ms"])
         story = self.client.post("/api/v1/stories", json={
             "title": "Mundo de Colab",
             "premise": "Una viajera entra en una biblioteca de un mundo desconocido."}).json()
