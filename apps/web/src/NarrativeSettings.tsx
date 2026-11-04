@@ -6,6 +6,7 @@ import type { NarrativeConfig, ProviderModels } from './types';
 const defaultConfig: NarrativeConfig = {
   provider: 'ollama', base_url: 'http://127.0.0.1:11434', model: '',
   temperature: 0.7, top_p: 0.9, max_tokens: 450, num_ctx: 4096, device: 'auto',
+  top_k: 40, repetition_penalty: 1.0, reasoning_mode: 'auto',
 };
 
 export function NarrativeSettings() {
@@ -51,7 +52,7 @@ export function NarrativeSettings() {
     <div className="narrative-section-title">
       <span className="setting-icon"><BookOpen size={22}/></span>
       <div><h2 id="narrative-settings-heading">Motor narrativo local</h2>
-        <p>Conecta Ollama o KoboldCpp ya iniciado y selecciona el modelo que utilizarán las historias.</p></div>
+        <p>Selecciona un motor local o OpenRouter. Ajusta parámetros según las capacidades reales del proveedor.</p></div>
     </div>
     {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Leyendo configuración...</div> : <>
       <div className="narrative-settings-grid">
@@ -60,14 +61,16 @@ export function NarrativeSettings() {
             const provider = e.target.value as NarrativeConfig['provider'];
             setStatus(null);
             setConfig(current => ({ ...current, provider, device: 'auto',
-              base_url: provider === 'ollama' ? 'http://127.0.0.1:11434' : 'http://127.0.0.1:5001', model: '' }));
+              base_url: provider === 'ollama' ? 'http://127.0.0.1:11434' : provider === 'koboldcpp' ? 'http://127.0.0.1:5001' : 'https://openrouter.ai/api/v1', model: '' }));
           }}>
             <option value="ollama">Ollama (API local)</option>
             <option value="koboldcpp">KoboldCpp (API compatible)</option>
+            <option value="openrouter">OpenRouter (modelos por API)</option>
           </select>
         </label>
-        <label>Dirección del servidor local
+        <label>Dirección del proveedor
           <input aria-label="Dirección del servidor LLM" value={config.base_url}
+            readOnly={config.provider === "openrouter"}
             onChange={e => update('base_url', e.target.value)} spellCheck={false}/>
         </label>
         <label className="settings-span">Modelo del motor
@@ -86,6 +89,24 @@ export function NarrativeSettings() {
           <input type="range" min={0.05} max={1} step={0.05} value={config.top_p}
             onChange={e => update('top_p', Number(e.target.value))}/>
         </label>
+        <label>Top-K <span className="field-value">{config.top_k}</span>
+          <input type="range" min={0} max={200} step={5} value={config.top_k}
+            disabled={config.provider === 'koboldcpp'}
+            onChange={e => update('top_k', Number(e.target.value))}/>
+        </label>
+        <label>Penalización de repetición <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
+          <input type="range" min={0.5} max={2} step={0.05} value={config.repetition_penalty}
+            disabled={config.provider === 'koboldcpp'}
+            onChange={e => update('repetition_penalty', Number(e.target.value))}/>
+        </label>
+        <label>Razonamiento
+          <select aria-label="Razonamiento del narrador" value={config.reasoning_mode}
+            disabled={config.provider !== 'ollama'}
+            onChange={e => update('reasoning_mode', e.target.value as NarrativeConfig['reasoning_mode'])}>
+            <option value="auto">Automático / configuración del modelo</option>
+            <option value="off">No solicitar razonamiento</option>
+          </select>
+        </label>
         <label>Máximo de tokens generados
           <input type="number" min={50} max={2048} value={config.max_tokens}
             onChange={e => update('max_tokens', Number(e.target.value))}/>
@@ -96,7 +117,7 @@ export function NarrativeSettings() {
           </select>
         </label>
         <label>Dispositivo <span className="field-value">Ollama</span>
-          <select aria-label="Dispositivo narrativo" disabled={config.provider === 'koboldcpp'} value={config.device}
+          <select aria-label="Dispositivo narrativo" disabled={config.provider !== 'ollama'} value={config.device}
             onChange={e => update('device', e.target.value as NarrativeConfig['device'])}>
             <option value="auto">Automático — usar GPU si existe</option>
             <option value="cpu">Solo CPU</option>
@@ -104,9 +125,9 @@ export function NarrativeSettings() {
         </label>
       </div>
       {config.provider === 'koboldcpp' && <p className="narrative-helper">
-        KoboldCpp determina las capas GPU al iniciar su ejecutable. Noble AI se conecta a su API;
-        todavía no administra ese proceso ni su configuración de VRAM.
+        KoboldCpp establece sus capas GPU desde el panel de runtime. Top-K, penalizaciones y razonamiento adicionales no están disponibles a través del adaptador actual.
       </p>}
+      {config.provider === 'openrouter' && <p className="narrative-helper">Las solicitudes saldrán del equipo hacia OpenRouter y pueden generar costos. Guarda tu clave desde Configuración → Proveedores; visión y razonamiento específicos dependen del modelo remoto.</p>}
       {status && <div className={'narrative-connect ' + (status.online ? 'connected' : 'disconnected')}>
         <Cpu size={17}/>
         <span>{status.online ? 'Servidor disponible' : 'Sin conexión con el servidor'}
@@ -123,8 +144,7 @@ export function NarrativeSettings() {
           onClick={() => void persist(false)}><Save size={16}/> Guardar parámetros</button>
       </div>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
-        todavía necesitan un motor que los cargue. Ollama carga su modelo configurado al generar;
-        KoboldCpp requiere que lo inicies con el GGUF elegido.</p>
+        necesitan un runtime local para su ejecución. Ollama puede cargar su propio modelo al generar; KoboldCpp puede arrancarse desde Noble AI. OpenRouter usa su infraestructura remota.</p>
     </>}
   </section>;
 }
