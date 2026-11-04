@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -38,6 +38,18 @@ export const api = {
     request<{ roles: Record<string, string>; message: string; runtime_connected: boolean }>(
       '/model-roles/' + role, { method: 'PUT', body: JSON.stringify({ installed_id: installedId }) }),
   providers: () => request<{ available: Array<{ id: string; kind: string; status: string }> }>('/providers'),
+  workspacePreferences: () => request<WorkspacePreferences>('/workspace/preferences'),
+  patchWorkspacePreferences: (data: Partial<WorkspacePreferences>) => request<WorkspacePreferences>(
+    '/workspace/preferences', { method: 'PATCH', body: JSON.stringify(data) }),
+  about: () => request<About>('/about'),
+  updates: (force = false) => request<Updates>('/updates' + (force ? '?force=true' : '')),
+  runtimeDiagnostics: () => request<RuntimeDiagnostics>('/runtime/diagnostics'),
+  networkCapabilities: () => request<NetworkCapabilities>('/network/capabilities'),
+  openRouterCredential: () => request<ProviderCredentialStatus>('/provider-credentials/openrouter'),
+  saveOpenRouterCredential: (api_key: string) => request<ProviderCredentialStatus>(
+    '/provider-credentials/openrouter', { method: 'PUT', body: JSON.stringify({ api_key }) }),
+  deleteOpenRouterCredential: () => request<ProviderCredentialStatus>(
+    '/provider-credentials/openrouter', { method: 'DELETE' }),
   narrativeConfig: () => request<NarrativeConfig>('/narrative/config'),
   saveNarrativeConfig: (config: NarrativeConfig) => request<NarrativeConfig>(
     '/narrative/config', { method: 'PUT', body: JSON.stringify(config) }),

@@ -45,7 +45,7 @@ export type Health = {
 };
 
 export type NarrativeConfig = {
-  provider: 'ollama' | 'koboldcpp';
+  provider: 'ollama' | 'koboldcpp' | 'openrouter';
   base_url: string;
   model: string;
   temperature: number;
@@ -53,6 +53,9 @@ export type NarrativeConfig = {
   max_tokens: number;
   num_ctx: number;
   device: 'auto' | 'cpu';
+  top_k: number;
+  repetition_penalty: number;
+  reasoning_mode: 'auto' | 'off';
 };
 export type ProviderModels = {
   online: boolean; provider: string; models: string[];
@@ -84,3 +87,38 @@ export type KoboldLaunch = {
   executable: string; installed_id: string; gpu_layers: number;
   contextsize: number; port: number;
 };
+
+export type WorkspacePreferences = {
+  target_language: 'es-419' | 'en' | 'ja' | 'ko' | 'pt-BR' | 'fr';
+  source_language: 'auto' | 'es' | 'en' | 'ja' | 'ko' | 'pt' | 'fr';
+  narration_style: 'natural' | 'literary' | 'concise';
+  translation_mode: 'off' | 'target_output';
+  accent: 'violet' | 'rose' | 'teal';
+  font_scale: number;
+  reader_layout: 'immersive' | 'classic';
+  shortcuts_enabled: boolean;
+  update_channel: 'stable' | 'beta' | 'nightly';
+  check_updates_on_start: boolean;
+};
+export type About = {
+  name: string; version: string; commit: string; build_type: string;
+  channel: string; models_dir: string; data_dir: string;
+  os: string; python: string; auto_update_supported: boolean;
+};
+export type Updates = {
+  channel: string; check_success: boolean; update_available: boolean;
+  needs_installer: boolean; message: string;
+  release: null | { version: string; name: string; url: string; channel: string;
+    published_at?: string; assets: number };
+};
+export type RuntimeDiagnostics = {
+  scope: string; updatable_from_app: boolean;
+  python_packages: Record<string, string | null>;
+  binaries: Record<string, string | null>;
+};
+export type NetworkCapabilities = {
+  mode: string; shared_workspace: boolean; cloudflare_tunnel: string;
+  remote_workers: string; api_key_auth: string;
+  cors_management: string; message: string;
+};
+export type ProviderCredentialStatus = { provider: string; configured: boolean; storage: string };
