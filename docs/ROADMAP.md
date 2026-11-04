@@ -63,6 +63,17 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [ ] Instalación de runtimes y actualizador de aplicación firmado/rollback.
 - **Gate P1.1:** CI PASS y una inferencia remota real reproducible (aún no alcanzado).
 
+## Fase P1.2 — ensayo remoto GPU (HERRAMIENTAS DISPONIBLES)
+
+- [x] Medición autenticada de TTFT, duración, errores y VRAM muestreada.
+- [x] Pantalla de estado remoto con GPU y latencia al comprobar worker.
+- [x] Notebook Colab reproducible con llama.cpp CUDA y Cloudflare Quick Tunnel.
+- [x] CLI de benchmark más tests offline de sus contratos.
+- [ ] Medir inferencia de un GGUF real en Colab T4/L4 y conservar reporte.
+- [ ] Probar fallos de red reales, recuperación de sesión y OOM.
+- [ ] Medir perfiles reales de tarjetas de 12/16 GB.
+- **Gate P1.2:** benchmark real ejecutado y adjuntado. Sigue pendiente.
+
 ## Fase P2 — ComfyUI, identidad y recursos visuales progresivos
 
 [Issue #6](https://github.com/Mairon31/novel_ai/issues/6)

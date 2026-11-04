@@ -84,3 +84,37 @@ Este modo requiere un servicio Cloudflare de terceros que enruta tráfico narrat
 - [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
 - Backend: `apps/api/noble_api/workers.py`, `worker_server.py`.
 - Pruebas: `tests/test_workers.py`.
+
+## Colab GPU real: notebook y benchmark (P1.2 experimental)
+
+[Notebook para Colab](../notebooks/noble_worker_colab_gpu.ipynb) · [Abrir directamente en Google Colab](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_worker_colab_gpu.ipynb).
+
+El notebook verifica NVIDIA/CUDA, compila llama.cpp con GPU, descarga Qwen3-4B-Instruct-2507 Q4_K_M, lanza llama-server y el proxy Bearer de Noble AI, crea un túnel HTTPS temporal y ejecuta un benchmark desde el cliente contra esa URL. **No se ha ejecutado aquí con hardware real**; no existe una medición de Colab hasta que se corra el notebook.
+
+### Nuevas métricas
+
+- TTFT real: tiempo desde que el cliente solicita texto hasta que recibe el primer contenido narrativo (incluye túnel y proxy), P50/P95 por ensayos.
+- GPU: VRAM utilizada y utilización obtenidas de `nvidia-smi`, muestreadas mientras genera. **No es el pico exacto garantizado**.
+- Estado: motor disponible, solicitudes activas/completadas/fallidas y tiempo medio de los ensayos.
+- Velocidad: solo se informa tokens por segundo si el servidor reporta `completion_tokens`; no se equiparan caracteres a tokens.
+
+El worker ahora ofrece `GET /v1/health`, protegido con el mismo token Bearer. Noble AI muestra esas estadísticas al pulsar **Configuración → Red y workers → Probar conexión**. No se guardan prompts, respuestas, direcciones o credenciales en la telemetría.
+
+Para medir un worker ya registrado, usa una terminal en la PC principal:
+
+```bash
+export NOBLE_WORKER_TOKEN="TOKEN_LOCAL"
+python tools/worker_benchmark.py --url https://mi-worker.trycloudflare.com --runs 3 --output informe-worker.json
+```
+
+En PowerShell establece `$env:NOBLE_WORKER_TOKEN = "TOKEN_LOCAL"` antes del segundo comando. El benchmark exige rechazo 401/403 ante un token incorrecto, lee el catálogo real, genera escenas de prueba y guarda un JSON con tiempos, errores y VRAM muestreada, sin contenido textual.
+
+### Diagnósticos
+
+- Si faltan `nvidia-smi` o `nvcc`, verifica que activaste la GPU en Colab.
+- Si el modelo no inicia, revisa `llama-server.log` y cuantización/contexto.
+- Si `/v1/health` responde 401, comprueba el token; **no publiques directamente el puerto 5001**.
+- Si el túnel desaparece o cambia, vuelve a registrarlo en Noble AI; todavía no hay reconexión automática.
+- En Colab la sesión GPU puede desconectarse. El producto principal seguirá conservando la historia localmente.
+
+Los tests CI de este incremento usan mocks del protocolo y comprueban la sintaxis de las celdas. **No son una prueba real de GPU**.

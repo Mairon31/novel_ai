@@ -143,6 +143,20 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 
 **Referencia operativa:** [WORKERS.md](WORKERS.md). Registrar siempre evidencia CI del commit final; no declarar PASS hasta el estado final de GitHub Actions.
 
+## 2026-11-04 · P1.2 — telemetría, Colab y validación pendiente en GPU
+
+- [x] Telemetría de solicitudes/errores y GPU NVIDIA opcional mediante nvidia-smi, sin guardar prompts.
+- [x] Proxy con `GET /v1/health` autenticado, TTFT, tiempos y límite de solicitud de 1 MB (también fragmentada).
+- [x] Registro de workers con latencia y salud remota, visualización VRAM en desktop/móvil.
+- [x] `tools/worker_benchmark.py`: verificación autenticación, SSE, P50/P95 y JSON sin secretos.
+- [x] `notebooks/noble_worker_colab_gpu.ipynb`: arranque CUDA llama.cpp, GGUF Qwen, proxy y Quick Tunnel, benchmark.
+- [x] Pruebas offline de protocolo, parsing y sintaxis del notebook. Sus datos GPU son simulados.
+- [ ] Ejecutar notebook en **Colab real** y conservar su JSON, logs y versión NVIDIA.
+- [ ] Verificar desconexión de túnel real, OOM, latencia de contexto largo y 12/16 GB.
+- [ ] Implementar adaptadores de imagen (ComfyUI) y TTS con roles de worker propios.
+
+**Importante:** herramientas y tests automatizados no equivalen a un benchmark físico; registrar el CI del commit final y la futura sesión real por separado.
+
 ## Plantilla para futuras entradas
 
 ```md

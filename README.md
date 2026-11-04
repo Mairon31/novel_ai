@@ -68,6 +68,8 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 | [Imágenes](docs/IMAGENES.md) · [TTS](docs/TTS.md) | Políticas media |
 | [Perfiles GPU](docs/PERFILES_GPU.md) | 12/16GB, VRAM y límites |
 | [Colab diagnóstico](docs/COLAB_A_LOCAL.md) | Pruebas opcionales, no UI |
+| [Colab worker GPU](notebooks/noble_worker_colab_gpu.ipynb) | GPU CUDA + llama.cpp + túnel autenticado + benchmark |
+| [Benchmark de workers](tools/worker_benchmark.py) | TTFT, fallos y VRAM sin registrar texto o claves |
 | [Workers GPU remotos](docs/WORKERS.md) | Proxy autenticado, Cloudflare, conexión desde otras PC/Colab y limitaciones |
 | [QA](docs/QA_Y_ACEPTACION.md) · [Seguridad](docs/SEGURIDAD_Y_LICENCIAS.md) | Criterios y límites |
 | [Roadmap](docs/ROADMAP.md) · [Progreso](docs/PROGRESO.md) | Hitos, evidencia y problemas |
