@@ -196,6 +196,52 @@ def mount_worker_routes(app, registry: WorkerRegistry, narrative):
         except ValueError as exc:
             raise HTTPException(404, str(exc)) from exc
 
+    @app.post("/api/v1/workers/{worker_id}/benchmark")
+    async def benchmark(worker_id: uuid.UUID, body: WorkerModel):
+        """Explicit, short, non-persistent generation trial against a remote GPU."""
+        result = await registry.probe(str(worker_id))
+        if not result["online"] or body.model not in result["models"]:
+            raise HTTPException(422, "El worker está desconectado o el modelo ya no existe")
+        from .narrative import DEFAULT_LLM
+        config = {**DEFAULT_LLM, "provider": "worker",
+                  "worker_id": str(worker_id), "model": body.model,
+                  "max_tokens": 128, "temperature": 0.4}
+        messages = [
+            {"role": "system", "content": (
+                "Eres un narrador. Responde en español latinoamericano, "
+                "con una escena original y breve sin mencionar métricas.")},
+            {"role": "user", "content": (
+                "Describe en dos oraciones una biblioteca de fantasía al anochecer.")},
+        ]
+        start = time.perf_counter()
+        first_ms = None
+        count = 0
+        try:
+            async for chunk in narrative.generate(config, messages):
+                if first_ms is None:
+                    first_ms = round((time.perf_counter() - start) * 1000, 1)
+                count += len(chunk)
+                if count > 15000:
+                    raise ValueError("La generación de prueba fue demasiado extensa")
+            duration_ms = round((time.perf_counter() - start) * 1000, 1)
+            if count == 0:
+                return {"success": False, "model": body.model,
+                        "error": "El modelo no devolvió texto", "duration_ms": duration_ms,
+                        "ttft_ms": None, "output_characters": 0}
+            return {
+                "success": True, "model": body.model, "ttft_ms": first_ms,
+                "duration_ms": duration_ms, "output_characters": count,
+                "gpu": (result.get("health") or {}).get("gpu", []),
+                "note": "Mide un único turno corto en el cliente. No garantiza pico real de VRAM.",
+            }
+        except (httpx.HTTPError, OSError, ValueError):
+            return {
+                "success": False, "model": body.model,
+                "error": "El worker falló durante la generación de prueba",
+                "duration_ms": round((time.perf_counter() - start) * 1000, 1),
+                "ttft_ms": first_ms, "output_characters": count,
+            }
+
     @app.delete("/api/v1/workers/{worker_id}", status_code=204)
     def remove(worker_id: uuid.UUID):
         try:
