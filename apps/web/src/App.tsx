@@ -45,6 +45,8 @@ function Loading() {
 export default function App() {
   const [page, setPage] = useState<Page>('modelos');
   const [narrativeRevision, setNarrativeRevision] = useState(0);
+  const [keyboardActive, setKeyboardActive] = useState(true);
+  const [releaseNotice, setReleaseNotice] = useState<{ name: string; url: string } | null>(null);
   const [navOpen, setNavOpen] = useState(false);
   const [tab, setTab] = useState<'discover' | 'installed'>('discover');
   const [role, setRole] = useState<ModelRole>('narrator');
@@ -67,6 +69,43 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('scene');
+
+  useEffect(() => {
+    let alive = true;
+    api.workspacePreferences().then(async p => {
+      if (!alive) return;
+      setKeyboardActive(p.shortcuts_enabled);
+      document.documentElement.dataset.nobleAccent = p.accent;
+      document.documentElement.dataset.nobleReaderLayout = p.reader_layout;
+      document.documentElement.style.setProperty('--noble-reader-scale', String(p.font_scale / 100));
+      if (!p.check_updates_on_start) return;
+      const u = await api.updates();
+      if (!alive || !u.release?.url) return;
+      const label = u.channel + ':' + u.release.version;
+      if (localStorage.getItem('noble-seen-release') !== label)
+        setReleaseNotice({ name: u.release.name, url: u.release.url });
+    }).catch(() => { /* startup must not depend on GitHub availability */ });
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!keyboardActive || e.isComposing) return;
+      if (e.key === 'Escape') { setDetail(null); setNavOpen(false); return; }
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('input,textarea,select,[contenteditable="true"]')) return;
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+      const destinations: Record<string, Page> = {
+        '1': 'inicio', '2': 'modelos', '3': 'ajustes',
+      };
+      if (destinations[e.key]) {
+        e.preventDefault(); setPage(destinations[e.key]);
+        setNavOpen(false); setNotice(''); setError('');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [keyboardActive]);
 
   const refreshDownloads = useCallback(async () => {
     const [jobList, models, roleMap] = await Promise.all([
@@ -226,6 +265,15 @@ export default function App() {
         </div>
       </header>
       <main className="content">
+        {releaseNotice && <div className="notice-banner noble-update-notice">
+          <RefreshCw size={17}/>
+          <span>Hay una publicación para tu canal: {releaseNotice.name}. La actualización automática aún no está disponible en la versión fuente.</span>
+          <a href={releaseNotice.url} target="_blank" rel="noreferrer">Ver en GitHub</a>
+          <button aria-label="Cerrar aviso de versión" onClick={() => {
+            setReleaseNotice(null);
+            localStorage.setItem('noble-seen-release', releaseNotice.url.split('/').pop() || releaseNotice.name);
+          }}><X size={16}/></button>
+        </div>}
         {error && <ErrorNote message={error} close={() => setError('')}/>}
         {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
         {!ready && <Loading/>}
