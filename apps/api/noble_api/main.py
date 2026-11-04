@@ -19,7 +19,7 @@ from .downloads import DownloadManager
 from .hardware import snapshot
 from .store import Store
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 class InstallBody(BaseModel):

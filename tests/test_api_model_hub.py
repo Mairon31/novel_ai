@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps" / "api"))
 
-from noble_api.main import create_app  # noqa: E402
+from noble_api.main import ROOT as APP_ROOT, create_app  # noqa: E402
 
 PAYLOAD = b"GGUF" + b"model-test-bytes" * 100
 SHA = hashlib.sha256(PAYLOAD).hexdigest()
@@ -60,6 +60,10 @@ class ModelHubApiTests(unittest.TestCase):
     def tearDown(self):
         self.cm.__exit__(None, None, None)
         self.temp.cleanup()
+
+    def test_application_root_for_static_bundle(self):
+        self.assertEqual(APP_ROOT, ROOT)
+        self.assertTrue((APP_ROOT / "apps" / "web" / "index.html").is_file())
 
     def test_startup_without_models_and_tts_off(self):
         self.assertEqual(self.client.get("/api/v1/health").status_code, 200)

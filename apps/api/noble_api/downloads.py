@@ -61,7 +61,21 @@ class DownloadManager:
             future = self._future.get(job_id)
             if future is not None and not future.done():
                 return
-            self._future[job_id] = self.pool.submit(self._run, job_id)
+            try:
+                future = self.pool.submit(self._run, job_id)
+                self._future[job_id] = future
+                future.add_done_callback(lambda _: self._restart_queued(job_id))
+            except RuntimeError:
+                # The controller is shutting down; the job can resume next run.
+                self.store.update_download(job_id, status="paused",
+                                           error="La aplicación se está cerrando")
+
+    def _restart_queued(self, job_id):
+        # Pause/resume may race a worker that is still stopping. Requeue safely
+        # after the worker has actually exited; never run two workers per job.
+        job = self.store.download(job_id)
+        if job and job["status"] == "queued":
+            self._start(job_id)
 
     def control(self, job_id: str, action: str):
         job = self.store.download(job_id)
