@@ -81,3 +81,25 @@ Los comandos de rutas todavía no creadas son **objetivos**, no verificaciones c
 ## Bloqueos
 
 No se habilita GPU compatibility badge sin logs de modelo y hardware reales. Error reproducible abierto bloquea la fase a la que pertenece hasta arreglarlo o documentarlo como limitación aceptada.
+
+## Suite APP-FIRST / MODEL HUB obligatoria (fase P0.5)
+
+| Caso ID | Entrada | Resultado esperado |
+|---|---|---|
+| MH-001 | Primer inicio sin modelos | Wizard + biblioteca + Model Hub funcionan |
+| MH-002 | Buscar HF (red disponible) | Resultado real con repo/revision/variants/licencia |
+| MH-003 | HF offline/429 | Error visible o caché marcado stale, nunca éxito falso |
+| MH-004 | Seleccionar Q4/Q5 | Mostrar tamaño, dependencias, fit estimado y razones |
+| MH-005 | Descarga pequeña interrumpida | Reanudar o reiniciar correctamente, hash antes de registrar |
+| MH-006 | Descargar modelo multiparte | No aparece como instalado hasta verificar todas las partes |
+| MH-007 | Importar archivo GGUF externo | Registro y preview; desinstalar no borra origen externo |
+| MH-008 | Cambiar narrador desde UI | Runtime valida, perfil persiste y historia no pierde canon |
+| MH-009 | Ajustes TTS OFF | 0 cargas/llamadas al abrir y cambiar opciones |
+| MH-010 | Seleccionar CPU para TTS | Ajuste solo si el motor admite CPU, y se respeta en tarea real |
+| MH-011 | Modelo de imagen comunitario | Metadata/licencia claras, configuración checkpoint sin falso switch universal |
+| MH-012 | Proveedor remoto | Keyring, test de conexión, indicador de salida de datos |
+| MH-013 | UI mobile 390x844/desktop 1440x900 | Wizard, filtros, progreso y settings accesibles sin overflow |
+| MH-014 | Swapping con job activo | Pausa/cancel/replan seguro, rollback y no corrupción |
+| MH-015 | 12GB vs 16GB | Fit estimado ≠ verified; logs reales por GPU antes de marcar soporte |
+
+**Gate de integración real:** buscar en Hugging Face y descargar/verificar/importar al menos un GGUF pequeño y utilizarlo para inferencia real desde la app; no basta con fixtures HTTP mock. El frontend debe conectarse a backend verdadero y cada control debe tener una función operativa. Ver issues [#9](https://github.com/Mairon31/novel_ai/issues/9) y [#10](https://github.com/Mairon31/novel_ai/issues/10).

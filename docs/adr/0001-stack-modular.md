@@ -1,6 +1,6 @@
 # ADR-0001 — Ensamblar motores existentes con orquestador propio
 
-Fecha: 2026-11-04 · Estado: **aceptada para prototipo, sujeta a resultados de pruebas**.
+Fecha: 2026-11-04 · Estado: **parcialmente sustituida por ADR-002** para prioridad y UX inicial: **app-first** (Model Hub/wizard) en lugar de Colab como entrada obligatoria. Se conserva elección de motores/adaptadores como decisión técnica.
 
 ## Contexto
 

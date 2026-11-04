@@ -132,3 +132,41 @@ Los adaptadores declaran capacidades reales (`streaming`, `json_schema`, `interr
 ## Artefactos futuros
 
 Publicar OpenAPI 3.1 y esquemas JSON verificables en `packages/contracts`. Generar cliente TypeScript desde contrato; `pytest` valida API y `vitest` valida cliente. Al implementar, sustituir los ejemplos UUID sintéticos por fixtures reproducibles.
+
+## Extensión APP-FIRST: contratos del Model Hub
+
+**ADR-002:** la aplicación incluye endpoints de control **antes** de existir historias jugables. Ver [contrato detallado](MODEL_HUB.md#7-contratos-propuestos-versionar-en-openapi).
+
+```
+GET   /api/v1/hardware
+GET   /api/v1/runtimes
+POST  /api/v1/runtimes/{id}/start|stop|test
+GET   /api/v1/providers
+POST  /api/v1/providers/connections
+POST  /api/v1/providers/{id}/test
+GET   /api/v1/models/search?role=narrator&query=qwen&page=1
+GET   /api/v1/models/{catalog_id}
+GET   /api/v1/models/installed
+POST  /api/v1/models/install
+POST  /api/v1/models/import
+POST  /api/v1/models/{installed_id}/activate
+POST  /api/v1/models/{installed_id}/unload
+DELETE /api/v1/models/installed/{installed_id}
+GET   /api/v1/downloads
+POST  /api/v1/downloads/{id}/pause|resume|cancel
+GET   /api/v1/model-roles
+PUT   /api/v1/model-roles/{role}
+GET   /api/v1/settings
+PATCH /api/v1/settings
+POST  /api/v1/models/{installed_id}/benchmark
+```
+
+### Identidad y estado
+
+`catalog_id` es modelo descubierto remoto, `installed_id` instalación verificada, `provider_connection_id` conexión, `runtime_id` ejecutor, `role` función dentro de Noble, `profile_id` parámetros. Nunca confundir un `repo_id` HF con una ruta local confiable. `PATCH /settings` no acepta secretos en texto plano persistente; claves en almacén seguro de OS.
+
+**Download status** adicional: `queued/downloading/paused/verifying/installing/completed/failed/cancelled`. Descarga completada no implica modelo cargado; activo vs runtime health separados. Compatibilidad lleva fuente `estimate|benchmark` para no falsificar capacidad.
+
+**Wizard sin modelos**: todos los GET de control deben funcionar sin modelos; `POST /turns` responde `MODEL_NOT_CONFIGURED` accionable sin fallar DB. Un `tts_enabled=false` no genera ningún job TTS.
+
+Las rutas aquí son objetivos de OpenAPI, **ninguna implementada todavía**. Ver [config/model_assignments.schema.json](../config/model_assignments.schema.json) para un contrato de estructura de settings propuesto.

@@ -46,3 +46,11 @@
 | Pendiente | — | minimum_12gb | — | — | — | — | — | — | — | — | — | No medido |
 
 No introducir números de rendimiento fabricados. Documentar versión de driver, CUDA, torch, cuantización, offload y parámetros de inferencia.
+
+## APP-FIRST: dispositivos configurables por modelo
+
+El usuario escogerá desde UI **CPU/GPU/Auto** individualmente para narración, imagen y voz, solo cuando el runtime seleccionado admita la opción. En NVIDIA se pueden exponer capas GPU/CPU de GGUF, tamaño de contexto, batch y KV, y memoria reservada. En ComfyUI los workflows determinan su carga real; en TTS la disponibilidad CPU/GPU depende del motor/versión. Mostrar `unsupported` si no existe backend.
+
+No se ejecuta un cálculo obligatorio de VRAM antes de abrir la app: el wizard arranca liviano, detecta dispositivos y calcula una **estimación** por variante; la medición real se obtiene con el botón `Probar`. El usuario puede elegir un modelo distinto al recomendado, con fallback/offload cuando esté soportado.
+
+El Model Hub muestra dos números separados: **VRAM/RAM estimada del modelo aislado** y **margen estimado durante sesión con el LLM activo**. Ninguno es benchmark sin datos. La cola única en GPU mantiene TTS lazy y limita imágenes pesadas.

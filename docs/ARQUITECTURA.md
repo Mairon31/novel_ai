@@ -1,6 +1,6 @@
 # Arquitectura técnica de Noble AI
 
-Versión: 0.1 · Estado: diseño objetivo, no implementación verificada.
+Versión: 0.2 · Estado: diseño objetivo, no implementación verificada. **La prioridad APP-FIRST de ADR-002 agrega Model Hub + Runtime Supervisor y desplaza Colab a diagnóstico opcional.**
 
 ## 1. Topología
 
@@ -148,3 +148,42 @@ Localidad por defecto (127.0.0.1), autenticación/token de sesión al habilitar 
 ## 9. Pruebas de integración exigidas
 
 Contract tests de cada adaptador; smoke backend sin GPU; smoke con un modelo real en Colab si disponible; prueba de 12/16 GB local; simulación de caídas; Playwright escritorio/móvil; trazabilidad de un job desde disparador hasta asset final. Ver [QA](QA_Y_ACEPTACION.md).
+
+## 10. Capa APP-FIRST: Model Hub, proveedores, configuración y desktop
+
+**Ruta al primer incremento:**
+```text
+React/Vite (Wizard + Model Hub + Downloads + Settings + Story VN)
+      ↓ REST/SSE
+FastAPI Control Plane
+   ├─ Hardware Discovery (GPU/CPU, RAM, drivers y dispositivos)
+   ├─ Model Catalog (HF search, metadata, quant variants, license)
+   ├─ Download Manager (jobs, pause/resume/cancel, hash, registry)
+   ├─ Provider Registry (LLM/image/TTS local o remoto; capabilities)
+   ├─ Model Assignments + Profiles (global, por historia, versionado)
+   ├─ Runtime Supervisor (instalar/iniciar/parar/swap y health)
+   ├─ Story Engine + SQLite (event log, memory, branches)
+   └─ GPU scheduler (texto prioritario; imagen/TTS lazy)
+      ↓ procesos aislados
+KoboldCpp/Ollama | ComfyUI | Chatterbox | API-compatible providers
+      ↑
+Tauri 2 / WebView (shell Windows futuro; mismo frontend y backend)
+```
+
+### Entidades adicionales persistentes
+
+`provider_connection` (sin claves en DB), `runtime_installation` (versión/ruta/estado), `model_catalog_entry` (metadata remoto cacheado), `model_variant` (ficheros/revision/quant), `installed_model` (referencias hash), `download_job` (status y bytes), `model_assignment` (función/provider/model/settings/device), `profile` (global/historia), `hardware_snapshot` (perfil efectivo y mediciones).
+
+**Diferenciar origen de modelo (descubierto) de archivo instalado y motor ejecutor.** El frontend no hace llamadas directas a Hugging Face ni registra llaves de proveedor; backend hace cache/paginación y gestión de credenciales. No ejecutar código remoto de modelos en instalación.
+
+### Lifecycle
+
+El **control plane** se inicia sin modelos ni GPU pesada. Solo cuando hay historia activa arranca el LLM seleccionado, cuya API permanece atendible durante la sesión, con GPU total/parcial/CPU según configuración. Los modelos de imagen ocupan GPU al cambiar escena/solicitud y liberan recursos según scheduler. Los de voz **no** se precargan, aun cuando el usuario abra Ajustes. Cambio de modelo con preflight de RAM/VRAM, guardado/timeout, stop/unload, start/health y rollback.
+
+### Frontend y empaquetado
+
+Vite/React/TS en web local, luego Tauri 2 con Python FastAPI empaquetado como sidecar. No mezclar Tauri internamente con implementación de motor. El backend valida sesión/puerto local, arranca/finaliza solo procesos propios, deja servicios externos compartidos intactos. Registro de modelos y datos fuera del binario; wizard visual y recuperación de settings.
+
+### Contratos y dependencias
+
+Ver [Model Hub](MODEL_HUB.md), [Onboarding UI](ONBOARDING_Y_UI.md) y [Desktop](DESKTOP_Y_DESPLIEGUE.md). Nuevo orden: Model Hub/Downloads/Settings → narrator runtime → Story engine/VN → imagen → TTS → empaquetado. El viejo notebook Colab se conserva solo para investigación opcional.

@@ -6,6 +6,8 @@
 
 | Proyecto | URL | Licencia observada | Qué aporta | Uso propuesto | Estado |
 |---|---|---|---|---|---|
+| **Urakatsu** | https://github.com/karrot0/Urakatsu | **MIT (LICENSE)**; aviso a Koharu | Catálogo HF con fit por GPU, descarga, selección de modelos, frontend React y launcher | **Prioridad alta: Model Hub y UI**; reuso tras spike/atribución | Código y docs inspeccionados 2026-11-04; integración pendiente |
+| **Koharu** | https://github.com/koharu-rs/koharu | **MIT OR Apache-2.0** | Settings/Providers, descarga, runtime Rust, Tauri | Inspiración y posible reuso de componentes UI/desktop | Código y docs inspeccionados 2026-11-04; integración pendiente |
 | **Open Dungeon** | https://github.com/newideas99/open-dungeon | MIT | Historias locales, Continue/Retry/Edit, texto streaming, imágenes inline, SQLite, UI | **Candidato principal de referencia/reuso** UX y bucle | Revisado README; integración **pendiente** |
 | **Talemate** | https://github.com/vegu-ai/talemate | AGPL-3.0 | Narrador, agentes, memoria, estado de mundo, imagen y TTS | Evaluar completo / estudiar arquitectura de agentes | Revisado README; integración **pendiente** |
 | **Gamentic** | https://github.com/hec-ovi/gamentic | MIT | Narrador + agentes NPC, voz, imágenes, estado; FastAPI/SQLite | Referencia de orquestación Python, **portabilidad NVIDIA pendiente** | Investigación |
@@ -21,6 +23,8 @@
 | **Qwen3-TTS** | https://github.com/QwenLM/Qwen3-TTS | Apache-2.0 | TTS expresivo y diseño de voz | TTS alternativo para evaluar | Investigación |
 
 Verificación de licencias a fecha de corte: metadatos GitHub y README/LICENCIAS oficiales. **La licencia de un motor no sustituye la del checkpoint** que usa. Ejemplos: SDXL OpenRAIL++ y LoRAs con términos propios. Para adoptar código de terceros: conservar copyright, atribuciones y obligaciones; registrar commit exacto, archivos copiados/modificados y revisión de licencia. Los servicios externos no quedan exentos automáticamente de cualquier obligación de licencia.
+
+**Cambio de prioridad APP-FIRST:** ahora **Urakatsu/Koharu** son referencias principales del gestor de modelos/configuración, y **Open Dungeon** continúa como referencia para historia VN. Ver [auditoría específica](REFERENCIAS_URAKATSU_KOHARU.md) con commits y rutas exactas y [Model Hub](MODEL_HUB.md). Las licencias de modelo/LoRA separadas deben verificarse.
 
 ## 2. Ranking operativo (no equivale a integración)
 
@@ -85,3 +89,9 @@ No confundir cuantización del checkpoint con la VRAM total. Longitud de context
 - Reglas/recursos Colab: https://research.google.com/colaboratory/intl/es/faq.html
 
 **Acciones pendientes:** verificar commits exactos antes de instalar; no vendorizar repositorios enteros sin evaluar licencia, seguridad de dependencias y coste de mantenimiento.
+
+## 7. Repos adicionales de APP-FIRST
+
+El orden de integración recomendado es: **Urakatsu** para benchmark/posible reuso de catalog/fit/installs; **Koharu** para preferencias y paquete Tauri; **Open Dungeon** para narrativa/UI VN; **KoboldCpp** proveedor narrativo; **ComfyUI** imágenes; **Chatterbox** voz. Ninguno está integrado todavía. Decisión [ADR-002](adr/0002-app-first-model-hub.md).
+
+Urakatsu `LICENSE` MIT (aunque metadata API GitHub no lo clasifique); Koharu MIT OR Apache-2.0. Si se incorporan módulos concretos, dejar registro de atribución/NOTICE y revisión del código utilizado.

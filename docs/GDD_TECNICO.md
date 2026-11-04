@@ -1,6 +1,6 @@
 # Noble AI — GDD técnico (v0.1)
 
-Fecha: 2026-11-04 · Estado: **propuesta de diseño; no implementado** · Responsable: proyecto Noble AI.
+Fecha: 2026-11-04 · Estado: **propuesta de diseño; no implementado** · Responsable: proyecto Noble AI. **Enmienda APP-FIRST:** [ADR-002](adr/0002-app-first-model-hub.md) hace del wizard y Model Hub el primer hito ejecutable. El motor narrativo jugable viene después; Colab no es obligatorio.
 
 ## 1. Visión y diferenciadores
 
@@ -93,3 +93,19 @@ No se pretende reproducir código, personajes, interfaz exacta o recursos proteg
 ## 10. Entregables técnicos vinculados
 
 Ver [Arquitectura](ARQUITECTURA.md), [Estado y memoria](ESTADO_Y_MEMORIA.md), [Contratos](CONTRATOS_API.md), [QA](QA_Y_ACEPTACION.md), [Roadmap](ROADMAP.md) y [Progreso](PROGRESO.md). Actualizar GDD cuando una decisión implementada difiera del diseño.
+
+## 11. Experiencia de instalación, modelos y personalización (ADR-002)
+
+**Requisito de producto incorporado:** Noble AI debe ser una **aplicación** con ajustes visuales, no una secuencia de celdas Colab ni un asistente que exige predescargar pesos. Pantallas obligatorias: Setup/Wizard, Model Hub, Installed/Downloads, Providers, Model Assignments, Performance/Devices, Story Studio, Novel Viewer y Diagnóstico. El navegador local y el futuro shell escritorio usarán los mismos contratos.
+
+- **Primer arranque sin pesos:** detectar hardware, escoger carpeta, elegir proveedor, buscar/importar/instalar modelos desde UI, guardar y reanudar wizard. Se puede editar/importar historias sin LLM.
+- **Personalización narrativa:** elegir proveedor (local/remoto), GGUF/quant, contexto, max tokens, temperatura, top-p, top-k, repetition, razonamiento/visión solo si soportado, offload/CPU/GPU, perfil rápido/equilibrado/calidad/personalizado.
+- **Personalización de imágenes:** checkpoint/workflow/LoRA/negative prompt/resolución/seed/steps/CFG/sampler y modo progresivo por escena vs manual. Los modelos comunitarios con etiqueta «uncensored» son opciones de checkpoint y política de contenido del proveedor, **no** un filtro mágico de todo el sistema.
+- **Personalización de voces:** motor TTS, voz y dispositivo CPU/GPU/Auto según soporte real, idioma, velocidad/estilo/emoción y caché. Configurar no equivale a cargar; synth **solo por petición**.
+- **Perfiles globales y por historia** con precedencia explícita, sin cambiar hechos de ramas anteriores al sustituir un modelo.
+- **Estado visible por módulo:** no configurado, descargando, instalado, cargando, listo, incompatible (estimación vs medición), error, sin conexión.
+- **Estética:** visual novel anime para jugar; panel Studio y Model Hub distinguibles; accesibilidad y responsive 390x844/1440x900 obligatorios. Inspiración técnica en Urakatsu/Koharu, no copiar su identidad visual ni assets.
+
+**Criterios de aceptación añadidos:** abrir app con 0 modelos; búsqueda HF real; un GGUF pequeño descargado/verificado desde la UI; cambiar modelo sin consola; seleccionar CPU/GPU según compatibilidad; persistir settings; cero cargas TTS no autorizadas; Playwright móvil/desktop y recuperación de descarga fallida.
+
+Ver [Model Hub](MODEL_HUB.md), [Onboarding](ONBOARDING_Y_UI.md), [Arquitectura de escritorio](DESKTOP_Y_DESPLIEGUE.md).

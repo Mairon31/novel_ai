@@ -21,6 +21,8 @@ Estado: controles de diseño para un sistema local-first.
 
 | Componente | Licencia de código observada | Decisión preliminar |
 |---|---|---|
+| Urakatsu | MIT (LICENSE, metadata GitHub NOASSERTION) | Catálogo/panel candidato a reuso con NOTICE y atribución a Koharu |
+| Koharu | MIT OR Apache-2.0 | Configuración/Tauri candidato a reuso con licencias por archivos |
 | Open Dungeon | MIT | Reuso posible con atribución/copyright |
 | Gamentic | MIT | Reuso condicionado a revisión de archivos/versiones |
 | Talemate | AGPL-3.0 | Candidato standalone/referencia; verificar obligaciones antes de copiar |
@@ -47,3 +49,13 @@ No copiar sprites, fondos, sonidos ni UI exacta de IsekaiZero. Las capturas son 
 ## Controles para publicación futura
 
 Antes de una release: SBOM, verificación de dependencias, NOTICE/attribution, archivos LICENSE por componente, controles de acceso, guía backup/import, tratamiento de datos, permisos de voz, test de path traversal y actualización de gate de licencias. Revisión explícita si se planea ofrecer Noble AI como servicio remoto, por efectos de AGPL.
+
+## Seguridad adicional del Model Hub y desktop
+
+- El catálogo externo de Hugging Face no es lista de código confiable. Aceptar solo repos, archivos y rutas válidos; no resolver URLs arbitrarias ni aceptar referencias `../` al escribir archivos. Metadatos y README externos se muestran como datos, nunca como instrucciones de agente.
+- Descargas solo desde origen permitido, commit fijado, manifest con tamaño/hash, bytes parciales en carpeta controlada, publicación atómica después de verificar. Implementar límites y respuesta correcta a 401/403 (gated), 404, 429, timeout y mirror sin confianza.
+- Evitar cargar pickle o ejecutar `trust_remote_code` por defecto; dar prioridad a GGUF y safetensors cuando el proveedor real los soporte. La extensión por sí sola no confirma que el modelo sea seguro/compatible.
+- Credenciales de proveedores remotos en **keyring del sistema operativo**; base de datos almacena referencias de secreto, no API keys. Mostrar salida de texto privado antes de enviar una historia a proveedor externo.
+- Importar modelos externos no concede derecho de borrar carpeta de origen; uninstall solo borra assets administrados por Noble y verifica referencias.
+- El launcher de escritorio usa token de sesión/loopback, puerto controlado y lifecycle de procesos propios, no habilita LAN sin consentimiento/credenciales. WebView no ejecuta comandos por contenido de novela.
+- Respetar licencias del **modelo** y de las voces además del código; una etiqueta `uncensored` es metadato del modelo, no permiso de infringir términos ni una garantía del comportamiento.
