@@ -123,7 +123,7 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 
 ## 2026-11-04 · P1.1 — continuación, lector inmersivo y worker remoto
 
-**Recuperación:** la sesión anterior terminó en \`5d6a08a\` con Python en verde y frontend fallido por contrato \`worker_id\` faltante. Se corrigió la definición frontend y el selector de la prueba visual. No se ocultaron las ejecuciones con fallos: [Actions](https://github.com/Mairon31/novel_ai/actions).
+**Recuperación:** la sesión anterior terminó en `5d6a08a` con Python en verde y frontend fallido por contrato `worker_id` faltante. Se corrigió la definición frontend y el selector de la prueba visual. No se ocultaron las ejecuciones con fallos: [Actions](https://github.com/Mairon31/novel_ai/actions).
 
 ### Implementación publicada
 
