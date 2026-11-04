@@ -56,13 +56,14 @@ def create_app(
     data_dir: Path | None = None,
     catalog_transport: httpx.BaseTransport | None = None,
     llm_transport: httpx.AsyncBaseTransport | None = None,
+    control_transport: httpx.BaseTransport | None = None,
 ) -> FastAPI:
     """Injectable data directory and HF transport make contract tests offline."""
     directory = Path(data_dir or os.getenv("NOBLE_DATA_DIR") or ROOT / "data")
     store = Store(directory)
     catalog = HfCatalog(transport=catalog_transport)
     downloads = DownloadManager(store, catalog)
-    control = ControlPlane(store)
+    control = ControlPlane(store, transport=control_transport)
     secrets = Secrets()
     narrative = NarrativeService(store, transport=llm_transport, secrets=secrets,
                                  preferences=control.preferences)
