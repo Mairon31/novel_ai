@@ -47,7 +47,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   });
   await page.getByRole('textbox', { name: 'Tu intervención en la historia' })
     .fill('Abro el libro que hay sobre el mostrador.');
-  await page.getByRole('button', { name: 'Enviar intervención' }).click();
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(page.getByText('Una hechicera abre la puerta y señala un libro antiguo.')).toBeVisible();
   await expect(page.getByText('Abro el libro que hay sobre el mostrador.')).toBeVisible();
   await page.screenshot({
