@@ -30,6 +30,12 @@ class KoboldManager:
         self.model_filename = ""
         self.gpu_layers = -1
 
+    @staticmethod
+    def _port_available(port: int) -> bool:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(.3)
+            return sock.connect_ex(("127.0.0.1", port)) != 0
+
     def _owned(self):
         return self.proc is not None and self.proc.poll() is None
 
@@ -86,10 +92,8 @@ class KoboldManager:
                 raise RuntimeFailure("El tamaño del modelo difiere del registro")
             # Avoid hijacking an existing local server. Still subject to a normal
             # TOCTOU race, handled by process exit and status diagnostics.
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(.3)
-                if sock.connect_ex(("127.0.0.1", port)) == 0:
-                    raise RuntimeFailure("El puerto ya está ocupado. Elige otro.")
+            if not self._port_available(port):
+                raise RuntimeFailure("El puerto ya está ocupado. Elige otro.")
             command = [
                 str(exe), "--model", str(filepath),
                 "--host", "127.0.0.1",

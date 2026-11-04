@@ -111,7 +111,7 @@ class RuntimeTests(unittest.TestCase):
     def test_launch_with_cpu_only_and_stop_owned_process(self):
         fake = FakeProcess()
         with patch("noble_api.runtime.subprocess.Popen", return_value=fake) as popen, patch(
-            "noble_api.runtime.socket.socket", return_value=UnoccupiedPort()
+            "noble_api.runtime.KoboldManager._port_available", return_value=True
         ):
             with TestClient(self.app) as c:
                 candidates = c.get("/api/v1/runtime/kobold/installed").json()
@@ -133,7 +133,7 @@ class RuntimeTests(unittest.TestCase):
     def test_ready_model_can_activate_narrator(self):
         fake = FakeProcess()
         with patch("noble_api.runtime.subprocess.Popen", return_value=fake), patch(
-            "noble_api.runtime.socket.socket", return_value=UnoccupiedPort()
+            "noble_api.runtime.KoboldManager._port_available", return_value=True
         ), patch("noble_api.runtime.httpx.Client", FakeHealthClient):
             with TestClient(self.app) as c:
                 started = c.post("/api/v1/runtime/kobold/start",
