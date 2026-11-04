@@ -65,6 +65,23 @@ def local_inference(request: httpx.Request):
     return httpx.Response(404)
 
 
+class BrokenStream(httpx.AsyncByteStream):
+    async def __aiter__(self):
+        yield b'data: {"choices":[{"delta":{"content":"Fragmento incompleto"}}]}\n\n'
+        raise httpx.ReadError("Conexión del túnel perdida")
+
+    async def aclose(self):
+        return None
+
+
+def broken_tunnel(request: httpx.Request):
+    if request.headers.get("authorization") != "Bearer " + TOKEN:
+        return httpx.Response(401)
+    if request.url.path == "/v1/chat/completions":
+        return httpx.Response(200, stream=BrokenStream())
+    return tunnel_server(request)
+
+
 class WorkerTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -109,6 +126,34 @@ class WorkerTests(unittest.TestCase):
         deleted = self.client.delete("/api/v1/workers/" + worker_id)
         self.assertEqual(deleted.status_code, 204, deleted.text)
         self.assertEqual(self.vault.get(worker_id), "")
+
+    def test_tunnel_break_does_not_commit_partial_turn_and_can_retry(self):
+        worker = self.client.post("/api/v1/workers", json={
+            "name": "Unstable GPU", "url": "https://unstable.trycloudflare.com",
+            "token": TOKEN}).json()
+        self.assertEqual(self.client.post(
+            "/api/v1/workers/" + worker["id"] + "/activate",
+            json={"model": "gpu-remote-gguf"}).status_code, 200)
+        story = self.client.post("/api/v1/stories", json={
+            "title": "Puente interrumpido",
+            "premise": "Una exploradora espera su respuesta frente a un portal antiguo."}).json()
+        request_id = str(uuid.uuid4())
+        payload = {"request_id": request_id, "input_text": "", "mode": "continue"}
+        self.app.state.narrative.transport = httpx.MockTransport(broken_tunnel)
+        failed = self.client.post(
+            "/api/v1/stories/" + story["id"] + "/generate", json=payload)
+        self.assertIn("event: delta", failed.text)
+        self.assertIn("event: error", failed.text)
+        self.assertNotIn("event: done", failed.text)
+        previous = self.client.get("/api/v1/stories/" + story["id"] + "/turns").json()
+        self.assertEqual(previous["turns"], [])
+        self.app.state.narrative.transport = httpx.MockTransport(tunnel_server)
+        recovered = self.client.post(
+            "/api/v1/stories/" + story["id"] + "/generate", json=payload)
+        self.assertIn("event: done", recovered.text)
+        turns = self.client.get("/api/v1/stories/" + story["id"] + "/turns").json()
+        self.assertEqual(len(turns["turns"]), 1)
+        self.assertEqual(turns["turns"][0]["assistant_text"], "Desde la GPU remota.")
 
     def test_refuse_dangerous_or_unauthenticated_tunnels(self):
         for url in ["http://127.0.0.1:8000", "https://evil.example.com",
