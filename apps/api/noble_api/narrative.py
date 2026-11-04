@@ -325,6 +325,9 @@ class NarrativeService:
                                      headers={"Authorization": "Bearer " + token} if (remote or worker) else None,
                                      follow_redirects=False) as response:
                 response.raise_for_status()
+                # A clean EOF is not proof that generation finished. Cloudflare
+                # may end a stream early without raising a network exception.
+                finished = False
                 async for line in response.aiter_lines():
                     line = line.strip()
                     if not line:
@@ -334,6 +337,7 @@ class NarrativeService:
                             continue
                         line = line.removeprefix("data:").strip()
                         if line == "[DONE]":
+                            finished = True
                             break
                     try:
                         data = json.loads(line)
@@ -343,12 +347,17 @@ class NarrativeService:
                         chunk = (data.get("message") or {}).get("content") or ""
                         if data.get("error"):
                             raise ValueError(str(data["error"])[:300])
+                        if data.get("done") is True:
+                            finished = True
                     else:
                         choices = data.get("choices") or []
                         delta = choices[0].get("delta") or {} if choices else {}
                         chunk = delta.get("content") or ""
                     if isinstance(chunk, str) and chunk:
                         yield chunk
+                if not finished:
+                    raise ValueError(
+                        "El motor terminó la conexión sin confirmar el final de la generación")
 
     async def stream_turn(self, story_id: str, request_id: str,
                           mode: str, instruction: str):
