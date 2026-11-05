@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, P
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
-import type { GenerationEvent, Story, StoryTurn } from './types';
+import type { CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn } from './types';
 
 interface StoryStudioProps {
   onOpenSettings: () => void;
@@ -15,7 +15,11 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [reading, setReading] = useState(false);
-  const [storyMetadata, setStoryMetadata] = useState<{ synopsis: string; genre: string; tags: string[] } | null>(null);
+  const [storyMetadata, setStoryMetadata] = useState<CreatorBlueprint | null>(null);
+  const [storyCharacters, setStoryCharacters] = useState<CreatorCharacter[]>([]);
+  const [storyAssets, setStoryAssets] = useState<CreatorMediaAsset[]>([]);
+  const [openingBusy, setOpeningBusy] = useState(false);
+  const [turnsLoading, setTurnsLoading] = useState(false);
   const [turns, setTurns] = useState<StoryTurn[]>([]);
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
@@ -31,6 +35,8 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
   const controller = useRef<AbortController | null>(null);
+  const activeStoryId = useRef<string | null>(null);
+  activeStoryId.current = active?.id || null;
 
   useEffect(() => {
     let alive = true;
@@ -48,19 +54,30 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   useEffect(() => {
     let live = true;
     setStoryMetadata(null);
-    if (active) api.creatorBlueprint(active.id).then(blueprint => {
-      if (live) setStoryMetadata({
-        synopsis: blueprint.synopsis, genre: blueprint.genre, tags: blueprint.tags,
+    setStoryCharacters([]);
+    setStoryAssets([]);
+    if (active) {
+      // Independent queries: a missing portrait must not hide the storyline or cast.
+      void Promise.allSettled([
+        api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
+        api.creatorAssets(active.id),
+      ]).then(([blueprint, cast, media]) => {
+        if (!live) return;
+        if (blueprint.status === 'fulfilled') setStoryMetadata(blueprint.value);
+        if (cast.status === 'fulfilled') setStoryCharacters(cast.value.characters);
+        if (media.status === 'fulfilled') setStoryAssets(media.value.assets);
       });
-    }).catch(() => { /* A story without a creator sheet remains readable. */ });
+    }
     return () => { live = false; };
   }, [active?.id]);
   useEffect(() => {
     let alive = true;
     setTurns([]); setStreamText(''); setError('');
+    setTurnsLoading(Boolean(active));
     if (active) {
       api.storyTurns(active.id).then(result => { if (alive) setTurns(result.turns); })
-        .catch((exc: Error) => { if (alive) setError(exc.message); });
+        .catch((exc: Error) => { if (alive) setError(exc.message); })
+        .finally(() => { if (alive) setTurnsLoading(false); });
     }
     return () => { alive = false; };
   }, [active?.id]);
@@ -111,6 +128,26 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     }
   }
 
+  async function startOpening(index: number) {
+    if (!active || openingBusy || turnsLoading || turns.length) return;
+    const storyId = active.id;
+    setOpeningBusy(true);
+    setError('');
+    try {
+      const firstTurn = await api.startCreatorOpening(storyId, index);
+      // Keep a delayed request from opening the wrong story after navigation.
+      if (activeStoryId.current !== storyId) return;
+      setTurns([firstTurn]);
+      setStories(previous => previous.map(story => story.id === storyId ?
+        { ...story, updated_at: Date.now() / 1000 } : story));
+      setReading(true);
+    } catch (exc) {
+      if (activeStoryId.current === storyId) setError((exc as Error).message);
+    } finally {
+      setOpeningBusy(false);
+    }
+  }
+
   async function createBranch(turnId: string) {
     if (!active || generating) return;
     const originalId = active.id;
@@ -152,8 +189,11 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       </div>
       <button className="noble-reader-settings-link" onClick={onOpenSettings}>Ajustes</button>
     </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
+      characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
+      error={error}
       onBack={() => { setActive(null); setReading(false); }}
       onContinue={() => setReading(true)}
+      onStartOpening={index => void startOpening(index)}
       onEdit={() => onEditStory?.(active.id)}/> : <div className="noble-library-home">
       <div className="noble-library-hero">
         <div><span className="eyebrow"><Feather size={15}/> TU UNIVERSO DE HISTORIAS</span>
