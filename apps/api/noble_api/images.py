@@ -22,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .media import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from .narrative import NarrativeService, validate_endpoint
+from .resource_policy import ResourceController
 
 
 class ImageSettings(BaseModel):
@@ -41,6 +42,7 @@ class SceneIllustration(BaseModel):
     seed: int | None = Field(default=None, ge=0, le=2**53 - 1)
     reference_asset_id: uuid.UUID | None = None
     denoise: float = Field(default=0.62, ge=0.2, le=0.95)
+    allow_low_vram: bool = False
 
 
 def workflow(settings: dict, prompt: str, seed: int,
@@ -109,9 +111,11 @@ def save_webp(data: bytes, target) -> None:
 
 class SceneImageService:
     def __init__(self, narrative: NarrativeService,
-                 transport: httpx.AsyncBaseTransport | None = None):
+                 transport: httpx.AsyncBaseTransport | None = None,
+                 resources: ResourceController | None = None):
         self.narrative = narrative
         self.transport = transport
+        self.resources = resources
         self.lock = asyncio.Lock()
         with narrative.store._conn() as conn:
             conn.execute("""CREATE TABLE IF NOT EXISTS image_preferences (
@@ -193,6 +197,11 @@ class SceneImageService:
                             "checkpoint": config["checkpoint"],
                             "duration_ms": round((time.monotonic()-started)*1000, 1),
                             "cached": True}
+            if self.resources is not None:
+                # Only on explicit, uncached requests; runs nvidia-smi off
+                # the event loop and never stops someone else's LLM process.
+                await asyncio.to_thread(self.resources.allow_image_request,
+                                        request.allow_low_vram)
             connected = await self.status()
             if not connected["online"]:
                 raise HTTPException(503, "ComfyUI no está disponible")

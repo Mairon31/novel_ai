@@ -26,6 +26,7 @@ from .media import mount_media_routes
 from .images import SceneImageService, mount_image_routes
 from .speech import SpeechService, mount_speech_routes
 from .visual_state import VisualState, mount_visual_routes
+from .resource_policy import ResourceController, mount_resource_routes
 from .workers import WorkerRegistry, mount_worker_routes
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -83,7 +84,8 @@ def create_app(
     kobold = KoboldManager(store)
     visual = VisualState(store)
     narrative.visual = visual
-    images = SceneImageService(narrative, transport=image_transport)
+    resources = ResourceController(store)
+    images = SceneImageService(narrative, transport=image_transport, resources=resources)
     speech = SpeechService(narrative)
 
     @asynccontextmanager
@@ -110,6 +112,7 @@ def create_app(
     service.state.narrative = narrative
     service.state.kobold = kobold
     service.state.images = images
+    service.state.resources = resources
     service.state.speech = speech
     service.state.visual = visual
 
@@ -213,6 +216,7 @@ def create_app(
     mount_media_routes(service, narrative)
     mount_visual_routes(service, visual)
     mount_image_routes(service, images)
+    mount_resource_routes(service, resources)
     mount_speech_routes(service, speech)
     mount_worker_routes(service, workers, narrative)
     mount_control_routes(service, control)
