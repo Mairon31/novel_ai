@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import shutil
 import sqlite3
 import time
@@ -21,6 +22,8 @@ from pydantic import BaseModel, Field
 
 from .store import Store
 from .secrets import Secrets
+
+LOG = logging.getLogger(__name__)
 
 
 DEFAULT_LLM = {
@@ -108,6 +111,7 @@ class NarrativeService:
         self.store = store
         self.secrets = secrets or Secrets()
         self.workers = workers
+        self.visual = None  # injected after VisualState initializes its SQLite tables
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
@@ -316,7 +320,16 @@ class NarrativeService:
             db.execute("INSERT INTO story_turns VALUES (?,?,?,?,?,?,?,?)",
                        (turn_id, story_id, request_id, mode, instruction, response, model, now))
             db.execute("UPDATE stories SET updated_at=? WHERE id=?", (now, story_id))
-        return self.previous(story_id, request_id)
+        turn = self.previous(story_id, request_id)
+        if self.visual is not None and turn is not None:
+            try:
+                changed = self.visual.observe_turn(story_id, turn)
+                if changed is not None:
+                    turn["scene_transition"] = changed
+            except (sqlite3.Error, ValueError, OSError):
+                # A visual hint must never block or invalidate a saved story turn.
+                LOG.exception("No se pudo registrar un cambio de escena")
+        return turn
 
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
         preferences = self.preferences()
