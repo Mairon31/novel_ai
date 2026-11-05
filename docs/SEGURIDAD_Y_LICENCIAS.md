@@ -82,3 +82,12 @@ El inventario de `model_storage.py` ya ignora archivos ajenos/symlinks y `downlo
 - **Importaciones:** PNG V2/V3 y paquetes de historias deben tener límites de tamaño, chunks y campos, evitar descompresión descontrolada y no ejecutar expresiones externas.
 
 Cierre condicionado a pruebas de regresión y auditoría del runtime real, no solo análisis de archivos.
+
+
+## Protección de integridad de instalaciones de modelos (2026-11-05)
+
+Las operaciones `pause/cancel/resume` y los cambios internos `queued→downloading→verifying→completed` usan transiciones condicionales sobre el estado persistido, evitando resucitar trabajos cancelados por carreras entre la interfaz y el worker. Durante SHA-256, la operación consulta el estado antes de continuar, y la publicación exige que aún esté en `verifying` bajo `BEGIN IMMEDIATE`. Un error de SQLite posterior al renombrado activa restauración del archivo parcial cuando es posible.
+
+**Límite de seguridad:** una transacción de SQLite no ofrece atomicidad frente a un corte eléctrico entre operaciones de archivos y base de datos; todavía se requiere conciliación de `model_dir`/jobs en arranque, validación de hashes de artefactos huérfanos y protección contra TOCTOU (sustitución de symlinks entre la comprobación y el uso). No declarar esas garantías como alcanzadas.
+
+Pruebas de falsificación de rutas, renombrado + SQL fallido y pausa/cancel durante hash: [QA](QA_Y_ACEPTACION.md), [TODO](../TODO.md).
