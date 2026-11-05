@@ -627,7 +627,8 @@
   .story-studio.is-reading .noble-scene-panel{
     min-height:42dvh;max-height:46dvh
   }
-  .story-studio.is-reading .noble-reader-main{padding-top:5px}
+  /* The floating back/title bar must not cover the reader's action buttons. */
+  .story-studio.is-reading .noble-reader-main{padding-top:74px}
   .noble-reading-navigation-title{max-width:48vw}
   .noble-reading-navigation-title span{display:none}
   .hub-detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
