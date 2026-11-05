@@ -87,3 +87,15 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Inyección de fallo en inserción de snapshot confirma rollback simultáneo de texto narrativo, escena y snapshot; reintento de la misma clave idempotente funciona.
 - [x] `tests/test_world_state.py`: [CI #42074620459](https://github.com/Mairon31/novel_ai/actions/runs/42074620459): **162 Python y 32 Playwright PASS**, incluidos los dos navegadores, escritura concurrente con solo una revisión confirmada y rechazo de testigo de otra historia. `world-state.spec.ts` prueba edición del mundo, presencia, testigos, inventario, indicador, edición posterior, snapshot histórico y persistencia tras recarga.
 - [ ] Rebobinado completo sin bifurcar, mutaciones del mundo derivadas del LLM validadas deterministicamente, afirmaciones del LLM auditadas contra testigos y pruebas con 100+ turnos con snapshots completos. La clonación multi-módulo se integró en una sola transacción con sus pruebas propias (ver gate de bifurcación abajo).
+
+
+## Gates de bifurcación transaccional y recuperación post-crash (2026-11-05)
+
+- [x] Inyectar excepción **después de cada clonación** (visual, creador, imagen editorial, Lorebook, estado del mundo, planner): no debe persistir ninguna fila en tablas del destino, ningún archivo de destino ni marcador colgante. La fuente no debe perder datos.
+- [x] Fallo de escritura de archivo **después de haber copiado bytes**: revertir SQLite y eliminar toda carpeta UUID de la nueva rama, conservando galería y portada originales.
+- [x] Dos bifurcaciones simultáneas del mismo origen: ambas deben persistir historia, turnos, galería, archivos editoriales, Lorebooks y snapshots independientes, sin sobrescribir identificadores ni dejar marcadores pendientes.
+- [x] Reinicio con marcador UUID de una bifurcación fallida: solo se elimina la carpeta UUID marcada que carezca de registro de historia. Una carpeta sin marcador no debe borrarse.
+- [x] Reinicio con marcador persistente de una rama ya **confirmada**: retirar marcador pero conservar filas SQLite, imagen de escena y portada; no confundir éxito del commit con un fallo al limpiar el marcador.
+- [x] Symlink de carpeta UUID externa con marcador: rechazar recuperación, conservar bytes externos, registrar conflicto; ninguna operación de borrado sigue ese enlace.
+- [x] `tests/test_fork_atomicity.py`: [CI #42077772761](https://github.com/Mairon31/novel_ai/actions/runs/42077772761), **170 Python PASS**. Esta prueba utiliza SQLite y archivos reales; la generación de imágenes usa fixtures PNG y no inicia modelos GPU.
+- [ ] Cortes eléctricos reales, pérdida/corrupción de datos tras fsync incompleto, alta concurrencia multiproceso y validación de todas las llamadas a filesystem frente a ataques TOCTOU persistentes.
