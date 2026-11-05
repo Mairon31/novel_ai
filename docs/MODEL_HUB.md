@@ -42,3 +42,12 @@ Adapted with MIT attribution from Urakatsu; see [Third-party notices](THIRD_PART
 La ficha de un GGUF muestra una medición de VRAM libre observada y demanda de memoria estimada. La persona puede elegir 2K–32K tokens y filtrar variantes: Todas / GPU / GPU + RAM / CPU. La cuantización recomendada es una sugerencia calculada por memoria, no una prueba empírica.
 
 La barra de comparación distingue presupuesto de GPU, memoria combinada o RAM según el tipo de ejecución. El resultado no predice velocidad ni descarga modelos para comprobarlos. Imágenes y TTS siguen en modalidad de catálogo hasta incorporar instaladores compatibles por motor.
+
+
+## Fichas de autor completas
+
+La ficha de modelo ofrece un botón **Leer ficha completa** que consulta bajo demanda el `README.md` publicado en Hugging Face para el commit SHA del modelo. Noble AI lee hasta 128 KiB y muestra el contenido como texto plano; no interpreta HTML incrustado ni ejecuta scripts publicados por el repositorio. El usuario puede ocultarla sin perder la variante seleccionada o la comparativa de hardware.
+
+Ruta: `GET /api/v1/model-cards/{namespace}/{model}?revision={sha40}`. El servidor valida los identificadores, utiliza únicamente el host de Hugging Face y limita tanto la lectura de red como la respuesta. Un repositorio sin README devuelve `available:false`; un modelo restringido informa el error correspondiente.
+
+El indicador de compatibilidad también expone la memoria estimada del archivo, la memoria KV asociada al contexto y el porcentaje aproximado de descarga GPU/RAM en su información accesible. Implementado mediante adaptación de `FitCell` del componente `ModelsPage.tsx` de Urakatsu (MIT). No se afirma compatibilidad empírica de CUDA ni medición de tokens por segundo.

@@ -66,7 +66,7 @@ Koharu documenta que las credenciales remotas se almacenan en servicio seguro de
 
 **Prioridad 3:** comparar launcher webview de Urakatsu con Tauri 2 de Koharu. Elegir Tauri como candidato inicial, sujeto a prueba real con Python sidecar y CI Windows.
 
-**No reutilizar por defecto:** detectores manga, OCR, inpainting de bocadillos, traductores por etapa, fuentes de lectura manga, UI exacta ni assets de terceros.
+**Reutilización autorizada por las licencias:** pueden copiarse y adaptarse código, componentes y diseño de interfaz de Urakatsu (MIT) y Koharu (MIT/Apache-2.0), incluso con cambios directos. Las funciones OCR o traducción manga se integrarán únicamente cuando resulten útiles para Noble AI. Los archivos de modelos, ilustraciones y dependencias se revisan según sus propias licencias.
 
 ## Spikes (pendientes)
 
@@ -101,3 +101,12 @@ Koharu documenta que las credenciales remotas se almacenan en servicio seguro de
   de archivos permanecen en el historial git.
 - Siguientes adaptaciones: inventario de almacenamiento por volumen, gestión
   de instalaciones/modelos por runtime, estado de descargas, limpieza, providers.
+
+
+## Implementaciones concretas incorporadas (2026-11-05)
+
+- **Urakatsu MIT** — `web/src/components/ModelsPage.tsx`: patrón de lista persistente y ficha lateral de detalles, caché de búsqueda y detalles, indicador `FitCell` para memoria, porcentaje GPU de offload y explicaciones accesibles. Adaptado a `apps/web/src/App.tsx`, `apps/web/src/modelCatalogCache.ts` y `apps/web/src/styles.css`.
+- **Urakatsu MIT** — sección `Model card` del mismo componente: consulta de `README.md` bajo demanda desde Hugging Face. Se implementó un proxy limitado a 128 KiB con revisión SHA fija en `apps/api/noble_api/catalog.py`, `apps/api/noble_api/main.py`, y una presentación de texto seguro en Noble.
+- **Koharu MIT/Apache-2.0** — los controles de providers y preferencias continúan siendo candidatos a reutilización de código; las referencias de UX no equivalen a incorporación del source.
+
+No existe ninguna prohibición general de copiar o adaptar la UI de los repositorios con licencia libre. El contrato de atribución consiste en conservar copyright, licencia y origen de cada componente importado; esto no restringe el grado de adaptación de la interfaz.

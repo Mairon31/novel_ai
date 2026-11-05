@@ -301,3 +301,13 @@ No editar entradas anteriores para borrar un fallo; agregar una corrección fech
 - [ ] Validación con GPU real y motor de paquetes para difusión/TTS.
 
 No se añadieron bitácoras ni advertencias internas a la portada pública README.
+
+
+## 2026-11-05 — Reutilización directa de interfaz MIT en Model Hub
+
+- [x] Investigación de licencia Urakatsu MIT y Koharu MIT/Apache; registrada la reutilización sin prohibiciones innecesarias en las referencias técnicas.
+- [x] Integración de inspección lateral de modelos y caché de sesión inspirados/adaptados del `ModelsPage.tsx` de Urakatsu.
+- [x] Adaptación del indicador `FitCell`: porcentaje aproximado de GPU, VRAM/RAM estimada, caché de contexto y estado de espacio en disco.
+- [x] Consulta de `README.md` de modelos por SHA de revisión y hasta 128 KiB, con presentación textual segura.
+- [x] Pruebas de ruta, límites, validación, acceso restringido y renderizado en lector de fichas de modelos.
+- [ ] Comparación detallada multi-modelo, soporte de información técnica de runtimes de imágenes y voces y sincronización real con una instalación de GPU.

@@ -59,3 +59,11 @@ Urakatsu `web/src/components/ModelsPage.tsx`.
 
 The desktop master/detail UX follows this same authorized open-source model,
 adapted to Noble AI's story-narration model categories and independent runtimes.
+
+
+## Reutilización de interfaz Urakatsu (2026-11-05)
+
+- `web/src/components/ModelsPage.tsx` — patrón master/detail de catálogo y ficha, caché de resultados y detalles de sesión, explicación de compatibilidad `FitCell` (porcentaje GPU, memoria de pesos y KV), y sección desplegable `Model card`.
+- Archivos de Noble AI derivados/adaptados: `apps/web/src/App.tsx`, `apps/web/src/modelCatalogCache.ts`, `apps/web/src/styles.css`, `apps/api/noble_api/catalog.py`, `apps/api/noble_api/main.py`.
+- Origen: https://github.com/karrot0/Urakatsu/tree/main/web/src/components/ModelsPage.tsx
+- Licencia aplicable: MIT, con aviso íntegro y copyright preservados en este documento. Se adaptaron dependencias a React/FastAPI de Noble AI; no se importa su editor de traducción ni es requisito ejecutar la aplicación Urakatsu.
