@@ -117,7 +117,8 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await page.getByRole('button', { name: 'Previsualizar Lorebook' }).click();
   await expect(page.getByText('1 entrada(s) activada(s)')).toBeVisible();
   await expect(page.getByText('0 sin testigos presentes')).toBeVisible();
-  await expect(page.getByText('El secreto del sello · prioridad 50')).toBeVisible();
+  await expect(page.locator('.creator-hint[role="status"]').getByText(
+    'El secreto del sello · prioridad 50')).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-lorebook-witness.png',
     fullPage: true,
