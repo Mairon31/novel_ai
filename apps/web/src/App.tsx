@@ -64,6 +64,7 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const detailRequest = useRef(0);
+  const [dockedDetail, setDockedDetail] = useState(false);
   const [detail, setDetail] = useState<ModelDetail | null>(null);
   const [pickedVariant, setPickedVariant] = useState('');
   const [variantFilter, setVariantFilter] = useState<'all' | 'full_gpu' | 'partial_offload' | 'cpu'>('all');
@@ -81,6 +82,13 @@ export default function App() {
   const [showSetup, setShowSetup] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('scene');
 
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1350px)');
+    const update = () => setDockedDetail(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   useEffect(() => {
     let alive = true;
     api.workspacePreferences().then(async p => {
@@ -424,7 +432,8 @@ export default function App() {
               Puedes explorar estos modelos. Su instalación se activará cuando integremos los motores de imágenes y TTS.</div>}
             <div className="hub-discovery-layout">
               <div className="model-grid" aria-label="Resultados de modelos">
-                {searchResults.map(m => <button key={m.repo_id} className="model-card"
+                {searchResults.map(m => <button key={m.repo_id} className={'model-card ' + (detail?.repo_id === m.repo_id ? 'hub-model-selected' : '')}
+                  aria-pressed={detail?.repo_id === m.repo_id}
                   onClick={() => void viewModel(m)}>
                   <span className="model-icon">
                     {role === 'narrator' ? <BookOpen size={21}/> :
@@ -554,7 +563,7 @@ export default function App() {
 
     {(detail || detailLoading) && <div className="modal-scrim model-detail-scrim"
       role="presentation" onClick={closeModelDetail}>
-      <section className="detail-panel" role="dialog" aria-modal="true" aria-label="Detalles del modelo" onClick={e => e.stopPropagation()}>
+      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label="Detalles del modelo" onClick={e => e.stopPropagation()}>
         <div className="detail-top"><span>DETALLE DE MODELO</span><button className="icon-button" onClick={closeModelDetail} aria-label="Cerrar detalles"><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
           <div className="noble-model-detail-heading">

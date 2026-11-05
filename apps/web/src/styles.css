@@ -891,3 +891,45 @@
   .noble-story-detail-overview>div{padding:13px}
   .noble-story-detail-resume{padding:19px}
 }
+
+
+/* Urakatsu-style discovery: keep model results interactive while inspecting one model.
+   Small screens retain the accessible overlay and dismissal behavior. */
+.hub-discovery-layout .model-card.hub-model-selected{
+  border-color:#b29cff;background:linear-gradient(125deg,#353254,#232c45);
+  box-shadow:inset 4px 0 #b59cff,0 9px 26px #0003
+}
+@media(min-width:1350px){
+  .app-shell.model-inspector-active .content{
+    max-width:none;margin:0;
+    padding-left:clamp(22px,3vw,56px);
+    padding-right:calc(450px + clamp(22px,3vw,56px));
+  }
+  .app-shell.model-inspector-active .hub-discovery-layout{
+    grid-template-columns:minmax(0,1fr)
+  }
+  .app-shell.model-inspector-active .hub-hardware-panel{display:none}
+  .app-shell.model-inspector-active .hub-discovery-layout .model-card{
+    min-height:97px
+  }
+  .app-shell.model-inspector-active .model-detail-scrim{
+    inset:0 0 0 auto;
+    display:block;
+    width:450px;
+    height:100vh;
+    background:none;
+    backdrop-filter:none;
+    box-shadow:-12px 0 40px #06091360;
+    pointer-events:none;
+    z-index:45
+  }
+  .app-shell.model-inspector-active .model-detail-scrim .detail-panel{
+    width:450px;max-width:100%;pointer-events:auto;
+    height:100dvh;border-left:1px solid #545675;
+    background:linear-gradient(155deg,#1f263b,#111727 80%);
+    border-top:3px solid #927de5
+  }
+  .app-shell.model-inspector-active .hub .page-heading{
+    max-width:640px
+  }
+}
