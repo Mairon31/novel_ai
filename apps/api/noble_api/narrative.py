@@ -411,7 +411,8 @@ class NarrativeService:
                 character_ids = {}
                 if self.creator is not None:
                     character_ids = self.creator.clone(
-                        story_id, new_id, visual_map, conn=db)
+                        story_id, new_id, visual_map,
+                        turn_map=turn_map, until_turn_id=until_turn_id, conn=db)
                 if self.creator_media is not None:
                     self.creator_media.clone(
                         story_id, new_id, character_ids, conn=db)
@@ -500,6 +501,8 @@ class NarrativeService:
                 self.world.snapshot_turn_in_transaction(db, story_id, turn_id, now)
             if self.lorebook is not None:
                 self.lorebook.snapshot_turn_in_transaction(db, story_id, turn_id, now)
+            if self.creator is not None:
+                self.creator.snapshot_turn_in_transaction(db, story_id, turn_id, now)
         return turn
 
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
