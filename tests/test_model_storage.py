@@ -82,8 +82,10 @@ class ModelStorageTests(unittest.TestCase):
         self.assertEqual(result["installed"]["bytes"], 0)
         self.assertTrue(all(not item["file_present"] for item in result["items"]))
         self.assertEqual(result["partial"]["count"], 0)
-        self.assertEqual(result["disk"]["used_bytes"] + result["disk"]["free_bytes"],
-                         result["disk"]["total_bytes"])
+        # POSIX can reserve disk blocks for root; total may exceed used + free.
+        self.assertLessEqual(result["disk"]["used_bytes"] + result["disk"]["free_bytes"],
+                             result["disk"]["total_bytes"])
+        self.assertGreaterEqual(result["disk"]["free_bytes"], 0)
 
 
 if __name__ == "__main__":
