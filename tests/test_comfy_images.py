@@ -121,7 +121,7 @@ class ComfySceneTests(unittest.TestCase):
     def test_exact_seed_config_and_character_reuse_without_second_diffusion(self):
         self.setup_comfy()
         endpoint=f"/api/v1/stories/{self.story}/illustrate"
-        body={"prompt":"Un castillo al anochecer", "seed":101010}
+        body={"prompt":"Luna en Un castillo al anochecer", "seed":101010}
         first=self.client.post(endpoint,json=body)
         self.assertEqual(first.status_code,200,first.text)
         self.assertFalse(first.json()["cached"])

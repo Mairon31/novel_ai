@@ -98,6 +98,8 @@ class VisualRegistryTests(unittest.TestCase):
         self.assertEqual(len(before["scenes"]), 1)
         self.assertIsNone(infer_location("«¡Llegaré al castillo pronto!»"))
         self.assertIsNone(infer_location("El castillo es muy antiguo."))
+        self.assertIsNone(infer_location('La maga murmuró: «Llegaron al bosque».'))
+        self.assertIsNone(infer_location("No llegaron al bosque de cristal."))
         turn = self.app.state.narrative.append(
             self.story, str(uuid.uuid4()), "do", "Avanzar",
             "Llegaron al bosque de cristal. El aire olía a lluvia.", "fixture")
@@ -136,7 +138,7 @@ class VisualRegistryTests(unittest.TestCase):
         self.assertEqual(create.json()["revision"], 1)
         preview = self.client.post(
             f"/api/v1/stories/{self.story}/illustration-prompt",
-            json={"prompt": "Una biblioteca iluminada por velas antiguas"})
+            json={"prompt": "Aira en una biblioteca iluminada por velas antiguas"})
         self.assertEqual(preview.status_code, 200, preview.text)
         result = preview.json()
         self.assertFalse(result["inference_used"])
@@ -150,7 +152,7 @@ class VisualRegistryTests(unittest.TestCase):
         self.assertEqual(update.json()["revision"], 2)
         self.assertIn("granate", self.client.post(
             f"/api/v1/stories/{self.story}/illustration-prompt",
-            json={"prompt": "Una biblioteca iluminada por velas antiguas"}).json()["prompt"])
+            json={"prompt": "Aira en una biblioteca iluminada por velas antiguas"}).json()["prompt"])
         duplicate = self.client.post(
             f"/api/v1/stories/{self.story}/visual-characters", json=person)
         self.assertEqual(duplicate.status_code, 422)
