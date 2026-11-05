@@ -44,7 +44,7 @@ Modo offline por defecto una vez descargados modelos. Toda historia se guarda en
 
 ## Uso de recursos visuales
 
-No copiar sprites, fondos, sonidos ni UI exacta de IsekaiZero. Las capturas son referencia de interacción, no una licencia. Mantener un registro de procedencia de todos los assets exportables.
+Se permite reutilizar y adaptar componentes de interfaz, estilos y código de repositorios open source cuando su licencia lo autorice (por ejemplo MIT o Apache-2.0), incluso si la presentación visual resulta muy similar. Conservar los avisos originales y documentar archivos, versión y modificaciones en `THIRD_PARTY_NOTICES.md`. La licencia del código no se extiende automáticamente a marcas, imágenes, sprites, fondos, sonidos o contenido de otros servicios; verificar por separado la procedencia de cada asset exportable. Para interfaces de servicios cuya licencia de código no se haya comprobado, distinguir referencias visuales de código reutilizable.
 
 ## Controles para publicación futura
 
