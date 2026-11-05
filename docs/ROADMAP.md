@@ -1,3 +1,22 @@
+# Hoja de ruta de Noble AI
+
+## Plan operativo actualizado — Auditoría Argon (2026-11-05)
+
+La ruta anterior que aparece a continuación refleja los hitos históricos P0–P5. A partir de esta revisión, la ejecución se sigue en [`TODO.md`](../TODO.md), derivado de las 22 secciones de [`ARGON_AUDITORIA.md`](ARGON_AUDITORIA.md); no se duplican allí fechas ni se marcan funcionalidades completas por mera presencia de un módulo. El trabajo se integra directamente en `master` y se evidencia en [`PROGRESO.md`](PROGRESO.md).
+
+| Secuencia de dependencias | Entregable demostrable | Prueba o criterio de cierre |
+| --- | --- | --- |
+| Fase 1 / P0 | SQLite transaccional, contención de rutas, descargas resilientes, SSE cancelable y seguridad de credenciales | Rollback y 50 escrituras; rutas/links adversariales; transferencia interrumpida; GPU liberada al abortar |
+| Fase 2 / P0–P1 | Arbitraje VRAM, ciclo de procesos gestionados, Model Hub V2 y ajuste según hardware real | 20–25 turnos texto/imagen sin OOM; comparación real de cuantizaciones y uso de memoria |
+| Fase 3 / P1 | Canon por turno, testigos, Lorebooks, resumen y memoria híbrida con contextos presupuestados | Historia de 100–120 turnos, restauración exacta al bifurcar y presupuestos visibles |
+| Fase 4 / P1 | Director de escena, caché de fondo, sprites emocionales, ComfyUI reproducible y voces por personaje | 10 turnos misma escena sin regenerar fondo, sprites instantáneos y TTS multivoz |
+| Fase 5 / P1–P2 | Cuatro espacios de navegación, VN/Libro/Chat, Studio básico/avanzado, tarjetas PNG V2/V3 y mobile | URLs directas, importación válida, pruebas Playwright en desktop/móvil, sin falsas funciones |
+| Fase 6 / P2–P3 | Paquete escritorio, benchmarks versionados y diferenciadores de producto | Instalador/portable real, informes reproducibles, exportación y regresiones medidas |
+
+**Importante:** el código de `store.py` ya usa WAL, `narrative.py` ya transmite SSE y `downloads.py` ya usa Range y SHA-256 cuando hay hash anunciado. Ninguno de estos hechos certifica que las condiciones completas de su fase estén resueltas. La tabla de Argon usa etiquetas AUD-005/006/007 distintas de §05: el identificador estable y las subtareas se mantienen en el TODO.
+
+---
+
 
 ## P1.5 — estado visual persistente y galería sin sobrescrituras (IMPLEMENTADO EN CÓDIGO)
 
