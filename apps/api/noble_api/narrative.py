@@ -146,6 +146,8 @@ class NarrativeService:
                 db.execute("ALTER TABLE stories ADD COLUMN origin_story_id TEXT")
             if "origin_turn_id" not in fields:
                 db.execute("ALTER TABLE stories ADD COLUMN origin_turn_id TEXT")
+            if "cover_asset_id" not in fields:
+                db.execute("ALTER TABLE stories ADD COLUMN cover_asset_id TEXT")
             db.execute("INSERT OR IGNORE INTO llm_preferences VALUES (1,?)",
                        (json.dumps(DEFAULT_LLM),))
 
@@ -245,6 +247,15 @@ class NarrativeService:
         art = self.store.root / "story-assets" / story["id"] / "scene.webp"
         story["scene_image_url"] = ("/api/v1/stories/" + story["id"] +
                                     "/scene-image") if art.is_file() else None
+        story["cover_image_url"] = None
+        # A creator-owned cover stays stable when the active narrative scene changes.
+        cover_id = story.get("cover_asset_id")
+        if cover_id:
+            cover_path = (self.store.root / "story-assets" / story["id"] /
+                          "creator" / (cover_id + ".webp"))
+            if cover_path.is_file() and not cover_path.is_symlink():
+                story["cover_image_url"] = ("/api/v1/stories/" + story["id"] +
+                    "/creator/assets/" + cover_id + "/file")
         return story
 
     def set_protagonist(self, story_id: str, name: str) -> dict:
