@@ -53,6 +53,14 @@ class LorebookService:
                 );
                 CREATE INDEX IF NOT EXISTS idx_lorebook_by_story
                     ON lorebook_entries(story_id,created_at,id);
+                CREATE TABLE IF NOT EXISTS lorebook_turn_snapshots(
+                    turn_id TEXT PRIMARY KEY REFERENCES story_turns(id) ON DELETE CASCADE,
+                    story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+                    entries_json TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_lorebook_turn_history
+                    ON lorebook_turn_snapshots(story_id,created_at,turn_id);
             """)
 
     def _check_story(self, story_id: str) -> None:
@@ -183,18 +191,109 @@ class LorebookService:
             "context": "\n\n".join(entry["content"] for entry in chosen),
         }
 
-    def clone(self, source_id: str, target_id: str, conn=None) -> None:
-        """Fork copies author facts in the caller's transaction if supplied."""
+    @staticmethod
+    def _snapshot_rows(db, story_id: str) -> list[dict]:
+        """Read exact current author data through the caller's transaction."""
+        return [dict(row) for row in db.execute(
+            "SELECT id,entry_json,created_at,updated_at "
+            "FROM lorebook_entries WHERE story_id=? ORDER BY created_at,id",
+            (story_id,)
+        )]
+
+    def snapshot_turn_in_transaction(
+        self, db, story_id: str, turn_id: str, created_at: float
+    ) -> None:
+        """Save what actually existed when the turn committed.
+
+        Later edits/deletions do not rewrite these immutable checkpoints.
+        This must run inside the same transaction as story_turns and world state.
+        """
+        entries = self._snapshot_rows(db, story_id)
+        db.execute(
+            "INSERT INTO lorebook_turn_snapshots"
+            "(turn_id,story_id,entries_json,created_at) VALUES (?,?,?,?)",
+            (turn_id, story_id, json.dumps(entries, ensure_ascii=False), created_at),
+        )
+
+    def snapshot(self, story_id: str, turn_id: str) -> dict:
+        self._check_story(story_id)
+        with self.store._conn() as db:
+            row = db.execute(
+                "SELECT entries_json,created_at FROM lorebook_turn_snapshots "
+                "WHERE story_id=? AND turn_id=?", (story_id, turn_id)
+            ).fetchone()
+        if row is None:
+            raise ValueError("Sin instantánea de Lorebook para ese turno")
+        entries = json.loads(row["entries_json"])
+        return {
+            "story_id": story_id, "turn_id": turn_id,
+            "created_at": row["created_at"], "entries": [
+                {"id": entry["id"], "story_id": story_id,
+                 **json.loads(entry["entry_json"]),
+                 "created_at": entry["created_at"],
+                 "updated_at": entry["updated_at"]}
+                for entry in entries
+            ],
+        }
+
+    def clone(
+        self, source_id: str, target_id: str,
+        turn_map: dict[str, str] | None = None,
+        until_turn_id: str | None = None, conn=None,
+    ) -> None:
+        """Restore the selected turn's Lorebook, never the source future.
+
+        Cloned entries keep stable NEW IDs across copied snapshots and current
+        rows. Existing turns before this feature lack history: a partial fork
+        of such a turn starts with an empty Lorebook, rather than leaking the
+        original's present-day secrets. Full forks keep the current Lorebook.
+        """
         with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
+            history = {
+                row["turn_id"]: json.loads(row["entries_json"])
+                for row in db.execute(
+                    "SELECT turn_id,entries_json FROM lorebook_turn_snapshots "
+                    "WHERE story_id=?", (source_id,)
+                )
+            }
+            entry_map: dict[str, str] = {}
+
+            def remap(rows: list[dict]) -> list[dict]:
+                result = []
+                for entry in rows:
+                    old_id = entry["id"]
+                    clone = dict(entry)
+                    clone["id"] = entry_map.setdefault(old_id, str(uuid.uuid4()))
+                    result.append(clone)
+                return result
+
+            if turn_map:
+                for source_turn, branch_turn in turn_map.items():
+                    entries = history.get(source_turn)
+                    if entries is None:
+                        continue  # Do not fabricate history for pre-feature turns.
+                    source_timestamp = db.execute(
+                        "SELECT created_at FROM story_turns WHERE id=? AND story_id=?",
+                        (source_turn, source_id)
+                    ).fetchone()
+                    db.execute(
+                        "INSERT INTO lorebook_turn_snapshots"
+                        "(turn_id,story_id,entries_json,created_at) VALUES (?,?,?,?)",
+                        (branch_turn, target_id,
+                         json.dumps(remap(entries), ensure_ascii=False),
+                         source_timestamp["created_at"]),
+                    )
+            if until_turn_id is not None:
+                selected = history.get(until_turn_id, [])
+            else:
+                selected = self._snapshot_rows(db, source_id)
             now = time.time()
-            rows = db.execute(
-                "SELECT entry_json FROM lorebook_entries WHERE story_id=? "
-                "ORDER BY created_at,id", (source_id,)
-            ).fetchall()
-            for index, row in enumerate(rows):
+            for index, entry in enumerate(remap(selected)):
                 db.execute(
-                    "INSERT INTO lorebook_entries VALUES (?,?,?,?,?)",
-                    (str(uuid.uuid4()), target_id, row["entry_json"],
+                    "INSERT INTO lorebook_entries"
+                    "(id,story_id,entry_json,created_at,updated_at) "
+                    "VALUES (?,?,?,?,?)",
+                    (entry["id"], target_id, entry["entry_json"],
                      now + index * 0.000001, now),
                 )
 
@@ -204,6 +303,13 @@ def mount_lorebook_routes(app, lorebook: LorebookService) -> None:
     def list_entries(story_id: uuid.UUID):
         try:
             return {"entries": lorebook.entries(str(story_id))}
+        except ValueError as exc:
+            raise HTTPException(404, str(exc)) from exc
+
+    @app.get("/api/v1/stories/{story_id}/lorebook/turns/{turn_id}")
+    def historical_entries(story_id: uuid.UUID, turn_id: uuid.UUID):
+        try:
+            return lorebook.snapshot(str(story_id), str(turn_id))
         except ValueError as exc:
             raise HTTPException(404, str(exc)) from exc
 
