@@ -100,3 +100,15 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Recurso editorial referenciado cuyo archivo ya no está: se rechaza clonación en vez de omitir su portada silenciosamente; no quedan filas ni archivos del intento de bifurcación.
 - [x] `tests/test_fork_atomicity.py`: [CI #42078434977](https://github.com/Mairon31/novel_ai/actions/runs/42078434977), **171 Python + 32 Playwright PASS** y frontend compilado. Las pruebas de clonación utilizan SQLite y archivos reales; las imágenes de prueba son fixtures PNG, no modelos GPU.
 - [ ] Cortes eléctricos reales, pérdida/corrupción de datos tras fsync incompleto, alta concurrencia multiproceso y validación de todas las llamadas a filesystem frente a ataques TOCTOU persistentes.
+
+
+## Gates de memoria histórica y rebobinado no destructivo (2026-11-05)
+
+- [x] Crear Lorebook con secreto A, confirmar turno N, editar A y crear B, confirmar turno N+1; bifurcar desde N incluye exclusivamente la versión anterior de A, sin B ni la edición futura. Bifurcar desde el presente conserva las versiones actuales.
+- [x] Eliminar una entrada después de un turno: el snapshot antiguo y una rama creada desde él conservan esa entrada, mientras el estado actual no la contiene. IDs nuevos independientes y estables a lo largo de la cronología clonada.
+- [x] Una instantánea fallida de Lorebook o Creator (inyección de excepción durante `append`) revierte **turno, transición visual y snapshots de todos los servicios**. Un reintento con la misma clave idempotente funciona.
+- [x] `creator_turn_snapshots`: actualizar `ai_plot`, modificar descripción de NPC e incorporar un personaje después de un turno no modifica las fichas/instrucciones de una rama anterior; el prompt de la rama no contiene esos secretos. Un fork presente sí incorpora la versión vigente.
+- [x] Un turno creado antes de este subsistema sin snapshot histórico no recibe secretos o NPC actuales por aproximación. Los registros de Lorebook históricos son propiedad estricta de su historia y sobreviven un reinicio.
+- [x] Historial del lector: «Rebobinar aquí» abre un diálogo que explica que se crea una ruta nueva, consulta snapshots Lorebook/estado y muestra los turnos conservados por la historia original. Cancelar no crea rama; confirmar crea ruta independiente sin alterar el origen.
+- [x] `tests/test_lorebook_timeline.py`, `tests/test_creator_timeline.py`, `apps/web/tests/story-rewind.spec.ts`: [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834) con **179 pruebas Python + 34 Playwright aprobadas**, desktop y móvil.
+- [ ] Aún pendiente: rebobinado destructivo/opcional con archivado, restauración temporal de imágenes editoriales y planes de composición editados, aislamiento cognitivo por testigo de cada Lorebook y recuperación de memorias semánticas.
