@@ -68,7 +68,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByRole('textbox', { name: 'Canon de la historia' })
     .fill('El dragón conoce la biblioteca.');
   await page.getByRole('button', { name: 'Guardar canon' }).click();
-  await page.getByRole('button', { name: 'Galería' }).click();
+  await page.getByRole('button', { name: 'Galería', exact: true }).click();
   await page.getByLabel('Describe la escena que quieres ilustrar')
     .fill('La biblioteca iluminada por luciérnagas, estilo anime.');
   await page.getByRole('button', { name: 'Ilustrar escena con ComfyUI' }).click();
