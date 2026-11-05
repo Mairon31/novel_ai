@@ -103,3 +103,12 @@ Estado confirmado en `master`: catálogo HF, fichas GGUF de archivo único, esti
 5. Benchmarks reales de ciclo LLM+ComfyUI sobre 16 GB y fallback para equipos inferiores; ninguna cifra de TPS inferida debe presentarse como resultado experimental.
 
 Para reutilizar UI y lógica de Urakatsu bajo MIT, documentar los archivos copiados, su revisión y licencia en [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md). Referencias: [auditoría §§11, 18–19](ARGON_AUDITORIA.md), [gestión GPU](RECURSOS_GPU.md).
+
+
+## Integridad en verificaciones SHA y cancelaciones (2026-11-05)
+
+- El gestor de descargas utiliza ahora **transiciones condicionales en SQLite**: una pausa/cancelación no puede sobrescribir un `completed` por una lectura de estado obsoleta. Se admite pausar y cancelar tanto en `downloading` como en `verifying`, con consulta periódica del estado durante el hashing.
+- Si el `.part` ya tiene exactamente el tamaño esperado, `resume` continúa directamente desde la verificación SHA sin solicitar un `HTTP Range` desde el EOF; ese caso devolvería HTTP 416. Con longitud remota desconocida, la recuperación de verificación completa sigue pendiente de diseño.
+- Al completar SHA, archivo y registro de modelo se publican bajo un bloqueo `BEGIN IMMEDIATE` de SQLite. Si un error de SQL ocurre después del renombrado, se intenta revertir el fichero a su extensión `.part`. Un cierre eléctrico inesperado no se puede resolver solo con esa compensación y requiere reconciliación en arranque.
+- La etiqueta `sha256_verified` requiere hash publicado por el proveedor. `local_hash_only` no equivale a autenticidad verificada.
+- Pruebas de cancelación en medio de `hashlib.update`, reanudación sin segundo GET y fallo de registro simulado en `tests/test_api_model_hub.py`; [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678), **121 Python PASS**. Ver [TODO](../TODO.md) para lo que falta.
