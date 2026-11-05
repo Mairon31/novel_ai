@@ -272,18 +272,25 @@ class NarrativeService:
                 (new_id, label, source["premise"], now, now,
                  source.get("protagonist_name") or "Protagonista",
                  source.get("canon") or "", story_id, until_turn_id))
+            turn_map = {}
             for idx, turn in enumerate(existing):
+                cloned_turn_id = str(uuid.uuid4())
+                turn_map[turn["id"]] = cloned_turn_id
                 db.execute("""INSERT INTO story_turns
                     (id,story_id,request_id,mode,input_text,assistant_text,model,created_at)
                     VALUES (?,?,?,?,?,?,?,?)""",
-                    (str(uuid.uuid4()), new_id, str(uuid.uuid4()), turn["mode"],
+                    (cloned_turn_id, new_id, str(uuid.uuid4()), turn["mode"],
                      turn["input_text"], turn["assistant_text"], turn["model"],
                      now + idx * 0.000001))
-        prior_art = self.store.root / "story-assets" / story_id / "scene.webp"
-        if prior_art.is_file():
-            copy_art = self.store.root / "story-assets" / new_id / "scene.webp"
-            copy_art.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(prior_art, copy_art)
+        if self.visual is not None:
+            self.visual.clone_branch(story_id, new_id, turn_map, partial=bool(until_turn_id),
+                cutoff_created_at=existing[-1]["created_at"] if existing and until_turn_id else None)
+        else:
+            prior_art = self.store.root / "story-assets" / story_id / "scene.webp"
+            if prior_art.is_file():
+                copy_art = self.store.root / "story-assets" / new_id / "scene.webp"
+                copy_art.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(prior_art, copy_art)
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
