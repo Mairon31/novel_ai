@@ -1,6 +1,6 @@
 # Noble AI — experiencia de aplicación, onboarding y diseño UI
 
-Estado: especificación v0.1. **La interfaz aún no está implementada.**
+Estado: diseño de producto y evaluación UX. Biblioteca, Creator Studio, Model Hub y lector ya tienen una interfaz funcional; varias funciones de esta especificación siguen siendo propuestas.
 
 ## Objetivo de experiencia
 

@@ -287,3 +287,17 @@ No editar entradas anteriores para borrar un fallo; agregar una corrección fech
 - Configuración organizada por inteligencia, multimedia, aplicación y conexión.
 - Documentación de investigación propia sobre Creator/Player de Isekai Zero y atribución MIT a Urakatsu.
 - Pendientes separados: compositor de sprites por expresión, capítulos/arcos con resúmenes, capas de publicación/distribución, instalador multimedia y pruebas físicas por GPU.
+
+## 2026-11-04 — Medios del creador y comparador de Model Hub
+
+- [x] Investigación de los campos de creación de historias/personajes y la separación visual de fondos y sprites, basada en guías de Isekai Zero.
+- [x] Creator Studio: biblioteca independiente para importar fondos y PNG de primer plano con captions editables y asociación opcional al NPC.
+- [x] API de medios con subida, listado, selección por contexto, eliminación y entrega de PNG/WebP; almacenamiento propio por historia.
+- [x] Lector: composición de fondo y sprite de personaje cuando las descripciones coinciden con el último texto narrativo. No ejecuta difusión.
+- [x] Bifurcaciones: remapeo de vínculos narrativos, personajes visuales y recursos multimedia para evitar compartir IDs mutables.
+- [x] Model Hub: comparación visual de memoria estimada frente a presupuesto disponible y filtros de cuantizaciones.
+- [x] Tests de Pillow, PNG alfa, permisos, selección de captions y navegador (desktop/mobile).
+- [ ] Portada editorial propia, editor de expresiones/poses, posicionamiento de múltiples sprites y triggers semánticos auditables.
+- [ ] Validación con GPU real y motor de paquetes para difusión/TTS.
+
+No se añadieron bitácoras ni advertencias internas a la portada pública README.

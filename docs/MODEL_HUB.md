@@ -36,3 +36,9 @@ Adapted with MIT attribution from Urakatsu; see [Third-party notices](THIRD_PART
 ## Tests and known limitations
 
 `tests/test_model_hardware_fit.py` tests synthetic GGUF header fields, 16GiB GPU and CPU fallback, API detail, and unknown file safety. These are analytical unit tests, not empirical performance measurements. GPU tests with actual checkpoint/driver belong to the later batch benchmark notebook.
+
+## Comparación visual de cuantizaciones
+
+La ficha de un GGUF muestra una medición de VRAM libre observada y demanda de memoria estimada. La persona puede elegir 2K–32K tokens y filtrar variantes: Todas / GPU / GPU + RAM / CPU. La cuantización recomendada es una sugerencia calculada por memoria, no una prueba empírica.
+
+La barra de comparación distingue presupuesto de GPU, memoria combinada o RAM según el tipo de ejecución. El resultado no predice velocidad ni descarga modelos para comprobarlos. Imágenes y TTS siguen en modalidad de catálogo hasta incorporar instaladores compatibles por motor.

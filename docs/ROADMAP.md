@@ -204,3 +204,14 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [x] Protección frente a duplicación concurrente de escena inicial en SQLite.
 - [ ] Conditioning multi-referencia y control consistente de identidad (IPAdapter/LoRA/etc.).
 - [ ] Cola persistente y scheduler consciente de GPU disponible, prioridades/cancelación y descarga real de pesos.
+
+## Crear historias con capas visuales — módulo autor
+
+- [x] Gestionar fondos WebP y sprites PNG alfa por historia.
+- [x] Captions de aparición, selección conservadora por palabras completas y mapeo a NPC.
+- [x] Compositor visual básico en el lector con archivos existentes; no genera imágenes automáticamente.
+- [x] Aislamiento de recursos y remapeo de personajes al bifurcar historias.
+- [x] Model Hub con filtros interactivos de compatibilidad y medidor visual de demanda de memoria.
+- [ ] Visor de expresión y pose múltiple por personaje; animaciones, capas y posicionamiento.
+- [ ] Motor de coincidencias semánticas revisable, con reglas por escena y sin invenciones.
+- [ ] Instalación efectiva de modelos de imagen, TTS y reportes de compatibilidad por runtime.
