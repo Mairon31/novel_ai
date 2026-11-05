@@ -3,7 +3,7 @@ import {
   Image as ImageIcon, PencilLine, Play, UserRound, Users, Download,
 } from 'lucide-react';
 import type {
-  Story, StoryTurn, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset,
+  Story, StoryTurn, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, BranchTree,
 } from './types';
 
 interface Props {
@@ -18,6 +18,8 @@ interface Props {
   onContinue: () => void;
   onEdit: () => void;
   onStartOpening: (index: number) => void;
+  branches: BranchTree['branches'];
+  onChooseBranch: (storyId: string) => void;
 }
 
 function date(value: number) {
@@ -33,7 +35,7 @@ function preview(text: string, protagonist: string) {
 /** Player-facing editorial page. Never display AI-only plot, reminders or dialogue prompts. */
 export function StoryDetail({
   story, turns, metadata, characters, media, openingBusy, error,
-  onBack, onContinue, onEdit, onStartOpening,
+  onBack, onContinue, onEdit, onStartOpening, branches, onChooseBranch,
 }: Props) {
   const last = turns.at(-1);
   const description = metadata?.synopsis.trim() || story.premise;
@@ -97,6 +99,30 @@ export function StoryDetail({
         </button>}
       </article>
     </div>
+    {branches.length > 1 && <section className="noble-detail-section"
+      aria-label="Árbol de rutas narrativas">
+      <div className="noble-detail-section-heading">
+        <span className="overline"><GitBranch size={16}/> HISTORIAS CONECTADAS</span>
+        <h2>Árbol de rutas <small>{branches.length}</small></h2>
+        <p>Explora las bifurcaciones guardadas sin alterar sus turnos ni decisiones.</p>
+      </div>
+      <div className="noble-route-list">
+        {branches.map(branch => <button key={branch.id}
+          type="button" disabled={branch.is_selected || openingBusy}
+          className={'noble-route-node ' + (branch.is_selected ? 'is-selected' : '')}
+          style={{ marginLeft: Math.min(branch.depth, 6) * 24 }}
+          aria-label={'Abrir ruta ' + branch.title}
+          onClick={() => onChooseBranch(branch.id)}>
+          <GitBranch size={18}/>
+          <span><strong>{branch.title}</strong><small>
+            {branch.depth === 0 ? 'Historia principal' : 'Ruta alternativa'}
+            {' · '}{branch.turn_count} escenas guardadas
+            {branch.is_selected ? ' · Ruta actual' : ''}
+          </small></span>
+          {!branch.is_selected && <ArrowRight size={16}/>}
+        </button>)}
+      </div>
+    </section>}
     {characters.length > 0 && <section className="noble-detail-section"
       aria-label="Personajes de la historia">
       <div className="noble-detail-section-heading">

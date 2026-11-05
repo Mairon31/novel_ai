@@ -835,7 +835,7 @@
 .noble-story-detail-back{position:absolute;left:clamp(20px,4vw,51px);top:25px;
   display:inline-flex;align-items:center;gap:8px;padding:10px 12px;
   border:1px solid #79738b80;border-radius:10px;background:rgba(10,12,24,.72);
-  color:#e9e8f9;font-size:12px;font-weight:700;backdrop-filter:blur(8px)}
+  color:#e9e8f9;font-size:12px;font-weight:700;backdrop-filter:blur(8px);z-index:3}
 .noble-story-cover-empty{position:absolute;right:12%;top:25%;opacity:.18;
   transform:rotate(-13deg);filter:drop-shadow(0 12px 25px #0007);
   color:#c4afff}
@@ -1175,3 +1175,16 @@
     border-radius:19px 19px 0 0}
   .noble-rewind-actions{flex-direction:column-reverse}
   .noble-rewind-actions button{width:100%}}
+
+/* Branch family: connected routes, never destructive rewind. */
+.noble-route-list{display:flex;flex-direction:column;gap:9px;max-width:850px}
+.noble-route-node{display:flex;align-items:center;gap:13px;text-align:left;min-height:65px;padding:12px 16px;border:1px solid #353950;border-radius:12px;background:#1c2032;color:#dfe0f2;max-width:calc(100% - 16px);transition:border-color .15s ease}
+.noble-route-node>span{display:flex;flex:1;flex-direction:column;min-width:0;gap:4px}
+.noble-route-node strong{overflow-wrap:anywhere;font-size:13px}
+.noble-route-node small{color:#aab0c7;font-size:11px}
+.noble-route-node:hover:not(:disabled){border-color:var(--noble-accent);background:#262a40}
+.noble-route-node.is-selected{border-color:var(--noble-accent);opacity:1}
+.noble-route-node:disabled{cursor:default}
+.noble-reading-navigation select{min-width:150px;max-width:280px;background:#1c2031;color:#ececf5;border:1px solid #393b53;border-radius:9px;padding:7px 10px;font-size:12px}
+@media(max-width:650px){.noble-route-node{max-width:calc(100% - 8px);margin-left:0!important}
+.noble-reading-navigation select{width:100%;max-width:180px;min-width:0}}

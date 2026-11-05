@@ -138,3 +138,8 @@ La exportación de una historia desde su raíz o rama sigue `origin_story_id` ha
 El importador valida tipo, versión, estructura, conexión del árbol, columnas SQLite permitidas, propiedad `story_id`, `turn_id` de snapshots, canon de UUID, miembros ZIP y SHA antes de crear archivos. Limita número de historias (64), registros (25 mil), archivos (1200), bytes de recursos (192 MiB), tamaño por archivo (16 MiB) y manifest (24 MiB). No extrae nombres ZIP como rutas de disco: reconstruye exclusivamente rutas permitidas dentro del almacenamiento de Noble. Si alguna historia o carpeta existe, devuelve 409 y no modifica datos del usuario.
 
 Para restaurar, obtiene el bloqueo de escritor SQLite, comprueba colisiones, crea marcadores durables `fork-staging/{uuid}.pending` y carpetas nuevas `story-assets/{uuid}`. Escribe los recursos y sincroniza archivos/directorios antes del COMMIT. Inserta tablas y reconstruye FTS en la misma transacción; errores permiten rollback de SQL y eliminación compensatoria de carpetas creadas. La recuperación de startup reutiliza el protocolo de marcadores ya probado para forks. Este diseño no garantiza atomicidad eléctrica entre FS y SQLite ni restauración sobre historias con el mismo UUID.
+
+
+## Navegador del árbol de ramas
+
+`branch_map.py` reutiliza la lectura de familia conectada (raíz y descendientes), conserva identificadores existentes y devuelve nodos con padre, corte de turno, profundidad y número de intervenciones. Es API de solo lectura y rechaza datos cíclicos. Biblioteca → Detalle muestra las rutas con sangría; el lector ofrece un selector para cambiar a la ruta vinculada al mismo árbol. Cambiar de ruta solicita sus datos e historial existentes sin editar ni generar turnos ni fusionar líneas.

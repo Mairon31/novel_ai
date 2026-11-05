@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, P
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
-import type { CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn } from './types';
+import type { BranchTree, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn } from './types';
 
 interface StoryStudioProps {
   onOpenSettings: () => void;
@@ -18,6 +18,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   const [storyMetadata, setStoryMetadata] = useState<CreatorBlueprint | null>(null);
   const [storyCharacters, setStoryCharacters] = useState<CreatorCharacter[]>([]);
   const [storyAssets, setStoryAssets] = useState<CreatorMediaAsset[]>([]);
+  const [branchTree, setBranchTree] = useState<BranchTree | null>(null);
   const [openingBusy, setOpeningBusy] = useState(false);
   const [turnsLoading, setTurnsLoading] = useState(false);
   const [turns, setTurns] = useState<StoryTurn[]>([]);
@@ -72,6 +73,16 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       });
     }
     return () => { live = false; };
+  }, [active?.id]);
+  useEffect(() => {
+    let alive = true;
+    setBranchTree(null);
+    if (active) {
+      void api.storyBranches(active.id).then(tree => {
+        if (alive) setBranchTree(tree);
+      }).catch(() => { /* Reader and library remain usable without the tree. */ });
+    }
+    return () => { alive = false; };
   }, [active?.id]);
   useEffect(() => {
     let alive = true;
@@ -213,6 +224,15 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     setGenerating(false); setStreamText('');
     setDraft(''); setActive(story); setReading(false); setCreating(false);
   }
+  async function switchBranch(storyId: string, read = false) {
+    if (generating || storyId === active?.id) return;
+    setError('');
+    try {
+      const next = await api.story(storyId);
+      selectStory(next);
+      setReading(read);
+    } catch (exc) { setError((exc as Error).message); }
+  }
 
 
   return <section className={'story-studio ' + (active && reading ? 'is-reading' : 'is-library')}>
@@ -224,6 +244,13 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       <div className="noble-reading-navigation-title">
         <strong>{active.title}</strong><span>Jugando como {active.protagonist_name || 'Protagonista'}</span>
       </div>
+      {branchTree && branchTree.branches.length > 1 && <select
+        aria-label="Cambiar ruta narrativa" value={active.id} disabled={generating}
+        onChange={event => void switchBranch(event.target.value, true)}>
+        {branchTree.branches.map(branch => <option key={branch.id} value={branch.id}>
+          {'· '.repeat(branch.depth)}{branch.title} ({branch.turn_count} turnos)
+        </option>)}
+      </select>}
       <button className="noble-reader-settings-link" onClick={onOpenSettings}>Ajustes</button>
     </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
       characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
@@ -231,6 +258,8 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       onBack={() => { setActive(null); setReading(false); }}
       onContinue={() => setReading(true)}
       onStartOpening={index => void startOpening(index)}
+      branches={branchTree?.branches || []}
+      onChooseBranch={id => void switchBranch(id)}
       onEdit={() => onEditStory?.(active.id)}/> : <div className="noble-library-home">
       <div className="noble-library-hero">
         <div><span className="eyebrow"><Feather size={15}/> TU UNIVERSO DE HISTORIAS</span>

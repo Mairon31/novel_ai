@@ -224,3 +224,10 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] El origen nunca se sobrescribe. Colisión de UUID en la instalación actual → 409; ZIP inválido, path traversal, hash corrupto o fila externa → 422 antes de modificar SQLite. Fallo de escritura del índice de memoria revierte todos los registros, medios y marcadores.
 - [ ] Playwright desktop/mobile comprueba descarga ZIP desde detalle y rechazo de importación duplicada en Biblioteca, conservando la historia visible.
 - [ ] Cierre del TODO solo tras CI Python, build Vite y todas las pruebas de navegador. No prometer restore con UUID remapeados, compatibilidad hacia delante automática ni resistencia demostrada a apagones.
+
+
+## P2 — Gate de árbol de ramas navegable (pendiente CI)
+
+- [ ] Árbol de padre, dos generaciones y ramas hermanas con profundidad, conteo y turno de corte correctos, independientemente de qué ruta se consulta.
+- [ ] Historia externa a esa familia no se filtra en el árbol. Historia inexistente responde 404 y ciclo SQLite inválido responde 422. Consultar el árbol no muta historias ni turnos.
+- [ ] Playwright real desktop/mobile: detalle muestra nodos conectados, pulsar rama lleva al detalle correcto y selector del lector abre historia principal sin pérdida de decisiones.

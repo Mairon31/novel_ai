@@ -88,6 +88,15 @@ export type Story = {
   cover_asset_id?: string | null; cover_image_url?: string | null;
   created_at: number; updated_at: number;
 };
+export type BranchTree = {
+  root_story_id: string; selected_story_id: string;
+  branches: Array<{
+    id: string; title: string; protagonist_name: string;
+    origin_story_id: string | null; origin_turn_id: string | null;
+    depth: number; turn_count: number; created_at: number;
+    updated_at: number; is_selected: boolean;
+  }>;
+};
 export type StoryTurn = {
   id: string; story_id: string; request_id: string;
   mode: 'say' | 'do' | 'story' | 'continue';

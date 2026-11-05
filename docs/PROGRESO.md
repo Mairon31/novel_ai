@@ -654,3 +654,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Importación no destructiva: bloqueo `BEGIN IMMEDIATE`, staging UUID por historia, `fsync` de marcadores y archivos antes del COMMIT, inserción de 18 tablas y reconstrucción transaccional de FTS para las acciones del jugador. Si falla, se revierte SQLite y se eliminan exclusivamente nuevas carpetas y marcadores; si se interrumpe el proceso, recuperación de Noble limpia los marcadores pendientes.
 - [ ] La Biblioteca tiene «Importar respaldo .noble.zip»; la ficha de historia, «Respaldar historia y ramas». `tests/test_story_archive.py` prueba roundtrip a una segunda instalación, árbol y archivos, aislamiento de turnos, colisiones 409, ZIP manipulado y rollback. E2E desktop/mobile prueba descarga real y rechazo de duplicación.
 - [ ] **CI pendiente**. Importar sobre una historia con UUID existente se rechaza (no hay sobrescritura ni remapeo automático). El formato no empaqueta modelos GGUF ni configuración global y no equivale a prueba de apagón físico o de compatibilidad con versiones futuras del esquema.
+
+
+## 2026-11-05 — P2: Visualizador de rutas narrativas (CI pendiente)
+
+- [ ] Nuevo `branch_map.py` expone `GET /api/v1/stories/{story_id}/branches`: árbol completo de raíz, hijas y nietas, con `origin_story_id`, `origin_turn_id`, profundidad, conteo de intervenciones, título y datos de actualización. La lectura es solo consulta SQLite y detecta ciclos; no altera ramas o escenas.
+- [ ] `StoryDetail.tsx` muestra el árbol de rutas con profundidad visual y permite abrir cualquier bifurcación conectada. `StoryStudio.tsx` incorpora selector rápido de ruta mientras se lee; cambia el identificador activo, carga el historial de esa rama y cancela la lectura anterior sin borrar ninguna decisión.
+- [ ] La UI se adapta a móvil y escritorio con controles accesibles; las rutas distintas de la familia seleccionada no se mezclan. Pruebas `tests/test_branch_map.py` y `apps/web/tests/branch-tree.spec.ts` verifican profundidad, independencia, 404, detección de ciclos, navegación de detalle y selector del lector.
+- [ ] **CI pendiente** y editor nodal fuera del alcance; el árbol de ramas sigue siendo una vista/navegador, no un sistema destructivo de rebobinado.

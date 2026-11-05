@@ -223,3 +223,8 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 `GET /api/v1/stories/{story_id}/archive.noble.zip` → `200 application/zip`, `Content-Disposition: attachment; filename="noble-family.noble.zip"`; `404` si no existe la historia; `422` en caso de límite o datos corruptos. El ZIP contiene `manifest.json` con `{format:"noble-story-family",version:1,root_story_id,tables,files:[{path,size,sha256}]}` y archivos administrados `story-assets/<uuid>/...`. Incluye el árbol conectado de historias y ramas, sin configuración global ni claves secretas.
 
 `POST /api/v1/stories/archive/import` con multipart `file=...noble.zip` → `201 {root_story_id,restored_stories,restored_files,story_ids}`. `409` ante historias/carpetas/identificadores ya existentes, sin sobrescritura. `422` ante ZIP inválido, checksum fallido, esquema inesperado o contenido externo. Se validan todos los miembros antes de la restauración transaccional.
+
+
+## Árbol de rutas de una historia
+
+`GET /api/v1/stories/{story_id}/branches` → `200 {root_story_id,selected_story_id,branches:[{id,title,protagonist_name,origin_story_id,origin_turn_id,depth,turn_count,created_at,updated_at,is_selected}]}`. Incluye raíz y todos los descendientes relacionados, en orden padre-antes-de-hijos. La ruta es de solo lectura, máximo 64 nodos, error 404 si la historia no existe, 422 si el árbol es cíclico/inválido.

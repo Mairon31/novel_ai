@@ -149,7 +149,7 @@
 
 ### AUD-013, AUD-015 a AUD-018
 - [ ] AUDIO: cola asíncrona multivoz con instrumentación de tiempos y descarte de segmentos cancelados.
-- [ ] P3: visualizador de árbol/linea temporal de ramas (antes que un editor nodal complejo).
+- [ ] **Visualizador de árbol de ramas y selector rápido (implementado, pendiente CI):** endpoint que entrega árbol conectado con raíz, profundidad, origen de bifurcación y conteo de escenas; detalle visual con cambio de ruta y selector desde lector. Pruebas de aislamiento y móvil/escritorio añadidas. Edición nodal no es parte del alcance.
 - [ ] P3: soporte opcional IP-Adapter/LoRA evaluado contra workflows instalados, sin suponer identidad perfecta.
 - [ ] P3: simulación de mundo fuera de cámara **solo después** de consolidar estado determinista.
 - [ ] P3: SDK/plugin sandbox investigado, **sin marketplace de ejecución arbitraria** en esta etapa.
