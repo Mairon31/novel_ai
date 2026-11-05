@@ -152,6 +152,21 @@ class ForkAtomicityTests(unittest.TestCase):
                         self.narrative.fork_story(self.story)
                 self.assert_unchanged()
 
+    def test_missing_editorial_source_does_not_publish_partial_branch(self):
+        # The DB still references this cover, but its file disappeared.
+        with self.app.state.store._conn() as db:
+            media = db.execute(
+                "SELECT * FROM creator_media_assets WHERE story_id=?",
+                (self.story,),
+            ).fetchone()
+        source = self.app.state.creator_media._path(
+            self.story, media["id"], media["kind"])
+        source.unlink()
+        self.assertFalse(source.exists())
+        with self.assertRaisesRegex(ValueError, "archivo editorial"):
+            self.narrative.fork_story(self.story)
+        self.assert_unchanged()
+
     def test_failed_planner_copy_also_rolls_back_visual_and_story(self):
         planner = self.app.state.scene_planner
         original = planner.clone
