@@ -195,6 +195,11 @@ def create_app(
     def download_list():
         return {"downloads": store.downloads()}
 
+    @service.get("/api/v1/downloads/recovery")
+    def download_recovery():
+        """Read-only summary of startup file/SQLite reconciliation."""
+        return downloads.recovery_report
+
     @service.get("/api/v1/downloads/{job_id}")
     def download_one(job_id: str):
         job = store.download(job_id)
