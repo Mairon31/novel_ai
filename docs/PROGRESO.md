@@ -334,3 +334,18 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Panel de portada editorial propio, gestor de modelos por runtime para
   imagen/TTS, cola de generación de trabajos y scheduler con offload auténtico.
 - [ ] Benchmarks físicos agrupados en CUDA/ComfyUI/TTS.
+
+
+## 2026-11-05 — Ficha editorial con elenco y elección de aperturas
+
+- [x] Pantalla de detalle de historia conectada con `creatorBlueprint`, `creatorCharacters` y `creatorAssets`, con solicitudes independientes; una galería ausente no bloquea la sinopsis ni los NPC.
+- [x] Elenco con retratos PNG vinculados al personaje; si no tiene recurso asociado se muestra una ficha sin fotografía. Galería de fondos y primeros planos con nombres reales del catálogo local.
+- [x] Separación editorial: sinopsis y trama del jugador visibles; reglas, instrucciones, recordatorios y trama privada de IA no se imprimen en la ficha.
+- [x] Hasta seis escenas de apertura del creador se presentan como elecciones antes del primer turno. El botón llama la API existente y abre el lector con el turno persistido; al retomar una partida ya iniciada no se ofrecen aperturas de reemplazo.
+- [x] Diseño responsive para escritorio y 390 px, con selección deshabilitada durante la operación; protección para navegación concurrente.
+- [x] Se agregó `apps/web/tests/story-editorial.spec.ts` para probar apertura #2, sustitución de `{{user}}`, persistencia del primer turno, privacidad del contexto interno, retratos y galería con FastAPI real.
+- [x] Documentación de licencias: se eliminó la prohibición general de reutilizar interfaces de proyectos open source. Las licencias de código se aplican según su texto, y los assets externos se revisan por separado.
+- [ ] QA: ejecutar `npm run build` y Playwright desktop/móvil en GitHub Actions; **no se declara PASS antes de la evidencia del workflow**.
+- [ ] Siguiente evolución: portadas editoriales dedicadas (sin usar la primera escena como portada), poses/expresiones multi-sprite y disparadores semánticos con control manual.
+
+**Alcance:** integración de datos y experiencia de lectura; no se añadió inferencia de imágenes, se duplicó la persistencia de historias ni se publicaron assets de terceros.

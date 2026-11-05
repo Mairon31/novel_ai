@@ -6,7 +6,7 @@
 
 | Proyecto | URL | Licencia observada | Qué aporta | Uso propuesto | Estado |
 |---|---|---|---|---|---|
-| **Urakatsu** | https://github.com/karrot0/Urakatsu | **MIT (LICENSE)**; aviso a Koharu | Catálogo HF con fit por GPU, descarga, selección de modelos, frontend React y launcher | **Prioridad alta: Model Hub y UI**; reuso tras spike/atribución | Código y docs inspeccionados 2026-11-04; integración pendiente |
+| **Urakatsu** | https://github.com/karrot0/Urakatsu | **MIT (LICENSE)**; aviso a Koharu | Catálogo HF con fit por GPU, descarga, selección de modelos, frontend React y launcher | **Prioridad alta: Model Hub y UI**; reuso tras spike/atribución | Código y docs inspeccionados; Model Hub master/detail y caché de Urakatsu MIT adaptados (ver THIRD_PARTY_NOTICES.md) |
 | **Koharu** | https://github.com/koharu-rs/koharu | **MIT OR Apache-2.0** | Settings/Providers, descarga, runtime Rust, Tauri | Inspiración y posible reuso de componentes UI/desktop | Código y docs inspeccionados 2026-11-04; integración pendiente |
 | **Open Dungeon** | https://github.com/newideas99/open-dungeon | MIT | Historias locales, Continue/Retry/Edit, texto streaming, imágenes inline, SQLite, UI | **Candidato principal de referencia/reuso** UX y bucle | Revisado README; integración **pendiente** |
 | **Talemate** | https://github.com/vegu-ai/talemate | AGPL-3.0 | Narrador, agentes, memoria, estado de mundo, imagen y TTS | Evaluar completo / estudiar arquitectura de agentes | Revisado README; integración **pendiente** |
