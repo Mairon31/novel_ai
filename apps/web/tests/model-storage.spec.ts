@@ -42,9 +42,10 @@ test('installed Model Hub reports real disk usage, partials and absent files', a
   const storage = page.getByRole('region', { name: 'Almacenamiento de modelos' });
   await expect(storage).toBeVisible();
   await expect(storage.getByText('Espacio de modelos')).toBeVisible();
-  await expect(storage.getByText('5.0 GB')).toBeVisible();
-  await expect(storage.getByText('64.0 MB')).toBeVisible();
-  await expect(storage.getByText('145.0 GB')).toBeVisible();
+  const metrics = storage.locator('.hub-storage-metrics > div');
+  await expect(metrics.nth(0).getByText('5.0 GB', { exact: true })).toBeVisible();
+  await expect(metrics.nth(1).getByText('64.0 MB', { exact: true })).toBeVisible();
+  await expect(metrics.nth(2).getByText('145.0 GB', { exact: true })).toBeVisible();
   await expect(storage.getByRole('meter', {name:'Espacio ocupado por archivos de Noble'}))
     .toHaveAttribute('aria-valuenow','3');
 
