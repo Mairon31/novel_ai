@@ -1098,3 +1098,50 @@
 .creator-fields label.creator-lore-toggle input[type="checkbox"]{
   width:17px;height:17px;min-width:17px;margin:0;padding:0;accent-color:#a08af0;
   cursor:pointer;flex:none}
+
+/* Confirmed world state: explicitly authored, compact and responsive. */
+.world-state-editor{gap:19px}
+.world-section{display:flex;flex-direction:column;gap:15px;padding:20px;
+  background:#1d253a;border:1px solid #3e4862;border-radius:14px;min-width:0}
+.world-section>h4{display:flex;align-items:center;gap:9px;font:700 16px 'Outfit',sans-serif;
+  color:#e7e9f6;margin:0}
+.world-section>p,.world-history>p{font-size:12px;color:#a9b5cb;
+  line-height:1.65;margin:0}
+.world-npc-grid{display:flex;flex-wrap:wrap;gap:9px}
+.creator-fields label.world-check{display:inline-flex;align-items:center;flex-direction:row;
+  gap:9px;cursor:pointer;font-weight:600;color:#cdd6e9;font-size:12px;
+  background:#232e46;border:1px solid #42506b;border-radius:10px;padding:9px 12px}
+.creator-fields label.world-check input[type=checkbox]{width:17px;height:17px;
+  min-width:17px;flex:none;padding:0;margin:0;accent-color:#a48bf1;cursor:pointer}
+.world-relations{display:flex;flex-direction:column;gap:11px}
+.world-relations h4{margin:5px 0 0;font-size:13px;color:#bec8de}
+.world-flag-row{display:flex;align-items:center;justify-content:space-between;
+  gap:9px;padding:4px 0;border-bottom:1px solid #353f57}
+.world-flag-row .secondary-button{padding:8px;min-width:36px;justify-content:center}
+.world-add-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.world-add-row>input,.world-add-row>select{min-width:170px;flex:1}
+.world-fact{display:flex;flex-direction:column;gap:13px;padding:17px;
+  background:#172039;border:1px solid #3a4764;border-radius:12px}
+.world-fact-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.world-fact-title strong{font:600 14px 'Outfit',sans-serif}
+.world-fact-title button{padding:8px}
+.world-witnesses{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.world-witnesses>strong{width:100%;font-size:12px;color:#b7c5df}
+.world-witnesses>p{color:#bac1d5;font-size:12px}
+.world-history{border:1px solid #3a4560;border-radius:13px;
+  background:#1b2438;padding:17px 20px;display:flex;flex-direction:column;gap:12px}
+.world-history summary{display:flex;align-items:center;gap:9px;
+  cursor:pointer;color:#e0e5f3;font-weight:650;font-size:13px;list-style:inside}
+.world-history[open]>summary{margin-bottom:12px}
+.world-history[open]>p{margin-bottom:13px}
+.world-snapshot{display:flex;flex-direction:column;gap:8px;margin-top:12px;
+  border:1px solid #4a516d;border-radius:10px;padding:16px;
+  color:#bbcce4;font-size:12px}
+.world-snapshot>strong{font-size:13px;color:#e4eafa;margin-bottom:3px}
+@media(max-width:680px){
+  .world-section{padding:15px}
+  .world-add-row{align-items:stretch;flex-direction:column}
+  .world-add-row>input,.world-add-row>select,.world-add-row>button{width:100%}
+  .world-fact{padding:13px}
+  .world-history{padding:13px}
+}
