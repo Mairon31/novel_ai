@@ -55,6 +55,13 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
       } }),
     });
   });
+  await page.route(/\/api\/v1\/model-cards\/demo\/Qwen3-8B-GGUF\?/, async route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({
+      readme: '# Modelo de ejemplo\\n<script>window.badCode=1</script>',
+      available: true, truncated: false,
+    }),
+  }));
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
@@ -82,6 +89,13 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await page.getByRole('button', { name: 'Todas', exact: true }).click();
   await page.getByRole('button', { name: /Qwen3-8B-Q8_0.gguf/ }).click();
   await expect(page.getByText('Variante seleccionada: Q8_0')).toBeVisible();
+  await page.getByRole('button', { name: 'Leer ficha completa' }).click();
+  const modelReadme = page.locator('.hub-model-readme');
+  await expect(modelReadme).toContainText('Modelo de ejemplo');
+  await expect(modelReadme).toContainText('<script>window.badCode=1</script>');
+  await expect(page.locator('script').filter({ hasText: 'window.badCode=1' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Ocultar ficha' }).click();
+  await expect(modelReadme).toHaveCount(0);
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-catalog-detail.png', fullPage: true });
   await page.getByRole('button', { name: 'Cerrar detalles' }).click();
   await page.getByRole('button', { name: /Qwen3-8B-GGUF/ }).click();
