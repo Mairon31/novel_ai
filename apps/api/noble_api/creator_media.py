@@ -132,8 +132,8 @@ class CreatorMediaService:
     def add(self, story_id: str, kind: str, label: str, caption: str,
             data: bytes, character_id: str | None = None) -> dict:
         self._require_story(story_id)
-        if kind not in ("background", "foreground"):
-            raise ValueError("El recurso debe ser fondo o primer plano")
+        if kind not in ("cover", "background", "foreground"):
+            raise ValueError("El recurso debe ser portada, fondo o primer plano")
         if not 1 <= len(label.strip()) <= 100:
             raise ValueError("El nombre debe tener entre 1 y 100 caracteres")
         if not 3 <= len(caption.strip()) <= 220:
@@ -174,12 +174,28 @@ class CreatorMediaService:
                        (form.label.strip(), form.caption.strip(), story_id, asset_id))
         return next(row for row in self.list(story_id) if row["id"] == asset_id)
 
+    def set_cover(self, story_id: str, asset_id: str | None) -> dict:
+        self._require_story(story_id)
+        if asset_id is not None:
+            asset = self.get(story_id, asset_id)
+            if asset["kind"] != "cover":
+                raise ValueError("Solo una imagen de tipo portada puede ser portada editorial")
+            path = self._path(story_id, asset_id, "cover")
+            if not path.is_file() or path.is_symlink():
+                raise ValueError("El archivo de portada no está disponible")
+        with self.store._conn() as db:
+            db.execute("UPDATE stories SET cover_asset_id=?,updated_at=? WHERE id=?",
+                       (asset_id, time.time(), story_id))
+        return self.narrative.get_story(story_id)
+
     def delete(self, story_id: str, asset_id: str) -> None:
         item = self.get(story_id, asset_id)
         file = self._path(story_id, asset_id, item["kind"])
         with self.store._conn() as db:
             db.execute("DELETE FROM creator_media_assets WHERE story_id=? AND id=?",
                        (story_id, asset_id))
+            db.execute("UPDATE stories SET cover_asset_id=NULL,updated_at=? "
+                       "WHERE id=? AND cover_asset_id=?", (time.time(), story_id, asset_id))
         file.unlink(missing_ok=True)
 
     def file(self, story_id: str, asset_id: str) -> FileResponse:
@@ -231,6 +247,7 @@ class CreatorMediaService:
         with self.store._conn() as db:
             rows = [dict(row) for row in db.execute(
                 "SELECT * FROM creator_media_assets WHERE story_id=?", (source_id,))]
+        cover_map: dict[str, str] = {}
         for row in rows:
             source = self._path(source_id, row["id"], row["kind"])
             if not source.is_file() or source.is_symlink():
@@ -239,12 +256,25 @@ class CreatorMediaService:
             target = self._path(target_id, new_id, row["kind"])
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
+            cover_map[row["id"]] = new_id
             with self.store._conn() as db:
                 db.execute("INSERT INTO creator_media_assets VALUES(?,?,?,?,?,?,?,?,?)",
                            (new_id, target_id, row["kind"], row["label"],
                             row["caption"], (character_ids or {}).get(row["character_id"]),
                             target.name,
                             row["media_type"], time.time()))
+        with self.store._conn() as db:
+            original = db.execute(
+                "SELECT cover_asset_id FROM stories WHERE id=?", (source_id,)).fetchone()
+            chosen = cover_map.get(original["cover_asset_id"]) if original else None
+            if chosen:
+                db.execute("UPDATE stories SET cover_asset_id=? WHERE id=?",
+                           (chosen, target_id))
+
+
+class CoverSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    asset_id: uuid.UUID | None = None
 
 
 def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
@@ -256,7 +286,7 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
             raise HTTPException(404, str(exc)) from exc
 
     @app.post("/api/v1/stories/{story_id}/creator/assets", status_code=201)
-    async def upload_asset(story_id: uuid.UUID, kind: Literal["background", "foreground"] = Form(...),
+    async def upload_asset(story_id: uuid.UUID, kind: Literal["cover", "background", "foreground"] = Form(...),
                            label: str = Form(...), caption: str = Form(...),
                            character_id: uuid.UUID | None = Form(None),
                            file: UploadFile = File(...)):
@@ -268,6 +298,13 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
         try:
             return media.add(str(story_id), kind, label, caption, data,
                              str(character_id) if character_id else None)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.put("/api/v1/stories/{story_id}/creator/cover")
+    def select_story_cover(story_id: uuid.UUID, body: CoverSelection):
+        try:
+            return media.set_cover(str(story_id), str(body.asset_id) if body.asset_id else None)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
