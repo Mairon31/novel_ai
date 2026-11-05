@@ -421,6 +421,38 @@ class NarrativeService:
                     raise ValueError(
                         "El motor terminó la conexión sin confirmar el final de la generación")
 
+    async def prepare(self) -> dict:
+        """Explicit warm-up without adding content to any story.
+
+        Loads a local/worker model through its normal inference contract. Never
+        executed automatically at application startup or on page navigation.
+        """
+        config = self.config()
+        if config["provider"] == "openrouter":
+            raise ValueError("OpenRouter no ofrece precalentamiento persistente. Genera normalmente.")
+        if not config["model"].strip():
+            raise ValueError("Primero selecciona y guarda un modelo narrativo")
+        warm = {**config, "max_tokens": 24, "temperature": 0.0}
+        started = time.monotonic()
+        first = None
+        count = 0
+        async for text in self.generate(warm, [
+            {"role": "system", "content": "Responde brevemente en español."},
+            {"role": "user", "content": "Responde únicamente: Listo."},
+        ]):
+            if first is None:
+                first = round((time.monotonic() - started) * 1000, 1)
+            count += len(text)
+        if count == 0:
+            raise ValueError("El modelo no devolvió una respuesta de preparación")
+        return {
+            "ready": True,
+            "provider": config["provider"], "model": config["model"],
+            "duration_ms": round((time.monotonic() - started) * 1000, 1),
+            "first_text_ms": first,
+            "message": "Preparación completada; el motor puede descargar memoria si está inactivo.",
+        }
+
     async def stream_turn(self, story_id: str, request_id: str,
                           mode: str, instruction: str):
         lock = self.locks.setdefault(story_id, asyncio.Lock())
@@ -474,6 +506,13 @@ def mount_narrative_routes(app, narrative: NarrativeService):
             return narrative.configure(body)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/v1/narrative/prepare")
+    async def warmup():
+        try:
+            return await narrative.prepare()
+        except (httpx.HTTPError, ValueError, OSError) as exc:
+            raise HTTPException(422, str(exc)[:250]) from exc
 
     @app.get("/api/v1/narrative/models")
     async def get_models():
