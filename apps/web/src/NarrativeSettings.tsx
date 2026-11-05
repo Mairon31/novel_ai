@@ -15,6 +15,8 @@ export function NarrativeSettings() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [saved, setSaved] = useState('');
+  const [preparing, setPreparing] = useState(false);
+  const [prepareElapsed, setPrepareElapsed] = useState(0);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -46,6 +48,23 @@ export function NarrativeSettings() {
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setWorking(false); }
+  }
+
+  async function prepare() {
+    setWorking(true); setPreparing(true); setPrepareElapsed(0);
+    setSaved(''); setError('');
+    const start = Date.now();
+    const ticker = window.setInterval(() => setPrepareElapsed(
+      Math.floor((Date.now() - start) / 1000)), 1000);
+    try {
+      await api.saveNarrativeConfig(config);
+      const result = await api.prepareNarrator();
+      setSaved('Modelo preparado: ' + result.model + ' · ' +
+        (result.duration_ms / 1000).toFixed(1) + ' s. Puedes comenzar tu historia.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally {
+      window.clearInterval(ticker); setPreparing(false); setWorking(false);
+    }
   }
 
   return <section className="narrative-settings" aria-labelledby="narrative-settings-heading">
@@ -144,7 +163,16 @@ export function NarrativeSettings() {
           Guardar y probar conexión</button>
         <button className="primary-button" disabled={working}
           onClick={() => void persist(false)}><Save size={16}/> Guardar parámetros</button>
+        <button className="secondary-button"
+          disabled={working || !config.model || config.provider === 'openrouter'}
+          onClick={() => void prepare()}>
+          {preparing ? <LoaderCircle size={16} className="rotating"/> : <Cpu size={16}/>}
+          {preparing ? 'Preparando modelo… ' + prepareElapsed + ' s' : 'Preparar modelo ahora'}
+        </button>
       </div>
+      <p className="narrative-helper">«Preparar modelo ahora» hace una inferencia corta
+        únicamente cuando pulsas el botón; no agrega ningún turno al historial.
+        Puede tardar en la primera carga. No se aplica a APIs remotas de OpenRouter.</p>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
         necesitan un runtime local para su ejecución. Ollama puede cargar su propio modelo al generar; KoboldCpp puede arrancarse desde Noble AI. OpenRouter usa su infraestructura remota y los workers utilizan una GPU externa autenticada.</p>
     </>}

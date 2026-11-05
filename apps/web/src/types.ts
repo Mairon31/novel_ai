@@ -165,3 +165,8 @@ export type SpeechVoices = {
   engine: 'piper'; available: boolean; device: string; on_demand_only: boolean;
   models_dir: string; voices: Array<{ id: string; name: string }>;
 };
+
+export type NarratorPrepareResult = {
+  ready: boolean; provider: string; model: string; duration_ms: number;
+  first_text_ms: number | null; message: string;
+};

@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -87,6 +87,7 @@ export const api = {
   saveNarrativeConfig: (config: NarrativeConfig) => request<NarrativeConfig>(
     '/narrative/config', { method: 'PUT', body: JSON.stringify(config) }),
   narrativeModels: () => request<ProviderModels>('/narrative/models'),
+  prepareNarrator: () => request<NarratorPrepareResult>('/narrative/prepare', { method: 'POST' }),
   koboldStatus: () => request<KoboldStatus>('/runtime/kobold/status'),
   koboldInstalled: () => request<{ models: KoboldInstalled[] }>('/runtime/kobold/installed'),
   koboldStart: (payload: KoboldLaunch) => request<KoboldStatus>(
