@@ -216,8 +216,8 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
         {stories.map(s => <button key={s.id} className="noble-library-cover"
           onClick={() => selectStory(s)} disabled={generating}>
           <div className="noble-library-cover-art"
-            style={s.scene_image_url ? {backgroundImage:'url("'+s.scene_image_url+'")'}:undefined}>
-            {!s.scene_image_url && <BookOpen size={38}/>}
+            style={s.cover_image_url || s.scene_image_url ? {backgroundImage:'url("'+(s.cover_image_url || s.scene_image_url)+'")'}:undefined}>
+            {!(s.cover_image_url || s.scene_image_url) && <BookOpen size={38}/>}
             <span>{s.origin_story_id ? 'Ruta alternativa' : 'Historia'}</span>
           </div>
           <div className="noble-library-cover-copy"><strong>{s.title}</strong>
