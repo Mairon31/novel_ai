@@ -311,3 +311,26 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Consulta de `README.md` de modelos por SHA de revisión y hasta 128 KiB, con presentación textual segura.
 - [x] Pruebas de ruta, límites, validación, acceso restringido y renderizado en lector de fichas de modelos.
 - [ ] Comparación detallada multi-modelo, soporte de información técnica de runtimes de imágenes y voces y sincronización real con una instalación de GPU.
+
+## 2026-11-05 — Rediseño de Model Hub, biblioteca y configuraciones
+
+- [x] Revisión del código fuente de Urakatsu con licencia MIT y verificación
+  de su commit de origen `165bf592716019b8487249bf7ca3ff3b708a23e7`.
+- [x] Adaptación real del patrón de caché de descubrimiento y detalles en
+  `apps/web/src/modelCatalogCache.ts`; atribución y licencia preservadas.
+- [x] Model Hub con inspector lateral interactivo en escritorio, panel
+  superpuesto para móvil, caché con caducidad y protección contra respuestas
+  tardías al cambiar de modelo/contexto.
+- [x] Vista editorial de historia: Biblioteca → Detalle (sinopsis, género,
+  tags, protagonista, últimos turnos) → Lector inmersivo, con acceso directo
+  a la edición en Creator Studio.
+- [x] Página general de Configuración con tarjetas de acceso a subsistemas,
+  estado del idioma, modo de imagen, proveedor y versión.
+- [x] Backend de almacenamiento administrado: tamaños reales de modelos
+  registrados y archivos parciales, estado del disco, exclusión de symlinks y
+  rutas externas; UI de inventario y bloqueo de asignación de archivos faltantes.
+- [x] Pruebas en Python y Playwright de historia, caché de modelos, parámetros
+  y almacenamiento en disco; regresiones detectadas en CI y pruebas corregidas.
+- [ ] Panel de portada editorial propio, gestor de modelos por runtime para
+  imagen/TTS, cola de generación de trabajos y scheduler con offload auténtico.
+- [ ] Benchmarks físicos agrupados en CUDA/ComfyUI/TTS.
