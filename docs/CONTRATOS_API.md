@@ -137,3 +137,12 @@ El endpoint ya implementado `POST /api/v1/stories/{story_id}/generate` mantiene 
 - Descargas GGUF: una respuesta HTTP 206 solo se acepta tras una petición `Range` explícita, verificando inicio, final, longitud total si conocida y longitud real de la respuesta. El modelo se registra únicamente tras comprobaciones de tamaño/hash disponibles.
 
 Referencias: [TODO](../TODO.md), [QA](QA_Y_ACEPTACION.md), [PROGRESO](PROGRESO.md).
+
+
+## Cancelación explícita de generación (implementación P0, 2026-11-05)
+
+- `POST /api/v1/stories/{story_id}/generate/{request_id}/cancel`: devuelve `{"request_id":"uuid","cancel_requested":true|false}`. `true` significa que la operación registrada recibió la señal; **no** certifica que los pesos hayan sido descargados ni que el cómputo físico se haya detenido. `false` indica que la operación ya no está en el registro, aún no estaba disponible o ya concluyó.
+- `POST /api/v1/stories/{story_id}/generate` registra la operación antes de abrir el `StreamingResponse`, rechaza el mismo `request_id` simultáneo con HTTP 409 y elimina el registro en `finally`. La señal por otro `request_id` o historia no alcanza una operación distinta.
+- El sondeo de desconexión y cancelación se realiza durante una espera del proveedor sin tokens, con intervalo de ~200 ms para detectar el corte en el servidor. El cierre cancela el siguiente `anext()` y cierra la respuesta HTTP upstream. No se persiste un turno incompleto ni se emite `done` por una solicitud cancelada.
+- Frontend: `AbortController` + señal explícita a este endpoint al presionar Detener, cambiar de historia o regresar a Biblioteca. La señal es de mejor esfuerzo si no existe conexión con el servidor.
+- Pruebas Python de cancelación por solicitud, upstream bloqueado y limpieza del lease aprobadas en [CI #42050811867](https://github.com/Mairon31/novel_ai/actions/runs/42050811867). **La parada inmediata del cómputo en Ollama/KoboldCpp/worker real no está certificada**.
