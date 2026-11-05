@@ -118,7 +118,7 @@ La activación del narrador analiza la intervención presente y los últimos cua
 
 La interfaz Creator Studio incluye pestaña propia de Lorebook con editor, prioridades, activadores y previsualización del texto exacto añadido. API y pruebas `tests/test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
 
-**No implementado todavía:** scopes de personaje/testigos (control de omnisciencia), snapshots de canon por turno, recuperación semántica de memorias episódicas, regex con timeout, recursión de Lorebooks y reparto del contexto con tokenizador del runtime. Estas tareas siguen abiertas en [TODO](../TODO.md).
+**No implementado todavía:** scopes de personaje/testigos (control de omnisciencia), recuperación semántica de memorias episódicas, regex con timeout, recursión de Lorebooks y reparto del contexto con tokenizador del runtime. Los snapshots de canon, Lorebook y NPC ahora existen y se documentan abajo. Estas tareas siguen abiertas en [TODO](../TODO.md).
 
 
 ## Implementación P1: estado estructurado por turno, rama y testigos (2026-11-05)
@@ -133,4 +133,23 @@ Para evitar omnisciencia directa, `WorldStateService.context` **no envía los he
 
 La UI incluye posición, momento, clima, inventario, relaciones por NPC, indicadores booleanos, hechos públicos/privados con selección de testigos, guardado manual con control de revisiones y un inspector de snapshots por turno. `tests/test_world_state.py` comprueba transacciones, confirmación/rollback, canon histórico, migraciones, independencia de ramas y filtrado de testigos. [CI #42074620459](https://github.com/Mairon31/novel_ai/actions/runs/42074620459): **162 pruebas Python y 32 pruebas Playwright aprobadas**, con cobertura escritorio/móvil y SQLite real, además de conflictos de revisión bajo concurrencia.
 
-**Pendiente:** rebobinado destructivo completo, actualización automática del estado mediante propuesta validada, aislamiento de conocimiento entre Lorebooks/diálogos y atomicidad entre todas las fases de una bifurcación. El estado de tiempo/clima y presencia es confirmado por el autor, no detectado automáticamente con fiabilidad por el LLM.
+**Pendiente:** rebobinado destructivo completo, actualización automática del estado mediante propuesta validada, aislamiento de conocimiento entre Lorebooks/diálogos y durabilidad de archivos ante corte eléctrico. El estado de tiempo/clima y presencia es confirmado por el autor, no detectado automáticamente con fiabilidad por el LLM.
+
+
+## P1: Lorebooks, instrucciones de autor y NPC históricos — rebobinado seguro (2026-11-05)
+
+**Problema corregido:** una rama creada desde un turno antiguo clonaba el Lorebook, las instrucciones internas del creador y las fichas de NPC tal como estaban *hoy*, incluso cuando contenían secretos escritos o descubiertos en turnos posteriores. Esto contradecía la independencia temporal del canon.
+
+**Solución:** cada `NarrativeService.append` escribe, dentro de la misma transacción SQLite del turno, escena y mundo:
+
+- `lorebook_turn_snapshots`: copia JSON íntegra de las entradas en ese instante (incluye activadores, prioridades y estado). Actualizar o eliminar una entrada después **no** reescribe el pasado.
+- `creator_turn_snapshots`: versión del blueprint de autor (incluye `ai_plot`, directrices y recordatorios) y las fichas de NPC tal como existían en el turno.
+- Las tablas existentes `world_turn_snapshots` continúan proporcionando lugar, testigos y canon textual con la misma fecha lógica.
+
+Una bifurcación con `until_turn_id` toma exactamente las versiones del turno seleccionado, vuelve a asignar IDs propios de Lorebook y NPC y conserva los mismos IDs nuevos a lo largo de las instantáneas copiadas. Una bifurcación **desde el presente** continúa copiando el estado actual. Para los turnos antiguos **sin snapshots** porque preceden a esta función, el sistema adopta el criterio seguro: **no inventa** entradas ni personajes históricos a partir de datos actuales que podrían revelar hechos futuros.
+
+**Interfaz:** Historial → **Rebobinar aquí** abre una confirmación. Muestra el turno de corte, el número de turnos posteriores que permanecerán en la historia original y las instantáneas disponibles de Lorebook/estado. «Crear ruta desde este turno» crea una rama mediante el `fork_story` transaccional existente y continúa en ella. «Mantenerme aquí» no altera datos. Es un **rebobinado no destructivo**: no borra ni archiva la línea original.
+
+**Evidencia:** `tests/test_lorebook_timeline.py` verifica versiones antiguas, edición/eliminación posterior, recuperación de datos al reiniciar, ausencia de filtraciones entre historias, fallback seguro de migración y rollback de turno. `tests/test_creator_timeline.py` verifica NPC/instrucciones históricas, remapeo estable de IDs, versiones antiguas sin revelaciones futuras y rollback. `apps/web/tests/story-rewind.spec.ts` prueba confirmación/cancelación/ramificación contra API real en escritorio y móvil. [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834): **179 Python + 34 Playwright PASS**.
+
+**Límites:** las ilustraciones editoriales, estados de referencia visual y planes de composición todavía no garantizan una reconstrucción temporal exacta ante ediciones posteriores. Tampoco hay recuperación de conocimiento episódico con FTS5/embeddings ni rebobinado destructivo seguro. No confundir «fichas de NPC históricas» con aislamiento cognitivo absoluto del modelo.
