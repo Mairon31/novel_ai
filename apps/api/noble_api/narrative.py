@@ -344,17 +344,17 @@ class NarrativeService:
         language = preferences.get("target_language", "es-419")
         styles = {"natural": "natural y conversacional", "literary": "literario y descriptivo",
                   "concise": "breve y dinámico"}
-        instruction = ("Idioma de salida obligatorio: " + language +
+        output_preferences = ("Idioma de salida obligatorio: " + language +
                        ". Estilo narrativo: " + styles.get(preferences.get("narration_style"), "natural") + ".")
         if preferences.get("translation_mode") == "target_output":
             source = preferences.get("source_language", "auto")
-            instruction += (" Idioma de entrada: " +
+            output_preferences += (" Idioma de entrada: " +
                             ("detecta automáticamente" if source == "auto" else source) +
                             ". Conserva el significado del contenido entrante y "
                             "escribe la respuesta únicamente en el idioma de salida.")
         canon = story.get("canon", "").strip()
         world_rules = "\nCanon persistente confirmado de la historia: " + canon if canon else ""
-        messages = [{"role": "system", "content": PROMPT + "\n" + instruction +
+        messages = [{"role": "system", "content": PROMPT + "\n" + output_preferences +
                      "\nPremisa: " + story["premise"] + "\nProtagonista: " +
                      story.get("protagonist_name", "Protagonista") + world_rules}]
         for t in self.turns(story["id"], limit=16):
