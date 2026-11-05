@@ -2,16 +2,20 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X } from 'lucide-react';
 import { api } from './api';
 import { VisualReader } from './VisualReader';
+import { StoryDetail } from './StoryDetail';
 import type { GenerationEvent, Story, StoryTurn } from './types';
 
 interface StoryStudioProps {
   onOpenSettings: () => void;
   onReadingChange?: (reading: boolean) => void;
+  onEditStory?: (storyId: string) => void;
 }
 
-export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProps) {
+export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: StoryStudioProps) {
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
+  const [reading, setReading] = useState(false);
+  const [storyMetadata, setStoryMetadata] = useState<{ synopsis: string; genre: string; tags: string[] } | null>(null);
   const [turns, setTurns] = useState<StoryTurn[]>([]);
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
@@ -39,8 +43,18 @@ export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProp
     return () => { alive = false; controller.current?.abort(); };
   }, []);
   useEffect(() => {
-    onReadingChange?.(Boolean(active));
-  }, [active?.id, onReadingChange]);
+    onReadingChange?.(Boolean(active && reading));
+  }, [active?.id, reading, onReadingChange]);
+  useEffect(() => {
+    let live = true;
+    setStoryMetadata(null);
+    if (active) api.creatorBlueprint(active.id).then(blueprint => {
+      if (live) setStoryMetadata({
+        synopsis: blueprint.synopsis, genre: blueprint.genre, tags: blueprint.tags,
+      });
+    }).catch(() => { /* A story without a creator sheet remains readable. */ });
+    return () => { live = false; };
+  }, [active?.id]);
   useEffect(() => {
     let alive = true;
     setTurns([]); setStreamText(''); setError('');
@@ -57,7 +71,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProp
     try {
       const story = await api.createStory(title.trim(), premise.trim(), protagonistName.trim());
       setStories(previous => [story, ...previous]);
-      setActive(story);
+      setActive(story); setReading(true);
       setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice('Historia creada. Puedes comenzar cuando quieras.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setLoading(false); }
@@ -105,6 +119,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProp
       const copy = await api.forkStory(originalId, turnId);
       setStories(existing => [copy, ...existing]);
       setActive(current => current?.id === originalId ? copy : current);
+      setReading(true);
       setDraft('');
       setNotice('Rama creada. Puedes continuar por una ruta diferente sin modificar la historia original.');
     } catch (e) { setError((e as Error).message); }
@@ -122,21 +137,24 @@ export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProp
   function selectStory(story: Story) {
     controller.current?.abort();
     setGenerating(false); setStreamText('');
-    setDraft(''); setActive(story); setCreating(false);
+    setDraft(''); setActive(story); setReading(false); setCreating(false);
   }
 
 
-  return <section className={'story-studio ' + (active ? 'is-reading' : 'is-library')}>
-    {active ? <div className="noble-reading-navigation">
+  return <section className={'story-studio ' + (active && reading ? 'is-reading' : 'is-library')}>
+    {active && reading ? <div className="noble-reading-navigation">
       <button className="noble-return-library" aria-label="Volver a biblioteca" onClick={() => {
         controller.current?.abort();
-        setGenerating(false); setStreamText(''); setDraft(''); setActive(null);
+        setGenerating(false); setStreamText(''); setDraft(''); setActive(null); setReading(false);
       }}><ArrowLeft size={19}/> Biblioteca</button>
       <div className="noble-reading-navigation-title">
         <strong>{active.title}</strong><span>Jugando como {active.protagonist_name || 'Protagonista'}</span>
       </div>
       <button className="noble-reader-settings-link" onClick={onOpenSettings}>Ajustes</button>
-    </div> : <div className="noble-library-home">
+    </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
+      onBack={() => { setActive(null); setReading(false); }}
+      onContinue={() => setReading(true)}
+      onEdit={() => onEditStory?.(active.id)}/> : <div className="noble-library-home">
       <div className="noble-library-hero">
         <div><span className="eyebrow"><Feather size={15}/> TU UNIVERSO DE HISTORIAS</span>
           <h1>Historias para vivir, no solo leer.</h1>
@@ -175,7 +193,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProp
         </div>}
       </div>
     </div>}
-    {active &&     <VisualReader active={active} turns={turns}
+    {active && reading && <VisualReader active={active} turns={turns}
       mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
       streamText={streamText} generating={generating} generationMessage={generationMessage}
       onCancel={cancelGeneration} onFork={createBranch} notice={notice} error={error}

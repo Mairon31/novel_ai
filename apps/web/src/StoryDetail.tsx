@@ -51,7 +51,7 @@ export function StoryDetail({ story, turns, metadata, onBack, onContinue, onEdit
     <div className="noble-story-detail-body">
       <div className="noble-story-detail-overview">
         <div><UserRound size={18}/><span>Protagonista</span><strong>{story.protagonist_name || 'Sin asignar'}</strong></div>
-        <div><BookOpen size={18}/><span>Intervenciones guardadas</span><strong>{turns.length}</strong></div>
+        <div><BookOpen size={18}/><span>Intervenciones recientes</span><strong>{turns.length}</strong></div>
         <div><CalendarDays size={18}/><span>Creada</span><strong>{date(story.created_at)}</strong></div>
         <div><Clock3 size={18}/><span>Actualizada</span><strong>{date(story.updated_at)}</strong></div>
       </div>

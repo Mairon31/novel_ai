@@ -22,9 +22,10 @@ const blankCharacter: CreatorCharacterDraft = {
 
 interface Props {
   onOpenLibrary: () => void;
+  initialStoryId?: string | null;
 }
 
-export function CreatorStudio({ onOpenLibrary }: Props) {
+export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [section, setSection] = useState<Section>('story');
@@ -53,11 +54,17 @@ export function CreatorStudio({ onOpenLibrary }: Props) {
   useEffect(() => {
     let live = true;
     api.stories().then(result => {
-      if (live) setStories(result.stories);
+      if (live) {
+        setStories(result.stories);
+        if (initialStoryId) {
+          setActive(result.stories.find(story => story.id === initialStoryId) || null);
+          setSection('story');
+        }
+      }
     }).catch((exc: Error) => { if (live) setError(exc.message); })
       .finally(() => { if (live) setLoading(false); });
     return () => { live = false; };
-  }, []);
+  }, [initialStoryId]);
 
   useEffect(() => {
     if (!active) return;

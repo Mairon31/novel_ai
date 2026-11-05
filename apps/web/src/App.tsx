@@ -47,6 +47,7 @@ function Loading() {
 export default function App() {
   const [page, setPage] = useState<Page>('modelos');
   const [reading, setReading] = useState(false);
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
   const [narrativeRevision, setNarrativeRevision] = useState(0);
   const [keyboardActive, setKeyboardActive] = useState(true);
   const [releaseNotice, setReleaseNotice] = useState<{ name: string; url: string; label: string } | null>(null);
@@ -171,6 +172,7 @@ export default function App() {
   }, [refreshDownloads]);
 
   function changePage(next: Page) {
+    setEditingStoryId(null);
     setPage(next); setNavOpen(false); setNotice(''); setError('');
   }
 
@@ -317,7 +319,8 @@ export default function App() {
         {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
         {!ready && <Loading/>}
 
-        {page === 'crear' && <CreatorStudio onOpenLibrary={() => changePage('inicio')}/>}
+        {page === 'crear' && <CreatorStudio initialStoryId={editingStoryId}
+          onOpenLibrary={() => changePage('inicio')}/>}
         {page === 'modelos' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> ECOSISTEMA LOCAL DE IA</div>
             <h1>Centro de modelos<span className="title-dot">.</span></h1>
@@ -464,7 +467,9 @@ export default function App() {
         </section>}
 
         {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}
-              onReadingChange={setReading}/>}
+              onReadingChange={setReading} onEditStory={storyId => {
+                setEditingStoryId(storyId); setReading(false); setPage('crear');
+              }}/>}
 
         {page === 'ajustes' && <WorkspaceSettings
           modelsDir={settings?.models_dir || ''}
