@@ -44,3 +44,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] [CI #42050811867](https://github.com/Mairon31/novel_ai/actions/runs/42050811867): **118 Python + 24 Playwright aprobadas**, incluyendo las pruebas backend nuevas. La comprobación E2E específica del botón Detener se agregó posteriormente.
 - [x] Playwright escritorio/móvil verificó el botón Detener con inferencia retenida: UUID exacto de historia y petición, POST al endpoint de cancelación, cierre del indicador de generación y ausencia de turno persistido. `story-cancellation.spec.ts` aprobó **2/2 viewports** en [CI #42051166584](https://github.com/Mairon31/novel_ai/actions/runs/42051166584), junto a 118 Python y 26 Playwright.
 - [ ] Medir tiempo real hasta detener inferencia y bajar VRAM con un modelo local bajo carga, worker remoto/Colab y conexión abruptamente cortada. No confundir cancelación de HTTP con descarga física de pesos.
+
+
+## Regresiones en descarga/instalación (2026-11-05)
+
+- [x] Pausa en `verifying` y reanudación sin HTTP cuando `.part` completo y tamaño esperado: no reiniciar desde cero ni solicitar Range desde EOF.
+- [x] Cancelar durante un `hashlib.update` bloqueado: el job queda `cancelled`, la transferencia parcial se conserva, el modelo no se registra y el archivo final no aparece.
+- [x] Rechazo transaccional de INSERT en `installed` tras mover el archivo: rollback SQLite y restauración del `.part` con los bytes originales.
+- [x] [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678): las tres pruebas nuevas aprobaron; **121 Python PASS**. Estado del job Playwright se verifica por separado.
+- [ ] Cortes físicos de proceso/energía, recuperaciones de metadatos de tamaño desconocido, cambios maliciosos de symlink durante la apertura y rollback de múltiples trabajadores simultáneos sobre el mismo fichero.
