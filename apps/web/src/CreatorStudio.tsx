@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
-  Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X, BookKey,
+  Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X, BookKey, Globe2,
 } from 'lucide-react';
 import { api } from './api';
+import { WorldStateEditor } from './WorldStateEditor';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter,
   CreatorCharacterDraft, CreatorMediaAsset, LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
-type Section = 'story' | 'cast' | 'lorebook' | 'openings' | 'media';
+type Section = 'story' | 'cast' | 'lorebook' | 'world' | 'openings' | 'media';
 
 const blankBlueprint: CreatorBlueprintDraft = {
   synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
@@ -350,6 +351,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
               onClick={() => setSection('cast')}><Users size={17}/> Personajes ({characters.length})</button>
             <button className={section === 'lorebook' ? 'selected' : ''}
               onClick={() => setSection('lorebook')}><BookKey size={17}/> Lorebook ({lorebookEntries.length})</button>
+            <button className={section === 'world' ? 'selected' : ''}
+              onClick={() => setSection('world')}><Globe2 size={17}/> Estado del mundo</button>
             <button className={section === 'openings' ? 'selected' : ''}
               onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
             <button className={section === 'media' ? 'selected' : ''}
@@ -357,6 +360,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
           </nav>
 
           {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando contenido...</div> :
+            section === 'world' ? <WorldStateEditor
+              storyId={active.id} characters={characters}/> :
             section === 'media' ? <div className="creator-fields creator-media-library">
               <div className="creator-section-intro">
                 <h3>Portadas, escenarios y personajes</h3>
