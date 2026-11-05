@@ -100,9 +100,15 @@ class CharacterVisual(BaseModel):
     distinguishing_features: str = Field(default="", max_length=650)
 
 
+class CharacterReference(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    asset_id: uuid.UUID | None = None
+
+
 class VisualState:
     def __init__(self, store: Store):
         self.store = store
+        self.planner = None
         with self.store._conn() as conn:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS visual_scenes(
@@ -132,6 +138,10 @@ class VisualState:
                     UNIQUE(story_id, name)
                 );
             """)
+            character_columns = [row[1] for row in conn.execute(
+                "PRAGMA table_info(visual_characters)")]
+            if "reference_asset_id" not in character_columns:
+                conn.execute("ALTER TABLE visual_characters ADD COLUMN reference_asset_id TEXT")
             columns = [row[1] for row in conn.execute("PRAGMA table_info(visual_assets)")]
             if "render_signature" not in columns:
                 conn.execute("ALTER TABLE visual_assets ADD COLUMN render_signature TEXT")
@@ -215,6 +225,28 @@ class VisualState:
                     "SELECT * FROM visual_characters WHERE id=?", (ident,)).fetchone())
         except sqlite3.IntegrityError as exc:
             raise ValueError("Ya existe un personaje visual con ese nombre") from exc
+
+    def set_character_reference(self, story_id: str,
+                                character_id: str, asset_id: str | None) -> dict:
+        self.scene(story_id)
+        with self.store._conn() as db:
+            character = db.execute("""SELECT * FROM visual_characters
+                WHERE story_id=? AND id=?""", (story_id, character_id)).fetchone()
+            if character is None:
+                raise ValueError("El personaje visual no existe en esta historia")
+            if asset_id:
+                asset = db.execute("""SELECT 1 FROM visual_assets
+                    WHERE story_id=? AND id=?""", (story_id, asset_id)).fetchone()
+                if asset is None:
+                    raise ValueError("La imagen de referencia no pertenece a esta historia")
+                # Check on-disk integrity before accepting a canonical reference.
+                self.reference_bytes(story_id, asset_id)
+            db.execute("""UPDATE visual_characters
+                SET reference_asset_id=?,revision=revision+1,updated_at=?
+                WHERE story_id=? AND id=?""",
+                (asset_id, time.time(), story_id, character_id))
+            return dict(db.execute("""SELECT * FROM visual_characters
+                WHERE story_id=? AND id=?""", (story_id, character_id)).fetchone())
 
     def enriched_prompt(self, story_id: str, prompt: str) -> str:
         scene = self.scene(story_id)
@@ -311,11 +343,7 @@ class VisualState:
                         scene_map[item["id"]], branch_id, item["location"],
                         turn_ids.get(item["source_turn_id"]) if item["source_turn_id"] else None,
                         item["detection"], now + index * 0.00001))
-                for index, person in enumerate(chars):
-                    conn.execute("INSERT INTO visual_characters VALUES(?,?,?,?,?,?,?,?)", (
-                        str(uuid.uuid4()), branch_id, person["name"], person["appearance"],
-                        person["outfit"], person["distinguishing_features"],
-                        person["revision"], now + index * 0.00001))
+                character_map: dict[str, str] = {}
                 for index, art in enumerate(gallery):
                     if art["scene_id"] not in scene_map:
                         continue
@@ -336,6 +364,19 @@ class VisualState:
                         new_file.name, art["content_sha256"], art["origin"],
                         art["prompt"], art["checkpoint"], art["seed"],
                         now + index * 0.00001, art.get("render_signature")))
+                for index, person in enumerate(chars):
+                    copied_id = str(uuid.uuid4())
+                    character_map[person["id"]] = copied_id
+                    conn.execute("""INSERT INTO visual_characters
+                        (id,story_id,name,appearance,outfit,distinguishing_features,
+                         revision,updated_at,reference_asset_id)
+                        VALUES(?,?,?,?,?,?,?,?,?)""", (
+                        copied_id, branch_id, person["name"], person["appearance"],
+                        person["outfit"], person["distinguishing_features"],
+                        person["revision"], now + index * 0.00001,
+                        asset_map.get(person.get("reference_asset_id"))))
+                if self.planner is not None:
+                    self.planner.clone(source_id, branch_id, scene_map, character_map)
                 if selected_id in asset_map:
                     new_selected = asset_map[selected_id]
                 else:
@@ -488,6 +529,15 @@ def mount_visual_routes(app, visual: VisualState):
     def edit_character(story_id: uuid.UUID, character_id: uuid.UUID, body: CharacterVisual):
         try:
             return visual.put_character(str(story_id), body, str(character_id))
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.put("/api/v1/stories/{story_id}/visual-characters/{character_id}/reference")
+    def assign_reference(story_id: uuid.UUID, character_id: uuid.UUID,
+                         body: CharacterReference):
+        try:
+            return visual.set_character_reference(str(story_id), str(character_id),
+                str(body.asset_id) if body.asset_id else None)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
