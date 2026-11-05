@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+import uuid
 import tempfile
 import unittest
 from pathlib import Path
@@ -168,6 +169,23 @@ class LorebookTests(unittest.TestCase):
             messages = restarted.state.narrative.messages(story, "Tomo la llave.", "do")
             self.assertIn("bóveda prohibida", messages[0]["content"])
             self.assertNotIn("bóveda prohibida", messages[-1]["content"])
+
+    def test_remote_author_fact_can_be_recalled_after_110_turns_by_explicit_trigger(self):
+        self.put(title="Sello lunar", keys=["sello lunar"],
+                 content="El sello lunar se rompe únicamente durante un eclipse total.")
+        narrative = self.app.state.narrative
+        for index in range(110):
+            narrative.append(
+                self.story_id, str(uuid.uuid4()), "do", f"Continuar paso {index}",
+                "Los viajeros avanzan tranquilamente por el sendero.", "fixture",
+            )
+        story = narrative.get_story(self.story_id)
+        before = narrative.messages(story, "Camino por la calle.", "do")
+        self.assertEqual(len(before), 34)  # system + 16 user/assistant pairs + latest request
+        self.assertNotIn("se rompe únicamente", before[0]["content"])
+        triggered = narrative.messages(story, "Toco el sello lunar.", "do")
+        self.assertIn("El sello lunar se rompe únicamente", triggered[0]["content"])
+        self.assertNotIn("El sello lunar se rompe únicamente", triggered[-1]["content"])
 
     def test_author_only_blueprint_does_not_trigger_lorebook_entries(self):
         self.put(title="Prohibido", content="El rey desapareció sin dejar rastro.",
