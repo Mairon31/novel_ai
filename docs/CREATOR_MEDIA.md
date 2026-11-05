@@ -35,3 +35,12 @@ Tablas SQLite: creator_media_assets y stories.cover_asset_id. Al crear una rama 
 ## Próximas mejoras de este módulo
 
 Editor de capas de personajes, varias expresiones por NPC, selección manual de escena, recorte del fondo automático, reglas de transición explícitas y validación de múltiples personajes. El diseño usa principios generales documentados por Isekai Zero, sin tomar sus recursos de imagen.
+
+## Seguridad y evolución según auditoría Argon (2026-11-05)
+
+- **Endurecimiento implementado en `master`:** los paths de recursos exigen UUID canónicos, tipo válido y directorio resuelto dentro del espacio administrado. Los enlaces simbólicos que desvíen archivos fuera de `story-assets` son rechazados, incluidos al acceder a registros antiguos importados. Ver `tests/test_creator_media.py::test_owned_asset_paths_reject_traversal_and_symlinked_directories` y [CI](https://github.com/Mairon31/novel_ai/actions/runs/41994792794).
+- **Fase P1:** asociar a cada personaje una hoja de expresiones `neutral/joy/anger/sadness/surprise` con IDs de assets, poses y metadatos; separar portada, fondo, sprite y CG, manteniendo referencias al ramificar.
+- **Fase P2:** importación/exportación de Character Card PNG V2/V3 (`chara`/`ccv3`), drag-and-drop, campos mapeados, Lorebook incrustado y límites de bytes/chunks; no ejecutar scripts ni suponer que un PNG contiene JSON seguro.
+- **Validación:** pruebas de permisos de historia, symlink, traversal, clonación, borrado seguro, roundtrip de tarjetas y reproducción de la misma expresión sin llamar a la GPU.
+
+Seguimiento: [TODO](../TODO.md), [auditoría §§08, 12, 16](ARGON_AUDITORIA.md).
