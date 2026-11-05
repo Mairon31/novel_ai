@@ -567,6 +567,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                     · {lorePreview.skipped_budget} excluidas por presupuesto</p>
                   {lorePreview.entries.map(entry => <p key={entry.id}>
                     {entry.title} · prioridad {entry.priority}</p>)}
+                  {!!lorePreview.context && <details className="creator-lorebook-preview">
+                    <summary>Ver contexto exacto enviado al narrador</summary>
+                    <pre>{lorePreview.context}</pre>
+                  </details>}
                 </div>}
               </div>
             </div> :
