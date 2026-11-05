@@ -6,6 +6,7 @@ It NEVER starts diffusion or uploads private story content to other providers.
 from __future__ import annotations
 
 import io
+from contextlib import nullcontext
 import json
 import re
 import shutil
@@ -260,29 +261,31 @@ class CreatorMediaService:
             "generated": False,
         }
 
-    def clone(self, source_id: str, target_id: str, character_ids: dict[str,str] | None = None) -> None:
-        self._require_story(target_id)
-        # Author-owned assets are deliberately cloned, not linked across stories.
-        with self.store._conn() as db:
+    def clone(self, source_id: str, target_id: str,
+              character_ids: dict[str, str] | None = None, conn=None) -> None:
+        # The destination is uncommitted during a transactional fork: do not
+        # query it using another connection or commit each asset separately.
+        if conn is None:
+            self._require_story(target_id)
+        with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
             rows = [dict(row) for row in db.execute(
                 "SELECT * FROM creator_media_assets WHERE story_id=?", (source_id,))]
-        cover_map: dict[str, str] = {}
-        for row in rows:
-            source = self._path(source_id, row["id"], row["kind"])
-            if not source.is_file() or source.is_symlink():
-                continue
-            new_id = str(uuid.uuid4())
-            target = self._path(target_id, new_id, row["kind"])
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, target)
-            cover_map[row["id"]] = new_id
-            with self.store._conn() as db:
+            cover_map: dict[str, str] = {}
+            for row in rows:
+                source = self._path(source_id, row["id"], row["kind"])
+                if not source.is_file() or source.is_symlink():
+                    # Existing, referenced assets must not silently disappear
+                    # from the new branch when a copy fails or source is gone.
+                    raise ValueError("No está disponible un archivo editorial de la historia original")
+                new_id = str(uuid.uuid4())
+                target = self._path(target_id, new_id, row["kind"])
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+                cover_map[row["id"]] = new_id
                 db.execute("INSERT INTO creator_media_assets VALUES(?,?,?,?,?,?,?,?,?)",
                            (new_id, target_id, row["kind"], row["label"],
                             row["caption"], (character_ids or {}).get(row["character_id"]),
-                            target.name,
-                            row["media_type"], time.time()))
-        with self.store._conn() as db:
+                            target.name, row["media_type"], time.time()))
             original = db.execute(
                 "SELECT cover_asset_id FROM stories WHERE id=?", (source_id,)).fetchone()
             chosen = cover_map.get(original["cover_asset_id"]) if original else None
