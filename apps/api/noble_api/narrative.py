@@ -115,6 +115,7 @@ class NarrativeService:
         self.visual = None  # injected after VisualState initializes its SQLite tables
         self.resources = None  # injected per app for local GPU operation arbitration
         self.creator = None
+        self.lorebook = None  # author-controlled conditional world knowledge
         self.creator_media = None  # optional creator-owned story bible and NPC guidance
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
@@ -315,6 +316,8 @@ class NarrativeService:
             character_ids = self.creator.clone(story_id, new_id, visual_character_map)
         if self.creator_media is not None:
             self.creator_media.clone(story_id, new_id, character_ids)
+        if self.lorebook is not None:
+            self.lorebook.clone(story_id, new_id)
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
@@ -380,12 +383,24 @@ class NarrativeService:
                             "escribe la respuesta únicamente en el idioma de salida.")
         canon = story.get("canon", "").strip()
         world_rules = "\nCanon persistente confirmado de la historia: " + canon if canon else ""
+        recent_turns = self.turns(story["id"], limit=16)
         creator_context = self.creator.context(story) if self.creator is not None else ""
+        # Only the current user intention and a bounded recent history activate
+        # lore: author secrets do not trigger themselves by being in AI context.
+        activation = "\n".join([
+            instruction,
+            *(turn["input_text"] + "\n" + turn["assistant_text"][:1600]
+              for turn in recent_turns[-4:]),
+        ])[-10000:]
+        lorebook_context = (self.lorebook.activate(story["id"], activation)["context"]
+                            if self.lorebook is not None else "")
         messages = [{"role": "system", "content": PROMPT + "\n" + output_preferences +
                      "\nPremisa: " + story["premise"] + "\nProtagonista: " +
                      story.get("protagonist_name", "Protagonista") + world_rules +
-                     ("\n\n" + creator_context if creator_context else "")}]
-        for t in self.turns(story["id"], limit=16):
+                     ("\n\n" + creator_context if creator_context else "") +
+                     ("\n\nLorebook activado para esta escena (conocimiento del mundo):\n" +
+                      lorebook_context if lorebook_context else "")}]
+        for t in recent_turns:
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
         line = {"say": "El protagonista dice", "do": "El protagonista hace",
