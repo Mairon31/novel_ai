@@ -50,6 +50,12 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await page.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(page.getByText('Una hechicera abre la puerta y señala un libro antiguo.')).toBeVisible();
   await expect(page.getByText('Abro el libro que hay sobre el mostrador.')).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir información de historia' }).click();
+  const inspector = page.locator('.noble-reader-inspector.is-open');
+  await expect(inspector).toBeVisible();
+  await expect(inspector).toHaveCSS('position', 'fixed');
+  await page.getByRole('button', { name: 'Cerrar información' }).click();
+  await expect(page.locator('.noble-reader-inspector.is-open')).toHaveCount(0);
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-story-reader.png',
     fullPage: true,
