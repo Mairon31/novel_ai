@@ -104,15 +104,17 @@
 - [x] **Lorebook temporal por turno**: `lorebook_turn_snapshots` conserva contenido exacto antes de futuras modificaciones/eliminaciones; rama desde corte antiguo clona solo ese snapshot, remapea IDs estables y no inventa información de turnos anteriores a la migración. `GET /stories/{id}/lorebook/turns/{turn_id}`, `tests/test_lorebook_timeline.py`, [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834): **179 Python + 34 Playwright PASS**.
 - [x] **Lorebooks por personaje/testigo**: filtro por presencia confirmada, pertenencia de UUID, remapeo histórico y controles en Creator Studio. [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216): **193 Python + 36 Playwright PASS** (escritorio/móvil). Es filtrado de entradas hacia el prompt; no garantiza obediencia del LLM ni aísla secretos en otros contextos.
 - [ ] Lorebook avanzado: regex autorales con timeout/límites seguros, recursión controlada y presupuesto por tokens reales (hoy usa límite por caracteres), más aislamiento cognitivo en todas las fuentes de contexto.
-- [ ] **Contexto en cuatro niveles**: canon y reglas del creador + estado mundial + Lorebooks por testigos + episodios de intervenciones antiguas + ventana reciente integrados. **Pendiente CI** del recuperador FTS y revisión de presupuesto por tokens; episodios históricos actuales son solo acciones del jugador, no resúmenes de narración.
-- [ ] **Memoria episódica FTS5**: índice persistente y transaccional de intervenciones del jugador, búsqueda Unicode por historia/rama, reconstrucción de index en migración, fallback léxico, recuerdos antiguos recuperados en mensajes con rol `user`, UI de búsqueda en historial, **pendiente CI**. `sqlite-vec`/embeddings CPU y ranking semántico opcional siguen pendientes.
+- [x] **Contexto de cuatro niveles integrado**: canon/instrucciones del autor, estado y Lorebook activado por testigos, episodios recuperados desde acciones del jugador y ventana reciente. Pruebas de persistencia/aislamiento en [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352), **217 Python + 42 Playwright PASS**. No se generan resúmenes semánticos automáticos.
+- [x] **Memoria episódica FTS5 y fallback**: índices transaccionales de las intervenciones del jugador, recuperación tras 115 turnos, aislamiento de bifurcaciones, migración de históricos y buscador en el lector. [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352), **217 Python + 42 Playwright PASS**. No se indexan respuestas del modelo ni secretos privados del autor.
+- [ ] Búsqueda semántica avanzada: `sqlite-vec` opcional, embeddings CPU, ranking híbrido y resúmenes episódicos verificables con procedencia/testigos.
 - [ ] Compresión y resúmenes de capítulos/arcos con procedencia, testigos e importancia; evitar conocimiento de testigos ausentes.
 - [ ] Prefijo de prompt estable para KV cache, tokenizador apropiado y truncamiento consciente; prueba de 100–120 turnos con hechos remotos.
 
 ### AUD-014 — Inspector de contexto
-- [ ] **Medidor de contexto del narrador** implementado en `NarrativeSettings.tsx`: desglosa sistema/preferencias, premisa, canon, contenido del creador, Lorebook, mundo, recuerdos e historial; reserva de salida y comparación con `num_ctx`, **pendiente CI**. Todos los tokens son estimados por caracteres, no tokenización real.
+- [x] **Medidor de contexto por bloques** en `NarrativeSettings.tsx`: sistema, canon, fichas, Lorebook, mundo, episodios, historial y reserva de salida; advertencia estimada de desbordamiento. [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352). Cuenta caracteres exactos y tokens **solo aproximados**.
 - [x] Creator Studio: pestaña separada de Lorebook con alta/edición/eliminación, prioridad, activadores y previsualización del contexto realmente seleccionado; QA Playwright escritorio y móvil [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220), **30/30 PASS**.
-- [ ] **Inspector de prompt completo** implementado: vista previa de los mismos mensajes enviados al adaptador, advertencia de posible desbordamiento y lectura privada local de instrucciones de autor, **pendiente CI**. Quedan pendientes tokenizadores reales por proveedor, medición real de KV-cache y avisos de truncamiento por proveedor.
+- [x] **Inspector completo de mensajes previos a la inferencia**: endpoint read-only y panel local privado de autor; muestra exactamente `NarrativeService.messages` y no escribe turnos. [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352), **217 Python + 42 Playwright PASS**.
+- [ ] Inspector avanzado por proveedor: tokenizadores reales por modelo/cuántización, lectura efectiva de KV-cache, advertencias de truncamiento reportadas por runtime y reservas medidas.
 
 ## Fase 4 — P1/P2: dirección escénica y multimedia
 
@@ -156,7 +158,7 @@
 - [ ] Empaquetado Tauri v2/sidecar o instalador portable validado en Windows 11 limpio, sin terminal para el usuario.
 - [ ] Benchmark reproducible TTFT, TPS, VRAM pico, carga KV, generación de fondos y latencia de sprites local/Colab.
 - [ ] Reportes JSON/Markdown con versión de modelo, cuantización, GPU, commit y entorno; no extrapolar resultados de un equipo a todos.
-- [ ] **Exportación HTML y EPUB3 ilustrada** por historia o rama: ambos formatos implementados, portada, imágenes WebP históricas, metadatos/índice de EPUB, textos escapados y descargas separadas en el lector; **pendiente CI**. El archivo portable `.noble.zip` para todo el grafo de ramas y restauración es una tarea distinta.
+- [x] **Exportación HTML y EPUB3 ilustrada** por historia o rama: descarga directa, portada, WebP históricos, OPF/índice XML EPUB3 válido, HTML escapado y aislamiento temporal. [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352): **217 Python + 42 Playwright PASS**. Exportación de backup `.noble.zip` y grafo de ramas sigue separada.
 - [ ] QA Playwright visual responsive, regresión E2E/API y perfil real de rendimiento por fase.
 
 ## Referencias y reutilización a investigar

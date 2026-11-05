@@ -635,3 +635,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Cada EPUB exporta solo la historia/rama indicada y usa `visual_turn_snapshots` para ilustraciones por escena; jamás reemplaza una selección antigua por una imagen futura. La portada del proyecto es opcional, los textos se codifican mediante ElementTree, y se aplican los mismos límites de bytes, cantidad y rutas seguras que en HTML.
 - [ ] El lector muestra enlaces separados «Exportar historia HTML» y «Exportar historia EPUB». Se extendieron `tests/test_story_export.py` para verificar estructura ZIP, validez OPF/XHTML, portada, historial de rama, texto escapado y 404. `apps/web/tests/story-export.spec.ts` descarga ambos formatos en desktop y móvil.
 - [ ] **CI pendiente**; `.noble.zip` con restauración completa y grafo de ramas, DRM y validación con lectores físicos quedan pendientes.
+
+
+## Verificación final de cuatro funciones — 2026-11-05
+
+- [x] [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) validó los commits `5ccab50` (HTML), `157267d` (FTS5), `d34b58e` (inspector), `ef801a9` (EPUB3) y `c7220d5` (fix E2E): **217 Python y 42 Playwright PASS**, UI escritorio/móvil y compilación web.
+- [x] Editor/lector exportan historias y ramas como HTML o EPUB3 autocontenidos, sin material interno del creador, con imágenes históricas y títulos. Tests verifican XML/ZIP, HTML escapado, firma WebP, ramas y 404.
+- [x] La memoria FTS5 recupera acciones del jugador después de 115 turnos, preserva aislamiento transaccional al bifurcar, se reconstruye en upgrades y utiliza fallback léxico. No almacena respuestas privadas del narrador ni las eleva al rol de sistema.
+- [x] Inspector read-only presenta mensajes exactos de `NarrativeService.messages`, desglose por bloques, advertencias de overflow estimado; no ejecuta modelo ni simula métricas KV-cache.
+- [ ] Pendientes explícitos: embeddings, resúmenes con procedencia, estimación tokenizadora real y runtime KV-cache, backup integral `.noble.zip` y compatibilidad con lectores EPUB físicos.

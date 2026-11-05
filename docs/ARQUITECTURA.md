@@ -126,3 +126,6 @@ El inspector forma parte de `NarrativeSettings` y es una herramienta local **par
 ## EPUB3 local sin dependencias externas
 
 La exportación EPUB utiliza `zipfile` y `xml.etree.ElementTree` de la biblioteca estándar. `mimetype` es la primera entrada ZIP sin compresión; `META-INF/container.xml` apunta al package OPF, que define metadata, manifest con todos los WebP, XHTML de capítulos, navegación e índice. `chapter.xhtml` contiene títulos, escenas y intervenciones ordenados; la portada y las imágenes de cada capítulo se leen desde rutas administradas por UUID y snapshots. Los archivos no incluyen peticiones a redes externas ni contexto privado de Creator. La variante EPUB se descarga desde el lector junto al HTML portátil.
+
+
+**Verificación conjunta de extensiones P1:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) — 217 Python, 42 Playwright (escritorio y móvil), compilación frontend PASS. Se validaron exportaciones EPUB3/HTML, recuperación de episodios del jugador y desglose privado del prompt.

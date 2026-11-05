@@ -170,3 +170,6 @@ La memoria episódica indexa exclusivamente los textos ingresados por el jugador
 ## Inspector del contexto — origen de cada bloque
 
 El sistema permite consultar, sin generar ni persistir turnos, exactamente qué mensajes pasaría al adaptador narrativo ante una nueva intervención. Agrupa canon, Lorebook activo sujeto a testigos, estado del mundo, acciones episódicas recuperadas y ventana reciente; reporta caracteres exactos y **tokens aproximados**, dejando `token_counts_exact=false`. Las alertas de exceso son estimadas y no significan que Ollama, KoboldCpp o workers hayan confirmado el truncamiento. El inspector muestra instrucciones de autor y por eso se ubica en Configuración, no en el lector exportado.
+
+
+**Suite integrada de memoria y contexto:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) aprobó recuperación después de 115 turnos, bifurcación aislada, rollback de índice y panel de contexto privado. La búsqueda permanece léxica y la contabilidad de tokens es estimativa.

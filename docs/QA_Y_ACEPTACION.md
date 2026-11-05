@@ -176,35 +176,42 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] Pendiente: durabilidad NTFS y resistencia demostrada a apagones eléctricos físicos.
 
 
-## P1 — Gate de HTML ilustrado autocontenido (pendiente CI)
+## P1 — Gate de HTML ilustrado autocontenido (CI verificada)
 
-- [ ] HTML con DOCTYPE, encabezado UTF-8, todos los turnos confirmados ordenados y distinción explícita de ramas; contenido no confiable escapado y sin scripts inyectados.
-- [ ] Exportar portada y 2 ilustraciones distintas de escenas usando WebP base64; al exportar una rama creada en turno 1 no incluir el texto ni la imagen de turno 2 del origen.
-- [ ] Una imagen WebP manipulada/corrupta no se embebe, tampoco se recorren symlinks o archivos fuera de UUID. Error 404 en historia inexistente.
-- [ ] Playwright desktop y mobile: descarga de HTML desde el lector, archivo attachment y enlace consistente. Build web y suite API completa PASS.
-- [ ] EPUB, imágenes gigantes y exportación del grafo de todas las ramas quedan como tareas distintas.
-
-
-## P1 — Gate de búsqueda de memoria por historia (pendiente CI)
-
-- [ ] Recuperar una intervención antigua después de 115 turnos sin introducir la narración privada del asistente; los recuerdos deben aparecer como `user` y no contaminar el prompt de sistema.
-- [ ] Bifurcar en turno anterior sin recibir intervenciones futuras; índice de rama usa IDs nuevos y no altera el origen; fallo de escritura FTS revierte turno y snapshots.
-- [ ] Restablecer indexación desde una base histórica después de recrear FTS; modo fallback léxico usable sin FTS5, con consulta delimitada y sin inyección de sintaxis.
-- [ ] Playwright desktop/mobile: nuevo buscador en el panel Historial funciona aun sin LLM ni GPU, muestra estado vacío y mantiene la interfaz.
-- [ ] CI Python completa y Playwright PASS; no declarar búsqueda semántica, embeddings ni conocimiento individual garantizado.
+- [x] HTML con DOCTYPE, encabezado UTF-8, todos los turnos confirmados ordenados y distinción explícita de ramas; contenido no confiable escapado y sin scripts inyectados.
+- [x] Exportar portada y 2 ilustraciones distintas de escenas usando WebP base64; al exportar una rama creada en turno 1 no incluir el texto ni la imagen de turno 2 del origen.
+- [x] Una imagen WebP manipulada/corrupta no se embebe, tampoco se recorren symlinks o archivos fuera de UUID. Error 404 en historia inexistente.
+- [x] Playwright desktop y mobile: descarga de HTML desde el lector, archivo attachment y enlace consistente. Build web y suite API completa PASS.
+- [ ] Imágenes sin límite, backup integral .noble.zip y exportación del grafo completo de ramas quedan como tareas distintas.
 
 
-## P1 — Gate de inspector del prompt narrativo (pendiente CI)
+## P1 — Gate de búsqueda de memoria por historia (CI verificada)
 
-- [ ] El endpoint debe devolver **exactamente** los mensajes de `NarrativeService.messages` para el mismo story, texto y modo; no generar texto, modificar SQLite ni consultar servicios externos.
-- [ ] Desglose conserva total de caracteres, distingue canon y fuente histórica/episódica, e informa ventana de contexto y reserva de salida. Al excederla, emitir alerta etiquetada como **estimada**, no tokens reales.
-- [ ] Rechazar modo inválido, entrada vacía salvo `continue`, más de 3000 caracteres e historia inexistente. Visualización en configuración desktop/móvil.
-- [ ] Tratar los textos de Creator y Lorebook como configuración privada para autor; la exportación HTML no debe incluirlos. No atribuir garantía de conocimiento a NPC ni números de KV-cache medidos.
+- [x] Recuperar una intervención antigua después de 115 turnos sin introducir la narración privada del asistente; los recuerdos deben aparecer como `user` y no contaminar el prompt de sistema.
+- [x] Bifurcar en turno anterior sin recibir intervenciones futuras; índice de rama usa IDs nuevos y no altera el origen; fallo de escritura FTS revierte turno y snapshots.
+- [x] Restablecer indexación desde una base histórica después de recrear FTS; modo fallback léxico usable sin FTS5, con consulta delimitada y sin inyección de sintaxis.
+- [x] Playwright desktop/mobile: nuevo buscador en el panel Historial funciona aun sin LLM ni GPU, muestra estado vacío y mantiene la interfaz.
+- [x] CI Python completa y Playwright PASS; no declarar búsqueda semántica, embeddings ni conocimiento individual garantizado.
 
 
-## P1 — Gate EPUB3 + HTML (pendiente CI)
+## P1 — Gate de inspector del prompt narrativo (CI verificada)
 
-- [ ] EPUB3 válido como ZIP: entrada `mimetype` primero, `ZIP_STORED`, `application/epub+zip`, `container.xml`, OPF con manifest/spine/metadatos, XHTML y navegación XML parseables.
-- [ ] Portada más dos cambios de ilustración WebP en historia completa; una rama desde el primer turno contiene solo ilustración/diálogo anteriores al corte. No se filtran instrucciones ocultas de Creator, se escapan etiquetas del usuario.
-- [ ] Endpoints para historia inexistente responden 404; HTML y EPUB se descargan con `Content-Disposition`, no-store y `nosniff`.
-- [ ] Playwright real API desktop/mobile con botones de ambos formatos; suite Python y build web completos. No certificar compatibilidad universal con todos los lectores sin validar dispositivos.
+- [x] El endpoint debe devolver **exactamente** los mensajes de `NarrativeService.messages` para el mismo story, texto y modo; no generar texto, modificar SQLite ni consultar servicios externos.
+- [x] Desglose conserva total de caracteres, distingue canon y fuente histórica/episódica, e informa ventana de contexto y reserva de salida. Al excederla, emitir alerta etiquetada como **estimada**, no tokens reales.
+- [x] Rechazar modo inválido, entrada vacía salvo `continue`, más de 3000 caracteres e historia inexistente. Visualización en configuración desktop/móvil.
+- [x] Tratar los textos de Creator y Lorebook como configuración privada para autor; la exportación HTML no debe incluirlos. No atribuir garantía de conocimiento a NPC ni números de KV-cache medidos.
+
+
+## P1 — Gate EPUB3 + HTML (CI verificada)
+
+- [x] EPUB3 válido como ZIP: entrada `mimetype` primero, `ZIP_STORED`, `application/epub+zip`, `container.xml`, OPF con manifest/spine/metadatos, XHTML y navegación XML parseables.
+- [x] Portada más dos cambios de ilustración WebP en historia completa; una rama desde el primer turno contiene solo ilustración/diálogo anteriores al corte. No se filtran instrucciones ocultas de Creator, se escapan etiquetas del usuario.
+- [x] Endpoints para historia inexistente responden 404; HTML y EPUB se descargan con `Content-Disposition`, no-store y `nosniff`.
+- [x] Playwright real API desktop/mobile con botones de ambos formatos; suite Python y build web completos. No certificar compatibilidad universal con todos los lectores sin validar dispositivos.
+
+
+### Gate conjunto — 2026-11-05
+
+- [x] [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) **217/217 Python y 42/42 Playwright PASS**, compilación React/Vite. Los cuatro bloques (HTML, EPUB3, memoria FTS5 e inspector de contexto) quedaron verificados en `master`.
+- [x] Fallos intermedios documentados: [CI #42104560683](https://github.com/Mairon31/novel_ai/actions/runs/42104560683) omitía un paso de wizard en la prueba de exportación; [CI #42105539031](https://github.com/Mairon31/novel_ai/actions/runs/42105539031) pasaba una respuesta narrativa como ID de historia en un test; [CI #42107129417](https://github.com/Mairon31/novel_ai/actions/runs/42107129417) tenía selector Playwright ambiguo del inspector. Los tres defectos de QA quedaron corregidos y no se ocultaron los resultados.
+- [ ] Pendiente: tokenización modelo-específica, embeddings, exportación `.noble.zip` y validación de compatibilidad EPUB con lectores físicos externos.

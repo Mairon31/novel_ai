@@ -213,3 +213,6 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 ## EPUB3
 
 `GET /api/v1/stories/{story_id}/export.epub` → `200 application/epub+zip`, `Content-Disposition: attachment; filename="noble-story.epub"`, `Cache-Control:no-store`, `X-Content-Type-Options:nosniff`; `404` si la historia no existe. EPUB3 autónomo con archivos XML/OPF, índice `nav.xhtml`, portada y WebP de snapshots por turno, restringidos a la rama indicada.
+
+
+**Gate de exportación, memoria e inspector:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) — 217 Python + 42 Playwright PASS. Las nuevas rutas son de lectura; no exponen instrucciones privadas en los archivos HTML/EPUB.
