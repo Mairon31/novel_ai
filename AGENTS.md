@@ -1,8 +1,8 @@
 # AGENTS.md — instrucciones de ingeniería Noble AI
 
-Leer `README.md`, `docs/GDD_TECNICO.md`, `docs/ARQUITECTURA.md`, `docs/MODEL_HUB.md`, `docs/ONBOARDING_Y_UI.md`, `docs/ROADMAP.md`, `docs/PROGRESO.md`, `docs/REFERENCIAS_URAKATSU_KOHARU.md`, `docs/SEGURIDAD_Y_LICENCIAS.md` y ambas ADR antes de cambiar código.
+Leer `TODO.md`, `docs/ARGON_AUDITORIA.md`, `README.md`, `docs/GDD_TECNICO.md`, `docs/ARQUITECTURA.md`, `docs/MODEL_HUB.md`, `docs/ONBOARDING_Y_UI.md`, `docs/ROADMAP.md`, `docs/PROGRESO.md`, `docs/REFERENCIAS_URAKATSU_KOHARU.md`, `docs/SEGURIDAD_Y_LICENCIAS.md` y ambas ADR antes de cambiar código.
 
-**Misión:** crear app web/desktop local-first con novela visual, catálogo/descargas de modelos dentro de la UI, proveedores intercambiables y memoria persistente. La experiencia final es **APP-FIRST**, no un notebook; el primer vertical slice debería ser Model Hub + wizard + narrador real. El repo todavía carece de app y backend ejecutables.
+**Misión:** crear app web/desktop local-first con novela visual, catálogo/descargas de modelos dentro de la UI, proveedores intercambiables y memoria persistente. La experiencia final es **APP-FIRST**, no un notebook; el primer vertical slice debería ser Model Hub + wizard + narrador real. El repositorio ya contiene un frontend React, API FastAPI, almacenamiento SQLite y pruebas automatizadas. Nunca asumir que un módulo falta sin inspeccionar el `master` actual.
 
 ## Reglas no negociables
 
@@ -36,3 +36,12 @@ Leer `README.md`, `docs/GDD_TECNICO.md`, `docs/ARQUITECTURA.md`, `docs/MODEL_HUB
 - Pruebas corridas (comando, resultado, entorno, screenshots/benchmark); tests no corridos en SKIP/NOT_RUN.
 - Fallos/limitaciones/preferencias de perfil por GPU.
 - `docs/PROGRESO.md` actualizado, link a issue y siguiente paso medible.
+
+## Integración obligatoria de la auditoría Argon (2026-11-05)
+
+- `TODO.md` es el backlog operativo con casillas y criterios verificables; `docs/ARGON_AUDITORIA.md` contiene los 22 apartados de diagnóstico, fases y arquitectura objetivo. **Trabajar directamente en `master`** salvo instrucción explícita en contrario; no crear una rama por tarea.
+- Antes de implementar, comprobar si el hallazgo sigue vigente: el código existente ya incluye WAL, SSE, Range/SHA-256 condicional y bloqueo básico GPU, pero no completa todas sus garantías.
+- Distinguir diseño, código, suite CI y validación sobre GPU real. Cerrar una casilla solo con pruebas y citar commit/resultado en `docs/PROGRESO.md`.
+- P0: rutas de archivos, atomicidad/rollback, cancelación y seguridad de workers. P1: VRAM, estado canónico, Lorebooks, escena multicapa. P2: V2/V3, Model Hub avanzado, medidor de contexto. No priorizar P3 por encima de estabilidad.
+- Las etiquetas `AUD-005/006/007` están duplicadas con otros sentidos dentro de la auditoría: `TODO.md` usa la nomenclatura estable de su §18. Citar §05 para los hallazgos homónimos.
+- Reutilizar implementaciones open-source compatibles y registrar su origen/licencia en `docs/THIRD_PARTY_NOTICES.md`; no inventar prohibiciones de copia de interfaz, ni asumir que atribución por sí sola cubre todas las obligaciones de licencia.
