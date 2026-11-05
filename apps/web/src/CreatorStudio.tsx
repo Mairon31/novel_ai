@@ -526,13 +526,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                     </select>
                   </label>
                 </div>
-                <label><input type="checkbox" checked={lorebookDraft.enabled}
+                <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.enabled}
                   onChange={e => setLorebookDraft(v => ({...v, enabled: e.target.checked}))}/>
                   Entrada habilitada</label>
-                <label><input type="checkbox" checked={lorebookDraft.always_active}
+                <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.always_active}
                   onChange={e => setLorebookDraft(v => ({...v, always_active: e.target.checked}))}/>
                   Siempre activo (sin claves)</label>
-                <label><input type="checkbox" checked={lorebookDraft.match_whole_words}
+                <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.match_whole_words}
                   onChange={e => setLorebookDraft(v => ({
                     ...v, match_whole_words: e.target.checked,
                   }))}/> Coincidir palabras completas</label>
