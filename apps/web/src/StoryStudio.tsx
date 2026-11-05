@@ -24,6 +24,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   const [turns, setTurns] = useState<StoryTurn[]>([]);
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [restoreAsCopy, setRestoreAsCopy] = useState(false);
   const archiveFile = useRef<HTMLInputElement | null>(null);
   const [title, setTitle] = useState('');
   const [premise, setPremise] = useState('');
@@ -100,13 +101,13 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     setRestoring(true);
     setError(''); setNotice('');
     try {
-      const result = await api.importStoryArchive(file);
+      const result = await api.importStoryArchive(file, restoreAsCopy);
       const fresh = await api.stories();
       setStories(fresh.stories);
       setActive(null);
       setReading(false);
-      setNotice('Respaldo restaurado: ' + result.restored_stories +
-        ' historias y ' + result.restored_files + ' recursos.');
+      setNotice((result.imported_as_copy ? 'Copia independiente creada: ' : 'Respaldo restaurado: ') +
+        result.restored_stories + ' historias y ' + result.restored_files + ' recursos.');
     } catch (e) { setError((e as Error).message); }
     finally { setRestoring(false); }
   }
@@ -282,6 +283,11 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
               event.currentTarget.value = '';
               if (file) void importArchive(file);
             }}/>
+          <label className="noble-backup-copy-choice">
+            <input type="checkbox" checked={restoreAsCopy}
+              onChange={event => setRestoreAsCopy(event.target.checked)}/>
+            Importar como copia independiente (nuevos identificadores)
+          </label>
           {notice && <p className="story-notice" role="status">{notice}</p>}
           {error && <p className="narrative-error" role="alert">{error}</p>}
         </div>

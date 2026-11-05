@@ -100,9 +100,10 @@ class StoryArchiveTests(unittest.TestCase):
         self.assertIn("attachment", result.headers["content-disposition"])
         return result.content
 
-    def restore(self, data, client=None):
+    def restore(self, data, client=None, *, as_copy=False):
         return (client or self.b).post(
             "/api/v1/stories/archive/import",
+            params={"as_copy": str(as_copy).lower()},
             files={"file": ("my-family.noble.zip", data, "application/zip")})
 
     def counts(self, app):
@@ -211,6 +212,107 @@ class StoryArchiveTests(unittest.TestCase):
                               (sid + ".pending")).exists())
         result = self.restore(data)
         self.assertEqual(result.status_code, 201, result.text)
+
+    def test_import_as_copy_keeps_original_and_remaps_entire_family(self):
+        self.setup_family()
+        # A duplicate family must not be mistaken for a destructive restore.
+        baseline = self.counts(self.src)
+        archive = self.export(self.child_id)
+        copied = self.restore(archive, self.a, as_copy=True)
+        self.assertEqual(copied.status_code, 201, copied.text)
+        report = copied.json()
+        self.assertTrue(report["imported_as_copy"])
+        self.assertEqual(report["original_root_story_id"], self.root_id)
+        self.assertEqual(len(report["story_id_map"]), 2)
+        new_root = report["story_id_map"][self.root_id]
+        new_child = report["story_id_map"][self.child_id]
+        self.assertNotEqual(new_root, self.root_id)
+        self.assertNotEqual(new_child, self.child_id)
+        self.assertEqual(report["root_story_id"], new_root)
+        self.assertEqual(set(report["story_ids"]), {new_root, new_child})
+        after = self.counts(self.src)
+        for table, amount in baseline.items():
+            self.assertEqual(after[table], amount * 2, table)
+        family = self.a.get(f"/api/v1/stories/{new_child}/branches").json()
+        self.assertEqual(family["root_story_id"], new_root)
+        self.assertEqual(len(family["branches"]), 2)
+        copied_child = self.a.get(f"/api/v1/stories/{new_child}").json()
+        self.assertEqual(copied_child["origin_story_id"], new_root)
+        self.assertEqual(len(self.a.get(
+            f"/api/v1/stories/{new_child}/turns").json()["turns"]), 2)
+        self.assertEqual(len(self.a.get(
+            f"/api/v1/stories/{new_root}/memory/search",
+            params={"q": "reino futuro"}).json()["episodes"]), 1)
+        self.assertEqual(self.a.get(
+            f"/api/v1/stories/{new_child}/memory/search",
+            params={"q": "reino futuro"}).json()["episodes"], [])
+        new_details = self.a.get(f"/api/v1/stories/{new_root}").json()
+        self.assertEqual(self.a.get(new_details["cover_image_url"]).status_code, 200)
+        self.assertEqual(self.a.get(new_details["scene_image_url"]).status_code, 200)
+        # A second duplication must produce a third disjoint family.
+        duplicate = self.restore(archive, self.a, as_copy=True)
+        self.assertEqual(duplicate.status_code, 201, duplicate.text)
+        self.assertTrue(set(duplicate.json()["story_ids"]).isdisjoint(
+            set(report["story_ids"]) | {self.root_id, self.child_id}))
+
+    def test_copy_does_not_rewrite_story_prose_or_public_character_text(self):
+        literal = str(uuid.uuid4())
+        self.setup_family(art=False)
+        self.turn(self.root_id, "Número de la puerta: " + literal)
+        data = self.export()
+        result = self.restore(data, self.a, as_copy=True)
+        self.assertEqual(result.status_code, 201, result.text)
+        new_root = result.json()["root_story_id"]
+        turns = self.a.get(f"/api/v1/stories/{new_root}/turns").json()["turns"]
+        self.assertIn(literal, turns[-1]["input_text"])
+        self.assertNotEqual(turns[-1]["id"],
+                            self.a.get(f"/api/v1/stories/{self.root_id}/turns"
+                                       ).json()["turns"][-1]["id"])
+
+    def test_copy_still_rejects_corrupt_media_without_mutating_original(self):
+        self.setup_family()
+        archive = self.export()
+        before = self.counts(self.src)
+
+        def corrupt(entries):
+            return [(name, b"bad-payload" if name.endswith(".webp") else data)
+                    for name, data in entries]
+
+        reply = self.restore(repack(archive, corrupt), self.a, as_copy=True)
+        self.assertEqual(reply.status_code, 422, reply.text)
+        self.assertEqual(before, self.counts(self.src))
+
+    def test_copy_remaps_historical_visual_and_editorial_snapshots(self):
+        self.setup_family()
+        archive = self.export()
+        report = self.restore(archive, self.a, as_copy=True).json()
+        new_root = report["root_story_id"]
+        new_child = report["story_id_map"][self.child_id]
+        with self.src.state.store._conn() as db:
+            old_turns = {r["id"] for r in db.execute(
+                "SELECT id FROM story_turns WHERE story_id IN (?,?)",
+                (self.root_id, self.child_id))}
+            new_turns = {r["id"] for r in db.execute(
+                "SELECT id FROM story_turns WHERE story_id IN (?,?)",
+                (new_root, new_child))}
+            self.assertTrue(old_turns.isdisjoint(new_turns))
+            for table in ("visual_turn_snapshots", "creator_turn_snapshots",
+                          "creator_media_turn_snapshots", "lorebook_turn_snapshots",
+                          "world_turn_snapshots"):
+                for row in db.execute("SELECT turn_id,story_id FROM " + table +
+                                      " WHERE story_id IN (?,?)", (new_root,new_child)):
+                    self.assertIn(row["turn_id"], new_turns, table)
+            old_media = {row["id"] for row in db.execute(
+                "SELECT id FROM creator_media_assets WHERE story_id=?",
+                (self.root_id,))}
+            new_media = {row["id"] for row in db.execute(
+                "SELECT id FROM creator_media_assets WHERE story_id=?",
+                (new_root,))}
+            self.assertTrue(old_media.isdisjoint(new_media))
+            for row in db.execute(
+                "SELECT cover_asset_id FROM creator_media_turn_snapshots "
+                "WHERE story_id=? AND cover_asset_id IS NOT NULL", (new_root,)):
+                self.assertIn(row["cover_asset_id"], new_media)
 
     def test_unknown_story_missing_zip_and_invalid_extension(self):
         self.assertEqual(self.a.get(f"/api/v1/stories/{uuid.uuid4()}/archive.noble.zip").status_code, 404)

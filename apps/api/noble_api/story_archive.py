@@ -288,9 +288,101 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
     return manifest, data_files, stories
 
 
-def restore_archive(narrative, payload: bytes) -> dict:
-    """All-or-nothing import. IDs must be new to the destination workspace."""
+def _copy_archive_ids(manifest: dict, files: list[tuple[str, bytes]]
+                      ) -> tuple[dict, list[tuple[str, bytes]], dict[str, str]]:
+    """Regenerate *all* in-family UUIDs, including historical-only references.
+
+    Only UUID-valued fields, structured JSON references and owned filenames are
+    remapped. Freeform story text and generated prose are never rewritten.
+    """
+    id_map: dict[str, str] = {}
+
+    def register(value):
+        if isinstance(value, str) and UUID_PATTERN.fullmatch(value):
+            canonical = _uuid(value)
+            if canonical not in id_map:
+                id_map[canonical] = str(uuid.uuid4())
+
+    def visit(value):
+        if isinstance(value, dict):
+            for nested in value.values():
+                visit(nested)
+        elif isinstance(value, list):
+            for nested in value:
+                visit(nested)
+        else:
+            register(value)
+
+    for rows in manifest["tables"].values():
+        for row in rows:
+            for column, value in row.items():
+                if column == "id" or column.endswith("_id") or column == "request_id":
+                    register(value)
+                elif column.endswith("_json") or column in {"visible_character_ids"}:
+                    try:
+                        visit(json.loads(value))
+                    except (TypeError, ValueError) as exc:
+                        raise ValueError("JSON estructurado inválido en respaldo: " + column) from exc
+    for path, _ in files:
+        # This path was already canonicalized and SHA-checked by _inspect_zip.
+        for match in UUID_PATTERN.finditer(path):
+            register(match.group(0))
+    register(manifest["root_story_id"])
+
+    def transform(value):
+        if isinstance(value, str):
+            return id_map.get(value, value)
+        if isinstance(value, list):
+            return [transform(x) for x in value]
+        if isinstance(value, dict):
+            return {key: transform(x) for key, x in value.items()}
+        return value
+
+    copied_tables = {}
+    for table, rows in manifest["tables"].items():
+        copied_rows = []
+        for row in rows:
+            new_row = {}
+            for column, value in row.items():
+                if (column.endswith("_json") or column == "visible_character_ids"):
+                    new_row[column] = json.dumps(
+                        transform(json.loads(value)), ensure_ascii=False,
+                        separators=(",", ":"))
+                elif column == "id" or column.endswith("_id") or column == "request_id":
+                    new_row[column] = transform(value)
+                elif column in {"filename", "file_name"} and isinstance(value, str):
+                    new_row[column] = UUID_PATTERN.sub(
+                        lambda match: id_map.get(match.group(0), match.group(0)), value)
+                else:
+                    new_row[column] = value
+            if table == "stories":
+                new_row["title"] = (new_row["title"][:88].rstrip() + " (copia)")
+            copied_rows.append(new_row)
+        copied_tables[table] = copied_rows
+
+    def new_path(path: str) -> str:
+        return UUID_PATTERN.sub(
+            lambda match: id_map.get(match.group(0), match.group(0)), path)
+
+    copied_files = [(new_path(path), data) for path, data in files]
+    result = dict(manifest)
+    result["root_story_id"] = transform(manifest["root_story_id"])
+    result["tables"] = copied_tables
+    result["files"] = [
+        {**item, "path": new_path(item["path"])}
+        for item in manifest["files"]
+    ]
+    return result, copied_files, id_map
+
+
+def restore_archive(narrative, payload: bytes, *, as_copy: bool = False) -> dict:
+    """All-or-nothing import. Copy mode remaps all internal UUID references."""
     manifest, files, stories = _inspect_zip(payload, narrative)
+    original_root = manifest["root_story_id"]
+    id_map = {}
+    if as_copy:
+        manifest, files, id_map = _copy_archive_ids(manifest, files)
+        stories = manifest["tables"]["stories"]
     ids = [row["id"] for row in stories]
     root = narrative.store.root
     assets_root = root / "story-assets"
@@ -376,7 +468,11 @@ def restore_archive(narrative, payload: bytes) -> dict:
     return {"root_story_id": manifest["root_story_id"],
             "restored_stories": len(ids),
             "restored_files": len(files),
-            "story_ids": ids}
+            "story_ids": ids,
+            "imported_as_copy": as_copy,
+            "original_root_story_id": original_root,
+            "story_id_map": {old: new for old, new in id_map.items()
+                             if new in ids} if as_copy else {}}
 
 
 def mount_story_archive_routes(app, narrative) -> None:
@@ -393,12 +489,12 @@ def mount_story_archive_routes(app, narrative) -> None:
                      "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"})
 
     @app.post("/api/v1/stories/archive/import", status_code=201)
-    async def import_family(file: UploadFile = File(...)):
+    async def import_family(file: UploadFile = File(...), as_copy: bool = False):
         if not file.filename or not file.filename.endswith(".noble.zip"):
             raise HTTPException(422, "Se requiere un archivo .noble.zip")
         raw = await file.read(MAX_UPLOAD_BYTES + 1)
         try:
-            return restore_archive(narrative, raw)
+            return restore_archive(narrative, raw, as_copy=as_copy)
         except FileExistsError as exc:
             raise HTTPException(409, str(exc)) from exc
         except (ValueError, OSError, sqlite3.IntegrityError) as exc:

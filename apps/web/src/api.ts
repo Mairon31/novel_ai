@@ -218,13 +218,15 @@ export const api = {
     '/stories/' + encodeURIComponent(storyId)),
   storyBranches: (storyId: string) => request<BranchTree>(
     '/stories/' + encodeURIComponent(storyId) + '/branches'),
-  async importStoryArchive(file: File): Promise<{
+  async importStoryArchive(file: File, asCopy = false): Promise<{
     root_story_id: string; restored_stories: number;
     restored_files: number; story_ids: string[];
+    imported_as_copy: boolean; original_root_story_id: string;
+    story_id_map: Record<string, string>;
   }> {
     const body = new FormData();
     body.append('file', file);
-    const response = await fetch('/api/v1/stories/archive/import',
+    const response = await fetch('/api/v1/stories/archive/import?as_copy=' + String(asCopy),
       { method: 'POST', body });
     if (!response.ok) {
       const payload: { detail?: string } = await response.json().catch(() => ({}));

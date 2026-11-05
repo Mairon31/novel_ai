@@ -38,6 +38,19 @@ test('library exports an archive and rejects duplicate restoration without losin
       buffer: archive });
   await expect(page.getByRole('alert')).toContainText('ya existe');
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toBeVisible();
+
+  await page.getByRole('checkbox', {
+    name: 'Importar como copia independiente (nuevos identificadores)',
+  }).check();
+  await page.getByLabel('Archivo de respaldo Noble')
+    .setInputFiles({ name: 'noble-family.noble.zip', mimeType: 'application/zip',
+      buffer: archive });
+  await expect(page.getByRole('status')).toContainText('Copia independiente creada: 1 historias');
+  await expect(page.locator('.noble-library-cover').filter({ hasText: title }))
+    .toHaveCount(2);
+  await expect(page.locator('.noble-library-cover').filter({
+    hasText: title + ' (copia)',
+  })).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-archive-guard.png',
     fullPage: true,
