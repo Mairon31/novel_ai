@@ -148,7 +148,8 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
       onCreate={() => { setCreateStep('story'); setCreating(true); }}
       onSettings={onOpenSettings}
       onUpdateStory={next => {
-        setActive(next);
+        // A slow image upload or generation must not jump back to an old story.
+        setActive(current => current?.id === next.id ? next : current);
         setStories(old => old.map(item => item.id === next.id ? next : item));
       }}/>
     {creating && <div className="welcome-scrim"><section className="welcome-panel" role="dialog"

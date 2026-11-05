@@ -61,6 +61,7 @@ export function VisualReader({
   const [synthesizing, setSynthesizing] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef<string | null>(null);
+  const mediaRevision = useRef(0);
   const [name, setName] = useState(active?.protagonist_name || 'Protagonista');
   const [canon, setCanon] = useState(active?.canon || '');
   const [shortcuts, setShortcuts] = useState(true);
@@ -88,11 +89,13 @@ export function VisualReader({
   }, []);
   useEffect(() => {
     return () => {
+      // Invalidates pending speech requests when story or voice changes.
+      mediaRevision.current += 1;
       audio.current?.pause();
       if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
       audio.current = null; audioUrl.current = null;
     };
-  }, [active?.id]);
+  }, [active?.id, voiceId]);
   useEffect(() => {
     let live = true;
     api.workspacePreferences().then(p => {
@@ -131,13 +134,14 @@ export function VisualReader({
   async function illustrateScene() {
     if (!active || !imagePrompt.trim() || illustrating) return;
     setIllustrating(true); setReaderError('');
+    const requestedStoryId = active.id;
     try {
-      const result = await api.illustrate(active.id, imagePrompt.trim());
+      const result = await api.illustrate(requestedStoryId, imagePrompt.trim());
       // Force refreshing a previous scene despite using a stable asset path.
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
         story.scene_image_url + '?v=' + Date.now() : null });
-      setTab('gallery');
+      if (active.id === requestedStoryId) setTab('gallery');
     } catch (e) { setReaderError((e as Error).message); }
     finally { setIllustrating(false); }
   }
@@ -152,8 +156,10 @@ export function VisualReader({
     audio.current?.pause();
     if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
     setPlayingTurn(null); setSynthesizing(true); setReaderError('');
+    const revision = mediaRevision.current;
     try {
       const file = await api.requestSpeech(active.id, turn.id, voiceId);
+      if (revision !== mediaRevision.current) return;
       const url = URL.createObjectURL(file);
       audioUrl.current = url;
       const next = new Audio(url);
