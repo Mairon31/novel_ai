@@ -62,6 +62,8 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   await expect(page.getByRole('heading', { name: story.title })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: story.title })).toBeVisible();
+  if (test.info().project.name === 'mobile')
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await expect(page).toHaveURL(/#\/creator$/);
   await expect(page.getByText('Selecciona una historia para editarla')).toBeVisible();
