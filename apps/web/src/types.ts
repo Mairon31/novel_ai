@@ -85,6 +85,7 @@ export type ProviderModels = {
 export type Story = {
   id: string; title: string; premise: string;
   protagonist_name: string; canon: string; origin_story_id?: string | null; origin_turn_id?: string | null; scene_image_url: string | null;
+  cover_asset_id?: string | null; cover_image_url?: string | null;
   created_at: number; updated_at: number;
 };
 export type StoryTurn = {
@@ -253,7 +254,7 @@ export type CreatorCharacter = {
 export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;
 
 export type CreatorMediaAsset = {
-  id: string; story_id: string; kind: 'background' | 'foreground';
+  id: string; story_id: string; kind: 'cover' | 'background' | 'foreground';
   label: string; caption: string; character_id: string | null;
   filename: string; media_type: string; created_at: number; url: string;
 };
