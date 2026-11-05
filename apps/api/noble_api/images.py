@@ -147,12 +147,13 @@ class SceneImageService:
             if config["checkpoint"] not in connected["checkpoints"]:
                 raise HTTPException(422, "El checkpoint seleccionado ya no está disponible")
             seed = request.seed if request.seed is not None else secrets.randbelow(2**53)
+            visual_prompt = self.narrative.visual.enriched_prompt(story_id, request.prompt)
             started = time.monotonic()
             async with httpx.AsyncClient(
                     transport=self.transport, trust_env=False,
                     timeout=httpx.Timeout(25, connect=5)) as client:
                 response = await client.post(config["base_url"] + "/prompt",
-                    json={"prompt": workflow(config, request.prompt, seed),
+                    json={"prompt": workflow(config, visual_prompt, seed),
                           "client_id": str(uuid.uuid4())}, follow_redirects=False)
                 response.raise_for_status()
                 ident = response.json().get("prompt_id")
@@ -185,9 +186,11 @@ class SceneImageService:
                     "filename": name, "subfolder": image_ref.get("subfolder", ""),
                     "type": image_ref.get("type", "output")}, follow_redirects=False)
                 view.raise_for_status()
-                asset = self.narrative.store.root / "story-assets" / story_id / "scene.webp"
-                save_webp(view.content, asset)
+                gallery = self.narrative.visual.publish(
+                    story_id, view.content, origin="comfyui",
+                    prompt=visual_prompt, checkpoint=config["checkpoint"], seed=seed)
             return {"story": self.narrative.get_story(story_id),
+                    "asset_id": gallery["selected_asset_id"],
                     "seed": seed, "checkpoint": config["checkpoint"],
                     "duration_ms": round((time.monotonic() - started) * 1000, 1)}
         except (httpx.HTTPError, ValueError) as exc:
