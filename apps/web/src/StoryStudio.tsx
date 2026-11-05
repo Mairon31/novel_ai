@@ -95,11 +95,12 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
 
   async function createBranch(turnId: string) {
     if (!active || generating) return;
+    const originalId = active.id;
     setError(''); setLoading(true);
     try {
-      const copy = await api.forkStory(active.id, turnId);
+      const copy = await api.forkStory(originalId, turnId);
       setStories(existing => [copy, ...existing]);
-      setActive(copy);
+      setActive(current => current?.id === originalId ? copy : current);
       setDraft('');
       setNotice('Rama creada. Puedes continuar por una ruta diferente sin modificar la historia original.');
     } catch (e) { setError((e as Error).message); }
