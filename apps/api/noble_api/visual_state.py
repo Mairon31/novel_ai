@@ -429,6 +429,24 @@ class VisualState:
                 DO UPDATE SET asset_id=excluded.asset_id""", (story_id, asset_id))
         return self.all(story_id)
 
+    def reference_bytes(self, story_id: str, asset_id: str) -> tuple[bytes, str]:
+        """Only the owning story may use this asset as a ComfyUI reference."""
+        with self.store._conn() as conn:
+            record = conn.execute(
+                "SELECT content_sha256 FROM visual_assets WHERE id=? AND story_id=?",
+                (asset_id, story_id)).fetchone()
+        if record is None:
+            raise ValueError("La ilustración de referencia no pertenece a esta historia")
+        path = self._asset_path(story_id, asset_id)
+        if not path.is_file() or path.is_symlink():
+            raise ValueError("La ilustración de referencia ya no está disponible")
+        data = path.read_bytes()
+        if not data or len(data) > MAX_BYTES:
+            raise ValueError("Referencia vacía o demasiado grande")
+        if hashlib.sha256(data).hexdigest() != record["content_sha256"]:
+            raise ValueError("La ilustración de referencia no pasó su verificación SHA256")
+        return data, record["content_sha256"]
+
     def asset_response(self, story_id: str, asset_id: str) -> FileResponse:
         with self.store._conn() as conn:
             row = conn.execute("SELECT id FROM visual_assets WHERE story_id=? AND id=?",
