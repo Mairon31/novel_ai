@@ -40,3 +40,12 @@ Orden de migración: cimientos P0 → coordinación GPU y modelos → narrador e
 Al no poder transaccionar archivos físicos con SQLite, el orquestador compensa errores borrando únicamente la carpeta de destino UUID recién creada. Para interrupciones de proceso, un marcador de staging `fork-staging/<UUID>.pending` se crea bajo el bloqueo SQLite antes de copiar; la rutina de arranque recorre solo estos marcadores, conserva ramas con fila SQLite confirmada y elimina carpetas de operaciones no confirmadas, verificando paths y symlinks. La recuperación reutiliza `BEGIN IMMEDIATE` para no competir con una clonación en curso.
 
 La estrategia conserva límites de durabilidad ante corte eléctrico abrupto y TOCTOU. Los tests `tests/test_fork_atomicity.py` incluyen fallos tardíos por módulo, error de filesystem, recuperación por marcador y bifurcaciones concurrentes. Véanse [QA](QA_Y_ACEPTACION.md), [TODO](../TODO.md) y [PROGRESO](PROGRESO.md).
+
+
+## Aislamiento temporal de recursos editoriales — 2026-11-05
+
+`CreatorMediaService` conserva el inventario de recursos, metadatos y selección de portada en `creator_media_turn_snapshots` por turno confirmado, en la misma transacción SQLite que la narración. Un fork parcial obtiene únicamente el inventario del turno elegido; un fork completo conserva el estado editorial actual y clona los checkpoints anteriores, remapeando los UUID. Ante historia legacy sin snapshot, no se importa arte futuro.
+
+La eliminación borra el registro activo y deja de servir la URL, pero conserva los bytes físicos si existe un turno que los referencie. Una rama histórica puede restaurarlos; si falta el archivo requerido, el fork se revierte por completo. Este mecanismo se apoya en el staging y la compensación de archivos de la bifurcación. La recolección de basura deberá considerar los recursos históricos y la seguridad TOCTOU de rutas sigue pendiente.
+
+**Verificación:** [CI #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045), **184 Python + 34 Playwright PASS**. Las imágenes de galería, referencias de `VisualState` y planes de `ScenePlanner` todavía no están protegidos por snapshots equivalentes.

@@ -526,3 +526,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] `creator_media_turn_snapshots` guarda inventario de medios del creador, metadatos y portada seleccionada en el commit SQLite del turno. La bifurcación parcial restaura exclusivamente ese checkpoint (sin traer medios futuros); la completa mantiene el estado presente.
 - [ ] Se remapean UUID de medios y NPC en toda la línea de snapshots; los bytes históricos de un medio borrado se conservan cuando hay turnos que lo referencian, aunque el recurso deje de estar disponible desde la biblioteca activa. La falta de un archivo requerido aborta la bifurcación sin publicar media ni filas parciales.
 - [ ] Pruebas creadas en `tests/test_creator_media_timeline.py`; hasta obtener CI, **no declarar PASS**. Continúa pendiente la recuperación histórica de referencias visuales y planes de escena, GC de medios históricos y durabilidad tras apagón.
+
+
+### Resultado definitivo de la fase editorial
+
+- [x] [GitHub Actions #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045) finalizó con **184/184 Python y 34/34 Playwright PASS** para el commit `dc124a1`, verificados en logs de ambos jobs. Incluye `tests/test_creator_media_timeline.py`, backend SQLite/Pillow y frontend escritorio/móvil.
+- [ ] El aislamiento temporal de `visual_state.py` y `scene_planner.py` sigue pendiente: **la CI verde no demuestra que imágenes de galería ni planes de composición antiguos estén correctamente versionados**.

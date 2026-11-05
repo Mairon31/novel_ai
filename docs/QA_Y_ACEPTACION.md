@@ -112,3 +112,11 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Historial del lector: «Rebobinar aquí» abre un diálogo que explica que se crea una ruta nueva, consulta snapshots Lorebook/estado y muestra los turnos conservados por la historia original. Cancelar no crea rama; confirmar crea ruta independiente sin alterar el origen.
 - [x] `tests/test_lorebook_timeline.py`, `tests/test_creator_timeline.py`, `apps/web/tests/story-rewind.spec.ts`: [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834) con **179 pruebas Python + 34 Playwright aprobadas**, desktop y móvil.
 - [ ] Aún pendiente: rebobinado destructivo/opcional con archivado, restauración temporal de imágenes editoriales y planes de composición editados, aislamiento cognitivo por testigo de cada Lorebook y recuperación de memorias semánticas.
+
+
+## P1 — Verificación de medios editoriales históricos · 2026-11-05
+
+- [x] Creación posterior, cambio de descripción, cambio de portada, eliminación y recuperación histórica sin filtrar recursos futuros: `tests/test_creator_media_timeline.py`.
+- [x] Snapshots del turno participan del rollback SQLite; los forks sin imagen histórica o sin snapshot fallan sin publicar una copia inconsistente.
+- [x] [GitHub Actions #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045) para `dc124a1`: **184/184 Python y 34/34 Playwright PASS**, incluyendo escritorio y móvil. Sin GPU física.
+- [ ] Aislamiento de recursos de galería y planes visuales por turno, pruebas de corte eléctrico y fsync.
