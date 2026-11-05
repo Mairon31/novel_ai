@@ -79,11 +79,14 @@
 
 ### AUD-005 — Estado de mundo y ramas
 - [x] CRUD de historias, canon, turnos, streaming y bifurcaciones básicas; apertura editorial seleccionable (código y pruebas existentes).
-- [ ] Snapshot **por turno y rama** de ubicación, tiempo/clima, personajes presentes, inventario, relaciones y flags; restauración exacta al bifurcar/rebobinar.
+- [x] **Snapshots inmutables por turno y rama** de ubicación, hora/clima, NPC presentes, inventario, relaciones, flags, hechos con testigos y **canon textual histórico**. El turno, escena y snapshot se confirman en una transacción SQLite; bifurcar desde un turno usa ese estado y canon históricos, con UUID nuevos y remapeo de NPC. `world_state.py` + `test_world_state.py` (**160 Python PASS**, CI #42073917233: navegador pendiente al documentar).
+- [ ] Rebobinado completo de una misma línea narrativa con truncado/archivo de turnos posteriores, assets y estado asociado; actualmente se puede **bifurcar** desde un turno, no rebobinar destructivamente la historia original.
 - [ ] Separar interpretación de entrada, narración visible y actualizaciones posteriores de estado; validación determinista de acciones.
-- [ ] Restringir conocimiento por testigos y personajes presentes; prevenir omnisciencia, contradicciones, control del protagonista y escenas estancadas.
+- [x] Hechos privados del **estado confirmado** filtrados por testigos presentes antes de construir el prompt; hechos públicos visibles y datos de personajes de otras historias rechazados. `GET/PUT /world-state` con revisión CAS para evitar perder ediciones. La respuesta del LLM no puede mutar directamente el estado. Pruebas de API en `test_world_state.py`.
+- [ ] Imponer **aislamiento cognitivo completo** también sobre Lorebooks/episodios/diálogos generados, detectar contradicciones y control indebido del protagonista; la instrucción al LLM no garantiza obediencia.
 - [ ] Modos de intención *Acción / Diálogo / Dirección*, instrucciones y stops compatibles con proveedor.
-- [ ] Test de rollback y restauración del canon en múltiples ramas sin fuga cruzada.
+- [x] Tests SQLite de rollback total si falla la escritura del snapshot; migración de tablas antiguas, canon histórico por turno, prevención de revelaciones futuras al crear rama anterior, remapeo estable de hechos y aislamiento de ediciones de ramas (suite `test_world_state.py`).
+- [ ] Atomicidad de la **bifurcación completa** entre tablas narrativas, galería, medios editoriales y Lorebooks: actualmente se clonan en varias transacciones; si falla una etapa podría dejar rama incompleta.
 
 ### AUD-006 — Lorebooks y memoria híbrida
 - [x] **Lorebooks por historia** persistentes: CRUD SQLite/API, activadores primarios/secundarios (any/all), coincidencia Unicode de palabra completa o subcadena, siempre activo/deshabilitado, prioridades deterministas y presupuesto de 6000 caracteres sin cortar entradas. Sin ejecutar regex arbitrarias. `lorebook.py` y `test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
