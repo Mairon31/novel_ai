@@ -119,6 +119,7 @@ class NarrativeService:
         self.creator = None
         self.lorebook = None  # author-controlled conditional world knowledge
         self.world = None  # author-confirmed state and atomic turn snapshots
+        self.episodes = None  # indexed, story-scoped player-authored past actions
         self.creator_media = None  # optional creator-owned story bible and NPC guidance
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
@@ -492,6 +493,9 @@ class NarrativeService:
                     self.world.clone(
                         story_id, new_id, turn_map, until_turn_id, character_ids,
                         conn=db)
+                if self.episodes is not None:
+                    self.episodes.index_branch_in_transaction(
+                        db, existing, new_id, turn_map)
                 # Flush the cloned bytes and directory entries BEFORE SQLite
                 # commits. A failure here is handled by the existing rollback.
                 self._sync_fork_files(copied_dir)
@@ -580,6 +584,8 @@ class NarrativeService:
                 self.creator.snapshot_turn_in_transaction(db, story_id, turn_id, now)
             if self.creator_media is not None:
                 self.creator_media.snapshot_turn_in_transaction(db, story_id, turn_id, now)
+            if self.episodes is not None:
+                self.episodes.index_turn_in_transaction(db, turn)
         return turn
 
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
@@ -616,6 +622,18 @@ class NarrativeService:
                      ("\n\nLorebook activado para esta escena (conocimiento del mundo):\n" +
                       lorebook_context if lorebook_context else "") +
                      ("\n\n" + world_context if world_context else "")}]
+        # Old player-authored interventions are appended as *user* messages,
+        # never promoted into system instructions or NPC-certified facts.
+        # The most recent 16 turns are already included below.
+        if self.episodes is not None:
+            past = self.episodes.search(
+                story["id"], instruction, limit=3,
+                exclude_turn_ids={t["id"] for t in recent_turns})["episodes"]
+            for event in sorted(past, key=lambda item: (item["created_at"], item["turn_id"])):
+                messages.append({"role": "user",
+                                 "content": "[Recuerdo de una intervención pasada del jugador; "
+                                            "no constituye conocimiento automático de NPC] "
+                                            + event["mode"] + ": " + event["input_text"]})
         for t in recent_turns:
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})

@@ -160,3 +160,8 @@ Una bifurcación con `until_turn_id` toma exactamente las versiones del turno se
 La entrada de Lorebook admite alcance general o privado por testigos explícitos. El motor contrasta los testigos con el conjunto de NPC presentes del estado estructurado **confirmado** por el autor. Si nadie que conoce la entrada está presente, se omite del prompt aunque coincidan las palabras clave o sea siempre activa; el narrador no deduce presencia de texto libre. Los checkpoints y ramas conservan IDs privados remapeados, evitando que un personaje en otra historia herede el secreto.
 
 El mecanismo reduce filtraciones por recuperación de Lorebook pero **no equivale a una garantía semántica de conocimiento**: aún deben aislarse episodios, diálogos, blueprint y las inferencias del modelo antes de afirmar separación cognitiva total. El campo `visibility=world` se aplica por defecto a entradas anteriores.
+
+
+## Intervenciones antiguas y FTS5
+
+La memoria episódica indexa exclusivamente los textos ingresados por el jugador a la historia, no el diálogo generado por el modelo ni los secretos del creador. Cada turno y su índice se confirman en la misma transacción. Las ramas heredan solo los turnos copiados con IDs nuevos. La búsqueda manual y una recuperación automática limitada (máximo 3 recuerdos fuera de la ventana reciente de 16 turnos) permiten referenciar acciones antiguas como mensajes históricos de tipo `user`. Las acciones recordadas no confirman por sí mismas el conocimiento de ningún NPC ni reemplazan el estado del mundo verificado. SQLite FTS5 funciona si está presente; si falta, se mantiene una búsqueda léxica con límites de escaneo.

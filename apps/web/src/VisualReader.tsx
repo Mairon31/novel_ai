@@ -5,7 +5,7 @@ import {
   Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot, EpisodicSearch } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -57,6 +57,10 @@ export function VisualReader({
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
   const [playerPlot, setPlayerPlot] = useState('');
+  const [memoryQuery, setMemoryQuery] = useState('');
+  const [memoryResults, setMemoryResults] = useState<EpisodicSearch | null>(null);
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [memoryError, setMemoryError] = useState('');
   useEffect(() => {
     if (!active || !rewindTurn) {
       setRewindPreview(null);
@@ -116,6 +120,9 @@ export function VisualReader({
   useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
   useEffect(() => {
     setPlayerPlot('');
+    setMemoryQuery('');
+    setMemoryResults(null);
+    setMemoryError('');
     if (!active) return;
     let live=true;
     api.creatorBlueprint(active.id).then(data => {
@@ -368,6 +375,16 @@ export function VisualReader({
     } catch (e) { setReaderError((e as Error).message); }
     finally { setUpdating(false); }
   }
+  async function findStoryMemory() {
+    if (!active || memoryQuery.trim().length < 2) return;
+    setMemoryBusy(true);
+    setMemoryError('');
+    setMemoryResults(null);
+    try {
+      setMemoryResults(await api.searchStoryMemory(active.id, memoryQuery.trim()));
+    } catch (exc) { setMemoryError((exc as Error).message); }
+    finally { setMemoryBusy(false); }
+  }
   function focusTurn(turn: StoryTurn) {
     document.getElementById('noble-turn-' + turn.id)?.scrollIntoView({
       behavior: 'smooth', block: 'center',
@@ -580,6 +597,34 @@ export function VisualReader({
           </p>}
         </>}
         {tab === 'history' && <>
+          <h4>Buscar recuerdos de la historia</h4>
+          <p className="noble-inspector-hint">Busca intervenciones antiguas del jugador, incluso
+            fuera de la ventana de los últimos turnos. No incluye secretos internos ni
+            declaraciones generadas por la IA. La búsqueda se limita a esta rama.</p>
+          <label className="noble-inspector-field">Buscar recuerdos de la historia
+            <input aria-label="Buscar recuerdos de la historia" value={memoryQuery}
+              maxLength={500} placeholder="medallón, biblioteca, promesa..."
+              onChange={e => { setMemoryQuery(e.target.value); setMemoryResults(null); }}/>
+          </label>
+          <button className="secondary-button" disabled={memoryBusy || memoryQuery.trim().length < 2}
+            onClick={() => void findStoryMemory()}>
+            {memoryBusy ? <LoaderCircle size={15} className="rotating"/> : <BookOpen size={15}/>}
+            Buscar en toda la historia
+          </button>
+          {memoryError && <p role="alert" className="narrative-error">{memoryError}</p>}
+          {memoryResults && <div role="status" className="creator-hint">
+            <strong>{memoryResults.episodes.length} recuerdos encontrados</strong>
+            <p>{memoryResults.fts5 ? 'Índice SQLite FTS5' : 'Búsqueda léxica local'}
+              · Solo intervenciones del jugador</p>
+            {memoryResults.episodes.map(entry => <div className="noble-inspector-turn" key={entry.turn_id}>
+              <p>{entry.input_text}</p>
+              {turns.some(turn => turn.id === entry.turn_id) &&
+                <button className="secondary-button" onClick={() => {
+                  const turn = turns.find(turn => turn.id === entry.turn_id);
+                  if (turn) focusTurn(turn);
+                }}>Ver escena</button>}
+            </div>)}
+          </div>}
           <h4>Historial de escenas</h4>
           {turns.length ? turns.map((turn, i) =>
             <div key={turn.id} className="noble-inspector-turn">

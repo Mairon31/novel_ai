@@ -107,3 +107,10 @@ El protocolo de staging ya fuerza las copias y metadatos antes del COMMIT. El **
 `story_export.py` implementa el contrato de lectura/exportación sin modificar SQLite. Selecciona turnos desde la historia/ramificación elegida, incluye en un archivo HTML autocontenido una portada administrada por Creator y los WebP del `selected_asset_id` de snapshots visuales históricos, solo si sus IDs pertenecen a la galería de la misma rama. No reconstruye imágenes históricas usando selecciones futuras. `html.escape` impide interpretar texto narrativo o del usuario como etiquetas HTML, y los datos de Illustrator no contienen rutas remotas. Hay límites de recursos para impedir lecturas masivas.
 
 El archivo HTML es una exportación de **una sola línea narrativa**, con marca «Rama independiente» cuando corresponde. No incluye secretos/instrucciones de Creator, Lorebooks completos ni estados administrativos; tampoco exporta EPUB ni un ZIP de todas las bifurcaciones. Exportación es una lectura y se mantiene separada del sistema de backups y restauración.
+
+
+## Memoria episódica: búsqueda FTS5 limitada a entradas del jugador
+
+El índice `narrative_turn_fts` contiene `turn_id,story_id,mode,input_text` y utiliza tokenizador `unicode61`; se reconstruye en archivos SQLite legados sin sobreescribir escenas. `story_turns` sigue siendo el registro de verdad. Nuevos turnos e índices y copias por rama se confirman juntos; ningún turno posterior al corte se recupera en una bifurcación. Al buscar, se filtra por `story_id` y se valida cada ID de turno contra `story_turns`; la alternativa léxica analiza como máximo los últimos 2500 turnos y usa los mismos límites de consultas.
+
+Se indexa **solo la entrada del jugador**, no el texto del LLM ni material privado de Creator/Lorebook. La recuperación automática de hasta tres recuerdos remotos los introduce con rol `user`, separadamente del prompt de sistema y del historial reciente, evitando la promoción directa de texto no confiable a instrucciones de sistema. Esto no atribuye hechos a NPC ni certifica causalidad; siguen pendientes búsqueda semántica, resúmenes con procedencia/testigos y tokenización real.

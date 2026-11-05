@@ -183,3 +183,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] Una imagen WebP manipulada/corrupta no se embebe, tampoco se recorren symlinks o archivos fuera de UUID. Error 404 en historia inexistente.
 - [ ] Playwright desktop y mobile: descarga de HTML desde el lector, archivo attachment y enlace consistente. Build web y suite API completa PASS.
 - [ ] EPUB, imágenes gigantes y exportación del grafo de todas las ramas quedan como tareas distintas.
+
+
+## P1 — Gate de búsqueda de memoria por historia (pendiente CI)
+
+- [ ] Recuperar una intervención antigua después de 115 turnos sin introducir la narración privada del asistente; los recuerdos deben aparecer como `user` y no contaminar el prompt de sistema.
+- [ ] Bifurcar en turno anterior sin recibir intervenciones futuras; índice de rama usa IDs nuevos y no altera el origen; fallo de escritura FTS revierte turno y snapshots.
+- [ ] Restablecer indexación desde una base histórica después de recrear FTS; modo fallback léxico usable sin FTS5, con consulta delimitada y sin inyección de sintaxis.
+- [ ] Playwright desktop/mobile: nuevo buscador en el panel Historial funciona aun sin LLM ni GPU, muestra estado vacío y mantiene la interfaz.
+- [ ] CI Python completa y Playwright PASS; no declarar búsqueda semántica, embeddings ni conocimiento individual garantizado.

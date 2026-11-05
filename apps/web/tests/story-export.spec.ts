@@ -15,6 +15,8 @@ test('reader exports its current story as a standalone HTML attachment', async (
   await dialog.getByLabel('Título').fill(title);
   await dialog.getByLabel('Premisa del mundo').fill(
     'Una exploradora descubre un reino antiguo y escribe sus recuerdos en un libro.');
+  await dialog.getByRole('button', { name: 'Elegir protagonista' }).click();
+  await dialog.getByLabel('Nombre del protagonista').fill('Luna');
   await dialog.getByRole('button', { name: 'Empezar historia' }).click();
   await expect(dialog).toBeHidden();
 

@@ -608,3 +608,13 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] El botón de descarga está dentro de la barra del lector, tanto en escritorio como móvil. La respuesta envía `Content-Disposition: attachment`, `Cache-Control: no-store`, `nosniff`. Una rama se exporta separadamente y el HTML se puede abrir sin Noble AI.
 - [ ] `tests/test_story_export.py`: validar escapes, ausencia de instrucciones internas, imágenes WebP base64, reversión temporal de imagen en rama anterior, datos corruptos y 404. `apps/web/tests/story-export.spec.ts`: verificar enlace y descarga real.
 - [ ] **CI pendiente**. EPUB, exportación integral de árbol de ramas y límites de impresión/artes de mayor tamaño siguen abiertos.
+
+
+## 2026-11-05 — P1: índice episódico FTS5 y recuperación aislada (CI pendiente)
+
+- [ ] Nuevo `EpisodicMemory`: FTS5 Unicode sobre **solo las acciones/diálogos del jugador**; no indexa hechos privados de Creator ni respuestas del LLM. Inserción del índice en la transacción SQLite del turno y clonación de entradas con nuevos IDs al bifurcar, sin copiar acciones futuras desde el origen.
+- [ ] Migración no destructiva: al iniciar se crea el índice FTS5 y se incorporan los turnos legados faltantes; si SQLite no ofrece el módulo, búsqueda léxica local limitada a 2500 turnos sin obligar a instalar servicio externo.
+- [ ] Nuevo `GET /api/v1/stories/{story_id}/memory/search?q=...&limit=...`: resultados con `turn_id`, modo, texto de intervención y fecha, **sin** texto generado por el narrador. Los términos pasan por tokenización Unicode limitada, no aceptan sintaxis FTS arbitraria.
+- [ ] `NarrativeService.messages` puede recuperar hasta 3 intervenciones antiguas fuera de la ventana reciente de 16 turnos. No sube estos recuerdos al mensaje de sistema: se insertan como mensajes históricos con rol `user` y etiqueta que prohíbe tratarlos como conocimiento confirmado de NPC.
+- [ ] UI de lector → «Historial» agrega consulta y resultados de búsqueda; pruebas `tests/test_episodic_memory.py` cubren recuperación tras 115 turnos, aislamiento de ramas, fallback, reinicio/migración, sanitización de consulta y rollback. E2E escritorio/móvil `story-memory.spec.ts`.
+- [ ] **CI pendiente**; la búsqueda es léxica, no hay embeddings ni resúmenes automáticos ni validación semántica de respuestas de modelos reales.

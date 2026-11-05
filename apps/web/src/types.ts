@@ -94,6 +94,13 @@ export type StoryTurn = {
   input_text: string; assistant_text: string;
   model: string; created_at: number;
 };
+export type EpisodicSearch = {
+  fts5: boolean; source: 'player_input';
+  episodes: Array<{
+    turn_id: string; story_id: string; input_text: string;
+    mode: StoryTurn['mode']; created_at: number; matched_terms: number;
+  }>;
+};
 export type GenerationEvent =
   | { event: 'status'; data: { phase: 'preparing' | 'connecting' | 'streaming'; message: string } }
   | { event: 'delta'; data: { text: string } }

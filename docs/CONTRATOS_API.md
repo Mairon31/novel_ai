@@ -198,3 +198,8 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 ## Exportación HTML ilustrada (P1)
 
 `GET /api/v1/stories/{story_id}/export.html` → `200 text/html; charset=utf-8`, `Content-Disposition: attachment; filename="noble-story.html"`, `Cache-Control: no-store` y `X-Content-Type-Options: nosniff`; `404` si no existe la historia. HTML autocontenido con portada cuando existe, intervenciones/diálogos y escenas ilustradas según snapshots visuales guardados. Escapa contenido textual antes de emitir HTML. Solo incluye datos de la rama solicitada, sin el árbol completo ni contextos privados de Creator.
+
+
+## Memoria episódica de intervenciones del jugador
+
+`GET /api/v1/stories/{story_id}/memory/search?q=<texto>&limit=6` → `{episodes:[{turn_id,story_id,mode,input_text,created_at,matched_terms},...],fts5:boolean,source:"player_input"}`. `q` exige 2–500 caracteres; `limit` 1–12. Error 404 para historia desconocida. Las búsquedas se limitan al proyecto solicitado y **no** exponen `assistant_text`, secretos del creador ni Lorebooks. Un índice FTS5 está disponible cuando lo soporta SQLite; el fallback léxico es local y no requiere modelos IA.

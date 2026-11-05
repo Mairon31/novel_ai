@@ -34,6 +34,7 @@ from .lorebook import LorebookService, mount_lorebook_routes
 from .world_state import WorldStateService, mount_world_state_routes
 from .creator_media import CreatorMediaService, mount_creator_media_routes
 from .story_export import mount_story_export_routes
+from .episodic_memory import EpisodicMemory, mount_episodic_routes
 from .resource_policy import ResourceController, mount_resource_routes
 from .workers import WorkerRegistry, mount_worker_routes
 
@@ -107,6 +108,8 @@ def create_app(
     narrative.world = world
     creator_media = CreatorMediaService(narrative)
     narrative.creator_media = creator_media
+    episodes = EpisodicMemory(narrative)
+    narrative.episodes = episodes
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
     speech = SpeechService(narrative)
 
@@ -142,6 +145,7 @@ def create_app(
     service.state.lorebook = lorebook
     service.state.world = world
     service.state.creator_media = creator_media
+    service.state.episodes = episodes
 
     @service.exception_handler(CatalogError)
     async def catalog_exception(_request, exc: CatalogError):
@@ -267,6 +271,7 @@ def create_app(
 
     mount_narrative_routes(service, narrative)
     mount_story_export_routes(service, narrative)
+    mount_episodic_routes(service, episodes)
     mount_media_routes(service, narrative)
     mount_visual_routes(service, visual)
     mount_scene_plan_routes(service, planner)
