@@ -8,6 +8,7 @@ in the scene; instructions alone cannot guarantee LLM compliance.
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 import time
 import uuid
 
@@ -231,10 +232,12 @@ class WorldStateService:
         return result
 
     def clone(self, source_id: str, target_id: str, turn_map: dict[str, str],
-              until_turn_id: str | None, character_map: dict[str, str]) -> None:
-        """Copy snapshots and select the *cutoff* state, never the source future."""
-        with self.store._conn() as db:
-            db.execute("BEGIN IMMEDIATE")
+              until_turn_id: str | None, character_map: dict[str, str],
+              conn=None) -> None:
+        """Copy snapshots under the fork transaction and honor historical cutoff."""
+        with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
+            if conn is None:
+                db.execute("BEGIN IMMEDIATE")
             fact_map: dict[str, str] = {}
             original = {
                 row["turn_id"]: row
