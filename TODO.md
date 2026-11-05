@@ -28,9 +28,9 @@
 - [x] Primer endurecimiento P0: medios de creador exigen UUID/tipo y rechazan symlink externo; descargas revalidan identificadores/rutas `.part`/destino; tres pruebas nuevas PASS (CI #41994792794).
 - [x] Endurecimiento de galería: rutas UUID, lectura de versiones y legacy, bloqueo de symlink en archivos temporales, rollback del registro/selección si falla la copia; pruebas en `tests/test_visual_state.py` (CI #41997120265).
 - [ ] Ampliar protección de archivos a **todos** los módulos y evitar carreras TOCTOU bajo cambio concurrente de symlinks; probar importación, clonación y borrados manipulados.
-- [x] Contrato HTTP 206 reforzado: validar offset, fin, tamaño total y longitud entregada; rechazar un `206` no solicitado y evitar registrar descargas incompletas. Pruebas offline en `tests/test_api_model_hub.py` (CI de los cambios más recientes por confirmar).
+- [x] Contrato HTTP 206 reforzado: validar offset, fin, tamaño total y longitud entregada; rechazar un `206` no solicitado y evitar registrar descargas incompletas. Pruebas offline en `tests/test_api_model_hub.py` ([CI #41997636863](https://github.com/Mairon31/novel_ai/actions/runs/41997636863): 112 Python + 24 Playwright PASS).
 - [ ] Ensayos de pausa/reanudación al 50%, interrupción durante verificación, carrera concurrente y renombrado atómico; no declarar «verificado» si el origen no aporta checksum.
-- [x] Impedir asignación de un GGUF registrado fuera del directorio de modelos, incluido symlink externo; `Store.assign` y prueba de API agregada (CI por confirmar).
+- [x] Impedir asignación de un GGUF registrado fuera del directorio de modelos, incluido symlink externo; `Store.assign` y prueba de API aprobada ([CI #41997814690](https://github.com/Mairon31/novel_ai/actions/runs/41997814690): 113 Python + 24 Playwright PASS).
 - [ ] Gestión de conflictos entre descargas, cuotas de disco, hashes y reintento sin pérdidas.
 
 ### AUD-004 — Streaming, cancelación y contratos
