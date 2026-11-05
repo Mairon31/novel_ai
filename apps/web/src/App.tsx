@@ -51,6 +51,9 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(false);
   const [tab, setTab] = useState<'discover' | 'installed'>('discover');
   const [role, setRole] = useState<ModelRole>('narrator');
+  const [modelSort, setModelSort] = useState('downloads');
+  const [modelContext, setModelContext] = useState(4096);
+  const [fitBusy, setFitBusy] = useState(false);
   const [query, setQuery] = useState('Qwen');
   const [searchResults, setSearchResults] = useState<CatalogEntry[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -149,13 +152,13 @@ export default function App() {
     }
     setSearchLoading(true);
     const t = window.setTimeout(() => {
-      api.search(query.trim(), role)
+      api.search(query.trim(), role, modelSort)
         .then(data => { if (live) setSearchResults(data.results); })
         .catch((exc: Error) => { if (live) { setSearchResults([]); setError(exc.message); } })
         .finally(() => { if (live) setSearchLoading(false); });
     }, 380);
     return () => { live = false; window.clearTimeout(t); };
-  }, [page, query, role, tab]);
+  }, [page, query, role, modelSort, tab]);
 
   useEffect(() => {
     const handle = window.setInterval(() => {
@@ -171,11 +174,26 @@ export default function App() {
   async function viewModel(model: CatalogEntry) {
     setDetail(null); setPickedVariant(''); setDetailLoading(true);
     try {
-      const info = await api.details(model.repo_id);
+      const info = await api.details(model.repo_id, modelContext);
       setDetail(info);
-      setPickedVariant(info.variants.find(v => v.supported)?.filename || '');
+      setPickedVariant(info.hardware_fit?.recommended_filename ||
+        info.variants.find(v => v.supported)?.filename || '');
     } catch (exc) { setError((exc as Error).message); }
     finally { setDetailLoading(false); }
+  }
+
+  async function selectContext(tokens: number) {
+    setModelContext(tokens);
+    if (!detail) return;
+    setFitBusy(true);
+    try {
+      const info = await api.details(detail.repo_id, tokens);
+      setDetail(info);
+      setPickedVariant(current => current ||
+        info.hardware_fit?.recommended_filename ||
+        info.variants.find(v => v.supported)?.filename || '');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setFitBusy(false); }
   }
 
   async function install() {
@@ -318,24 +336,69 @@ export default function App() {
                 {item.id === 'narrator' ? <BookOpen size={18}/> : item.id === 'image' ? <Image size={18}/> : <Headphones size={18}/>}
                 {item.title}</button>)}
             </div>
-            <div className="section-caption"><div><h2>{selectedRole.subtitle}</h2><p>Resultados del catálogo en línea · compatibilidad aún sin verificar</p></div>
-              {searchLoading && <LoaderCircle className="rotating" size={18}/>}</div>
+            <div className="section-caption"><div><h2>{selectedRole.subtitle}</h2>
+              <p>Catálogo de Hugging Face · selecciona un modelo para ver su análisis</p></div>
+              <div className="noble-model-sort"><label htmlFor="hub-sort">Ordenar por</label>
+                <select id="hub-sort" aria-label="Ordenar modelos" value={modelSort}
+                  onChange={e => setModelSort(e.target.value)}>
+                  <option value="downloads">Descargas</option>
+                  <option value="likes">Me gusta</option>
+                  <option value="trendingScore">Tendencias</option>
+                  <option value="lastModified">Actualizados</option>
+                </select>
+                {searchLoading && <LoaderCircle className="rotating" size={18}/>}
+              </div></div>
             {role !== 'narrator' && <div className="info-note"><Info size={18}/>
               Puedes explorar estos modelos. Su instalación se activará cuando integremos los motores de imágenes y TTS.</div>}
-            <div className="model-grid">
-              {searchResults.map(m => <button key={m.repo_id} className="model-card" onClick={() => void viewModel(m)}>
-                <div className="card-top"><span className="model-icon">
-                  {role === 'narrator' ? <BookOpen size={23}/> : role === 'image' ? <Image size={23}/> : <Volume2 size={23}/>}
-                </span><ArrowRight size={18} className="card-arrow"/></div>
-                <strong title={m.repo_id}>{m.repo_id.split('/').slice(-1)[0]}</strong>
-                <small className="author">{m.repo_id.split('/')[0]}</small>
-                <p>{m.description}</p>
-                <div className="card-meta"><span><Download size={15}/> {compactCount(m)}</span>
-                  <span>{m.gated ? 'Acceso restringido' : 'Público'}</span></div>
-              </button>)}
-              {!searchLoading && searchResults.length === 0 && <div className="empty-state">
-                <Search size={30}/><strong>No hay resultados</strong>
-                <p>Prueba otra búsqueda o revisa tu conexión con Hugging Face.</p></div>}
+            <div className="hub-discovery-layout">
+              <div className="model-grid" role="list" aria-label="Resultados de modelos">
+                {searchResults.map(m => <button key={m.repo_id} className="model-card"
+                  role="listitem" onClick={() => void viewModel(m)}>
+                  <span className="model-icon">
+                    {role === 'narrator' ? <BookOpen size={21}/> :
+                      role === 'image' ? <Image size={21}/> : <Volume2 size={21}/>}
+                  </span>
+                  <span className="hub-model-row-main">
+                    <strong title={m.repo_id}>{m.repo_id.split('/').slice(-1)[0]}</strong>
+                    <small>{m.repo_id.split('/')[0]} · {m.description}</small>
+                    <span className="hub-model-chips">
+                      <span><Download size={13}/> {compactCount(m)}</span>
+                      <span>♥ {m.likes.toLocaleString()}</span>
+                      <span>{m.gated ? 'Restringido' : 'Público'}</span>
+                      {m.license !== 'sin verificar' && <span>{m.license}</span>}
+                    </span>
+                  </span>
+                  <ChevronDown className="hub-model-row-arrow" size={18}/>
+                </button>)}
+                {!searchLoading && searchResults.length === 0 && <div className="empty-state">
+                  <Search size={30}/><strong>No hay resultados</strong>
+                  <p>Prueba otra búsqueda o revisa tu conexión con Hugging Face.</p></div>}
+              </div>
+              <aside className="hub-hardware-panel">
+                <div className="hub-hardware-title"><Cpu size={20}/>
+                  <div><strong>Compatibilidad de tu equipo</strong>
+                    <small>Estimación por cuantización</small></div></div>
+                <div className="hub-hardware-numbers">
+                  <div><span>GPU detectada</span><strong>{hardware?.gpus[0]?.name || 'No detectada'}</strong></div>
+                  <div><span>VRAM libre</span><strong>
+                    {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : 'No disponible'}
+                  </strong></div>
+                  <div><span>RAM disponible</span><strong>
+                    {hardware ? (hardware.ram_available_mb / 1024).toFixed(1)+' GiB' : '—'}
+                  </strong></div>
+                  <div><span>Espacio libre</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
+                </div>
+                <p>Abre un modelo para comparar sus variantes. Noble AI estima pesos,
+                  memoria de contexto y margen del runtime. La clasificación no garantiza
+                  compatibilidad con un motor concreto ni velocidad.</p>
+                <div className="hub-hardware-legend">
+                  <span>GPU completa</span><span>Descarga parcial</span>
+                  <span>CPU</span><span>Memoria insuficiente</span>
+                </div>
+                <button className="secondary-button" onClick={() => changePage('ajustes')}>
+                  <Settings2 size={15}/> Ajustes de motores
+                </button>
+              </aside>
             </div>
           </> : <>
             <div className="section-caption"><div><h2>Modelos en tu equipo</h2><p>Solo instalaciones completas y registradas por Noble AI.</p></div></div>
@@ -419,28 +482,110 @@ export default function App() {
       <section className="detail-panel" role="dialog" aria-modal="true" aria-label="Detalles del modelo" onClick={e => e.stopPropagation()}>
         <div className="detail-top"><span>DETALLE DE MODELO</span><button className="icon-button" onClick={() => setDetail(null)} aria-label="Cerrar detalles"><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
-          <div className="detail-avatar"><BookOpen size={32}/></div>
-          <h2>{detail.repo_id.split('/')[1]}</h2><p className="detail-author">{detail.repo_id.split('/')[0]}</p>
-          <a className="external-link" href={detail.url} target="_blank" rel="noreferrer">Ver en Hugging Face <ExternalLink size={15}/></a>
-          <div className="detail-props">
-            <div><span>LICENCIA DECLARADA</span><strong>{detail.license}</strong></div>
-            <div><span>REVISIÓN</span><code>{detail.revision.slice(0, 12) || 'Desconocida'}</code></div>
-            <div><span>ACCESO</span><strong>{detail.gated ? 'Restringido' : 'Público'}</strong></div>
+          <div className="noble-model-detail-heading">
+            <div className="detail-avatar"><BookOpen size={32}/></div>
+            <div>
+              <span className="overline">{detail.pipeline_tag || 'MODELO HUGGING FACE'}</span>
+              <h2>{detail.repo_id.split('/')[1]}</h2>
+              <p className="detail-author">{detail.author || detail.repo_id.split('/')[0]}</p>
+            </div>
           </div>
+          {detail.summary && <p className="hub-detail-description">{detail.summary}</p>}
+          <div className="hub-detail-stats">
+            <div><span>Descargas</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
+            <div><span>Me gusta</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
+            <div><span>Licencia</span><strong>{detail.license}</strong></div>
+            <div><span>Acceso</span><strong>{detail.gated ? 'Restringido' : 'Público'}</strong></div>
+          </div>
+          <div className="hub-detail-metadata">
+            <div><span>Revisión</span><code>{detail.revision.slice(0,12)}</code></div>
+            {detail.hardware_fit?.architecture &&
+              <div><span>Arquitectura GGUF</span><strong>{detail.hardware_fit.architecture}</strong></div>}
+            {detail.hardware_fit?.parameter_count != null &&
+              <div><span>Parámetros declarados</span>
+                <strong>{(detail.hardware_fit.parameter_count/1e9).toFixed(2)} B</strong></div>}
+            {detail.library && <div><span>Biblioteca</span><strong>{detail.library}</strong></div>}
+            {detail.base_model && <div><span>Modelo base</span><strong>
+              {Array.isArray(detail.base_model) ? detail.base_model.join(', ') : detail.base_model}
+            </strong></div>}
+          </div>
+          {!!detail.tags?.length && <div className="hub-detail-tags">
+            {detail.tags.slice(0,10).map(tag => <span key={tag}>{tag}</span>)}
+          </div>}
+          <a className="external-link" href={detail.url} target="_blank" rel="noreferrer">
+            Ver ficha original en Hugging Face <ExternalLink size={15}/></a>
           {role === 'narrator' && detail.variants.length > 0 ? <>
-            <h3>Elegir cuantización GGUF</h3>
-            <div className="variant-list">{detail.variants.map(v => <button key={v.filename} disabled={!v.supported}
-              className={'variant ' + (pickedVariant === v.filename ? 'variant-active' : '')} onClick={() => setPickedVariant(v.filename)}>
-              <span><strong>{v.filename}</strong><small>{size(v.size_bytes)} · {v.sha256 ? 'SHA-256 disponible' : 'Sin hash de origen'}</small></span>
-              {pickedVariant === v.filename && <Check size={17}/>}</button>)}</div>
-            <p className="detail-disclaimer">La compatibilidad real con GPU/CPU se comprobará cuando conectemos el runtime. La descarga no ejecuta el modelo.</p>
-            <button className="primary-button full" disabled={busy || detail.gated || !detail.supports_install ||
-              !pickedVariant || Boolean(isInstalled)} onClick={() => void install()}>
-              {busy ? <LoaderCircle className="rotating" size={17}/> : isInstalled ? <CheckCircle2 size={18}/> : <Download size={18}/>}
-              {isInstalled ? 'Variante instalada' : 'Instalar variante'} </button>
+            <section className="hub-fit-analysis">
+              <div className="hub-fit-header">
+                <div><h3>Evaluación para tu hardware</h3>
+                  <p>{detail.hardware_fit?.gpu?.name || 'CPU / RAM'} ·
+                    {detail.hardware_fit?.metadata_source === 'gguf_header'
+                      ? ' KV estimada desde cabecera GGUF' : ' Reserva de contexto aproximada'}
+                  </p></div>
+                <label>Contexto
+                  <select aria-label="Contexto de compatibilidad" value={modelContext}
+                    disabled={fitBusy} onChange={e => void selectContext(Number(e.target.value))}>
+                    <option value={2048}>2K tokens</option>
+                    <option value={4096}>4K tokens</option>
+                    <option value={8192}>8K tokens</option>
+                    <option value={16384}>16K tokens</option>
+                    <option value={32768}>32K tokens</option>
+                  </select>
+                </label>
+              </div>
+              {detail.hardware_fit?.recommended_filename ?
+                <div className="hub-best-fit"><CheckCircle2 size={19}/>
+                  <div><strong>Cuantización sugerida: {detail.hardware_fit.recommended_filename}</strong>
+                    <small>Estimación para la memoria observada, no garantía de ejecución.</small>
+                  </div></div> :
+                <div className="hub-fit-caution"><CircleAlert size={18}/>
+                  No se pudo recomendar una cuantización con la información disponible.</div>}
+              <h3>Comparar archivos GGUF</h3>
+              <div className="variant-list">{detail.variants.map(v => {
+                const fit=detail.hardware_fit?.variants.find(item=>item.filename===v.filename);
+                const selected=pickedVariant===v.filename;
+                const labels:Record<string,string>={
+                  full_gpu:'GPU completa',partial_offload:'GPU + RAM',
+                  cpu:'Solo CPU',too_large:'Memoria insuficiente',
+                  unsupported:'No compatible',unknown:'Sin datos',
+                };
+                return <button key={v.filename} disabled={!v.supported}
+                  aria-pressed={selected} className={'variant hub-fit-variant ' +
+                    (selected?'variant-active ':'')+(fit?'fit-'+fit.fit:'')}
+                  onClick={() => setPickedVariant(v.filename)}>
+                  <span className="hub-variant-info">
+                    <strong>{v.filename}</strong>
+                    <small>{fit?.quantization || 'GGUF'} · {size(v.size_bytes)} ·
+                      {v.sha256 ? ' SHA256 publicado' : ' sin hash publicado'}</small>
+                    {fit && <small>{fit.note}</small>}
+                    {fit?.disk_ok===false && <small>Espacio insuficiente para descargar este archivo.</small>}
+                  </span>
+                  <span className="hub-variant-aside">
+                    {fit && <span className={'hub-fit-state state-'+fit.fit}>
+                      {labels[fit.fit]}
+                    </span>}
+                    {fit?.estimated_required_bytes && <small>
+                      ~{size(fit.estimated_required_bytes)} memoria
+                    </small>}
+                    {selected && <Check size={17}/>}
+                  </span>
+                </button>;
+              })}</div>
+              <p className="detail-disclaimer">{detail.hardware_fit?.warning ||
+                'Se muestran estimaciones, no resultados de un benchmark real.'}</p>
+            </section>
+            <button className="primary-button full"
+              disabled={busy || detail.gated || !detail.supports_install ||
+                !pickedVariant || Boolean(isInstalled)} onClick={() => void install()}>
+              {busy ? <LoaderCircle className="rotating" size={17}/> :
+                isInstalled ? <CheckCircle2 size={18}/> : <Download size={18}/>}
+              {isInstalled ? 'Variante instalada' : 'Descargar variante seleccionada'}
+            </button>
           </> : <div className="info-note"><Info size={18}/>
-            {role === 'narrator' ? 'Este repositorio no ofrece un GGUF individual compatible con esta primera versión.' :
-            'La instalación de modelos de imágenes y voces llegará al integrar sus motores.'}</div>}
+            {role === 'narrator' ?
+              'No hay un archivo GGUF individual admitido por el descargador actual.' :
+              'Este catálogo permite consultar metadatos; el instalador de imágenes y voces se configura desde su proveedor.'}
+          </div>}
         </>}
       </section>
     </div>}
