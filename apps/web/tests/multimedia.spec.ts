@@ -49,7 +49,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
   await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
   await page.getByLabel('Activar botones de voz bajo demanda').check();
-  await expect(page.getByText('TTS activado solo para los botones Escuchar.')).toBeVisible();
+  await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeChecked();
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Abrir menú' }).click();

@@ -44,11 +44,15 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   }
   async function toggleSpeech(enabled: boolean) {
     setBusy(true); setError(''); setMessage('');
+    const previous = setup;
+    setSetup(current => current ? { ...current, tts_enabled: enabled, tts_autoread: false } : current);
     try {
       setSetup(await api.patchSettings({ tts_enabled: enabled, tts_autoread: false }));
       setMessage(enabled ? 'TTS activado solo para los botones Escuchar.' : 'TTS desactivado.');
-    } catch (exc) { setError((exc as Error).message); }
-    finally { setBusy(false); }
+    } catch (exc) {
+      setSetup(previous);
+      setError((exc as Error).message);
+    } finally { setBusy(false); }
   }
   const change = <K extends keyof ImageSettings>(field: K, value: ImageSettings[K]) => {
     setImage(previous => previous ? { ...previous, [field]: value } : previous);
