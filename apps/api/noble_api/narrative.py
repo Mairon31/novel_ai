@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import sqlite3
 import time
 import uuid
@@ -77,6 +78,10 @@ class LlmSettings(BaseModel):
     worker_id: str = ""
 
 
+class ForkRequest(BaseModel):
+    until_turn_id: uuid.UUID | None = None
+
+
 class CanonChange(BaseModel):
     canon: str = Field(default='', max_length=5000)
 
@@ -130,6 +135,10 @@ class NarrativeService:
                 db.execute("ALTER TABLE stories ADD COLUMN protagonist_name TEXT NOT NULL DEFAULT 'Protagonista'")
             if "canon" not in fields:
                 db.execute("ALTER TABLE stories ADD COLUMN canon TEXT NOT NULL DEFAULT ''")
+            if "origin_story_id" not in fields:
+                db.execute("ALTER TABLE stories ADD COLUMN origin_story_id TEXT")
+            if "origin_turn_id" not in fields:
+                db.execute("ALTER TABLE stories ADD COLUMN origin_turn_id TEXT")
             db.execute("INSERT OR IGNORE INTO llm_preferences VALUES (1,?)",
                        (json.dumps(DEFAULT_LLM),))
 
@@ -236,6 +245,42 @@ class NarrativeService:
             db.execute("UPDATE stories SET protagonist_name=?,updated_at=? WHERE id=?",
                        (name.strip(), time.time(), story_id))
         return self.get_story(story_id)
+
+    def fork_story(self, story_id: str, until_turn_id: str | None = None) -> dict:
+        source = self.get_story(story_id)
+        if source is None:
+            raise ValueError("La historia original no existe")
+        with self.store._conn() as db:
+            existing = [dict(row) for row in db.execute(
+                "SELECT * FROM story_turns WHERE story_id=? ORDER BY created_at,id", (story_id,))]
+            if until_turn_id:
+                positions = [index for index, turn in enumerate(existing)
+                             if turn["id"] == until_turn_id]
+                if not positions:
+                    raise ValueError("La intervención seleccionada no pertenece a esta historia")
+                existing = existing[:positions[0] + 1]
+            new_id, now = str(uuid.uuid4()), time.time()
+            label = source["title"][:88].rstrip() + " (rama)"
+            db.execute("""INSERT INTO stories
+                (id,title,premise,created_at,updated_at,protagonist_name,
+                 canon,origin_story_id,origin_turn_id)
+                VALUES (?,?,?,?,?,?,?,?,?)""",
+                (new_id, label, source["premise"], now, now,
+                 source.get("protagonist_name") or "Protagonista",
+                 source.get("canon") or "", story_id, until_turn_id))
+            for idx, turn in enumerate(existing):
+                db.execute("""INSERT INTO story_turns
+                    (id,story_id,request_id,mode,input_text,assistant_text,model,created_at)
+                    VALUES (?,?,?,?,?,?,?,?)""",
+                    (str(uuid.uuid4()), new_id, str(uuid.uuid4()), turn["mode"],
+                     turn["input_text"], turn["assistant_text"], turn["model"],
+                     now + idx * 0.000001))
+        prior_art = self.store.root / "story-assets" / story_id / "scene.webp"
+        if prior_art.is_file():
+            copy_art = self.store.root / "story-assets" / new_id / "scene.webp"
+            copy_art.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(prior_art, copy_art)
+        return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
         if len(canon) > 5000:
@@ -448,6 +493,14 @@ def mount_narrative_routes(app, narrative: NarrativeService):
         if not story:
             raise HTTPException(404, "Historia inexistente")
         return story
+
+    @app.post("/api/v1/stories/{story_id}/fork", status_code=201)
+    def fork_story(story_id: uuid.UUID, body: ForkRequest):
+        try:
+            return narrative.fork_story(str(story_id),
+                                        str(body.until_turn_id) if body.until_turn_id else None)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.patch("/api/v1/stories/{story_id}/canon")
     def set_canon(story_id: uuid.UUID, body: CanonChange):
