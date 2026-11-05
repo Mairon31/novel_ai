@@ -194,3 +194,14 @@ export type VisualState = {
   assets: VisualAsset[]; characters: VisualCharacter[];
   selected_asset_id: string | null;
 };
+
+export type ResourceConfig = {
+  mode: 'monitor' | 'guard'; gpu_index: number; minimum_free_mib: number;
+};
+export type ResourceStatus = {
+  policy: ResourceConfig; status: 'above_reserve' | 'below_reserve' | 'unknown';
+  gpus: Array<{ index: number; name: string; total_mib: number;
+    used_mib: number; free_mib: number; gpu_utilization_percent: number | null }>;
+  selected_gpu: ResourceStatus['gpus'][number] | null;
+  observed_at: number; message: string; monitor_only: boolean;
+};

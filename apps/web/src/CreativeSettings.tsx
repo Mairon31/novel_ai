@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
-import type { ImageSettings, ImageStatus, Settings, SpeechVoices } from './types';
+import type { ImageSettings, ImageStatus, Settings, SpeechVoices, ResourceConfig, ResourceStatus } from './types';
 
 interface Props {
   imageMode: Settings['image_mode'];
@@ -13,15 +13,19 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   const [status, setStatus] = useState<ImageStatus | null>(null);
   const [setup, setSetup] = useState<Settings | null>(null);
   const [voices, setVoices] = useState<SpeechVoices | null>(null);
+  const [resources, setResources] = useState<ResourceConfig | null>(null);
+  const [resourceStatus, setResourceStatus] = useState<ResourceStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    Promise.all([api.imageConfig(), api.settings(), api.speechVoices()])
-      .then(([imageSettings, appSettings, speech]) => {
+    Promise.all([api.imageConfig(), api.settings(), api.speechVoices(),
+                 api.resourceConfig(), api.resourceStatus()])
+      .then(([imageSettings, appSettings, speech, policy, telemetry]) => {
         if (!active) return;
         setImage(imageSettings); setSetup(appSettings); setVoices(speech);
+        setResources(policy); setResourceStatus(telemetry);
       }).catch((exc: Error) => { if (active) setError(exc.message); });
     return () => { active = false; };
   }, []);
@@ -42,6 +46,17 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
+  async function saveResourcePolicy() {
+    if (!resources) return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      setResources(await api.saveResourceConfig(resources));
+      setResourceStatus(await api.resourceStatus());
+      setMessage('Política GPU guardada.');
+    } catch (e) { setError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
   async function toggleSpeech(enabled: boolean) {
     setBusy(true); setError(''); setMessage('');
     const previous = setup;
@@ -120,6 +135,53 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
           Guardar ajustes de imagen</button>
       </div>
       {status?.online && <p>Checkpoint(s) detectados: {status.checkpoints.length}. El modelo se cargará cuando pulses «Ilustrar».</p>}
+    </div>
+    <div className="workspace-panel">
+      <h3>Memoria GPU y admisión</h3>
+      <p>Consulta la VRAM libre observada con nvidia-smi. Puedes avisar o impedir una
+        solicitud de ComfyUI por debajo de una reserva configurada. Esto no calcula
+        la memoria real que necesita el checkpoint ni detiene otros procesos.</p>
+      {resourceStatus && <p role="status">
+        {resourceStatus.selected_gpu
+          ? resourceStatus.selected_gpu.name + ' · ' +
+            resourceStatus.selected_gpu.free_mib + ' MiB libres / ' +
+            resourceStatus.selected_gpu.total_mib + ' MiB totales'
+          : 'Telemetría de GPU no disponible (CPU u otro proveedor).'}
+        {' · '}{resourceStatus.message}
+      </p>}
+      {resources && <div className="workspace-field-grid">
+        <label className="workspace-pref-field">Modo
+          <select aria-label="Modo de reserva GPU" value={resources.mode}
+            onChange={e => setResources(x => x ? {
+              ...x, mode: e.target.value as ResourceConfig['mode'],
+            } : x)}>
+            <option value="monitor">Solo supervisar</option>
+            <option value="guard">Bloquear si hay menos VRAM que la reserva</option>
+          </select>
+        </label>
+        <label className="workspace-pref-field">GPU (índice nvidia-smi)
+          <input type="number" min={0} max={31} value={resources.gpu_index}
+            aria-label="Índice GPU" onChange={e => setResources(x => x ? {
+              ...x, gpu_index: Number(e.target.value),
+            } : x)}/>
+        </label>
+        <label className="workspace-pref-field">Reserva mínima libre (MiB)
+          <input type="number" min={0} max={65536} step={256}
+            value={resources.minimum_free_mib} aria-label="Reserva GPU en MiB"
+            onChange={e => setResources(x => x ? {
+              ...x, minimum_free_mib: Number(e.target.value),
+            } : x)}/>
+        </label>
+      </div>}
+      <div className="settings-buttons">
+        <button className="secondary-button" disabled={busy}
+          onClick={() => void api.resourceStatus().then(setResourceStatus).catch(
+            (e: Error) => setError(e.message))}>
+          <RefreshCcw size={16}/> Consultar VRAM</button>
+        <button className="primary-button" disabled={busy || !resources}
+          onClick={() => void saveResourcePolicy()}>
+          <Check size={16}/> Guardar política GPU</button>
+      </div>
     </div>
     <div className="workspace-panel">
       <h3><Volume2 size={18}/> Voz local con Piper</h3>

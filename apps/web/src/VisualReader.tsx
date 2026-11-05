@@ -63,6 +63,7 @@ export function VisualReader({
   const [imageSeed, setImageSeed] = useState('');
   const [referenceAssetId, setReferenceAssetId] = useState('');
   const [denoise, setDenoise] = useState(0.62);
+  const [allowLowVram, setAllowLowVram] = useState(false);
   const [illustrationNotice, setIllustrationNotice] = useState('');
   const [illustrating, setIllustrating] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('manual');
@@ -220,7 +221,8 @@ export function VisualReader({
       if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
         throw new Error('La semilla debe ser un número entero positivo.');
       const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed,
-        referenceAssetId || undefined, referenceAssetId ? denoise : undefined);
+        referenceAssetId || undefined, referenceAssetId ? denoise : undefined,
+        allowLowVram);
       setIllustrationNotice(result.cached ? 'Ilustración recuperada de la caché.' :
         'Ilustración nueva guardada como versión independiente.');
       // Force refreshing a previous scene despite using a stable asset path.
@@ -531,6 +533,11 @@ export function VisualReader({
             {previewPrompt && <div className="noble-prompt-preview">
               <strong>Prompt que recibirá ComfyUI</strong><p>{previewPrompt}</p>
             </div>}
+            <label className="noble-inspector-field">
+              <span>Ignorar la reserva mínima de VRAM solo para esta solicitud</span>
+              <input type="checkbox" checked={allowLowVram}
+                onChange={e => setAllowLowVram(e.target.checked)}/>
+            </label>
             <button className="primary-button" disabled={illustrating || imagePrompt.trim().length < 8}
               onClick={() => void illustrateScene()}>
               {illustrating ? <LoaderCircle className="rotating" size={16}/> : <Image size={16}/>}

@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -79,16 +79,22 @@ export const api = {
   imagePromptPreview: (storyId: string, prompt: string) => request<{ prompt: string; inference_used: boolean }>(
     '/stories/' + encodeURIComponent(storyId) + '/illustration-prompt',
     { method: 'POST', body: JSON.stringify({ prompt }) }),
+  resourceStatus: () => request<ResourceStatus>('/resources/status'),
+  resourceConfig: () => request<ResourceConfig>('/resources/config'),
+  saveResourceConfig: (body: ResourceConfig) => request<ResourceConfig>(
+    '/resources/config', { method: 'PUT', body: JSON.stringify(body) }),
   imageConfig: () => request<ImageSettings>('/images/config'),
   saveImageConfig: (config: ImageSettings) => request<ImageSettings>(
     '/images/config', { method: 'PUT', body: JSON.stringify(config) }),
   imageStatus: () => request<ImageStatus>('/images/status'),
   illustrate: (storyId: string, prompt: string, seed?: number,
-               reference_asset_id?: string, denoise?: number) => request<IllustrationResult>(
+               reference_asset_id?: string, denoise?: number,
+               allow_low_vram = false) => request<IllustrationResult>(
     '/stories/' + encodeURIComponent(storyId) + '/illustrate',
     { method: 'POST', body: JSON.stringify({
       prompt, ...(seed === undefined ? {} : { seed }),
       ...(reference_asset_id ? { reference_asset_id, denoise: denoise ?? 0.62 } : {}),
+      allow_low_vram,
     }) }),
   speechVoices: () => request<SpeechVoices>('/tts/voices'),
   async requestSpeech(storyId: string, turnId: string, voice_id: string): Promise<Blob> {
