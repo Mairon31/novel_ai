@@ -82,3 +82,10 @@ En Windows no hay `fsync` portable para directorios en Python; se sincronizan ar
 
 
 **Recuperación probada con proceso externo:** [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453) — 198 Python y 36 Playwright PASS. Una terminación con `os._exit(41)` después de copiar datos y antes del COMMIT deja el marcador durable y bytes sin fila SQLite. Al crear otra app, `recover_incomplete_forks` elimina solo esa carpeta marcada y conserva el proyecto original. La prueba no demuestra durabilidad física ante un apagón ni protección completa ante carreras de symlinks.
+
+
+## Recovery multiproceso — gates de interrupción real
+
+Los tests nuevos ejercitan varias **instancias reales** de `create_app` sobre el mismo `Store`. La coordinación se implementa fuera del producto en el harness de pruebas con archivos de handshake publicados atómicamente. `Popen.kill()` interrumpe intérpretes Python independientes en el punto declarado (después de fsync antes del COMMIT o después del COMMIT antes de borrar el marcador), mientras un segundo escritor compite por el lock SQLite. Tras la caída, `recover_incomplete_forks` debe distinguir las rutas realmente abandonadas de aquellas confirmadas en `stories`.
+
+No se añadieron retardos ni modos de prueba a la API de producción. El mismo comportamiento real de `BEGIN IMMEDIATE`, `synchronous=FULL`, `fork-staging/*.pending` y recuperación de inicio se usa para el ensayo. Ninguno de estos mecanismos constituye una transacción distribuida con el filesystem ni una simulación de un apagón físico.

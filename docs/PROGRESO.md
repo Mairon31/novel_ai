@@ -579,3 +579,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Commit [`dea96ac`](https://github.com/Mairon31/novel_ai/commit/dea96ac6c62ce1289bdfc3626197f29472b5f55e): `tests/test_fork_atomicity.py` ejecuta un intérprete Python independiente, fuerza `os._exit(41)` después de copiar medios, comprueba rollback SQLite implícito por cierre del proceso, conserva el marcador UUID y archivos huérfanos, y verifica recuperación al iniciar otra instancia sin modificar la historia original.
 - [x] [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453): **198/198 pruebas Python + 36/36 Playwright PASS**, compilación Vite correcta, ambos jobs GitHub Actions en éxito.
 - [ ] Limitación explícita: `os._exit` no es un corte de corriente ni prueba que el filesystem persista bytes ya confirmados; la recuperación tras abortar en COMMIT/limpieza, fallos multi-proceso simultáneos, filesystem corrupto, guardado duradero de metadatos Windows y pruebas físicas continúan pendientes.
+
+
+## 2026-11-05 — P0: SIGKILL multiproceso en bifurcaciones (CI pendiente)
+
+- [ ] Tres pruebas de integración multiproceso añadidas a `tests/test_fork_atomicity.py` para evaluar el bloqueo de escrituras SQLite y la recuperación del staging durante distintas interrupciones. La señal de cada hijo se publica con `Path.replace`, para que el padre sepa si el fork está antes o después del COMMIT sin depender del reloj ni de un `sleep` arbitrario.
+- [ ] En escenario A el hijo permanece detenido al finalizar el fsync previo al COMMIT; un segundo proceso inicia el mismo proyecto, espera el lock, y tras matar al primero recupera el huérfano y confirma una única rama válida.
+- [ ] En escenario B la historia ya fue confirmada en la base, pero el proceso muere al iniciar `marker.unlink`; el siguiente arranque conserva los recursos y limpia el marcador sin borrar la rama.
+- [ ] En escenario C dos procesos son terminados con `SIGKILL` en secuencia antes de confirmar. La instancia B debe limpiar el huérfano A; una instancia C limpia el huérfano B; ninguna fila parcial debe aparecer.
+- [ ] Ejecutar CI Python, frontend y Playwright; no reportar `PASS` ni marcar TODO hasta verificar GitHub Actions. Permanece excluida la durabilidad ante apagón físico.

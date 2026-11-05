@@ -7,8 +7,10 @@ no cloned SQLite rows and no branch-owned files, while source data survives.
 from __future__ import annotations
 
 import io
+import json
 import os
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
@@ -106,8 +108,13 @@ class ForkAtomicityTests(unittest.TestCase):
         self.app.state.visual.all(self.story)
         self.start_counts = self.counts()
         self.start_dirs = self.branch_dirs()
+        self.workers = []
 
     def tearDown(self):
+        for proc in self.workers:
+            if proc.poll() is None:
+                proc.kill()
+            proc.communicate(timeout=10)
         self.cm.__exit__(None, None, None)
         self.tmp.cleanup()
 
@@ -293,6 +300,159 @@ app.state.narrative.fork_story(sys.argv[3])
         self.assertEqual(recovered.state.narrative.fork_recovery_report,
                          {"removed_orphans": 1, "retained_stories": 0, "conflicts": 0})
         self.assertFalse((self.assets_root / abandoned_id).exists())
+        self.assert_unchanged()
+
+
+    # This script executes in an independent Python process, not a mocked
+    # thread. It uses on-disk handshake signals so no timing assumptions are
+    # needed to decide whether the SQLite commit has happened.
+    KILL_WORKER = """
+import json
+import sys
+import time
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from noble_api.main import create_app
+
+root = Path(sys.argv[2])
+story_id = sys.argv[3]
+mode = sys.argv[4]
+signal = Path(sys.argv[5])
+app = create_app(root)
+service = app.state.narrative
+
+def publish(data):
+    # Atomic handshake: parent never sees partially written JSON/UUID.
+    temporary = signal.with_name(signal.name + ".tmp")
+    temporary.write_text(data, encoding="utf-8")
+    temporary.replace(signal)
+
+def freeze(branch_id):
+    publish(branch_id)
+    while True:
+        time.sleep(0.5)
+
+if mode == "precommit":
+    sync = service._sync_fork_files
+    def sync_and_freeze(folder):
+        result = sync(folder)
+        freeze(folder.name)  # SQLite writer lock is still held.
+        return result
+    service._sync_fork_files = sync_and_freeze
+elif mode == "postcommit":
+    unlink = Path.unlink
+    def unlink_and_freeze(path, *args, **kwargs):
+        if path.suffix == ".pending" and path.parent == root / "fork-staging":
+            freeze(path.stem)  # with-connection COMMIT already completed.
+        return unlink(path, *args, **kwargs)
+    Path.unlink = unlink_and_freeze
+elif mode != "regular":
+    raise ValueError("invalid fork worker mode")
+branch = service.fork_story(story_id)
+publish(json.dumps({
+    "branch": branch["id"],
+    "recovery": service.fork_recovery_report,
+}))
+"""
+
+    def _spawn_fork_worker(self, mode):
+        signal = self.root / ("worker-" + str(uuid.uuid4()) + ".signal")
+        proc = subprocess.Popen(
+            [sys.executable, "-c", self.KILL_WORKER,
+             str(ROOT / "apps" / "api"), str(self.root),
+             self.story, mode, str(signal)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        self.workers.append(proc)
+        return proc, signal
+
+    def _wait_for_worker_signal(self, proc, signal):
+        deadline = time.monotonic() + 25
+        while not signal.exists():
+            if proc.poll() is not None:
+                stdout, stderr = proc.communicate(timeout=5)
+                self.fail("Worker terminated before handshake: "
+                          + str(proc.returncode) + "\\n" + stdout + stderr)
+            if time.monotonic() >= deadline:
+                self.fail("Worker handshake timeout; status=" + str(proc.poll()))
+            time.sleep(0.05)
+        return signal.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _stop_fork_worker(proc):
+        if proc.poll() is None:
+            proc.kill()  # SIGKILL on POSIX, TerminateProcess on Windows.
+        proc.communicate(timeout=10)
+
+    def test_sigkill_precommit_unblocks_competing_process_and_recovery(self):
+        held, held_signal = self._spawn_fork_worker("precommit")
+        abandoned_id = self._wait_for_worker_signal(held, held_signal)
+        self.assertTrue((self.assets_root / abandoned_id).is_dir())
+        self.assertTrue((self.root / "fork-staging" /
+                         (abandoned_id + ".pending")).exists())
+        self.assertEqual(self.counts(), self.start_counts)
+
+        # The contender is a *second process*: it must wait for the SQLite
+        # writer lock and cannot mistake an in-flight fork for an orphan.
+        contender, contender_signal = self._spawn_fork_worker("regular")
+        time.sleep(0.35)
+        self.assertIsNone(contender.poll())
+        self.assertEqual(self.counts(), self.start_counts)
+        self._stop_fork_worker(held)
+        result = json.loads(self._wait_for_worker_signal(contender, contender_signal))
+        self.assertEqual(contender.wait(timeout=10), 0)
+        self.assertEqual(result["recovery"]["removed_orphans"], 1)
+        branch = result["branch"]
+        self.assertNotEqual(branch, abandoned_id)
+        self.assertFalse((self.assets_root / abandoned_id).exists())
+        self.assertTrue((self.assets_root / branch / "scene.webp").is_file())
+        self.assertIsNone(self.narrative.get_story(abandoned_id))
+        self.assertIsNotNone(self.narrative.get_story(branch))
+        self.assertIsNotNone(self.narrative.get_story(self.story))
+        self.assertEqual(list((self.root / "fork-staging").glob("*.pending")), [])
+        self.assertEqual(len(self.client.get("/api/v1/stories").json()["stories"]), 2)
+
+    def test_sigkill_after_sqlite_commit_retains_complete_branch(self):
+        committed, signal = self._spawn_fork_worker("postcommit")
+        branch = self._wait_for_worker_signal(committed, signal)
+        marker = self.root / "fork-staging" / (branch + ".pending")
+        self.assertTrue(marker.exists())
+        self.assertIsNotNone(self.narrative.get_story(branch))
+        self.assertTrue((self.assets_root / branch / "scene.webp").is_file())
+        self.assertTrue((self.assets_root / branch / "creator").is_dir())
+        self._stop_fork_worker(committed)
+
+        restarted = create_app(self.root)
+        self.assertEqual(restarted.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 0, "retained_stories": 1,
+                          "conflicts": 0})
+        self.assertFalse(marker.exists())
+        self.assertTrue((self.assets_root / branch / "scene.webp").is_file())
+        self.assertEqual(len(restarted.state.narrative.turns(branch)), 2)
+        self.assertEqual(
+            restarted.state.creator_media.list(branch)[0]["kind"], "cover")
+        self.assertIsNotNone(restarted.state.narrative.get_story(self.story))
+
+    def test_two_killed_processes_serialized_recover_both_without_data_loss(self):
+        first, first_signal = self._spawn_fork_worker("precommit")
+        first_id = self._wait_for_worker_signal(first, first_signal)
+        second, second_signal = self._spawn_fork_worker("precommit")
+        time.sleep(0.25)
+        self.assertIsNone(second.poll())
+        self._stop_fork_worker(first)
+        # The second startup reconciles the first orphan after acquiring
+        # SQLite's writer lock; then its own fork reaches pre-commit.
+        second_id = self._wait_for_worker_signal(second, second_signal)
+        self.assertNotEqual(first_id, second_id)
+        self.assertFalse((self.assets_root / first_id).exists())
+        self._stop_fork_worker(second)
+
+        restarted = create_app(self.root)
+        self.assertEqual(restarted.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 1, "retained_stories": 0,
+                          "conflicts": 0})
+        self.assertFalse((self.assets_root / second_id).exists())
+        self.assertEqual(self.counts(), self.start_counts)
         self.assert_unchanged()
 
     def test_two_simultaneous_forks_commit_complete_independent_copies(self):
