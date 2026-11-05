@@ -228,3 +228,6 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 ## Árbol de rutas de una historia
 
 `GET /api/v1/stories/{story_id}/branches` → `200 {root_story_id,selected_story_id,branches:[{id,title,protagonist_name,origin_story_id,origin_turn_id,depth,turn_count,created_at,updated_at,is_selected}]}`. Incluye raíz y todos los descendientes relacionados, en orden padre-antes-de-hijos. La ruta es de solo lectura, máximo 64 nodos, error 404 si la historia no existe, 422 si el árbol es cíclico/inválido.
+
+
+**Validación de contratos de backups/ramas:** [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293): 226 Python + 46 Playwright PASS. El backup importado en un espacio distinto preserva el árbol de historias y la indexación de intervenciones sin tocar la instalación origen.

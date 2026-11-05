@@ -217,7 +217,7 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] Pendiente: tokenización modelo-específica, embeddings, exportación `.noble.zip` y validación de compatibilidad EPUB con lectores físicos externos.
 
 
-## P1 — Gate de backup y restauración .noble.zip (CI pendiente)
+## P1 — Gate de backup y restauración .noble.zip (CI verificada)
 
 - [ ] Exportar desde una rama recupera toda la familia conectada: raíz y ramas, tablas de estado de mundo, snapshots históricos, personajes, Lorebooks, portada y medios. `manifest.json` versionado y cada archivo con checksum SHA-256.
 - [ ] Importar el ZIP en un directorio Noble distinto produce IDs originales y misma cantidad de registros por tabla; los WebP/PNG restaurados responden en endpoints y las ramas conservan `origin_story_id` y `origin_turn_id`.
@@ -226,8 +226,16 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] Cierre del TODO solo tras CI Python, build Vite y todas las pruebas de navegador. No prometer restore con UUID remapeados, compatibilidad hacia delante automática ni resistencia demostrada a apagones.
 
 
-## P2 — Gate de árbol de ramas navegable (pendiente CI)
+## P2 — Gate de árbol de ramas navegable (CI verificada)
 
 - [ ] Árbol de padre, dos generaciones y ramas hermanas con profundidad, conteo y turno de corte correctos, independientemente de qué ruta se consulta.
 - [ ] Historia externa a esa familia no se filtra en el árbol. Historia inexistente responde 404 y ciclo SQLite inválido responde 422. Consultar el árbol no muta historias ni turnos.
 - [ ] Playwright real desktop/mobile: detalle muestra nodos conectados, pulsar rama lleva al detalle correcto y selector del lector abre historia principal sin pérdida de decisiones.
+
+
+### Evidencia de cierre P1/P2 — 2026-11-05
+
+- [x] [GitHub Actions #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293): 226 pruebas Python PASS, 46 pruebas Playwright PASS (desktop/mobile), build Vite PASS.
+- [x] Pruebas `test_story_archive.py` cubren exportación/importación a segunda instalación, fidelidad de ramas e imágenes, FTS restaurado, archivo ZIP corrupto, ID externo, conflicto 409 y rollback; `test_branch_map.py` cubre navegación, aislamiento y ciclos.
+- [x] E2E `story-archive.spec.ts` comprueba descarga `.noble.zip` y protección al intentar importar sobre ID existente, y `branch-tree.spec.ts` navega raíz, descendientes y selector en lector.
+- [ ] Compatibilidad con lectores/instalaciones de esquemas nuevos, importación con remapeo de UUID, datasets de más de 192 MiB y resistencia a cortes eléctricos físicos no están cubiertas por la suite actual.

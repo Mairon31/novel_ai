@@ -646,7 +646,7 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Pendientes explícitos: embeddings, resúmenes con procedencia, estimación tokenizadora real y runtime KV-cache, backup integral `.noble.zip` y compatibilidad con lectores EPUB físicos.
 
 
-## 2026-11-05 — P1: Respaldo portable del árbol de ramas + importador seguro (CI pendiente)
+## 2026-11-05 — P1: Respaldo portable del árbol de ramas + importador seguro (CI verificada)
 
 - [ ] `story_archive.py` agrega `GET /api/v1/stories/{story_id}/archive.noble.zip` y `POST /api/v1/stories/archive/import`. Exportar desde una rama incluye su raíz, ancestros y descendientes, hasta 64 historias, preservando UUID y referencias entre ramas. El `manifest.json` versión 1 contiene 18 tablas permitidas, incluida historia, turnos, visual/escenas/selecciones, fichas Creator, medios, Lorebooks, mundo, revisiones y snapshots de todos los turnos.
 - [ ] Los archivos `story-assets/<uuid>` se seleccionan únicamente por rutas conocidas (escena, galería WebP y Creator WebP/PNG), y cada uno tiene tamaño y SHA-256 verificable. Nunca se exportan los modelos descargados, las credenciales, los workers ni la base de datos completa.
@@ -656,9 +656,17 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] **CI pendiente**. Importar sobre una historia con UUID existente se rechaza (no hay sobrescritura ni remapeo automático). El formato no empaqueta modelos GGUF ni configuración global y no equivale a prueba de apagón físico o de compatibilidad con versiones futuras del esquema.
 
 
-## 2026-11-05 — P2: Visualizador de rutas narrativas (CI pendiente)
+## 2026-11-05 — P2: Visualizador de rutas narrativas (CI verificada)
 
 - [ ] Nuevo `branch_map.py` expone `GET /api/v1/stories/{story_id}/branches`: árbol completo de raíz, hijas y nietas, con `origin_story_id`, `origin_turn_id`, profundidad, conteo de intervenciones, título y datos de actualización. La lectura es solo consulta SQLite y detecta ciclos; no altera ramas o escenas.
 - [ ] `StoryDetail.tsx` muestra el árbol de rutas con profundidad visual y permite abrir cualquier bifurcación conectada. `StoryStudio.tsx` incorpora selector rápido de ruta mientras se lee; cambia el identificador activo, carga el historial de esa rama y cancela la lectura anterior sin borrar ninguna decisión.
 - [ ] La UI se adapta a móvil y escritorio con controles accesibles; las rutas distintas de la familia seleccionada no se mezclan. Pruebas `tests/test_branch_map.py` y `apps/web/tests/branch-tree.spec.ts` verifican profundidad, independencia, 404, detección de ciclos, navegación de detalle y selector del lector.
 - [ ] **CI pendiente** y editor nodal fuera del alcance; el árbol de ramas sigue siendo una vista/navegador, no un sistema destructivo de rebobinado.
+
+
+## 2026-11-05 — Cierre de recuperación de archivos y árbol de ramas
+
+- [x] [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293), commit `abf114e`: **226/226 pruebas Python y 46/46 Playwright PASS**, compilación web correcta. Incluye backup/restauración de familias conectadas con imágenes reales fixture, manifest SHA, rechazo 409 de duplicación, path traversal/ZIP manipulado y rollback tras error de FTS.
+- [x] El lector y la página editorial navegan rutas conectadas con controles adaptados a escritorio/móvil. El botón «Volver a biblioteca» dejó de quedar cubierto por la cabecera en móvil; se corrigió su `z-index`.
+- [x] Las regresiones previas se corrigieron: `d65d9da` detectó expresión JSX sin cierre; `1b6740c` pasó compilación pero el botón volver estaba interceptado en móvil; `ce52550` añadió el mapa, y `abf114e` fijó la selección exacta de historia raíz en el E2E.
+- [ ] Limitaciones declaradas: el respaldo v1 no importa colisiones como copias renombradas, admite hasta 64 historias y 192 MiB de recursos, no incluye pesos de modelos ni configuración global. No se han validado apagones físicos/NTFS, hardware GPU ni compatibilidad de archivo con versiones futuras del esquema.

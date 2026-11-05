@@ -143,3 +143,6 @@ Para restaurar, obtiene el bloqueo de escritor SQLite, comprueba colisiones, cre
 ## Navegador del árbol de ramas
 
 `branch_map.py` reutiliza la lectura de familia conectada (raíz y descendientes), conserva identificadores existentes y devuelve nodos con padre, corte de turno, profundidad y número de intervenciones. Es API de solo lectura y rechaza datos cíclicos. Biblioteca → Detalle muestra las rutas con sangría; el lector ofrece un selector para cambiar a la ruta vinculada al mismo árbol. Cambiar de ruta solicita sus datos e historial existentes sin editar ni generar turnos ni fusionar líneas.
+
+
+**Gate de backup/ramas:** [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) confirmó 226/226 Python, 46/46 Playwright y build, incluido el ajuste móvil del `z-index` del botón de retorno. Se preservan UUID de la familia; el importador retorna 409 en conflictos en lugar de sobreescribir datos.

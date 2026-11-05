@@ -143,13 +143,13 @@
 ### AUD-012 — Interoperabilidad
 - [ ] Importación/exportación **Character Card PNG V2/V3** con metadatos `chara`/`ccv3` y validación de límites, tipos y caracteres.
 - [ ] Arrastrar tarjeta a creador, mapa de campos/persona, activos incrustados y Lorebook, exportación redonda.
-- [ ] **Respaldo y restauración portátil `.noble.zip` (implementado, pendiente CI):** manifest v1, árbol completo de ramas, turnos/estado/Lorebook/Creator/instantáneas/recursos, SHA-256 por archivo, importación transaccional sin sobrescribir UUID existentes y recuperación de staging. Pruebas API y Playwright añadidas. Queda por verificar CI y, posteriormente, ampliación para importar como copia renombrada cuando existan IDs.
+- [x] **Respaldo y restauración portátil `.noble.zip`:** manifest v1, árbol conectado de ramas, turnos, canon, Creator, Lorebooks, instantáneas y medios; hashes SHA-256 y validación previa de entradas, restauración transaccional con staging, sin sobrescribir UUID existentes. [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) **226 Python + 46 Playwright PASS**. Restauración con UUID remapeados para reimportar en el mismo espacio queda fuera del contrato v1.
 
 ## Fase 6 — P2/P3: distribución, QA, investigación
 
 ### AUD-013, AUD-015 a AUD-018
 - [ ] AUDIO: cola asíncrona multivoz con instrumentación de tiempos y descarte de segmentos cancelados.
-- [ ] **Visualizador de árbol de ramas y selector rápido (implementado, pendiente CI):** endpoint que entrega árbol conectado con raíz, profundidad, origen de bifurcación y conteo de escenas; detalle visual con cambio de ruta y selector desde lector. Pruebas de aislamiento y móvil/escritorio añadidas. Edición nodal no es parte del alcance.
+- [x] **Visualizador de árbol de ramas y selector rápido:** árbol conectado con raíz, profundidad, origen de corte y conteo de escenas en el detalle de la historia; selector en el lector sin alterar otras rutas. [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293), **226 Python + 46 Playwright PASS**. Edición nodal destructiva no implementada.
 - [ ] P3: soporte opcional IP-Adapter/LoRA evaluado contra workflows instalados, sin suponer identidad perfecta.
 - [ ] P3: simulación de mundo fuera de cámara **solo después** de consolidar estado determinista.
 - [ ] P3: SDK/plugin sandbox investigado, **sin marketplace de ejecución arbitraria** en esta etapa.
