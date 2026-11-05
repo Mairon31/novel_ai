@@ -718,3 +718,17 @@
   .creator-editor-tabs{gap:12px}
   .creator-projects{padding:9px}
 }
+
+
+/* Professional settings navigation: grouped subsystems instead of one crowded list */
+.settings-nav-group{display:flex;flex-direction:column;gap:3px;padding:10px 0 15px}
+.settings-nav-group + .settings-nav-group{border-top:1px solid #363d55;padding-top:18px}
+.settings-nav-label{padding:2px 12px;display:block;color:#c1b0f7;font-size:10px;
+  letter-spacing:1.5px;font-weight:800}
+.settings-nav-group>small{display:block;padding:0 12px 7px;color:#8490b0;font-size:10px}
+.settings-nav-group>button{width:100%;margin:0}
+.workspace-settings-shell{align-items:start}
+.workspace-settings-tabs{position:sticky;top:20px;max-height:calc(100dvh - 36px);
+  overflow-y:auto;scrollbar-width:thin}
+@media(max-width:760px){.workspace-settings-tabs{position:static;max-height:none}
+  .settings-nav-group{padding:8px 0 12px}}

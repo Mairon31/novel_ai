@@ -30,6 +30,17 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'about', label: 'Sobre y actualizaciones', icon: MonitorCog },
 ];
 
+const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
+  {title:'INTELIGENCIA',description:'Narrador y proveedores',
+    sections:['narration','providers','languages']},
+  {title:'CREACIÓN MULTIMEDIA',description:'Generación visual y voces',
+    sections:['multimedia']},
+  {title:'APLICACIÓN',description:'Preferencias y herramientas',
+    sections:['appearance','shortcuts','runtimes']},
+  {title:'CONEXIONES Y SISTEMA',description:'Red, dispositivos y versión',
+    sections:['network','about']},
+];
+
 function applyAppearance(p: WorkspacePreferences) {
   document.documentElement.dataset.nobleAccent = p.accent;
   document.documentElement.dataset.nobleReaderLayout = p.reader_layout;
@@ -131,9 +142,17 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
     </div>
     <div className="workspace-settings-shell">
       <nav aria-label="Apartados de configuración" className="workspace-settings-tabs">
-        {tabs.map(item => <button key={item.id} className={tab === item.id ? 'selected' : ''}
-          onClick={() => { setTab(item.id); setFeedback(''); setError(''); }}>
-          <item.icon size={17}/>{item.label}</button>)}
+        {settingGroups.map(group => <div className="settings-nav-group" key={group.title}>
+          <span className="settings-nav-label">{group.title}</span>
+          <small>{group.description}</small>
+          {group.sections.map(id => {
+            const item = tabs.find(candidate => candidate.id === id)!;
+            return <button key={item.id} className={tab === item.id ? 'selected' : ''}
+              aria-current={tab === item.id ? 'page' : undefined}
+              onClick={() => { setTab(item.id); setFeedback(''); setError(''); }}>
+              <item.icon size={17}/>{item.label}</button>;
+          })}
+        </div>)}
       </nav>
       <div className="workspace-settings-body">
         {!prefs && <div className="loading"><LoaderCircle className="rotating" size={18}/> Cargando preferencias...</div>}
