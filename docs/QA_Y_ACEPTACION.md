@@ -149,3 +149,10 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] Forzar excepción de sincronización después de terminar copias, y de persistir el marcador antes del commit; verificar rollback de todas las tablas históricas, archivos de destino y ausencia de rama publicada.
 - [ ] Inyectar un symlink en la carpeta nueva y comprobar que el sincronizador se niega a recorrerlo sin borrar el archivo externo.
 - [ ] Suite Python completa y Playwright verde; GPU y power-loss físicos **no** cubiertos por los tests automáticos. Contar aparte futuras pruebas Linux/Windows de procesos muertos y apagones.
+
+
+### Evidencia fsync y crash de proceso
+
+- [x] [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) — 197 Python + 36 Playwright PASS y compilación frontend, commit `eca8166`; se verificó flush real de archivos/dir POSIX y rollback por error de `fsync`.
+- [ ] `test_real_process_crash_after_copy_recovers_without_partial_branch`: proceso independiente termina con `os._exit(41)` tras clonar medios y antes del COMMIT, sin ejecutar `finally`. Una nueva app debe limpiar sólo el UUID huérfano, mantener origen y dejar sin marcador. Pendiente de CI.
+- [ ] Pendiente prueba de crash después de COMMIT con marcador sin borrar, y terminación simultánea de procesos/energía física.

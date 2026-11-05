@@ -566,3 +566,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] `_fsync_directory` fuerza metadatos de directorio en POSIX con `O_DIRECTORY/O_NOFOLLOW` cuando están disponibles; Windows no proporciona esta primitiva de forma portable y continúa como best-effort. `_sync_fork_files` recorre únicamente carpeta UUID de la nueva rama, rechaza symlinks y sincroniza contenidos, subdirectorios y directorio propietario.
 - [ ] `tests/test_fork_atomicity.py` se amplió para contar las tablas de snapshots históricas en rollback y probar fsync real, inyección de fallo de disco/metadata, rechazo de symlink externo y conservación de la fuente.
 - [ ] **No declararlo resistente a apagón físico ni CI PASS todavía.** Pendientes ejecución de corte eléctrico real, procesos independientes terminados con `SIGKILL`, análisis de journaling Windows/NTFS, corrupción filesystem, copias de seguridad y restauración.
+
+
+### Gate fsync inicial confirmado
+
+- [x] [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) finalizada con **197/197 Python y 36/36 Playwright PASS**, build React/Vite PASS. Cuatro regresiones nuevas en `test_fork_atomicity.py` ejercitan `os.fsync` real y fallos inyectados de sync/metadata con rollback de todos los snapshots.
+- [ ] Ahora se añade una prueba de **terminación real de otro proceso** con `os._exit(41)` tras copiar los medios editoriales. Debe dejar marcador y carpeta de rama inconclusa, sin fila SQLite confirmada; el inicio de otra instancia los debe reconciliar conservando el origen. Pendiente de CI del commit que la incorpora. No equivale a ensayo de corte eléctrico físico.

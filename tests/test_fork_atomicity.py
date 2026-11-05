@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import os
+import subprocess
 from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
@@ -252,6 +253,46 @@ class ForkAtomicityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "simbólico"):
                 self.narrative.fork_story(self.story)
         self.assertEqual(protected.read_bytes(), b"never delete this")
+        self.assert_unchanged()
+
+    def test_real_process_crash_after_copy_recovers_without_partial_branch(self):
+        # A different Python process terminates with os._exit during a clone.
+        # Unlike a raised exception, this bypasses all Python finally/rollback
+        # handlers; SQLite must roll back its open transaction via OS close.
+        child = """
+import os
+import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from noble_api.main import create_app
+
+app = create_app(Path(sys.argv[2]))
+service = app.state.creator_media
+original = service.clone
+
+def crash_after_copies(*args, **kwargs):
+    original(*args, **kwargs)
+    os._exit(41)
+
+service.clone = crash_after_copies
+app.state.narrative.fork_story(sys.argv[3])
+"""
+        proc = subprocess.run(
+            [sys.executable, "-c", child, str(ROOT / "apps" / "api"),
+             str(self.root), self.story],
+            capture_output=True, text=True, timeout=45, check=False,
+        )
+        self.assertEqual(proc.returncode, 41, proc.stderr)
+        stage = self.root / "fork-staging"
+        pending = list(stage.glob("*.pending"))
+        self.assertEqual(len(pending), 1)
+        abandoned_id = pending[0].stem
+        self.assertTrue((self.assets_root / abandoned_id).is_dir())
+        self.assertEqual(self.counts(), self.start_counts)
+        recovered = create_app(self.root)
+        self.assertEqual(recovered.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 1, "retained_stories": 0, "conflicts": 0})
+        self.assertFalse((self.assets_root / abandoned_id).exists())
         self.assert_unchanged()
 
     def test_two_simultaneous_forks_commit_complete_independent_copies(self):
