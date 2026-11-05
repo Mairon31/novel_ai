@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
@@ -10,6 +10,8 @@ import { api, downloads as compactCount, size } from './api';
 import { StoryStudio } from './StoryStudio';
 import { CreatorStudio } from './CreatorStudio';
 import { WorkspaceSettings } from './WorkspaceSettings';
+import { readModelDetails, readModelSearch, searchCacheKey,
+  writeModelDetails, writeModelSearch } from './modelCatalogCache';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
   ModelRole, Page, Settings,
@@ -61,6 +63,7 @@ export default function App() {
   const [searchResults, setSearchResults] = useState<CatalogEntry[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const detailRequest = useRef(0);
   const [detail, setDetail] = useState<ModelDetail | null>(null);
   const [pickedVariant, setPickedVariant] = useState('');
   const [variantFilter, setVariantFilter] = useState<'all' | 'full_gpu' | 'partial_offload' | 'cpu'>('all');
@@ -108,7 +111,10 @@ export default function App() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!keyboardActive || e.isComposing) return;
-      if (e.key === 'Escape') { setDetail(null); setNavOpen(false); return; }
+      if (e.key === 'Escape') {
+        detailRequest.current += 1;
+        setDetail(null); setDetailLoading(false); setNavOpen(false); return;
+      }
       const target = e.target as HTMLElement | null;
       if (target?.closest('input,textarea,select,[contenteditable="true"]')) return;
       if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
@@ -154,10 +160,22 @@ export default function App() {
     if (page !== 'modelos' || tab !== 'discover' || query.trim().length < 2) {
       setSearchResults([]); return;
     }
+    const key = searchCacheKey(query, role, modelSort);
+    const saved = readModelSearch(key);
+    if (saved) {
+      setSearchResults(saved);
+      setSearchLoading(false);
+      return;
+    }
+    setSearchResults([]);
     setSearchLoading(true);
     const t = window.setTimeout(() => {
       api.search(query.trim(), role, modelSort)
-        .then(data => { if (live) setSearchResults(data.results); })
+        .then(data => {
+          if (!live) return;
+          writeModelSearch(key, data.results);
+          setSearchResults(data.results);
+        })
         .catch((exc: Error) => { if (live) { setSearchResults([]); setError(exc.message); } })
         .finally(() => { if (live) setSearchLoading(false); });
     }, 380);
@@ -171,34 +189,70 @@ export default function App() {
     return () => window.clearInterval(handle);
   }, [refreshDownloads]);
 
+  function closeModelDetail() {
+    detailRequest.current += 1;
+    setDetail(null); setDetailLoading(false); setFitBusy(false);
+  }
   function changePage(next: Page) {
+    closeModelDetail();
     setEditingStoryId(null);
     setPage(next); setNavOpen(false); setNotice(''); setError('');
   }
+  function applyModelDetail(info: ModelDetail) {
+    setDetail(info);
+    setPickedVariant(info.hardware_fit?.recommended_filename ||
+      info.variants.find(v => v.supported)?.filename || '');
+  }
 
   async function viewModel(model: CatalogEntry) {
+    const requestId = ++detailRequest.current;
     setDetail(null); setPickedVariant(''); setVariantFilter('all'); setDetailLoading(true);
+    const cached = readModelDetails(model.repo_id, modelContext);
+    if (cached) {
+      applyModelDetail(cached);
+      setDetailLoading(false);
+      return;
+    }
     try {
       const info = await api.details(model.repo_id, modelContext);
-      setDetail(info);
-      setPickedVariant(info.hardware_fit?.recommended_filename ||
-        info.variants.find(v => v.supported)?.filename || '');
-    } catch (exc) { setError((exc as Error).message); }
-    finally { setDetailLoading(false); }
+      if (requestId !== detailRequest.current) return;
+      writeModelDetails(info, modelContext);
+      applyModelDetail(info);
+    } catch (exc) {
+      if (requestId === detailRequest.current) setError((exc as Error).message);
+    } finally {
+      if (requestId === detailRequest.current) setDetailLoading(false);
+    }
   }
 
   async function selectContext(tokens: number) {
     setModelContext(tokens);
     if (!detail) return;
+    const repoId = detail.repo_id;
+    const requestId = ++detailRequest.current;
+    const cached = readModelDetails(repoId, tokens);
+    if (cached) {
+      setDetail(cached);
+      setPickedVariant(current => cached.variants.some(v => v.filename === current)
+        ? current : cached.hardware_fit?.recommended_filename ||
+          cached.variants.find(v => v.supported)?.filename || '');
+      setFitBusy(false);
+      return;
+    }
     setFitBusy(true);
     try {
-      const info = await api.details(detail.repo_id, tokens);
+      const info = await api.details(repoId, tokens);
+      if (requestId !== detailRequest.current) return;
+      writeModelDetails(info, tokens);
       setDetail(info);
-      setPickedVariant(current => current ||
-        info.hardware_fit?.recommended_filename ||
-        info.variants.find(v => v.supported)?.filename || '');
-    } catch (exc) { setError((exc as Error).message); }
-    finally { setFitBusy(false); }
+      setPickedVariant(current => info.variants.some(v => v.filename === current)
+        ? current : info.hardware_fit?.recommended_filename ||
+          info.variants.find(v => v.supported)?.filename || '');
+    } catch (exc) {
+      if (requestId === detailRequest.current) setError((exc as Error).message);
+    } finally {
+      if (requestId === detailRequest.current) setFitBusy(false);
+    }
   }
 
   async function install() {
@@ -271,7 +325,10 @@ export default function App() {
   const isInstalled = detail && installed.some(m => m.repo_id === detail.repo_id &&
     m.revision === detail.revision && m.filename === pickedVariant);
 
-  return <div className={'app-shell ' + (page === 'inicio' && reading ? 'reader-active' : '')}>
+  return <div className={'app-shell ' +
+    (page === 'inicio' && reading ? 'reader-active ' : '') +
+    (page === 'modelos' && tab === 'discover' && (detail || detailLoading)
+      ? 'model-inspector-active' : '')}>
     <aside className={'sidebar ' + (navOpen ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark"><Sparkles size={22}/></div>
         <div className="brand-text"><strong>Noble AI</strong><small>LOCAL STORY STUDIO</small></div>
@@ -329,9 +386,9 @@ export default function App() {
           <div className="hub-toolbar">
             <div className="tab-buttons" role="tablist">
               <button role="tab" aria-selected={tab === 'discover'} className={tab === 'discover' ? 'active' : ''}
-                onClick={() => { setTab('discover'); setDetail(null); }}><Search size={17}/> Descubrir</button>
+                onClick={() => { setTab('discover'); closeModelDetail(); }}><Search size={17}/> Descubrir</button>
               <button role="tab" aria-selected={tab === 'installed'} className={tab === 'installed' ? 'active' : ''}
-                onClick={() => { setTab('installed'); setDetail(null); }}><HardDrive size={17}/> Instalados <span className="mini-count">{installed.length}</span></button>
+                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> Instalados <span className="mini-count">{installed.length}</span></button>
             </div>
             <div className="source-tag"><Cloud size={16}/> Hugging Face</div>
           </div>
@@ -341,12 +398,12 @@ export default function App() {
                 <input aria-label="Buscar modelos" value={query} onChange={e => setQuery(e.target.value)}
                   placeholder="Buscar modelos, familias o autores..."/></div>
               <div className="search-role-wrap"><SlidersHorizontal size={17}/>
-                <select aria-label="Categoría de modelo" value={role} onChange={e => { setRole(e.target.value as ModelRole); setDetail(null); }}>
+                <select aria-label="Categoría de modelo" value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select><ChevronDown size={15}/></div>
             </div>
             <div className="category-tabs" role="group" aria-label="Tipos de modelo">
-              {roles.map(item => <button key={item.id} onClick={() => { setRole(item.id); setDetail(null); }}
+              {roles.map(item => <button key={item.id} onClick={() => { setRole(item.id); closeModelDetail(); }}
                 className={role === item.id ? 'selected' : ''}>
                 {item.id === 'narrator' ? <BookOpen size={18}/> : item.id === 'image' ? <Image size={18}/> : <Headphones size={18}/>}
                 {item.title}</button>)}
@@ -495,9 +552,10 @@ export default function App() {
       </main>
     </div>
 
-    {(detail || detailLoading) && <div className="modal-scrim" role="presentation" onClick={() => setDetail(null)}>
+    {(detail || detailLoading) && <div className="modal-scrim model-detail-scrim"
+      role="presentation" onClick={closeModelDetail}>
       <section className="detail-panel" role="dialog" aria-modal="true" aria-label="Detalles del modelo" onClick={e => e.stopPropagation()}>
-        <div className="detail-top"><span>DETALLE DE MODELO</span><button className="icon-button" onClick={() => setDetail(null)} aria-label="Cerrar detalles"><X size={19}/></button></div>
+        <div className="detail-top"><span>DETALLE DE MODELO</span><button className="icon-button" onClick={closeModelDetail} aria-label="Cerrar detalles"><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
           <div className="noble-model-detail-heading">
             <div className="detail-avatar"><BookOpen size={32}/></div>
