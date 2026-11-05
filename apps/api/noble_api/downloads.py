@@ -195,55 +195,75 @@ class DownloadManager:
                                                 timeout=httpx.Timeout(180, connect=15)) as response:
                     if response.status_code in (401, 403):
                         raise RuntimeError("Acceso denegado; revisa los permisos del modelo")
-                    response.raise_for_status()
-                    continued = offset > 0 and response.status_code == 206
-                    if response.status_code == 206 and not continued:
-                        raise RuntimeError("Respuesta HTTP 206 inesperada sin petición Range")
-                    expected_chunk_bytes = None
-                    if response.status_code == 206:
-                        # A bare prefix check ("bytes 20-") is insufficient: a
-                        # truncated or forged range can silently corrupt a file.
+                    # Size-unreported uploads can be complete when interrupted
+                    # during hashing. RFC 9110 uses 416 + "bytes */N" to
+                    # describe the current length when Range begins at EOF.
+                    complete_at_eof = False
+                    if response.status_code == 416 and offset > 0:
                         content_range = response.headers.get("content-range", "").strip()
-                        match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", content_range)
-                        expected_offset = offset if continued else 0
-                        if not match:
-                            raise RuntimeError("Content-Range ausente o con formato inválido")
-                        start, end = int(match[1]), int(match[2])
-                        total = None if match[3] == "*" else int(match[3])
-                        if (start != expected_offset or end < start or
-                                (total is not None and (total <= end or total <= 0)) or
-                                (job["expected_size"] is not None and total is not None and
-                                 total != job["expected_size"])):
-                            raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
-                        expected_chunk_bytes = end - start + 1
-                        length = response.headers.get("content-length")
-                        if length is not None and (not length.isdigit() or
-                                                   int(length) != expected_chunk_bytes):
-                            raise RuntimeError("Content-Length no coincide con Content-Range")
+                        match = re.fullmatch(r"bytes \*/(\d+)", content_range)
+                        if (match is None or int(match[1]) != offset or
+                                offset > MAX_FILE_BYTES):
+                            raise RuntimeError("HTTP 416 no confirma que el archivo parcial esté completo")
+                        complete_at_eof = True
+                    if not complete_at_eof:
+                        response.raise_for_status()
+                    if not complete_at_eof:
+                        continued = offset > 0 and response.status_code == 206
+                        if response.status_code == 206 and not continued:
+                            raise RuntimeError("Respuesta HTTP 206 inesperada sin petición Range")
+                        expected_chunk_bytes = None
+                        if response.status_code == 206:
+                            # A bare prefix check ("bytes 20-") is insufficient: a
+                            # truncated or forged range can silently corrupt a file.
+                            content_range = response.headers.get("content-range", "").strip()
+                            match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", content_range)
+                            expected_offset = offset if continued else 0
+                            if not match:
+                                raise RuntimeError("Content-Range ausente o con formato inválido")
+                            start, end = int(match[1]), int(match[2])
+                            total = None if match[3] == "*" else int(match[3])
+                            if (start != expected_offset or end < start or
+                                    (total is not None and (total <= end or total <= 0)) or
+                                    (total is not None and end != total - 1) or
+                                    (job["expected_size"] is not None and total is not None and
+                                     total != job["expected_size"]) or
+                                    (total is None and job["expected_size"] is None) or
+                                    (total is None and end != job["expected_size"] - 1)):
+                            # All bytes after the resume offset must be returned;
+                            # a valid but intermediate 206 must not be installed.
+                                raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
+                            expected_chunk_bytes = end - start + 1
+                            length = response.headers.get("content-length")
+                            if length is not None and (not length.isdigit() or
+                                                       int(length) != expected_chunk_bytes):
+                                raise RuntimeError("Content-Length no coincide con Content-Range")
+                        else:
+                            # Server may ignore Range with HTTP 200; restart cleanly.
+                            offset = 0
+                        mode = "ab" if continued else "wb"
+                        received = offset
+                        last_reported = 0.0
+                        with part.open(mode) as output:
+                            for chunk in response.iter_bytes(chunk_size=1024 * 256):
+                                state = self.store.download(job_id)["status"]
+                                if state in ("paused", "cancelled"):
+                                    return
+                                if chunk:
+                                    received += len(chunk)
+                                    if received > MAX_FILE_BYTES:
+                                        raise RuntimeError("Archivo supera el límite de seguridad")
+                                    output.write(chunk)
+                                if time.monotonic() - last_reported >= .35:
+                                    self.store.update_download(job_id, received_bytes=received)
+                                    last_reported = time.monotonic()
+                        if (expected_chunk_bytes is not None and
+                                received - offset != expected_chunk_bytes):
+                            raise RuntimeError("El servidor entregó un fragmento Range incompleto")
+                        self.store.update_download(job_id, received_bytes=received)
                     else:
-                        # Server may ignore Range with HTTP 200; restart cleanly.
-                        offset = 0
-                    mode = "ab" if continued else "wb"
-                    received = offset
-                    last_reported = 0.0
-                    with part.open(mode) as output:
-                        for chunk in response.iter_bytes(chunk_size=1024 * 256):
-                            state = self.store.download(job_id)["status"]
-                            if state in ("paused", "cancelled"):
-                                return
-                            if chunk:
-                                received += len(chunk)
-                                if received > MAX_FILE_BYTES:
-                                    raise RuntimeError("Archivo supera el límite de seguridad")
-                                output.write(chunk)
-                            if time.monotonic() - last_reported >= .35:
-                                self.store.update_download(job_id, received_bytes=received)
-                                last_reported = time.monotonic()
-                    if (expected_chunk_bytes is not None and
-                            received - offset != expected_chunk_bytes):
-                        raise RuntimeError("El servidor entregó un fragmento Range incompleto")
-                    self.store.update_download(job_id, received_bytes=received)
-    
+                        # Do not modify the complete partial file: rehash it.
+                        self.store.update_download(job_id, received_bytes=offset)
             if not self.store.transition_download(
                     job_id, ("downloading",), "verifying"):
                 return
