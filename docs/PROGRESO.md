@@ -679,10 +679,20 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] `tests/test_story_archive.py` verifica la duplicación repetida del mismo ZIP, independencia de familias, remapeo de instantáneas, recursos WebP/portadas, búsqueda FTS por rama, preservación de texto libre con UUID literal y rechazo sin escritura de hash corrupto. Playwright comprueba el checkbox en escritorio y móvil.
 - [x] [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321): **230/230 Python y 46/46 Playwright PASS**, build frontend correcto.
 
-## 2026-11-05 — P2: Enlaces profundos mediante URL local (CI pendiente)
+## 2026-11-05 — P2: Enlaces profundos mediante URL local (CI verificada)
 
-- [ ] `workspaceRoute.ts` define parseo y serialización de rutas hash con UUID canónico. Admite `#/biblioteca`, `#/historia/<uuid>`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico` y alias `#/infraestructura`.
-- [ ] `App.tsx` sincroniza menú, atajos de teclado, back/forward del navegador y enlaces externos con el hash. `StoryStudio.tsx` carga una historia por UUID desde la URL al iniciar o recargar; selección, lectura, retorno, bifurcación y cambio de rama actualizan la ruta. `CreatorStudio.tsx` sincroniza proyecto seleccionado y nuevos proyectos.
-- [ ] Ruta hash elegida para que los enlaces funcionen en backend/instalación empaquetada **sin configurar fallback de servidor web**. Una ruta desconocida abre Model Hub; las rutas con ID válido pero inexistente muestran error sin tocar datos.
-- [ ] `apps/web/tests/workspace-route.spec.ts` comprueba carga directa, recarga, navegación de detalle→lector→otra ruta, Back/Forward, Creator Studio y enlace de infraestructura en ambos tamaños.
-- [ ] **CI pendiente**, no sustituye la separación interna por dominios de `App.tsx` ni añade historial URL por cada escena/turno.
+- [x] `workspaceRoute.ts` define parseo y serialización de rutas hash con UUID canónico. Admite `#/biblioteca`, `#/historia/<uuid>`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico` y alias `#/infraestructura`.
+- [x] `App.tsx` sincroniza menú, atajos de teclado, back/forward del navegador y enlaces externos con el hash. `StoryStudio.tsx` carga una historia por UUID desde la URL al iniciar o recargar; selección, lectura, retorno, bifurcación y cambio de rama actualizan la ruta. `CreatorStudio.tsx` sincroniza proyecto seleccionado y nuevos proyectos.
+- [x] Ruta hash elegida para que los enlaces funcionen en backend/instalación empaquetada **sin configurar fallback de servidor web**. Una ruta desconocida abre Model Hub; las rutas con ID válido pero inexistente muestran error sin tocar datos.
+- [x] `apps/web/tests/workspace-route.spec.ts` comprueba carga directa, recarga, navegación de detalle→lector→otra ruta, Back/Forward, Creator Studio y enlace de infraestructura en ambos tamaños.
+- [x] **CI aprobada**: [#42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384), 231 Python + 52 Playwright y build. Navegación de inicio, detalle, lector, rutas hijas, Creator Studio, atrás/adelante y cambio de sección validados.
+- [ ] Queda abierta la separación del estado interno por dominios de `App.tsx`, y no se agrega una URL por cada escena/turno.
+
+
+## 2026-11-05 — Cierre de importaciones duplicadas y rutas directas
+
+- [x] [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384): **231/231 Python y 52/52 Playwright PASS**, compilación frontend correcta. Rama publicada: únicamente `master`.
+- [x] La conversión `_copy_archive_ids` remapea **claves UUID de diccionarios JSON**, esenciales para `WorldState.relationships`, además de los valores y los identificadores de snapshots. `test_copy_remaps_uuid_dictionary_keys_in_world_relationships` comprueba estado actual, snapshot histórico y preservación de la historia original.
+- [x] `workspaceRoute.ts` conserva enlace directo al lector al completar onboarding en una instalación nueva y no deja seleccionado un proyecto si el usuario navega a `#/creator` sin ID. `workspace-route.spec.ts` verifica ambos estados y abre menú de navegación antes de pulsar Creator Studio en móvil.
+- [x] Commits principales de esta fase: `7f265dc` importación como copia, `1dd4681` rutas compartibles, `9ef0440` claves UUID en JSON, `3429f2a` persistencia del enlace durante onboarding, `18cc08e` navegación de prueba móvil.
+- [ ] Pendientes separados: compatibilidad automática de schemas futuros, respaldos de más de 192 MiB, tokenización real por modelo y desacoplamiento interno de `App.tsx`.

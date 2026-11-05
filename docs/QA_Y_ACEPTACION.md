@@ -247,8 +247,14 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Instantáneas visuales, editoriales, Lorebook y mundo conservan los enlaces a nuevos `turn_id`; imágenes y nombres físicos cambian de UUID. Los textos narrativos con UUID literales no se reescriben.
 - [x] ZIP con WebP manipulado y checksum roto sigue respondiendo 422 incluso al intentar copiarlo. [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321), **230 Python + 46 Playwright PASS** (escritorio y móvil).
 
-## P2 — Gate de enlaces profundos al lector y Creator (pendiente CI)
+## P2 — Gate de enlaces profundos al lector y Creator (CI verificada)
 
-- [ ] Compartir `#/historia/<uuid>` carga detalle tras navegación directa y recarga; `#/historia/<uuid>/leer` carga lector con historia correcta. Volver/adelante restaura rutas y selección de ramas.
-- [ ] `#/creator/<uuid>` selecciona proyecto concreto incluso tras F5; Creator Studio actualiza URL al cambiar proyecto. Atajos y menú sincronizan hash para Biblioteca/Modelos/Configuración/Infraestructura.
-- [ ] IDs inválidos nunca generan llamadas con nombres de ruta arbitrarios; ID válido inexistente da error no destructivo. Playwright real desktop/móvil y build Vite deben pasar.
+- [x] Compartir `#/historia/<uuid>` carga detalle tras navegación directa y recarga; `#/historia/<uuid>/leer` carga lector con historia correcta. Volver/adelante restaura rutas y selección de ramas.
+- [x] `#/creator/<uuid>` selecciona proyecto concreto incluso tras F5; Creator Studio actualiza URL al cambiar proyecto. Atajos y menú sincronizan hash para Biblioteca/Modelos/Configuración/Infraestructura.
+- [x] IDs inválidos nunca generan llamadas con nombres de ruta arbitrarios; ID válido inexistente da error no destructivo. Playwright real desktop/móvil y build Vite deben pasar.
+
+
+### Resultado integrado — CI verificada
+
+- [x] [GitHub Actions #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384): **231 Python PASS, 52 Playwright PASS, build Vite PASS**. Incluye UUID en claves JSON de relaciones y escenarios de onboarding con enlace directo.
+- [x] Las nuevas pruebas del navegador recorren carga de historias por hash, F5, detalle→lector, cambio de rama, Atrás/Adelante y Creator Studio desde enlace, menú y móvil, sin invocar GPU.

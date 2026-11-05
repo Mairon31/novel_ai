@@ -134,7 +134,7 @@
 ## Fase 5 — P1/P2: UX, compatibilidad e inmersión
 
 ### AUD-008 — Interfaz por espacios
-- [ ] **Navegación profunda mediante hash URL implementada, CI pendiente**: Biblioteca, detalle, lector, Creator Studio (historia seleccionada), Model Hub, Descargas, Configuración y Diagnóstico/Infraestructura. Botones, menú, enlaces directos, recarga y atrás/adelante se sincronizan; no requiere catch-all del servidor local.
+- [x] **Navegación profunda por URL hash:** Biblioteca, detalle, lector, Creator Studio con proyecto seleccionado, Model Hub, Descargas, Configuración y Diagnóstico/Infraestructura. Rutas compartibles, recarga, Atrás/Adelante, navegación móvil y primer inicio conservando el enlace; [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384): **231 Python + 52 Playwright PASS**, build Vite correcto. No requiere reescribir rutas en el backend.
 - [ ] Separar estado de `App.tsx` por dominio y vistas; medir renders y preservar rutas existentes.
 - [ ] Lector con VN/Libro/Chat, backlog, ocultar HUD, teclado, regeneración y selector rápido de rama.
 - [ ] UX móvil y escritorio verificadas visualmente; virtualización cuando la lista lo requiera (500 mensajes).

@@ -155,3 +155,8 @@ El endpoint de restauración conserva su comportamiento no destructivo por defec
 ## Enrutamiento local compartible
 
 `workspaceRoute.ts` maneja rutas de UI en el fragmento de URL (`#/biblioteca`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`, etc.), distinguiendo estado de navegación de cada dominio visual. `App.tsx` es el punto de coordinación del hash; `StoryStudio` y `CreatorStudio` reciben destino por props y notifican cuando el usuario abre otra historia o proyecto. El uso de hash permite recarga y favoritos dentro de instalaciones locales FastAPI/desktop sin agregar rutas backend para cada vista, preservando la API `/api/v1`. El enrutamiento no borra ni fusiona turnos ni anula el límite de aislamiento de ramas.
+
+
+**Integridad de UUID en JSON:** el remapeo para `as_copy=true` registra y transforma UUID tanto en **valores como en claves** de objetos JSON estructurados, necesario para `world_states.relationships`, `world_state_edits` y snapshots de mundo. No sustituye UUID en los campos de prosa libre. [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) valida 231 pruebas Python y 52 Playwright.
+
+**Onboarding con enlace directo:** completar la configuración inicial solo redirige a Model Hub si el usuario ya está en Model Hub; un destino `#/historia/{id}` permanece intacto. `#/creator` sin ID deselecciona el último proyecto activo. La navegación móvil abre el menú antes de interactuar con sus botones.

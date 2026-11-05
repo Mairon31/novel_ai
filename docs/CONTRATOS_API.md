@@ -240,3 +240,6 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 ## Contrato de enlaces de la interfaz
 
 Los enlaces `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creator/{id}`, `#/creator`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico` y `#/infraestructura` son rutas de **frontend** (hash), no llamadas HTTP de API. Los IDs se validan como UUID. Navegar o recargar no genera ni modifica turnos.
+
+
+**Validación de remapeos y rutas:** [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) **231 Python y 52 Playwright PASS**. El importador remapea UUID tanto en campos y valores como en **claves** JSON usadas por relaciones del mundo; el frontend conserva una ruta válida durante el onboarding inicial.
