@@ -118,6 +118,42 @@ class ComfySceneTests(unittest.TestCase):
                                 json={"prompt": "Un castillo al anochecer"})
         self.assertEqual(down.status_code, 503, down.text)
 
+    def test_exact_seed_config_and_character_reuse_without_second_diffusion(self):
+        self.setup_comfy()
+        endpoint=f"/api/v1/stories/{self.story}/illustrate"
+        body={"prompt":"Un castillo al anochecer", "seed":101010}
+        first=self.client.post(endpoint,json=body)
+        self.assertEqual(first.status_code,200,first.text)
+        self.assertFalse(first.json()["cached"])
+        self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/prompt"]),1)
+        gallery=self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()
+        self.assertEqual(len(gallery["assets"]),1)
+        self.fixture.offline=True
+        cached=self.client.post(endpoint,json=body)
+        self.assertEqual(cached.status_code,200,cached.text)
+        self.assertTrue(cached.json()["cached"])
+        self.assertEqual(cached.json()["asset_id"],first.json()["asset_id"])
+        self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/prompt"]),1)
+        self.fixture.offline=False
+        changed=self.client.post(endpoint,json={**body,"seed":101011})
+        self.assertEqual(changed.status_code,200,changed.text)
+        self.assertFalse(changed.json()["cached"])
+        self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/prompt"]),2)
+        self.assertEqual(len(self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"]),2)
+
+        # A changed character bible produces a new signature even for same seed.
+        profile={"name":"Luna","appearance":"Cabello violeta, ojos turquesa y orejas puntiagudas.",
+                 "outfit":"Capa negra", "distinguishing_features":"Un aro plateado"}
+        added=self.client.post(
+            f"/api/v1/stories/{self.story}/visual-characters",json=profile)
+        self.assertEqual(added.status_code,201,added.text)
+        generated=self.client.post(endpoint,json=body)
+        self.assertEqual(generated.status_code,200,generated.text)
+        self.assertFalse(generated.json()["cached"])
+        self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/prompt"]),3)
+
     def test_security_and_model_validation(self):
         invalid = self.client.put("/api/v1/images/config", json={
             "base_url": "http://evil.example:8188"})
