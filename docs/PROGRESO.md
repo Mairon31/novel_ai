@@ -417,7 +417,7 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] `tests/test_visual_state.py` añade ataques de enlace simbólico a galería/legacy, rechazo de temporal enlazado y rollback de publicación. Commit `3d770ec4a076`. [CI #41997120265](https://github.com/Mairon31/novel_ai/actions/runs/41997120265): **109/109 Python + 24/24 Playwright PASS**.
 - [x] `downloads.py` valida respuesta 206 completa (`start/end/total`, `Content-Length` si existe y bytes entregados), rechaza 206 sin solicitud de Range y no registra fragmentos truncados como modelo instalado. Commits `6e4725d6e085`, `9334c83df501`, `81cb36acd232`.
 - [x] `tests/test_api_model_hub.py` añade escenarios de Content-Range corrupto, rango no solicitado y descarga truncada incluso sin tamaño/hash upstream. Commits `35c34856a078`, `21bf0d94e238`, `accf29454aa5`. [CI #41997636863](https://github.com/Mairon31/novel_ai/actions/runs/41997636863): **112/112 Python + 24/24 Playwright PASS**.
-- [x] `Store.assign` ahora rechaza archivos GGUF de registros externos y symlinks fuera de `models_dir`; prueba nueva `test_installed_model_outside_storage_cannot_be_assigned` (commits `6ebde66a6fd0`, `f4e5a4871906`). La comprobación de CI de este último SHA se registra por separado.
+- [x] `Store.assign` ahora rechaza archivos GGUF de registros externos y symlinks fuera de `models_dir`; prueba nueva `test_installed_model_outside_storage_cannot_be_assigned` (commits `6ebde66a6fd0`, `f4e5a4871906`). [CI #41997814690](https://github.com/Mairon31/novel_ai/actions/runs/41997814690): **113/113 Python + 24/24 Playwright PASS**, frontend build correcto.
 
 ### Límites y próxima intervención
 
