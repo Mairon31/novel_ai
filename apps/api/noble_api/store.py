@@ -112,6 +112,56 @@ class Store:
             )
         return self.download(job_id), True
 
+    def recovery_candidates(self) -> list[dict]:
+        """Inspect all unfinished jobs, not the capped 200-row UI history."""
+        with self._conn() as conn:
+            return [dict(row) for row in conn.execute(
+                "SELECT * FROM downloads WHERE status IN ('paused','failed') "
+                "ORDER BY created_at,id")]
+
+    def installed_for_job(self, job: dict) -> dict | None:
+        with self._conn() as conn:
+            return self._dict(conn.execute(
+                "SELECT * FROM installed WHERE repo_id=? AND revision=? AND filename=?",
+                (job["repo_id"], job["revision"], job["filename"]),
+            ).fetchone())
+
+    def restore_orphaned_download(self, job_id: str, target: Path, part: Path) -> bool:
+        """Reclaim a GGUF renamed before its SQLite commit.
+
+        Never trust this file as installed: turn it back into .part and require
+        full size/SHA revalidation through the existing resume workflow.
+        """
+        moved = False
+        try:
+            with self._conn() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                row = conn.execute(
+                    "SELECT * FROM downloads WHERE id=?", (job_id,),
+                ).fetchone()
+                if row is None or row["status"] not in ("paused", "failed"):
+                    return False
+                already = conn.execute(
+                    "SELECT 1 FROM installed WHERE repo_id=? AND revision=? AND filename=?",
+                    (row["repo_id"], row["revision"], row["filename"]),
+                ).fetchone()
+                if already or part.exists() or part.is_symlink() or not target.is_file() or target.is_symlink():
+                    return False
+                target.replace(part)
+                moved = True
+                conn.execute(
+                    "UPDATE downloads SET status='paused', received_bytes=?, error=?, updated_at=? "
+                    "WHERE id=?",
+                    (part.stat().st_size,
+                     "Archivo recuperado tras interrupción; reanudar para verificar SHA-256",
+                     time.time(), job_id),
+                )
+        except Exception:
+            if moved and part.is_file() and not target.exists():
+                part.replace(target)
+            raise
+        return True
+
     def update_download(self, job_id, **fields):
         allowed = {"status", "received_bytes", "error"}
         if not set(fields).issubset(allowed):
