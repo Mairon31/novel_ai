@@ -116,6 +116,7 @@ class NarrativeService:
         self.resources = None  # injected per app for local GPU operation arbitration
         self.creator = None
         self.lorebook = None  # author-controlled conditional world knowledge
+        self.world = None  # author-confirmed state and atomic turn snapshots
         self.creator_media = None  # optional creator-owned story bible and NPC guidance
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
@@ -318,6 +319,8 @@ class NarrativeService:
             self.creator_media.clone(story_id, new_id, character_ids)
         if self.lorebook is not None:
             self.lorebook.clone(story_id, new_id)
+        if self.world is not None:
+            self.world.clone(story_id, new_id, turn_map, until_turn_id, character_ids)
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
@@ -366,6 +369,8 @@ class NarrativeService:
                 transition = self.visual.observe_turn_in_transaction(db, story_id, turn)
                 if transition is not None:
                     turn["scene_transition"] = transition
+            if self.world is not None:
+                self.world.snapshot_turn_in_transaction(db, story_id, turn_id, now)
         return turn
 
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
@@ -394,12 +399,14 @@ class NarrativeService:
         ])[-10000:]
         lorebook_context = (self.lorebook.activate(story["id"], activation)["context"]
                             if self.lorebook is not None else "")
+        world_context = (self.world.context(story["id"]) if self.world is not None else "")
         messages = [{"role": "system", "content": PROMPT + "\n" + output_preferences +
                      "\nPremisa: " + story["premise"] + "\nProtagonista: " +
                      story.get("protagonist_name", "Protagonista") + world_rules +
                      ("\n\n" + creator_context if creator_context else "") +
                      ("\n\nLorebook activado para esta escena (conocimiento del mundo):\n" +
-                      lorebook_context if lorebook_context else "")}]
+                      lorebook_context if lorebook_context else "") +
+                     ("\n\n" + world_context if world_context else "")}]
         for t in recent_turns:
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
