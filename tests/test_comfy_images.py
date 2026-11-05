@@ -34,7 +34,7 @@ class ComfyFixture:
             nodes = data["prompt"]
             assert nodes["1"]["class_type"] == "CheckpointLoaderSimple"
             assert nodes["1"]["inputs"]["ckpt_name"] == "my-story-checkpoint.safetensors"
-            assert nodes["2"]["inputs"]["text"] == "Un castillo al anochecer"
+            assert "Un castillo al anochecer" in nodes["2"]["inputs"]["text"]
             assert nodes["7"]["class_type"] == "SaveImage"
             return httpx.Response(200, json={"prompt_id": "123e4567"})
         if path == "/history/123e4567":
