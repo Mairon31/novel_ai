@@ -87,3 +87,14 @@ La operación fork retorna una historia con `origin_story_id` y `origin_turn_id`
 `GET /stories/{uuid}/visual-state` responde `{current_scene, scenes, assets, characters, selected_asset_id}`, con URLs individuales de recursos, `origin`, `content_sha256`, `seed` y `selected`. `PUT /stories/{uuid}/scene` recibe `{location}`. `POST /stories/{uuid}/visual-characters` y `PUT /stories/{uuid}/visual-characters/{uuid}` reciben `{name, appearance, outfit, distinguishing_features}`. `POST /stories/{uuid}/illustration-prompt` devuelve `{prompt, inference_used:false}`; `GET /stories/{uuid}/gallery/{uuid}` obtiene el WebP, `POST /stories/{uuid}/gallery/{uuid}/select` selecciona el archivo anterior. Los IDs deben pertenecer a la historia solicitada.
 
 `POST /stories/{uuid}/illustrate` acepta `{prompt,seed?}` y ahora responde también `cached` y `asset_id`. Si el seed, parámetros, prompt enriquecido y escena no cambian, puede devolver el recurso de caché sin contactar ComfyUI. La detección de un cambio de lugar **nunca** equivale a iniciar difusión ni a cargar GPU.
+
+
+## Imagen de referencia y recursos (P1.6)
+
+`POST /api/v1/stories/{uuid}/illustrate` acepta campos adicionales opcionales `reference_asset_id:uuid`, `denoise:0.2..0.95` y `allow_low_vram:boolean`, junto a `prompt` y `seed`. Sin `reference_asset_id` se mantiene el modo texto-a-imagen. Con referencia se verifica autoría de historia, integridad SHA256 y se utiliza `POST /upload/image` del ComfyUI local antes del grafo de imagen-a-imagen.
+
+- `GET /api/v1/resources/config`: `{mode:"monitor"|"guard",gpu_index:number,minimum_free_mib:number}`.
+- `PUT /api/v1/resources/config`: persiste configuración validada.
+- `GET /api/v1/resources/status`: GPU(s) observadas, MiB libres/usados, índice, porcentaje de utilización, `status=above_reserve|below_reserve|unknown`, política y tiempo de consulta.
+
+El modo guard consulta `nvidia-smi` **solo** antes de enviar una generación de ComfyUI explícita que no haya sido servida por caché. No bloquea a los proveedores sin telemetría NVIDIA y no garantiza que el modelo quepa. `allow_low_vram=true` permite una excepción por solicitud, pero no edita la configuración persistida.

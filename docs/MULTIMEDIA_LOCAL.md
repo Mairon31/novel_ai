@@ -43,3 +43,18 @@ El motor Piper CPU usa hasta 120 s por petición y admite textos de hasta 3500 c
 ## Próximas implementaciones
 
 Detector de cambios de escena, identidad consistente con retratos/LoRA, versiones de escena, jobs con cancelación y progreso, motores TTS GPU (Chatterbox/Qwen3-TTS), servicios API seleccionables, lector con capas y scheduler VRAM.
+
+
+## Generación img2img (escena de referencia)
+
+1. Abre una historia y agrega una ilustración a su galería.
+2. Selecciona **Imagen de referencia** dentro del formulario de ComfyUI.
+3. Ajusta **Transformación de la referencia**. Cuanto más baja, más se conservará la composición visual; el valor exacto depende del checkpoint.
+4. Escribe el prompt de la nueva escena. Usa una semilla si quieres que el resultado sea reproducible.
+5. Pulsa **Ilustrar escena con ComfyUI**. Se prepara y envía la imagen de referencia únicamente en esta solicitud. No se ejecuta carga adicional por abrir el lector.
+
+La generación de texto a imagen sigue disponible eligiendo «Sin referencia». Se utiliza `/upload/image` local en ComfyUI para enviar el PNG y un workflow estándar `LoadImage`+`VAEEncode`. Las pruebas de contrato verifican el grafo y el envío multipart, pero el resultado visual del modelo se evaluará en los ensayos reales agrupados.
+
+## Monitor y reserva GPU
+
+En **Configuración → Imágenes y voz**, consulta la VRAM de `nvidia-smi` y configura un mínimo libre. El modo `monitor` solamente informa; el modo `guard` rechaza con 409 una generación cuando la VRAM registrada es menor al umbral. En el lector puedes autorizar una ejecución puntual ignorando la reserva. Ni el monitor ni el guard descargan modelos o detienen procesos.

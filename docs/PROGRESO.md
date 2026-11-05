@@ -229,6 +229,21 @@ Ver [informe del primer ensayo GPU real](COLAB_QA_V14_RESULTADOS.md). Los númer
 
 **Nota:** «detección automática» aquí significa detección **heurística**; no hay garantía de comprender todo cambio de escena. No se crea imagen automáticamente al guardar o reproducir un turno.
 
+## 2026-11-04 — Referencias de imágenes y control de VRAM (P1.6)
+
+- [x] README rediseñado como presentación profesional: banner propio, badges, Mermaid, capturas reales de Playwright (escritorio/móvil) y enlace a la guía de colaboración.
+- [x] Capturas auténticas optimizadas WebP en `docs/assets/screenshots/` mediante workflow de publicación de artefactos.
+- [x] ComfyUI img2img con ilustración de la galería como referencia, VAEEncode y denoise 0.2–0.95.
+- [x] Verificación de ownership y SHA256 de referencia; subida HTTP multipart al ComfyUI local, nombre validado.
+- [x] Caché incluye el hash de la imagen de referencia y denoise; nunca escribe encima del asset original.
+- [x] `ResourceController`: telemetría real mediante nvidia-smi bajo demanda; supervisor de VRAM y modo opcional de admisión.
+- [x] Ajustes para supervisión o bloqueo por reserva, GPU seleccionable y excepción explícita de una generación.
+- [x] Tests offline: grafos img2img, caché, aislamiento, proveedor inválido, telemetría y política; CI frontend/móvil.
+- [ ] IPAdapter/LoRA/consistencia de rostro, rutas de provider multimodal comercial, scheduler con control real de memoria compartida y offload.
+- [ ] Ensayos de GPU ComfyUI/Piper agrupados cuando varias integraciones estén listas.
+
+Ninguna fase de esta entrada representa un nuevo benchmark físico; se trata de API, archivos de imagen, UI y tests de integración simulados.
+
 ## Plantilla para futuras entradas
 
 ```md

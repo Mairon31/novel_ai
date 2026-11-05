@@ -1,6 +1,6 @@
-# Noble AI P1 — Ejecutar el primer motor narrativo local
+# Noble AI — Instalar y ejecutar la aplicación local
 
-**Versión actual:** interfaz web React + FastAPI, Model Hub, narración por Ollama/KoboldCpp y almacenamiento SQLite. Todavía no es una novela visual completa ni un instalador .exe. No requiere Google Colab.
+**Descripción:** aplicación web local React + FastAPI con Model Hub, historias persistentes, ramas, galería de ilustraciones, integración ComfyUI y síntesis Piper opcional. No requiere Google Colab. Las funciones externas necesitan sus motores instalados por separado.
 
 ## Requisitos
 
@@ -75,3 +75,8 @@ Playwright se ejecuta en GitHub Actions para escritorio y móvil. **Pruebas veri
 - **Historias sin imágenes o voces:** esas integraciones serán fases siguientes.
 
 [Model Hub](MODEL_HUB.md) · [Bitácora](PROGRESO.md) · [Issues](https://github.com/Mairon31/novel_ai/issues).
+
+
+## Referencias visuales y VRAM
+
+Puedes generar nuevas variantes de una ilustración guardada usando **ComfyUI → Imagen de referencia** y el control **Transformación**, que utiliza un workflow de imagen-a-imagen nativo. En **Configuración → Imágenes y voz** puedes consultar la VRAM libre observada y establecer una reserva mínima para trabajos de imagen. Esta política no instala un scheduler de GPU ni elimina procesos existentes. Ver [Guía multimedia](MULTIMEDIA_LOCAL.md) y [Imágenes](IMAGENES.md).

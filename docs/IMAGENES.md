@@ -101,3 +101,24 @@ Perfiles 12/16GB con un worker de difusión como máximo; mantener LLM atendible
 - `POST /api/v1/stories/{id}/illustrate`: devuelve además `asset_id` y `cached`; cada respuesta nueva conserva su propia versión.
 
 **Pruebas:** SQLite y Pillow reales para versión, sustitución, restauración, aislamiento entre historias, migración y bifurcación; transporte ComfyUI simulado para difusión/retorno y reutilización; Playwright desktop/móvil para la interfaz. **No son benchmarks de GPU.**
+
+
+## ComfyUI img2img con una imagen guardada
+
+Se puede usar cualquier imagen WebP de la galería de **la misma historia** como referencia visual de una nueva ilustración. Esta función utiliza únicamente nodos estándar: `LoadImage` → `VAEEncode` → `KSampler` (denoise configurable) → `VAEDecode` → `SaveImage`.
+
+- En **Biblioteca → Galería**, importa una ilustración o selecciona una versión archivada. En el formulario «Ilustrar» selecciona «Imagen de referencia» y ajusta **Transformación de la referencia** entre 20% y 95%. Un valor bajo busca conservar más su composición.
+- El backend verifica que la imagen pertenece a la misma historia y que el SHA256 almacenado coincide con sus bytes actuales. Después prepara un PNG al tamaño del checkpoint, lo sube al ComfyUI local mediante `POST /upload/image`, comprueba el nombre devuelto y envía el grafo img2img a `POST /prompt`.
+- Las imágenes resultantes conservan su propia versión independiente; la fotografía de referencia nunca se sobrescribe. El cache de inferencia incorpora el SHA256 de referencia y el nivel de denoise.
+- La identidad visual aproximada deriva del contenido de la referencia y las instrucciones del prompt. Esto es **img2img clásico, no IPAdapter, InstantID, FaceID ni entrenamiento LoRA**. No se promete preservación exacta del rostro.
+- No se exige realizar nuevas instalaciones de nodos personalizados, pero el checkpoint seleccionado sí debe ser compatible con los nodos estándar y VAEEncode.
+
+### Supervisión de VRAM por GPU
+
+Con `nvidia-smi` disponible, Noble AI puede leer la VRAM global libre en MiB. **Configuración → Imágenes y voz → Memoria GPU y admisión** permite elegir `Solo supervisar` o `Bloquear si hay menos VRAM que la reserva`, además del índice de GPU y el mínimo libre. La reserva es un umbral definido por el usuario, no una estimación del consumo de un modelo.
+
+- En `monitor` (predeterminado) muestra los valores y no bloquea.
+- En `guard` devuelve HTTP 409 antes de contactar ComfyUI si la VRAM observada es inferior al mínimo.
+- La opción «Ignorar la reserva mínima de VRAM solo para esta solicitud» permite intentar una generación específica. La opción no altera los valores persistidos.
+- Si `nvidia-smi` no está disponible, el estado es `unknown` y no se bloquea a los proveedores CPU o no NVIDIA.
+- La supervisión NO descarga modelos, libera la VRAM, detiene procesos, predice consumo de un checkpoint ni coordina VRAM con otro programa. Un scheduler multiproceso con offload seguirá requiriendo una implementación independiente.

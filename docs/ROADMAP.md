@@ -181,3 +181,15 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [ ] Extracción automática, auditable y configurable de hechos de los capítulos.
 - [ ] Controlador GPU/CPU multinivel de ComfyUI, LLM y TTS.
 
+
+
+## Referencias de imagen y recursos GPU
+
+- [x] Img2img con VAEEncode de ComfyUI; cargar una versión WebP de la galería como composición inicial.
+- [x] Control seguro del archivo de referencia por historia y firma SHA256.
+- [x] Denoise seleccionable y cache reproducible por referencia, semilla, prompt y configuración.
+- [x] Consulta bajo demanda de VRAM global observada con nvidia-smi, sin presuponer modelos concretos.
+- [x] Opción de admisión por reserva mínima y sobreescritura explícita por solicitud.
+- [ ] IPAdapter/FaceID, consistencia visual a nivel identidad sin cambios indeseados.
+- [ ] Gestor de prioridades/orquestación para offload y transferencia LLM-ComfyUI-TTS.
+- [ ] Telemetría de memoria por proceso, GPUs múltiples y CUDA con checkpoints heterogéneos.
