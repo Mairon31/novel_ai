@@ -54,6 +54,8 @@ test('author art library overlays caption-matched background and transparent spr
 
   await page.getByRole('button', { name: 'Ir a Biblioteca' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
+  await expect(page.getByRole('region', { name: 'Detalle de ' + title })).toBeVisible();
+  await page.getByRole('button', { name: 'Continuar historia' }).click();
   const portrait = page.getByRole('img', { name: 'Personaje presente: Aira feliz' });
   await expect(portrait).toBeVisible();
   await expect(page.locator('.noble-scene-art'))
