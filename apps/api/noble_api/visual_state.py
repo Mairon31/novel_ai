@@ -237,6 +237,19 @@ class VisualState:
 
     def all(self, story_id: str) -> dict:
         active_scene = self.scene(story_id)
+        # Older Noble AI installations kept only scene.webp. Import that
+        # image as the first immutable version when the gallery is first read.
+        legacy = self.store.root / "story-assets" / story_id / "scene.webp"
+        with self.store._conn() as conn:
+            has_art = conn.execute(
+                "SELECT 1 FROM visual_assets WHERE story_id=? LIMIT 1",
+                (story_id,)).fetchone()
+        if has_art is None and legacy.is_file() and not legacy.is_symlink():
+            try:
+                self.publish(story_id, legacy.read_bytes(), origin="manual")
+            except (ValueError, OSError):
+                # Broken older artwork must not hide the story or its scene log.
+                pass
         with self.store._conn() as conn:
             scenes = [dict(row) for row in conn.execute(
                 "SELECT * FROM visual_scenes WHERE story_id=? ORDER BY created_at,id",
@@ -262,7 +275,7 @@ class VisualState:
         A partial fork only receives scenes that existed at its selected turn.
         A gallery from a later scene is not exposed on an earlier branch.
         """
-        self.scene(source_id)
+        self.all(source_id)  # migrate any pre-gallery scene.webp before copying
         self.scene(branch_id)  # ensures a scene even for older histories
         with self.store._conn() as conn:
             scenes = [dict(row) for row in conn.execute(
