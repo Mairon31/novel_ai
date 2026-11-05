@@ -34,6 +34,31 @@ class ModelStorageTests(unittest.TestCase):
         }
         return self.store.register_model(job, file, "f" * 64, "sha256_verified")
 
+    def test_sqlite_connection_enforces_integrity_pragmas(self):
+        with self.store._conn() as conn:
+            self.assertEqual(conn.execute("PRAGMA journal_mode").fetchone()[0], "wal")
+            self.assertEqual(conn.execute("PRAGMA synchronous").fetchone()[0], 1)
+            self.assertEqual(conn.execute("PRAGMA foreign_keys").fetchone()[0], 1)
+            self.assertGreaterEqual(conn.execute("PRAGMA busy_timeout").fetchone()[0], 5000)
+
+    def test_download_rejects_symlink_escape_without_writing(self):
+        outside = Path(self.tmp.name) / "outside.gguf.part"
+        outside.write_bytes(b"untouched")
+        job, created = self.store.enqueue("test/model", "a" * 40, "model.gguf", 100, None)
+        self.assertTrue(created)
+        partial = (self.store.models_dir / "hf" / "test" / "model" /
+                   ("a" * 40) / "model.gguf.part")
+        partial.parent.mkdir(parents=True)
+        try:
+            partial.symlink_to(outside)
+        except (OSError, NotImplementedError):
+            self.skipTest("Filesystem disallows file symlinks")
+        self.app.state.downloads._run(job["id"])
+        result = self.store.download(job["id"])
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("Ruta de descarga", result["error"])
+        self.assertEqual(outside.read_bytes(), b"untouched")
+
     def test_disk_uses_actual_model_files_and_partial_downloads(self):
         full = self.store.models_dir / "hf" / "test" / "model" / ("a" * 40) / "model.gguf"
         full.parent.mkdir(parents=True, exist_ok=True)
