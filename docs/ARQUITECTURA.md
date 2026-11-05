@@ -18,3 +18,16 @@ El registro local mantiene URL/nombre/rol de worker en SQLite y token en keyring
 Componentes: `noble_api/workers.py`, `worker_server.py`, `narrative.py`, `RemoteWorkers.tsx` y `tests/test_workers.py`. El navegador gestiona el registro, pero jamás obtiene el token previamente guardado. El contenido de contexto narrativo sí viaja a la GPU externa. No hay servidor LAN compartido ni workers de difusión/TTS.
 
 Estado: protocolos simulados con pruebas; sin sesión real de GPU. Detalles en [ADR-003](adr/0003-remote-workers.md).
+
+## Decisión técnica — Aplicación de auditoría Argon (2026-11-05)
+
+**Evolución modular, no reescritura:** conservar el monolito modular Python/FastAPI (`apps/api/noble_api`), React/Vite (`apps/web`), SQLite local, adaptadores de inferencia y workers. Separar responsabilidades sin convertir un producto local-first en microservicios. Ver la [arquitectura objetivo y fronteras por capa (§20)](ARGON_AUDITORIA.md) y [tareas priorizadas](../TODO.md).
+
+**Fronteras obligatorias:**
+- UI: envía intenciones, muestra estado visual y consume REST/SSE; no ensambla el prompt canónico.
+- Narrativa: canon, ramas, testigos, estado por turno, presupuesto/contexto y postprocesamiento de cambios.
+- Infraestructura: hardware, modelos, lifecycle de procesos, descarga, VRAM, workers; no contamina la interfaz inmersiva.
+- Escena: decisión explícita de reutilizar fondo, cambiar sprite, generar fondo nuevo o ilustración especial.
+- Persistencia: transacciones coherentes para mutaciones relacionadas y esquema versionado; no confundir WAL con atomicidad de operaciones **entre servicios**.
+
+Orden de migración: cimientos P0 → coordinación GPU y modelos → narrador estructurado/memoria → composición visual → navegación VN/Creator/infraestructura → empaquetado y benchmarks. API externa estable y cobertura E2E durante la transición. El informe estático contiene hallazgos ya parcial o totalmente implementados; comprobar `master` antes de abrir tareas duplicadas.
