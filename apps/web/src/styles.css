@@ -818,3 +818,76 @@
   .hub-variants-toolbar>div{width:100%}
   .hub-variants-toolbar button{flex:1}
 }
+
+
+/* Standalone story landing: bookshelf -> editorial details -> immersive reader */
+.noble-story-detail{width:100%;max-width:1320px;margin:0 auto;display:flex;
+  flex-direction:column;gap:24px;min-width:0}
+.noble-story-detail-cover{min-height:clamp(430px,58vh,630px);position:relative;
+  isolation:isolate;overflow:hidden;display:flex;align-items:end;
+  border:1px solid #4a466c;border-radius:23px;
+  background-color:#22283f;background-position:center;background-size:cover;
+  box-shadow:0 20px 75px #0004}
+.noble-story-cover-shade{position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(90deg,rgba(12,15,28,.97) 0%,rgba(14,17,31,.87) 42%,
+    rgba(12,15,28,.34) 100%),
+    linear-gradient(0deg,rgba(9,11,22,.95) 0%,transparent 62%)}
+.noble-story-detail-back{position:absolute;left:clamp(20px,4vw,51px);top:25px;
+  display:inline-flex;align-items:center;gap:8px;padding:10px 12px;
+  border:1px solid #79738b80;border-radius:10px;background:rgba(10,12,24,.72);
+  color:#e9e8f9;font-size:12px;font-weight:700;backdrop-filter:blur(8px)}
+.noble-story-cover-empty{position:absolute;right:12%;top:25%;opacity:.18;
+  transform:rotate(-13deg);filter:drop-shadow(0 12px 25px #0007);
+  color:#c4afff}
+.noble-story-detail-heading{position:relative;padding:95px clamp(24px,6vw,76px) 48px;
+  width:min(100%,860px);z-index:1;display:flex;flex-direction:column;
+  align-items:start;gap:17px}
+.noble-story-detail-overline{display:inline-flex;align-items:center;gap:8px;
+  color:#c5b4ff;font-size:11px;letter-spacing:1.8px;font-weight:800}
+.noble-story-detail-heading h1{margin:0;font:800 clamp(31px,5.5vw,66px)/1.09 'Outfit',sans-serif;
+  letter-spacing:-1.5px;color:#fff;text-wrap:balance;overflow-wrap:anywhere;
+  text-shadow:0 5px 35px #0008}
+.noble-story-detail-heading>p{max-width:650px;color:#dbdef1;
+  font-size:clamp(13px,1.3vw,16px);line-height:1.7;margin:0;
+  text-shadow:0 2px 10px #0008}
+.noble-story-genre{display:inline-flex;padding:7px 11px;
+  border:1px solid #ac92e4;border-radius:20px;color:#e5d6ff;
+  background:#4b386799;font-size:11px;font-weight:750}
+.noble-story-detail-tags{display:flex;flex-wrap:wrap;gap:7px}
+.noble-story-detail-tags span{padding:5px 9px;font-size:11px;color:#d6d5ef;
+  border:1px solid #74718a80;background:#10122299;border-radius:20px}
+.noble-story-detail-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px}
+.noble-story-detail-actions button{min-height:47px}
+.noble-story-detail-body{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1fr);
+  gap:20px;align-items:start}
+.noble-story-detail-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px}
+.noble-story-detail-overview>div{padding:19px;background:#1b2133;
+  border:1px solid #383e57;border-radius:15px;min-width:0;
+  display:flex;flex-direction:column;gap:8px}
+.noble-story-detail-overview svg{color:#b99ff2}
+.noble-story-detail-overview span{font-size:11px;color:#97a3be}
+.noble-story-detail-overview strong{font-size:13px;color:#edeefa;overflow-wrap:anywhere}
+.noble-story-detail-resume{padding:25px 29px;background:#191f30;
+  border:1px solid #383e57;border-radius:15px;min-height:176px}
+.noble-story-detail-resume h2{font:750 clamp(20px,2.6vw,27px) 'Outfit',sans-serif;
+  margin:12px 0}
+.noble-story-detail-resume p{font-size:13px;line-height:1.75;
+  color:#bdc6dc;display:-webkit-box;-webkit-line-clamp:5;
+  -webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.noble-story-detail-resume-link{display:inline-flex;align-items:center;gap:8px;
+  margin-top:11px;color:#c2aaff;background:transparent;font-size:12px;font-weight:800}
+@media(max-width:900px){
+  .noble-story-detail-body{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .noble-story-detail-cover{min-height:490px;border-radius:15px}
+  .noble-story-cover-shade{background:linear-gradient(0deg,#0b0e1cf5 0%,#151626cc 60%,#15162650 100%)}
+  .noble-story-detail-heading{padding:85px 19px 32px;gap:13px}
+  .noble-story-detail-back{left:19px;top:18px}
+  .noble-story-detail-actions{width:100%}
+  .noble-story-detail-actions button{width:100%;justify-content:center}
+  .noble-story-detail-overview{gap:9px}
+  .noble-story-detail-overview>div{padding:13px}
+  .noble-story-detail-resume{padding:19px}
+}
