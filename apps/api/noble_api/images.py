@@ -164,6 +164,7 @@ class SceneImageService:
         if self.lock.locked():
             raise HTTPException(409, "ComfyUI ya está generando una ilustración")
         await self.lock.acquire()
+        lease = False
         try:
             config = self.config()
             if not config["checkpoint"]:
@@ -209,6 +210,7 @@ class SceneImageService:
                 # the event loop and never stops someone else's LLM process.
                 await asyncio.to_thread(self.resources.allow_image_request,
                                         request.allow_low_vram)
+                lease = await self.resources.claim_local_gpu("ComfyUI")
             connected = await self.status()
             if not connected["online"]:
                 raise HTTPException(503, "ComfyUI no está disponible")
@@ -280,6 +282,8 @@ class SceneImageService:
         except (httpx.HTTPError, ValueError) as exc:
             raise HTTPException(502, "Error de ComfyUI: " + str(exc)[:180]) from exc
         finally:
+            if self.resources is not None:
+                self.resources.release_local_gpu(lease)
             self.lock.release()
 
 

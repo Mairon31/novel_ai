@@ -88,6 +88,7 @@ def create_app(
     visual.planner = planner
     narrative.visual = visual
     resources = ResourceController(store)
+    narrative.resources = resources
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
     speech = SpeechService(narrative)
 

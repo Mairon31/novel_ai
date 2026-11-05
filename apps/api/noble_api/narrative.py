@@ -112,6 +112,7 @@ class NarrativeService:
         self.secrets = secrets or Secrets()
         self.workers = workers
         self.visual = None  # injected after VisualState initializes its SQLite tables
+        self.resources = None  # injected per app for local GPU operation arbitration
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
@@ -456,13 +457,21 @@ class NarrativeService:
         started = time.monotonic()
         first = None
         count = 0
-        async for text in self.generate(warm, [
-            {"role": "system", "content": "Responde brevemente en español."},
-            {"role": "user", "content": "Responde únicamente: Listo."},
-        ]):
-            if first is None:
-                first = round((time.monotonic() - started) * 1000, 1)
-            count += len(text)
+        lease = False
+        try:
+            if (self.resources is not None and config["provider"] in {"ollama", "koboldcpp"}
+                    and config["device"] != "cpu"):
+                lease = await self.resources.claim_local_gpu("preparación del narrador")
+            async for text in self.generate(warm, [
+                {"role": "system", "content": "Responde brevemente en español."},
+                {"role": "user", "content": "Responde únicamente: Listo."},
+            ]):
+                if first is None:
+                    first = round((time.monotonic() - started) * 1000, 1)
+                count += len(text)
+        finally:
+            if self.resources is not None:
+                self.resources.release_local_gpu(lease)
         if count == 0:
             raise ValueError("El modelo no devolvió una respuesta de preparación")
         return {
@@ -487,6 +496,7 @@ class NarrativeService:
                 return
             config = self.config()
             collected: list[str] = []
+            lease = False
             try:
                 yield encode_event("status", {
                     "phase": "preparing", "message": "Preparando contexto de la historia..."})
@@ -495,6 +505,9 @@ class NarrativeService:
                     "phase": "connecting", "message": "Conectando con el modelo narrador..."})
                 first_piece = True
                 total_length = 0
+                if (self.resources is not None and config["provider"] in {"ollama", "koboldcpp"}
+                        and config["device"] != "cpu"):
+                    lease = await self.resources.claim_local_gpu("narración local")
                 async for piece in self.generate(config, messages):
                     if first_piece:
                         yield encode_event("status", {
@@ -510,9 +523,14 @@ class NarrativeService:
                     raise ValueError("El modelo no produjo narración")
                 turn = self.append(story_id, request_id, mode, instruction, text, config["model"])
                 yield encode_event("done", {"turn": turn, "replayed": False})
+            except HTTPException as exc:
+                yield encode_event("error", {"message": str(exc.detail)[:400]})
             except (httpx.HTTPError, ValueError, OSError, sqlite3.Error) as exc:
                 # Never commit an incomplete story turn.
                 yield encode_event("error", {"message": str(exc)[:400]})
+            finally:
+                if self.resources is not None:
+                    self.resources.release_local_gpu(lease)
 
 
 def mount_narrative_routes(app, narrative: NarrativeService):
