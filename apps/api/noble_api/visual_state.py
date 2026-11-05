@@ -142,7 +142,7 @@ class VisualState:
             character_columns = [row[1] for row in conn.execute(
                 "PRAGMA table_info(visual_characters)")]
             if "reference_asset_id" not in character_columns:
-                db.execute("ALTER TABLE visual_characters ADD COLUMN reference_asset_id TEXT")
+                conn.execute("ALTER TABLE visual_characters ADD COLUMN reference_asset_id TEXT")
             columns = [row[1] for row in conn.execute("PRAGMA table_info(visual_assets)")]
             if "render_signature" not in columns:
                 conn.execute("ALTER TABLE visual_assets ADD COLUMN render_signature TEXT")
