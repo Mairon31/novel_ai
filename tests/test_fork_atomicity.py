@@ -121,6 +121,8 @@ class ForkAtomicityTests(unittest.TestCase):
         self.assertEqual(self.counts(), self.start_counts)
         self.assertEqual(self.branch_dirs(), self.start_dirs)
         self.assertEqual(
+            list((self.root / "fork-staging").glob("*.pending")), [])
+        self.assertEqual(
             self.client.get(f"/api/v1/stories/{self.story}/creator/assets")
             .json()["assets"][0]["kind"], "cover")
         self.assertEqual(
@@ -177,6 +179,68 @@ class ForkAtomicityTests(unittest.TestCase):
             with self.assertRaisesRegex(OSError, "simulated disk copy failure"):
                 self.narrative.fork_story(self.story)
         self.assert_unchanged()
+
+    def test_startup_recovers_only_marked_orphan_branch_from_crash(self):
+        abandoned = str(uuid.uuid4())
+        folder = self.assets_root / abandoned
+        folder.mkdir(parents=True)
+        (folder / "interrupted.webp").write_bytes(b"unfinished-branch-file")
+        staging = self.root / "fork-staging"
+        staging.mkdir(exist_ok=True)
+        (staging / (abandoned + ".pending")).write_text(abandoned, encoding="utf-8")
+        # An unmarked UUID folder is not proof that Noble owns its contents.
+        unmarked = self.assets_root / str(uuid.uuid4())
+        unmarked.mkdir()
+        (unmarked / "user-art.png").write_bytes(b"user-file")
+        other = create_app(self.root)
+        self.assertEqual(other.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 1, "retained_stories": 0, "conflicts": 0})
+        self.assertFalse(folder.exists())
+        self.assertFalse((staging / (abandoned + ".pending")).exists())
+        self.assertEqual((unmarked / "user-art.png").read_bytes(), b"user-file")
+        self.assertEqual(self.counts(), self.start_counts)
+        self.assertEqual(self.narrative.get_story(self.story)["title"],
+                         "La guardiana del faro")
+
+    def test_stale_marker_after_successful_commit_keeps_story_and_media(self):
+        complete = self.narrative.fork_story(self.story)
+        branch_id = complete["id"]
+        media = self.assets_root / branch_id / "scene.webp"
+        self.assertTrue(media.exists())
+        staging = self.root / "fork-staging"
+        staging.mkdir(exist_ok=True)
+        marker = staging / (branch_id + ".pending")
+        marker.write_text(branch_id, encoding="utf-8")
+        other = create_app(self.root)
+        self.assertEqual(other.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 0, "retained_stories": 1, "conflicts": 0})
+        self.assertFalse(marker.exists())
+        self.assertEqual(other.state.narrative.get_story(branch_id)["id"], branch_id)
+        self.assertTrue(media.exists())
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{branch_id}/lorebook").status_code, 200)
+
+    def test_fork_recovery_refuses_symlink_and_does_not_erase_external_data(self):
+        orphan = str(uuid.uuid4())
+        external = self.root / "external-files"
+        external.mkdir()
+        (external / "keep-me").write_bytes(b"personal-file")
+        self.assets_root.mkdir(exist_ok=True)
+        alias = self.assets_root / orphan
+        try:
+            alias.symlink_to(external, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("Los symlinks no están disponibles")
+        staging = self.root / "fork-staging"
+        staging.mkdir(exist_ok=True)
+        marker = staging / (orphan + ".pending")
+        marker.write_text(orphan, encoding="utf-8")
+        other = create_app(self.root)
+        self.assertEqual(other.state.narrative.fork_recovery_report["conflicts"], 1)
+        self.assertTrue(marker.exists())
+        self.assertTrue(alias.is_symlink())
+        self.assertEqual((external / "keep-me").read_bytes(), b"personal-file")
+        alias.unlink()
 
     def test_successful_fork_publishes_all_modules_with_new_ids(self):
         branch = self.narrative.fork_story(self.story)
