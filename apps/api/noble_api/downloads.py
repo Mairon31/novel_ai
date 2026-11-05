@@ -99,11 +99,24 @@ class DownloadManager:
         job = self.store.download(job_id)
         if not job or job["status"] != "queued":
             return
-        target = (self.store.models_dir / "hf" / job["repo_id"] /
-                  job["revision"] / job["filename"])
-        part = Path(str(target) + ".part")
-        target.parent.mkdir(parents=True, exist_ok=True)
         try:
+            # Revalidate persisted jobs and resolved paths: the database and
+            # folder tree might have been edited since the original install.
+            validate_repo(job["repo_id"])
+            validate_variant(job["revision"], job["filename"])
+            root = self.store.models_dir.resolve()
+            if not root.is_relative_to(self.store.root.resolve()):
+                raise RuntimeError("Directorio de modelos fuera del espacio administrado")
+            target = (root / "hf" / job["repo_id"] /
+                      job["revision"] / job["filename"])
+            part = Path(str(target) + ".part")
+            for file in (target, part):
+                if file.is_symlink() or not file.resolve().is_relative_to(root):
+                    raise RuntimeError("Ruta de descarga fuera del directorio de modelos")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            # Check again after mkdir in case the path already existed as a link.
+            if not target.parent.resolve().is_relative_to(root):
+                raise RuntimeError("Directorio de descarga no confiable")
             self.store.update_download(job_id, status="downloading", error=None)
             offset = part.stat().st_size if part.exists() else 0
             headers = {"Range": "bytes=" + str(offset) + "-"} if offset else {}
