@@ -14,7 +14,7 @@
 ## Fase 1 — P0: datos, rutas, transferencias y streaming
 
 ### AUD-001 — Persistencia y transacciones
-- [x] Base SQLite existente con `journal_mode=WAL` y `busy_timeout` en `store.py` (inspección del código en `master`).
+- [x] Base SQLite con `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON` y `busy_timeout` en cada conexión; PRAGMAs comprobados por `test_sqlite_connection_enforces_integrity_pragmas` (CI #41994792794).
 - [ ] Aplicar y probar claves foráneas, transacciones atómicas entre turno, canon, escena y medios; rollback coherente frente a fallos (no basta `with conn` aislado).
 - [ ] Migraciones versionadas, índices adecuados y plan seguro de upgrade/backups; no reemplazar ni borrar bases existentes.
 - [ ] Prueba concurrente de ≥50 escrituras, procesos de multimedia simultáneos y recuperación tras interrupción con integridad verificada.
@@ -23,13 +23,14 @@
 - [x] Instalación GGUF de archivo único con validadores de repo/revisión/nombre y reanudación HTTP Range con `.part` (código existente).
 - [x] Cálculo de SHA-256 y comparación cuando catálogo aporta checksum; estado diferenciado `local_hash_only` cuando no existe checksum publicado.
 - [x] El inventario del Model Hub excluye enlaces simbólicos y rutas externas de los bytes computados.
-- [ ] Protección explícita de rutas reales y enlaces simbólicos al **escribir, leer, clonar, descargar y borrar** recursos y modelos; pruebas adversariales `../`, symlink y registro manipulado.
+- [x] Primer endurecimiento P0: medios de creador exigen UUID/tipo y rechazan symlink externo; descargas revalidan identificadores/rutas `.part`/destino; tres pruebas nuevas PASS (CI #41994792794).
+- [ ] Ampliar contención y protección frente a carreras a **todos** los módulos que leen, clonan, importan, escriben y borran recursos/modelos; pruebas con registros manipulados y symlink de padres.
 - [ ] Pruebas de reanudación exacta al 50%, respuesta Range incorrecta, interrupción durante verificación y renombrado atómico; no declarar «verificado» si no hay checksum de origen.
 - [ ] Gestión de conflictos entre descargas, cuotas de disco, hashes y reintento sin pérdidas.
 
 ### AUD-004 — Streaming, cancelación y contratos
-- [x] Endpoint narrativo SSE y consumo incremental de eventos existentes en backend/web (inspección de código).
-- [ ] Botón Detener / `AbortController` desde la UI hasta el proceso local o remoto, propagación de `CancelledError` y limpieza de reservas GPU.
+- [x] Endpoint narrativo SSE, streaming incremental y cliente con `AbortController` + control Detener existentes (inspección de `narrative.py`, `api.ts`, `StoryStudio.tsx`, `VisualReader.tsx`).
+- [ ] Probar y garantizar que **Detener** cancela cómputo en Ollama/KoboldCpp/worker remoto (no solo fetch), propaga desconexión, no persiste turnos incompletos y libera VRAM en un tiempo medible.
 - [ ] Pruebas con cliente que desconecta a mitad del stream: no persistir turno incompleto, liberar recursos, no dejar worker generando.
 - [ ] Eventos tipados `token/state_delta/scene_plan/done/error`, gestión de reconexión y códigos estructurados `VRAM_EXHAUSTED`, `WORKER_UNREACHABLE`, `CONTEXT_OVERFLOW`.
 - [ ] Medir TTFT y tiempo de cancelación en hardware real: metas de Argon sujetas a validación, no valores garantizados.
