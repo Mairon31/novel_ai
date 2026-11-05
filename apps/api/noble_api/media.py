@@ -5,12 +5,10 @@ uploaded later by a scene-generation adapter as a separate trusted workflow.
 """
 from __future__ import annotations
 
-import io
 import uuid
 
 from fastapi import File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
-from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 from .narrative import NarrativeService
@@ -40,24 +38,9 @@ def mount_media_routes(app, narrative: NarrativeService):
         if not data or len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(413, "La ilustración supera el límite de 12 MB")
         try:
-            with Image.open(io.BytesIO(data)) as source:
-                if source.format not in {"PNG", "JPEG", "WEBP"}:
-                    raise ValueError("Formato de imagen incorrecto")
-                if source.width * source.height > MAX_IMAGE_PIXELS:
-                    raise ValueError("La imagen contiene demasiados píxeles")
-                source.load()
-                img = ImageOps.exif_transpose(source).convert("RGB")
-                img.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
-                target = narrative.store.root / "story-assets" / str(story_id) / "scene.webp"
-                target.parent.mkdir(parents=True, exist_ok=True)
-                temporary = target.with_suffix(".webp.part")
-                try:
-                    img.save(temporary, "WEBP", quality=88, method=5)
-                    temporary.replace(target)
-                finally:
-                    temporary.unlink(missing_ok=True)
-        except (UnidentifiedImageError, ValueError, OSError, Image.DecompressionBombError):
-            raise HTTPException(422, "No se pudo procesar la imagen enviada")
+            narrative.visual.publish(str(story_id), data, origin="manual")
+        except ValueError as exc:
+            raise HTTPException(422, "No se pudo procesar la imagen enviada: " + str(exc)[:150]) from exc
         return narrative.get_story(str(story_id))
 
     @app.get("/api/v1/stories/{story_id}/scene-image")
