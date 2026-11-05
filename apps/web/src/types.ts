@@ -197,6 +197,7 @@ export type VisualState = {
 
 export type ResourceConfig = {
   mode: 'monitor' | 'guard'; gpu_index: number; minimum_free_mib: number;
+  serialize_local_gpu: boolean;
 };
 export type ResourceStatus = {
   policy: ResourceConfig; status: 'above_reserve' | 'below_reserve' | 'unknown';
@@ -204,6 +205,8 @@ export type ResourceStatus = {
     used_mib: number; free_mib: number; gpu_utilization_percent: number | null }>;
   selected_gpu: ResourceStatus['gpus'][number] | null;
   observed_at: number; message: string; monitor_only: boolean;
+  workload: {active: {kind: string; started_at: number} | null;
+             serialization_enabled: boolean};
 };
 
 export type ScenePlan = {

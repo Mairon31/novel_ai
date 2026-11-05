@@ -77,6 +77,7 @@ export function VisualReader({
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef<string | null>(null);
   const mediaRevision = useRef(0);
+  const visualLoadRevision = useRef(0);
   const [name, setName] = useState(active?.protagonist_name || 'Protagonista');
   const [canon, setCanon] = useState(active?.canon || '');
   const [shortcuts, setShortcuts] = useState(true);
@@ -93,10 +94,11 @@ export function VisualReader({
   useEffect(() => {
     if (!active) { setVisual(null); return; }
     let live = true;
+    const revision = ++visualLoadRevision.current;
     setVisual(null); setScenePlan(null); setPreviewPrompt('');
     Promise.all([api.visualState(active.id), api.scenePlan(active.id)])
       .then(([current, plan]) => {
-        if (!live) return;
+        if (!live || revision !== visualLoadRevision.current) return;
         setVisual(current);
         setSceneLocation(current.current_scene.location);
         setScenePlan(plan);
@@ -165,6 +167,7 @@ export function VisualReader({
   }
   async function refreshVisual(storyId: string) {
     const next = await api.visualState(storyId);
+    visualLoadRevision.current += 1;
     setVisual(next);
     setSceneLocation(next.current_scene.location);
     setScenePlan(await api.scenePlan(storyId));
@@ -174,6 +177,7 @@ export function VisualReader({
     setVisualBusy(true); setReaderError('');
     try {
       const next = await api.setSceneLocation(active.id, sceneLocation.trim());
+      visualLoadRevision.current += 1;
       setVisual(next); setSceneLocation(next.current_scene.location);
       setScenePlan(await api.scenePlan(active.id));
     } catch (e) { setReaderError((e as Error).message); }

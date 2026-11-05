@@ -149,6 +149,18 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
           : 'Telemetría de GPU no disponible (CPU u otro proveedor).'}
         {' · '}{resourceStatus.message}
       </p>}
+      {resourceStatus?.workload.active && <p role="status">
+        Operación local activa: {resourceStatus.workload.active.kind}.
+        Las solicitudes simultáneas al mismo recurso recibirán un aviso.
+      </p>}
+      {resources && <label className="workspace-pref-toggle">
+        <span>Coordinar narrador local y ComfyUI (una operación GPU a la vez)</span>
+        <input type="checkbox" aria-label="Coordinar GPU local"
+          checked={resources.serialize_local_gpu}
+          onChange={e => setResources(x => x ? {
+            ...x, serialize_local_gpu: e.target.checked,
+          } : x)}/>
+      </label>}
       {resources && <div className="workspace-field-grid">
         <label className="workspace-pref-field">Modo
           <select aria-label="Modo de reserva GPU" value={resources.mode}
