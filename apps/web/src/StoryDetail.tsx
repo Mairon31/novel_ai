@@ -39,7 +39,7 @@ export function StoryDetail({
   const description = metadata?.synopsis.trim() || story.premise;
   const publicPlot = metadata?.player_plot.trim();
   const openings = turns.length ? [] : (metadata?.opening_scenarios || []);
-  const heroArt = story.scene_image_url ||
+  const heroArt = story.cover_image_url || story.scene_image_url ||
     media.find(item => item.kind === 'background')?.url || null;
 
   return <section className="noble-story-detail" aria-label={'Detalle de ' + story.title}>
@@ -139,14 +139,14 @@ export function StoryDetail({
         </article>)}
       </div>
     </section>}
-    {media.length > 0 && <section className="noble-detail-section"
+    {media.some(asset => asset.kind !== 'cover') && <section className="noble-detail-section"
       aria-label="Galería visual de la historia">
       <div className="noble-detail-section-heading">
         <span className="overline"><ImageIcon size={15}/> GALERÍA DEL MUNDO</span>
         <h2>Escenarios e ilustraciones</h2>
       </div>
       <div className="noble-detail-media-strip">
-        {media.slice(0, 8).map(asset => <figure key={asset.id}>
+        {media.filter(asset => asset.kind !== 'cover').slice(0, 8).map(asset => <figure key={asset.id}>
           <img src={asset.url} alt={asset.label} loading="lazy"/>
           <figcaption>{asset.label}</figcaption>
         </figure>)}
