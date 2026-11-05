@@ -17,7 +17,8 @@
 - [x] Base SQLite con `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON` y `busy_timeout` en cada conexión; PRAGMAs comprobados por `test_sqlite_connection_enforces_integrity_pragmas` (CI #41994792794).
 - [ ] Aplicar y probar claves foráneas, transacciones atómicas entre turno, canon, escena y medios; rollback coherente frente a fallos (no basta `with conn` aislado).
 - [ ] Migraciones versionadas, índices adecuados y plan seguro de upgrade/backups; no reemplazar ni borrar bases existentes.
-- [ ] Prueba concurrente de ≥50 escrituras, procesos de multimedia simultáneos y recuperación tras interrupción con integridad verificada.
+- [x] Primera prueba de **50 escrituras narrativas concurrentes**, rollback por excepción y rechazo de FK inválida: `tests/test_sqlite_concurrency.py` (104 Python OK en run #41995580802; GPU/multimedia no cubiertos por esta prueba).
+- [ ] Prueba conjunta de 50 escrituras con trabajos multimedia reales, recuperación tras interrupción y coherencia entre turno/escena; no cubierta por la suite concurrente básica.
 
 ### AUD-003 — Seguridad de rutas, descargas e integridad
 - [x] Instalación GGUF de archivo único con validadores de repo/revisión/nombre y reanudación HTTP Range con `.part` (código existente).
