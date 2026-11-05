@@ -844,7 +844,12 @@ export function VisualReader({
           </button>
           {directorError && <p className="narrative-error" role="alert">{directorError}</p>}
           {directorPreview && <div className="noble-director-result" role="status">
-            <strong>{directorPreview.action.replaceAll('_', ' ')}</strong>
+            <strong>{({
+              REUSE_BACKGROUND: 'Reutilizar fondo',
+              UPDATE_SPRITE_EMOTION: 'Actualizar expresión del personaje',
+              GENERATE_NEW_BACKGROUND: 'Preparar un fondo nuevo',
+              GENERATE_EVENT_CG: 'Proponer ilustración especial de evento',
+            } as const)[directorPreview.action]}</strong>
             <p>{directorPreview.reason}</p>
             <small>Contexto: {directorPreview.context.location || 'sin lugar'}
               {' · '}{directorPreview.context.time_of_day || 'hora no confirmada'}

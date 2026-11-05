@@ -39,12 +39,12 @@ test('visual director registers and reuses existing background without ComfyUI',
     await expect(inspector.getByText('Director visual y caché de fondos')).toBeVisible();
     await inspector.getByRole('button', { name: 'Evaluar director visual' }).click();
     const result = inspector.locator('.noble-director-result');
-    await expect(result).toContainText('GENERATE NEW BACKGROUND');
+    await expect(result).toContainText('Preparar un fondo nuevo');
     await expect(result).toContainText('bosque lunar');
     await result.getByRole('button', {
       name: 'Registrar fondo manual para este contexto',
     }).click();
-    await expect(result).toContainText('REUSE BACKGROUND');
+    await expect(result).toContainText('Reutilizar fondo');
 
     const before = await (await page.request.get(base + '/visual-state')).json();
     await result.getByRole('button', { name: 'Reutilizar fondo sin generar' }).click();
@@ -56,12 +56,12 @@ test('visual director registers and reuses existing background without ComfyUI',
     await inspector.getByRole('combobox', { name: 'Intención visual del director' })
       .selectOption('emotion');
     await inspector.getByRole('button', { name: 'Evaluar director visual' }).click();
-    await expect(result).toContainText('UPDATE SPRITE EMOTION');
+    await expect(result).toContainText('Actualizar expresión del personaje');
 
     await inspector.getByRole('combobox', { name: 'Intención visual del director' })
       .selectOption('event');
     await inspector.getByRole('button', { name: 'Evaluar director visual' }).click();
-    await expect(result).toContainText('GENERATE EVENT CG');
+    await expect(result).toContainText('Proponer ilustración especial de evento');
     await expect(result).toContainText('no se ha producido ninguna imagen automáticamente');
 
     await page.screenshot({

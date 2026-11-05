@@ -368,6 +368,39 @@ class StoryArchiveTests(unittest.TestCase):
                 "WHERE story_id=? AND cover_asset_id IS NOT NULL", (new_root,)):
                 self.assertIn(row["cover_asset_id"], new_media)
 
+    def test_background_reuse_cache_survives_restore_and_as_copy(self):
+        self.setup_family()
+        director = self.src.state.visual_director
+        asset = self.a.get(
+            f"/api/v1/stories/{self.root_id}/visual-state"
+        ).json()["selected_asset_id"]
+        self.assertIsNotNone(asset)
+        initial = director.preview(self.root_id)
+        self.assertEqual(initial["action"], "GENERATE_NEW_BACKGROUND")
+        registered = self.a.post(
+            f"/api/v1/stories/{self.root_id}/visual-director/backgrounds/{asset}",
+            json={"expected_cache_key": initial["cache_key"]})
+        self.assertEqual(registered.status_code, 200, registered.text)
+        self.assertEqual(registered.json()["action"], "REUSE_BACKGROUND")
+
+        archive = self.export()
+        restored = self.restore(archive)
+        self.assertEqual(restored.status_code, 201, restored.text)
+        external = self.dest.state.visual_director.preview(self.root_id)
+        self.assertEqual(external["cache_key"], initial["cache_key"])
+        self.assertEqual(external["action"], "REUSE_BACKGROUND")
+        self.assertEqual(external["background_asset_id"], asset)
+
+        copied = self.restore(archive, as_copy=True)
+        self.assertEqual(copied.status_code, 201, copied.text)
+        new_root = copied.json()["root_story_id"]
+        independent = self.dest.state.visual_director.preview(new_root)
+        self.assertEqual(independent["action"], "REUSE_BACKGROUND")
+        self.assertNotEqual(independent["background_asset_id"], asset)
+        self.assertEqual(independent["cache_key"], initial["cache_key"])
+        self.assertEqual(self.dest.state.visual_director.preview(
+            self.root_id)["background_asset_id"], asset)
+
     def test_unknown_story_missing_zip_and_invalid_extension(self):
         self.assertEqual(self.a.get(f"/api/v1/stories/{uuid.uuid4()}/archive.noble.zip").status_code, 404)
         missing = self.restore(b"not a zip")
