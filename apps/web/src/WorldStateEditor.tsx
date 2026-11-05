@@ -291,6 +291,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
         <span>Clima: {snapshot.state.weather || 'No definido'}</span>
         <span>Objetos: {snapshot.state.inventory.join(', ') || 'Ninguno'}</span>
         <span>Hechos registrados: {snapshot.state.facts.length}</span>
+        <span>Canon de ese turno: {snapshot.canon || 'Sin canon confirmado'}</span>
       </div>}
     </details>
   </div>;
