@@ -253,6 +253,23 @@ export type CreatorCharacter = {
 };
 export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;
 
+export type WorldFact = {
+  id: string; text: string; public: boolean; witness_character_ids: string[];
+};
+export type WorldStateData = {
+  location: string; time_of_day: string; weather: string;
+  present_character_ids: string[]; inventory: string[];
+  relationships: Record<string, string>; flags: Record<string, boolean>;
+  facts: WorldFact[];
+};
+export type WorldStateDocument = {
+  story_id: string; revision: number; updated_at: number | null;
+  state: WorldStateData;
+};
+export type WorldTurnSnapshot = {
+  story_id: string; turn_id: string; created_at: number; state: WorldStateData;
+};
+
 export type LorebookEntry = {
   id: string; story_id: string; title: string; content: string;
   keys: string[]; secondary_keys: string[];
