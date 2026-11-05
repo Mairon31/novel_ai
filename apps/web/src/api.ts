@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -63,6 +63,26 @@ export const api = {
     '/provider-credentials/openrouter', { method: 'PUT', body: JSON.stringify({ api_key }) }),
   deleteOpenRouterCredential: () => request<ProviderCredentialStatus>(
     '/provider-credentials/openrouter', { method: 'DELETE' }),
+  imageConfig: () => request<ImageSettings>('/images/config'),
+  saveImageConfig: (config: ImageSettings) => request<ImageSettings>(
+    '/images/config', { method: 'PUT', body: JSON.stringify(config) }),
+  imageStatus: () => request<ImageStatus>('/images/status'),
+  illustrate: (storyId: string, prompt: string, seed?: number) => request<IllustrationResult>(
+    '/stories/' + encodeURIComponent(storyId) + '/illustrate',
+    { method: 'POST', body: JSON.stringify({ prompt, ...(seed === undefined ? {} : { seed }) }) }),
+  speechVoices: () => request<SpeechVoices>('/tts/voices'),
+  async requestSpeech(storyId: string, turnId: string, voice_id: string): Promise<Blob> {
+    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
+      '/turns/' + encodeURIComponent(turnId) + '/speech', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voice_id, request_source: 'listen_button' }),
+    });
+    if (!response.ok) {
+      const error: { detail?: string } = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'Error de síntesis de voz');
+    }
+    return response.blob();
+  },
   narrativeConfig: () => request<NarrativeConfig>('/narrative/config'),
   saveNarrativeConfig: (config: NarrativeConfig) => request<NarrativeConfig>(
     '/narrative/config', { method: 'PUT', body: JSON.stringify(config) }),
@@ -124,7 +144,7 @@ export const api = {
         if (line.startsWith('event:')) name = line.slice(6).trim();
         if (line.startsWith('data:')) data += line.slice(5).trim();
       }
-      if (name && data && (name === 'delta' || name === 'done' || name === 'error')) {
+      if (name && data && (name === 'delta' || name === 'done' || name === 'error' || name === 'status')) {
         onEvent({ event: name, data: JSON.parse(data) } as GenerationEvent);
       }
     }

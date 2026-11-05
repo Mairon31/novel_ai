@@ -74,6 +74,7 @@ export type StoryTurn = {
   model: string; created_at: number;
 };
 export type GenerationEvent =
+  | { event: 'status'; data: { phase: 'preparing' | 'connecting' | 'streaming'; message: string } }
   | { event: 'delta'; data: { text: string } }
   | { event: 'done'; data: { turn: StoryTurn; replayed: boolean } }
   | { event: 'error'; data: { message: string } };
@@ -148,4 +149,19 @@ export type WorkerBenchmark = {
   success: boolean; model: string; duration_ms: number;
   ttft_ms: number | null; output_characters: number;
   error?: string; gpu?: WorkerGpu[]; note?: string;
+};
+
+export type ImageSettings = {
+  provider: 'comfyui'; base_url: string; checkpoint: string;
+  width: number; height: number; steps: number; cfg: number; negative_prompt: string;
+};
+export type ImageStatus = {
+  online: boolean; provider: string; checkpoints: string[]; error: string | null;
+};
+export type IllustrationResult = {
+  story: Story; seed: number; checkpoint: string; duration_ms: number;
+};
+export type SpeechVoices = {
+  engine: 'piper'; available: boolean; device: string; on_demand_only: boolean;
+  models_dir: string; voices: Array<{ id: string; name: string }>;
 };
