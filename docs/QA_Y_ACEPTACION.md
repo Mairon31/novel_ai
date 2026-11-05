@@ -51,5 +51,5 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Pausa en `verifying` y reanudación sin HTTP cuando `.part` completo y tamaño esperado: no reiniciar desde cero ni solicitar Range desde EOF.
 - [x] Cancelar durante un `hashlib.update` bloqueado: el job queda `cancelled`, la transferencia parcial se conserva, el modelo no se registra y el archivo final no aparece.
 - [x] Rechazo transaccional de INSERT en `installed` tras mover el archivo: rollback SQLite y restauración del `.part` con los bytes originales.
-- [x] [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678): las tres pruebas nuevas aprobaron; **121 Python PASS**. Estado del job Playwright se verifica por separado.
+- [x] [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678): las tres pruebas nuevas aprobaron; **121 Python + 26 Playwright PASS**, ambos jobs completos y exitosos.
 - [ ] Cortes físicos de proceso/energía, recuperaciones de metadatos de tamaño desconocido, cambios maliciosos de symlink durante la apertura y rollback de múltiples trabajadores simultáneos sobre el mismo fichero.
