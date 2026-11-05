@@ -145,7 +145,7 @@ export type WorkspacePreferences = {
   translation_mode: 'off' | 'target_output';
   accent: 'violet' | 'rose' | 'teal';
   font_scale: number;
-  reader_layout: 'immersive' | 'classic';
+  reader_layout: 'immersive' | 'classic' | 'chat';
   shortcuts_enabled: boolean;
   update_channel: 'stable' | 'beta' | 'nightly';
   check_updates_on_start: boolean;

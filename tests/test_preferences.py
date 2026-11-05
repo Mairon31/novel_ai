@@ -68,6 +68,24 @@ class PreferencesTests(unittest.TestCase):
                                           json={"unknown": "bad"}).status_code, 422)
         self.assertEqual(self.client.get("/api/v1/about").json()["channel"], "beta")
 
+    def test_reader_modes_persist_and_invalid_mode_is_atomic(self):
+        for mode in ("immersive", "classic", "chat"):
+            changed = self.client.patch(
+                "/api/v1/workspace/preferences", json={"reader_layout": mode})
+            self.assertEqual(changed.status_code, 200, changed.text)
+            self.assertEqual(changed.json()["reader_layout"], mode)
+            self.assertEqual(self.client.get(
+                "/api/v1/workspace/preferences").json()["reader_layout"], mode)
+        self.assertEqual(self.client.patch(
+            "/api/v1/workspace/preferences",
+            json={"reader_layout": "unknown"}).status_code, 422)
+        self.assertEqual(self.client.get(
+            "/api/v1/workspace/preferences").json()["reader_layout"], "chat")
+        restarted = create_app(Path(self.tmp.name))
+        with TestClient(restarted) as client:
+            self.assertEqual(client.get(
+                "/api/v1/workspace/preferences").json()["reader_layout"], "chat")
+
     def test_release_selection_and_readonly_diagnostics(self):
         self.assertEqual(self.client.get("/api/v1/updates").json()["release"]["version"], "v0.9.0")
         self.client.patch("/api/v1/workspace/preferences", json={"update_channel": "beta"})

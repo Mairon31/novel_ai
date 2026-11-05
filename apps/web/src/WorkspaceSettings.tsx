@@ -278,7 +278,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               ['violet', 'Violeta nocturno'], ['rose', 'Rosa oscuro'], ['teal', 'Turquesa'],
             ], v => void update('accent', v))}
             {option('Presentación del lector', prefs.reader_layout, [
-              ['immersive', 'Inmersiva · escena + texto'], ['classic', 'Clásica · lectura prioritaria'],
+              ['immersive', 'VN · fondo y narración'], ['classic', 'Libro · lectura continua'],
+              ['chat', 'Chat · turnos y respuestas'],
             ], v => void update('reader_layout', v))}
             <label className="workspace-pref-field">Tamaño del texto del lector: {prefs.font_scale}%
               <input type="range" min={85} max={135} step={5} value={prefs.font_scale}

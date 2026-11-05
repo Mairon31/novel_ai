@@ -42,7 +42,7 @@ class Preferences(BaseModel):
             "narration_style": {"natural", "literary", "concise"},
             "translation_mode": {"off", "target_output"},
             "accent": {"violet", "rose", "teal"},
-            "reader_layout": {"immersive", "classic"},
+            "reader_layout": {"immersive", "classic", "chat"},
             "update_channel": {"stable", "beta", "nightly"},
         }
         for name, options in allowed.items():

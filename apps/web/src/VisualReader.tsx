@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, BookOpen, Camera, Check, ChevronRight, Cpu, Eye, Feather,
   Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2, Volume2, Square,
-  Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download,
+  Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download, EyeOff, History,
 } from 'lucide-react';
 import { api } from './api';
 import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot, EpisodicSearch } from './types';
@@ -54,6 +54,9 @@ export function VisualReader({
   } | null>(null);
   const [rewindLoading, setRewindLoading] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [backlogOpen, setBacklogOpen] = useState(false);
+  const [backlogQuery, setBacklogQuery] = useState('');
+  const [hudHidden, setHudHidden] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
   const [playerPlot, setPlayerPlot] = useState('');
@@ -118,6 +121,11 @@ export function VisualReader({
   const tail = useRef<HTMLDivElement | null>(null);
   useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
   useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
+  useEffect(() => {
+    setBacklogOpen(false);
+    setBacklogQuery('');
+    setHudHidden(false);
+  }, [active?.id]);
   useEffect(() => {
     setPlayerPlot('');
     setMemoryQuery('');
@@ -195,6 +203,31 @@ export function VisualReader({
     return () => { live = false; };
   }, []);
   useEffect(() => { tail.current?.scrollIntoView({ block: 'end' }); }, [turns.length, streamText]);
+  useEffect(() => {
+    if (!shortcuts) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.defaultPrevented || event.isComposing || event.ctrlKey || event.metaKey) return;
+      if (event.key === 'Escape') {
+        if (backlogOpen) { event.preventDefault(); setBacklogOpen(false); }
+        else if (hudHidden) { event.preventDefault(); setHudHidden(false); }
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input,textarea,select,[contenteditable="true"]')) return;
+      if (!event.altKey || event.shiftKey) return;
+      const key = event.key.toLowerCase();
+      if (key === 'b') {
+        event.preventDefault(); setBacklogOpen(open => !open);
+      } else if (key === 'h') {
+        event.preventDefault(); setHudHidden(hidden => !hidden);
+      } else if (!updating && (key === '1' || key === '2' || key === '3')) {
+        event.preventDefault();
+        void changeReaderLayout(key === '1' ? 'immersive' : key === '2' ? 'classic' : 'chat');
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shortcuts, backlogOpen, hudHidden, updating, prefs]);
 
   async function saveCanon() {
     if (!active) return;
@@ -365,7 +398,7 @@ export function VisualReader({
     finally { setSynthesizing(false); }
   }
 
-  async function changeReaderLayout(mode: 'immersive' | 'classic') {
+  async function changeReaderLayout(mode: WorkspacePreferences['reader_layout']) {
     if (!prefs) return;
     setUpdating(true); setReaderError('');
     try {
@@ -403,7 +436,18 @@ export function VisualReader({
   </div>;
 
   const displayedBackground = sceneMedia?.background?.url || active.scene_image_url;
-  return <div className="noble-reader-layout">
+  const readerMode = prefs?.reader_layout || 'immersive';
+  const matches = backlogQuery.trim().toLocaleLowerCase();
+  const backlogItems = [...turns].reverse().filter(turn =>
+    !matches || (turn.input_text + '\\n' + turn.assistant_text).toLocaleLowerCase().includes(matches));
+  return <div className={'noble-reader-layout ' + (hudHidden ? 'is-hud-hidden' : '')}
+    data-reader-mode={readerMode}>
+    <button className="noble-hud-switch" type="button"
+      aria-label={hudHidden ? 'Mostrar interfaz del lector' : 'Ocultar interfaz del lector'}
+      title={hudHidden ? 'Mostrar interfaz (Alt+H)' : 'Ocultar interfaz (Alt+H)'}
+      onClick={() => setHudHidden(hidden => !hidden)}>
+      {hudHidden ? <Eye size={17}/> : <EyeOff size={17}/>}
+    </button>
     <aside className={'noble-scene-panel ' + (displayedBackground ? 'has-art' : '')}>
       <div className="noble-scene-art"
         style={displayedBackground ? { backgroundImage: 'url("' + displayedBackground + '")' } : undefined}>
@@ -441,6 +485,8 @@ export function VisualReader({
           <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.epub'}
             download="noble-story.epub" title="Exportar historia EPUB compatible con lectores"
             aria-label="Exportar historia EPUB"><BookOpen size={17}/></a>
+          <button title="Consultar backlog (Alt+B)" aria-label="Abrir backlog"
+            onClick={() => setBacklogOpen(true)}><History size={17}/></button>
           <button title="Mostrar panel de historia" aria-label="Abrir información de historia"
             onClick={() => setInspectorOpen(open => !open)}><Eye size={17}/></button>
           <button title="Configurar narrador" aria-label="Configurar narrador" onClick={onSettings}>
@@ -789,15 +835,29 @@ export function VisualReader({
         </>}
         {tab === 'reader' && <>
           <h4>Presentación de lectura</h4>
-          <p>El diseño es adaptable a móvil y escritorio. Elige entre lector inmersivo o lectura clásica.</p>
+          <p>Tres vistas sobre los mismos turnos guardados. VN muestra ilustraciones,
+            Libro prioriza la narración y Chat distingue la intervención del jugador.
+            El modo se conserva al reiniciar.</p>
           {prefs && <div className="noble-reader-layout-options">
             <button className={prefs.reader_layout === 'immersive' ? 'selected' : ''}
+              aria-pressed={prefs.reader_layout === 'immersive'}
               disabled={updating} onClick={() => void changeReaderLayout('immersive')}>
-              <Palette size={17}/> Inmersiva</button>
+              <Palette size={17}/> VN</button>
             <button className={prefs.reader_layout === 'classic' ? 'selected' : ''}
+              aria-pressed={prefs.reader_layout === 'classic'}
               disabled={updating} onClick={() => void changeReaderLayout('classic')}>
-              <BookOpen size={17}/> Clásica</button>
+              <BookOpen size={17}/> Libro</button>
+            <button className={prefs.reader_layout === 'chat' ? 'selected' : ''}
+              aria-pressed={prefs.reader_layout === 'chat'}
+              disabled={updating} onClick={() => void changeReaderLayout('chat')}>
+              <MessageSquareText size={17}/> Chat</button>
           </div>}
+          <p className="noble-inspector-hint">Atajos cuando el cursor no está en un campo:
+            Alt+1 VN, Alt+2 Libro, Alt+3 Chat, Alt+B backlog, Alt+H ocultar interfaz.
+            Esc cierra el backlog o restaura la interfaz, si los atajos están activos.</p>
+          <button className="secondary-button" onClick={() => setBacklogOpen(true)}>
+            <History size={16}/> Abrir backlog de lectura
+          </button>
           {voiceEnabled && <label className="noble-inspector-field">Voz de narrador
             <select value={voiceId} disabled={synthesizing} onChange={e => setVoiceId(e.target.value)}>
               {voices?.voices.map(voice => <option key={voice.id} value={voice.id}>{voice.name}</option>)}
@@ -813,6 +873,39 @@ export function VisualReader({
     </aside>
     {inspectorOpen && <button className="noble-inspector-backdrop"
       aria-label="Cerrar panel de información" onClick={() => setInspectorOpen(false)}/>}
+    {backlogOpen && <div className="noble-backlog-scrim">
+      <section className="noble-backlog-dialog" role="dialog" aria-modal="true"
+        aria-label="Backlog de historia">
+        <header className="noble-backlog-heading">
+          <div><span className="overline"><History size={15}/> REGISTRO DE LECTURA</span>
+            <h2>Backlog de la historia</h2>
+            <p>{turns.length} escenas cargadas de esta ruta. Las ramas diferentes no se mezclan.</p></div>
+          <button className="icon-button" aria-label="Cerrar backlog"
+            onClick={() => setBacklogOpen(false)}><X size={19}/></button>
+        </header>
+        <label className="noble-backlog-search">Buscar en escenas cargadas
+          <input type="search" aria-label="Buscar en backlog" maxLength={150}
+            value={backlogQuery} onChange={event => setBacklogQuery(event.target.value)}
+            placeholder="Intervención, diálogo o narración..."/>
+        </label>
+        <div className="noble-backlog-entries">
+          {backlogItems.map(turn => <article key={turn.id} className="noble-backlog-entry">
+            <div><strong>{turn.mode === 'say' ? 'Diálogo' :
+              turn.mode === 'do' ? 'Acción' : turn.mode === 'story' ? 'Dirección' : 'Continuación'}
+              {' · '}{active.protagonist_name}</strong>
+              <button className="secondary-button" onClick={() => {
+                setBacklogOpen(false); focusTurn(turn);
+              }}>Ir a escena</button></div>
+            {turn.input_text && <p className="noble-backlog-player">{turn.input_text}</p>}
+            <p className="noble-backlog-narrator"><NarrativeText text={turn.assistant_text}/></p>
+          </article>)}
+          {!backlogItems.length && <p className="noble-backlog-empty">
+            {turns.length ? 'No hay coincidencias en las escenas cargadas.' :
+              'Todavía no hay escenas guardadas en esta ruta.'}
+          </p>}
+        </div>
+      </section>
+    </div>}
     {rewindTurn && <div className="noble-rewind-scrim" role="presentation">
       <section className="noble-rewind-dialog" role="dialog"
         aria-modal="true" aria-label="Confirmar rebobinado">

@@ -1188,3 +1188,80 @@
 .noble-reading-navigation select{min-width:150px;max-width:280px;background:#1c2031;color:#ececf5;border:1px solid #393b53;border-radius:9px;padding:7px 10px;font-size:12px}
 @media(max-width:650px){.noble-route-node{max-width:calc(100% - 8px);margin-left:0!important}
 .noble-reading-navigation select{width:100%;max-width:180px;min-width:0}}
+
+
+/* Reader presentation modes. They share the same immutable story turns. */
+.story-studio.is-reading .noble-reader-layout[data-reader-mode="classic"],
+.story-studio.is-reading .noble-reader-layout[data-reader-mode="chat"]{
+  grid-template-columns:minmax(0,1fr)!important
+}
+.noble-reader-layout[data-reader-mode="classic"] .noble-scene-panel,
+.noble-reader-layout[data-reader-mode="chat"] .noble-scene-panel{display:none}
+.noble-reader-layout[data-reader-mode="classic"] .noble-reader-main{max-width:1080px;width:100%;margin:0 auto}
+.noble-reader-layout[data-reader-mode="classic"] .noble-reader-prose{max-height:75dvh;padding-inline:clamp(18px,6vw,76px)}
+.noble-reader-layout[data-reader-mode="classic"] .noble-narration{font-size:calc(16px * var(--noble-reader-scale));line-height:2.1}
+.noble-reader-layout[data-reader-mode="chat"] .noble-reader-main{width:100%;max-width:1040px;margin:0 auto}
+.noble-reader-layout[data-reader-mode="chat"] .noble-reader-prose{max-height:76dvh}
+.noble-reader-layout[data-reader-mode="chat"] .noble-reading-turn{display:flex;flex-direction:column;gap:12px;padding-top:20px}
+.noble-reader-layout[data-reader-mode="chat"] .noble-reader-user{
+  max-width:84%;align-self:flex-end;background:#343055;
+  border:1px solid #5e5088;border-radius:16px 16px 4px 16px;
+  padding:13px 17px
+}
+.noble-reader-layout[data-reader-mode="chat"] .noble-narration{
+  max-width:90%;align-self:flex-start;background:#1d253a;border:1px solid #384560;
+  border-radius:16px 16px 16px 4px;padding:13px 17px;margin:0;
+  font-size:calc(13px * var(--noble-reader-scale));line-height:1.75
+}
+.noble-reader-layout[data-reader-mode="chat"] .noble-reading-turn>small,
+.noble-reader-layout[data-reader-mode="chat"] .noble-turn-caption{align-self:center}
+.noble-reader-layout[data-reader-mode="chat"] .noble-turn-caption{width:100%;padding-bottom:12px}
+.noble-reader-layout[data-reader-mode="chat"] .noble-reader-intro{margin-bottom:12px}
+.story-studio.is-reading .noble-reader-layout .noble-hud-switch{
+  position:fixed;right:18px;top:84px;z-index:34;
+  width:38px;height:38px;display:grid;place-items:center;
+  background:#22263de8;color:#ded6fb;border:1px solid #534b7d;
+  border-radius:10px;box-shadow:0 4px 22px #080b16a8
+}
+.story-studio.is-reading .noble-reader-layout .noble-hud-switch:hover{background:#37304f}
+.noble-reader-layout.is-hud-hidden .noble-reader-toolbar,
+.noble-reader-layout.is-hud-hidden .noble-reader-compose,
+.noble-reader-layout.is-hud-hidden .noble-scene-bottom{display:none!important}
+.story-studio.is-reading:has(.noble-reader-layout.is-hud-hidden) .noble-reading-navigation{
+  opacity:0;pointer-events:none
+}
+.story-studio.is-reading:has(.noble-reader-layout.is-hud-hidden) .noble-reader-main{padding-top:0}
+.story-studio.is-reading .noble-reader-layout.is-hud-hidden .noble-reader-prose{max-height:calc(100dvh - 20px)}
+.noble-backlog-scrim{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:#070a17dd;backdrop-filter:blur(5px);z-index:110
+}
+.noble-backlog-dialog{
+  width:min(820px,100%);max-height:90dvh;min-height:240px;display:flex;flex-direction:column;
+  overflow:hidden;background:#171d2f;border:1px solid #51547a;border-radius:18px;
+  color:#eaeafb;box-shadow:0 30px 100px #05070fbb
+}
+.noble-backlog-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:23px 26px 8px}
+.noble-backlog-heading h2{font:700 22px 'Outfit',sans-serif;margin:10px 0 5px}
+.noble-backlog-heading p{font-size:12px;color:#a5adc8;line-height:1.5}
+.noble-backlog-search{display:flex;flex-direction:column;gap:7px;font-size:11px;padding:0 26px 16px;color:#bfc6e3}
+.noble-backlog-search input{background:#0f1424;border:1px solid #404764;border-radius:9px;padding:11px;color:#e8ebfb;outline:0}
+.noble-backlog-search input:focus{border-color:#a797ed}
+.noble-backlog-entries{min-height:80px;overflow:auto;overscroll-behavior:contain;padding:8px 26px 25px}
+.noble-backlog-entry{border-top:1px solid #353b54;padding:17px 0}
+.noble-backlog-entry>div{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.noble-backlog-entry strong{color:#c7baff;font-size:12px}
+.noble-backlog-entry .secondary-button{min-height:32px;padding:7px 11px;font-size:11px;flex-shrink:0}
+.noble-backlog-player{white-space:pre-wrap;color:#d8cef5;font-size:12px;line-height:1.7}
+.noble-backlog-narrator{white-space:pre-wrap;overflow-wrap:anywhere;color:#e9ebf6;font-size:13px;line-height:1.8}
+.noble-backlog-empty{color:#bec4dc;text-align:center;padding:22px;font-size:12px}
+@media(max-width:760px){
+  .story-studio.is-reading .noble-reader-layout .noble-hud-switch{top:77px;right:10px}
+  .noble-backlog-scrim{padding:9px}
+  .noble-backlog-dialog{max-height:96dvh;border-radius:14px}
+  .noble-backlog-heading{padding:18px 16px 8px}
+  .noble-backlog-search{padding:0 16px 14px}
+  .noble-backlog-entries{padding:4px 16px 18px}
+  .noble-reader-layout[data-reader-mode="chat"] .noble-reader-user{max-width:93%}
+  .noble-reader-layout[data-reader-mode="chat"] .noble-narration{max-width:94%}
+}
