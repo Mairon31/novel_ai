@@ -143,7 +143,7 @@
 ### AUD-012 — Interoperabilidad
 - [ ] Importación/exportación **Character Card PNG V2/V3** con metadatos `chara`/`ccv3` y validación de límites, tipos y caracteres.
 - [ ] Arrastrar tarjeta a creador, mapa de campos/persona, activos incrustados y Lorebook, exportación redonda.
-- [ ] Archivo portátil de historia `.noble.zip` con manifest versionado, imágenes, canon/ramas y recuperación segura.
+- [ ] **Respaldo y restauración portátil `.noble.zip` (implementado, pendiente CI):** manifest v1, árbol completo de ramas, turnos/estado/Lorebook/Creator/instantáneas/recursos, SHA-256 por archivo, importación transaccional sin sobrescribir UUID existentes y recuperación de staging. Pruebas API y Playwright añadidas. Queda por verificar CI y, posteriormente, ampliación para importar como copia renombrada cuando existan IDs.
 
 ## Fase 6 — P2/P3: distribución, QA, investigación
 

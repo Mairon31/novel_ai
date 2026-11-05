@@ -106,7 +106,7 @@ El protocolo de staging ya fuerza las copias y metadatos antes del COMMIT. El **
 
 `story_export.py` implementa el contrato de lectura/exportación sin modificar SQLite. Selecciona turnos desde la historia/ramificación elegida, incluye en un archivo HTML autocontenido una portada administrada por Creator y los WebP del `selected_asset_id` de snapshots visuales históricos, solo si sus IDs pertenecen a la galería de la misma rama. No reconstruye imágenes históricas usando selecciones futuras. `html.escape` impide interpretar texto narrativo o del usuario como etiquetas HTML, y los datos de Illustrator no contienen rutas remotas. Hay límites de recursos para impedir lecturas masivas.
 
-El archivo HTML es una exportación de **una sola línea narrativa**, con marca «Rama independiente» cuando corresponde. No incluye secretos/instrucciones de Creator, Lorebooks completos ni estados administrativos; tampoco exporta EPUB ni un ZIP de todas las bifurcaciones. Exportación es una lectura y se mantiene separada del sistema de backups y restauración.
+El archivo HTML es una exportación de **una sola línea narrativa**, con marca «Rama independiente» cuando corresponde. No incluye secretos/instrucciones de Creator, Lorebooks completos ni estados administrativos; el EPUB y el ZIP de toda la familia son funciones distintas. Exportar HTML solo lee el contenido de la rama elegida; el respaldo incluye los datos de autor y requiere importación explícita.
 
 
 ## Memoria episódica: búsqueda FTS5 limitada a entradas del jugador
@@ -129,3 +129,12 @@ La exportación EPUB utiliza `zipfile` y `xml.etree.ElementTree` de la bibliotec
 
 
 **Verificación conjunta de extensiones P1:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) — 217 Python, 42 Playwright (escritorio y móvil), compilación frontend PASS. Se validaron exportaciones EPUB3/HTML, recuperación de episodios del jugador y desglose privado del prompt.
+
+
+## Archivo `.noble.zip` — formato v1, límites y recuperación
+
+La exportación de una historia desde su raíz o rama sigue `origin_story_id` hasta la raíz y recorre sus descendientes. El respaldo versionado almacena un `manifest.json` con raíz, 18 tablas SQLite de dominio (sin tablas globales ni índices FTS de implementación) y un listado firmado de bytes con `sha256`, tamaño y ruta administrada por UUID. Solo se incluyen archivos regulares en `story-assets/{uuid}/scene.webp`, `images/{uuid}.webp`, `creator/{uuid}.webp` y `creator/{uuid}.png`. La restauración reindexa automáticamente las intervenciones del jugador en FTS.
+
+El importador valida tipo, versión, estructura, conexión del árbol, columnas SQLite permitidas, propiedad `story_id`, `turn_id` de snapshots, canon de UUID, miembros ZIP y SHA antes de crear archivos. Limita número de historias (64), registros (25 mil), archivos (1200), bytes de recursos (192 MiB), tamaño por archivo (16 MiB) y manifest (24 MiB). No extrae nombres ZIP como rutas de disco: reconstruye exclusivamente rutas permitidas dentro del almacenamiento de Noble. Si alguna historia o carpeta existe, devuelve 409 y no modifica datos del usuario.
+
+Para restaurar, obtiene el bloqueo de escritor SQLite, comprueba colisiones, crea marcadores durables `fork-staging/{uuid}.pending` y carpetas nuevas `story-assets/{uuid}`. Escribe los recursos y sincroniza archivos/directorios antes del COMMIT. Inserta tablas y reconstruye FTS en la misma transacción; errores permiten rollback de SQL y eliminación compensatoria de carpetas creadas. La recuperación de startup reutiliza el protocolo de marcadores ya probado para forks. Este diseño no garantiza atomicidad eléctrica entre FS y SQLite ni restauración sobre historias con el mismo UUID.

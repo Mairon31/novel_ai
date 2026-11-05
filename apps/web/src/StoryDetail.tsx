@@ -1,6 +1,6 @@
 import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Clock3, Feather, GitBranch,
-  Image as ImageIcon, PencilLine, Play, UserRound, Users,
+  Image as ImageIcon, PencilLine, Play, UserRound, Users, Download,
 } from 'lucide-react';
 import type {
   Story, StoryTurn, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset,
@@ -71,6 +71,11 @@ export function StoryDetail({
           <button className="secondary-button" onClick={onEdit}>
             <PencilLine size={16}/> Editar en Creator Studio
           </button>
+          <a className="secondary-button" role="link"
+            href={'/api/v1/stories/' + encodeURIComponent(story.id) + '/archive.noble.zip'}
+            download="noble-family.noble.zip" aria-label="Descargar respaldo completo">
+            <Download size={16}/> Respaldar historia y ramas
+          </a>
         </div>
       </div>
     </div>

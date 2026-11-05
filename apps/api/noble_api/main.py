@@ -34,6 +34,7 @@ from .lorebook import LorebookService, mount_lorebook_routes
 from .world_state import WorldStateService, mount_world_state_routes
 from .creator_media import CreatorMediaService, mount_creator_media_routes
 from .story_export import mount_story_export_routes
+from .story_archive import mount_story_archive_routes
 from .episodic_memory import EpisodicMemory, mount_episodic_routes
 from .context_inspector import mount_context_inspector_routes
 from .resource_policy import ResourceController, mount_resource_routes
@@ -272,6 +273,7 @@ def create_app(
 
     mount_narrative_routes(service, narrative)
     mount_story_export_routes(service, narrative)
+    mount_story_archive_routes(service, narrative)
     mount_episodic_routes(service, episodes)
     mount_context_inspector_routes(service, narrative)
     mount_media_routes(service, narrative)

@@ -215,3 +215,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) **217/217 Python y 42/42 Playwright PASS**, compilación React/Vite. Los cuatro bloques (HTML, EPUB3, memoria FTS5 e inspector de contexto) quedaron verificados en `master`.
 - [x] Fallos intermedios documentados: [CI #42104560683](https://github.com/Mairon31/novel_ai/actions/runs/42104560683) omitía un paso de wizard en la prueba de exportación; [CI #42105539031](https://github.com/Mairon31/novel_ai/actions/runs/42105539031) pasaba una respuesta narrativa como ID de historia en un test; [CI #42107129417](https://github.com/Mairon31/novel_ai/actions/runs/42107129417) tenía selector Playwright ambiguo del inspector. Los tres defectos de QA quedaron corregidos y no se ocultaron los resultados.
 - [ ] Pendiente: tokenización modelo-específica, embeddings, exportación `.noble.zip` y validación de compatibilidad EPUB con lectores físicos externos.
+
+
+## P1 — Gate de backup y restauración .noble.zip (CI pendiente)
+
+- [ ] Exportar desde una rama recupera toda la familia conectada: raíz y ramas, tablas de estado de mundo, snapshots históricos, personajes, Lorebooks, portada y medios. `manifest.json` versionado y cada archivo con checksum SHA-256.
+- [ ] Importar el ZIP en un directorio Noble distinto produce IDs originales y misma cantidad de registros por tabla; los WebP/PNG restaurados responden en endpoints y las ramas conservan `origin_story_id` y `origin_turn_id`.
+- [ ] El origen nunca se sobrescribe. Colisión de UUID en la instalación actual → 409; ZIP inválido, path traversal, hash corrupto o fila externa → 422 antes de modificar SQLite. Fallo de escritura del índice de memoria revierte todos los registros, medios y marcadores.
+- [ ] Playwright desktop/mobile comprueba descarga ZIP desde detalle y rechazo de importación duplicada en Biblioteca, conservando la historia visible.
+- [ ] Cierre del TODO solo tras CI Python, build Vite y todas las pruebas de navegador. No prometer restore con UUID remapeados, compatibilidad hacia delante automática ni resistencia demostrada a apagones.

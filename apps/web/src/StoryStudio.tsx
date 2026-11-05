@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X, Upload } from 'lucide-react';
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
@@ -22,6 +22,8 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   const [turnsLoading, setTurnsLoading] = useState(false);
   const [turns, setTurns] = useState<StoryTurn[]>([]);
   const [creating, setCreating] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const archiveFile = useRef<HTMLInputElement | null>(null);
   const [title, setTitle] = useState('');
   const [premise, setPremise] = useState('');
   const [protagonistName, setProtagonistName] = useState('');
@@ -82,6 +84,21 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     }
     return () => { alive = false; };
   }, [active?.id]);
+
+  async function importArchive(file: File) {
+    setRestoring(true);
+    setError(''); setNotice('');
+    try {
+      const result = await api.importStoryArchive(file);
+      const fresh = await api.stories();
+      setStories(fresh.stories);
+      setActive(null);
+      setReading(false);
+      setNotice('Respaldo restaurado: ' + result.restored_stories +
+        ' historias y ' + result.restored_files + ' recursos.');
+    } catch (e) { setError((e as Error).message); }
+    finally { setRestoring(false); }
+  }
 
   async function createStory() {
     if (title.trim().length < 2 || premise.trim().length < 10 || !protagonistName.trim()) return;
@@ -223,6 +240,21 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
           <button className="primary-button" onClick={() => {
             setCreating(true); setCreateStep('story');
           }}><Plus size={17}/> Nueva historia</button>
+          {' '}
+          <button className="secondary-button" disabled={restoring}
+            onClick={() => archiveFile.current?.click()}>
+            {restoring ? <LoaderCircle size={17} className="rotating"/> : <Upload size={17}/>}
+            {restoring ? 'Restaurando respaldo...' : 'Importar respaldo .noble.zip'}
+          </button>
+          <input ref={archiveFile} type="file" hidden accept=".zip,.noble.zip"
+            aria-label="Archivo de respaldo Noble"
+            onChange={event => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = '';
+              if (file) void importArchive(file);
+            }}/>
+          {notice && <p className="story-notice" role="status">{notice}</p>}
+          {error && <p className="narrative-error" role="alert">{error}</p>
         </div>
         <div className="noble-library-hero-art" aria-hidden="true">
           <BookOpen size={72}/>

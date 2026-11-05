@@ -216,3 +216,10 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 
 
 **Gate de exportación, memoria e inspector:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) — 217 Python + 42 Playwright PASS. Las nuevas rutas son de lectura; no exponen instrucciones privadas en los archivos HTML/EPUB.
+
+
+## Respaldo/restauración del árbol de historias (.noble.zip v1)
+
+`GET /api/v1/stories/{story_id}/archive.noble.zip` → `200 application/zip`, `Content-Disposition: attachment; filename="noble-family.noble.zip"`; `404` si no existe la historia; `422` en caso de límite o datos corruptos. El ZIP contiene `manifest.json` con `{format:"noble-story-family",version:1,root_story_id,tables,files:[{path,size,sha256}]}` y archivos administrados `story-assets/<uuid>/...`. Incluye el árbol conectado de historias y ramas, sin configuración global ni claves secretas.
+
+`POST /api/v1/stories/archive/import` con multipart `file=...noble.zip` → `201 {root_story_id,restored_stories,restored_files,story_ids}`. `409` ante historias/carpetas/identificadores ya existentes, sin sobrescritura. `422` ante ZIP inválido, checksum fallido, esquema inesperado o contenido externo. Se validan todos los miembros antes de la restauración transaccional.

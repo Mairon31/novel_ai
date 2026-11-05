@@ -214,6 +214,20 @@ export const api = {
     '/stories/' + encodeURIComponent(id) + '/creator/opening',
     {method: 'POST', body: JSON.stringify({index})}),
   stories: () => request<{ stories: Story[] }>('/stories'),
+  async importStoryArchive(file: File): Promise<{
+    root_story_id: string; restored_stories: number;
+    restored_files: number; story_ids: string[];
+  }> {
+    const body = new FormData();
+    body.append('file', file);
+    const response = await fetch('/api/v1/stories/archive/import',
+      { method: 'POST', body });
+    if (!response.ok) {
+      const payload: { detail?: string } = await response.json().catch(() => ({}));
+      throw new Error(payload.detail || 'No se pudo restaurar el respaldo');
+    }
+    return response.json();
+  },
   createStory: (title: string, premise: string, protagonist_name = 'Protagonista') => request<Story>(
     '/stories', { method: 'POST', body: JSON.stringify({ title, premise, protagonist_name }) }),
   forkStory: (storyId: string, until_turn_id: string | null = null) => request<Story>(
