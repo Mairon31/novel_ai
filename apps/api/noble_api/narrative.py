@@ -521,8 +521,6 @@ class NarrativeService:
                     yield piece
                 return
             while True:
-                if await disconnected():
-                    return
                 pending = asyncio.create_task(anext(upstream))
                 try:
                     while not pending.done():
@@ -533,8 +531,8 @@ class NarrativeService:
                         piece = pending.result()
                     except StopAsyncIteration:
                         return
-                    if await disconnected():
-                        return
+                    # The caller checks the disconnect immediately before
+                    # publishing the delta; avoid redundant probes per chunk.
                     yield piece
                 finally:
                     if not pending.done():
