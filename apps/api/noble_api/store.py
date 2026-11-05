@@ -160,7 +160,11 @@ class Store:
                                  (installed_id,)).fetchone()
             if model is None:
                 raise ValueError("El modelo no está instalado")
-            if not Path(model["filepath"]).is_file():
+            model_path = Path(model["filepath"])
+            if (model_path.is_symlink() or
+                    not model_path.resolve().is_relative_to(self.models_dir.resolve())):
+                raise ValueError("El modelo está fuera del directorio administrado")
+            if not model_path.is_file():
                 raise ValueError("El archivo del modelo ya no existe")
             if role not in ("narrator", "world_state"):
                 raise ValueError("La asignación de imágenes y voces llegará con sus adaptadores")
