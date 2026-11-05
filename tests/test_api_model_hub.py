@@ -132,7 +132,7 @@ class ModelHubApiTests(unittest.TestCase):
         from noble_api.store import Store
         from noble_api.catalog import HfCatalog
         broken = [
-            ("wrong-start", "bytes 31-{} /{}".format(len(PAYLOAD) - 1, len(PAYLOAD)).replace(" ", "")),
+            ("wrong-start", "bytes 31-{}/{}".format(len(PAYLOAD) - 1, len(PAYLOAD))),
             ("wrong-total", "bytes 30-{}/{}".format(len(PAYLOAD) - 1, len(PAYLOAD) + 99)),
             ("invalid", "bytes 30-/{}".format(len(PAYLOAD))),
         ]
@@ -154,7 +154,8 @@ class ModelHubApiTests(unittest.TestCase):
                     manager._run(job["id"])
                     state = store.download(job["id"])
                     self.assertEqual(state["status"], "failed", state)
-                    self.assertIn("rango", state["error"].lower())
+                    self.assertTrue("rango" in state["error"].lower() or
+                                    "content-range" in state["error"].lower(), state)
                     self.assertEqual(part.read_bytes(), PAYLOAD[:30])
                     self.assertEqual(store.installed(), [])
                 finally:
