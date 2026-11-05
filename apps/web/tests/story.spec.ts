@@ -59,7 +59,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
   await expect(page.locator('.noble-reader-layout')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
-  await expect(page.locator('.noble-library-cover')).toHaveCount(1);
+  await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toHaveCount(1);
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-bookshelf.png',
     fullPage: true,
