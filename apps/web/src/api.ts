@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -138,6 +138,20 @@ export const api = {
     '/runtime/kobold/stop', { method: 'POST' }),
   koboldActivate: () => request<NarrativeConfig>(
     '/runtime/kobold/activate', { method: 'POST' }),
+  creatorBlueprint: (id: string) => request<CreatorBlueprint>(
+    '/stories/' + encodeURIComponent(id) + '/creator'),
+  saveCreatorBlueprint: (id: string, input: CreatorBlueprintDraft) => request<CreatorBlueprint>(
+    '/stories/' + encodeURIComponent(id) + '/creator',
+    { method: 'PUT', body: JSON.stringify(input) }),
+  creatorCharacters: (id: string) => request<{characters: CreatorCharacter[]}>(
+    '/stories/' + encodeURIComponent(id) + '/creator/characters'),
+  saveCreatorCharacter: (id: string, input: CreatorCharacterDraft, characterId?: string) =>
+    request<CreatorCharacter>('/stories/' + encodeURIComponent(id) +
+      '/creator/characters' + (characterId ? '/' + encodeURIComponent(characterId) : ''),
+      {method: characterId ? 'PUT' : 'POST', body: JSON.stringify(input)}),
+  startCreatorOpening: (id: string, index: number) => request<StoryTurn>(
+    '/stories/' + encodeURIComponent(id) + '/creator/opening',
+    {method: 'POST', body: JSON.stringify({index})}),
   stories: () => request<{ stories: Story[] }>('/stories'),
   createStory: (title: string, premise: string, protagonist_name = 'Protagonista') => request<Story>(
     '/stories', { method: 'POST', body: JSON.stringify({ title, premise, protagonist_name }) }),

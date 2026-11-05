@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
 import { StoryStudio } from './StoryStudio';
+import { CreatorStudio } from './CreatorStudio';
 import { WorkspaceSettings } from './WorkspaceSettings';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
@@ -21,6 +22,7 @@ const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
 ];
 const menu: Array<{ id: Page; label: string; icon: typeof BookOpen }> = [
   { id: 'inicio', label: 'Biblioteca', icon: BookOpen },
+  { id: 'crear', label: 'Creator Studio', icon: Feather },
   { id: 'modelos', label: 'Model Hub', icon: Layers3 },
   { id: 'descargas', label: 'Descargas', icon: ArrowDownToLine },
   { id: 'ajustes', label: 'Configuración', icon: Settings2 },
@@ -306,6 +308,7 @@ export default function App() {
         {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
         {!ready && <Loading/>}
 
+        {page === 'crear' && <CreatorStudio onOpenLibrary={() => changePage('inicio')}/>}
         {page === 'modelos' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> ECOSISTEMA LOCAL DE IA</div>
             <h1>Centro de modelos<span className="title-dot">.</span></h1>

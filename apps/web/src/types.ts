@@ -1,5 +1,5 @@
 export type ModelRole = 'narrator' | 'image' | 'tts';
-export type Page = 'inicio' | 'modelos' | 'descargas' | 'ajustes' | 'diagnostico';
+export type Page = 'inicio' | 'crear' | 'modelos' | 'descargas' | 'ajustes' | 'diagnostico';
 export type CatalogEntry = {
   repo_id: string; revision: string | null; description: string;
   downloads: number; likes: number; gated: boolean; license: string;
@@ -237,3 +237,16 @@ export type ScenePlan = {
 };
 export type ScenePlanInput = Pick<ScenePlan, 'shot' | 'lighting' | 'mood' | 'direction'
   | 'visible_character_ids' | 'reference_character_id'>;
+
+export type CreatorBlueprint = {
+  story_id: string; synopsis: string; player_plot: string; ai_plot: string;
+  guidelines: string; reminder: string; opening_scenarios: string[];
+  genre: string; tags: string[]; language: string; updated_at: number | null;
+};
+export type CreatorBlueprintDraft = Omit<CreatorBlueprint, 'story_id'|'updated_at'>;
+export type CreatorCharacter = {
+  id: string; story_id: string; name: string; description: string;
+  personality: string; dialogue_examples: string; visual_character_id: string | null;
+  voice_id: string; updated_at: number;
+};
+export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;
