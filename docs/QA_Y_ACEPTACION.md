@@ -64,3 +64,14 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Symlink externo y checksum SHA corrupto: archivo externo intacto, recuperación rechazada; bytes locales con SHA erróneo nunca se registran como verificados.
 - [x] Pruebas reales en disco SQLite/Python: `tests/test_download_recovery.py`, **127 Python PASS** en [CI #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624); verificar conclusión final del navegador por separado.
 - [ ] No se han validado: cortes físicos de energía; corrupción del sistema de archivos, TOCTOU con un atacante que sustituye symlinks entre comprobación y apertura; dos instancias simultáneas y tamaño remoto desconocido sin metadatos HTTP suficientes. El caso EOF con 416 válido y 206 con longitud completa sí se probó.
+
+
+## Gates del primer Lorebook real (2026-11-05)
+
+- [x] CRUD local de Lorebooks con validación de claves, rechazo de parámetros inesperados y propiedad estricta por historia.
+- [x] Palabras clave Unicode (palabra completa frente a subcadena), claves secundarias combinadas por `all/any`, entradas deshabilitadas o siempre activas y prioridades deterministas.
+- [x] Límite de 6000 caracteres por contexto activado, descarte íntegro de entradas que no caben y vista previa del presupuesto gastado.
+- [x] La intervención y los cuatro turnos recientes pueden activar hechos; la información privada de `ai_plot` por sí sola no activa entradas; la respuesta del jugador no recibe el texto privado.
+- [x] Clonado independiente por rama y persistencia tras reinicio; recuperación por palabra clave de un hecho autoral tras 110 turnos narrativos.
+- [x] Playwright escritorio/móvil crea una entrada y prueba coincidencia/no coincidencia desde Creator Studio. [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
+- [ ] Testigos presentes/ausentes, scopes de personaje, memorias episódicas con FTS5/embeddings, regex con timeout, recursión y presupuestos **en tokens reales**. No atribuir estas capacidades al primer Lorebook.
