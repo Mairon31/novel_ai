@@ -202,3 +202,14 @@ Y si quieres ayudar a construirlo, abre una propuesta, reporta un problema o col
 <sub>Hecho para dar vida a historias que todavía no existen.</sub>
 
 </div>
+
+
+---
+
+## Lectura VN / Libro / Chat y director de fondos
+
+En el lector, **UI/UX** permite elegir **VN** (escenario e historia), **Libro** (narración continua) o **Chat** (turnos separados en burbujas). La selección queda persistida en las preferencias locales. El botón **Backlog** abre las escenas cargadas de la ruta actual con búsqueda y salto al turno. También puedes ocultar el HUD sin perder la narración y restaurarlo con el botón flotante. Con los atajos habilitados: `Alt+1/2/3` cambia de vista, `Alt+B` abre el backlog, `Alt+H` oculta/revela los controles y `Esc` cierra el backlog.
+
+Desde **Galería → Director visual**, Noble evalúa si conviene reutilizar un fondo ya registrado o preparar uno nuevo. Permite registrar manualmente una versión de galería como fondo para un contexto de lugar, hora, clima, plano e iluminación, y seleccionarla otra vez sin procesar GPU. Los cambios de emoción no invalidan la caché del paisaje; las acciones de sprites y CG son propuestas para funciones futuras, **no generaciones automáticas**. La indexación de fondos manuales sigue las historias y sus archivos `.noble.zip`.
+
+Ver [arquitectura](docs/ARQUITECTURA.md), [QA](docs/QA_Y_ACEPTACION.md) y [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317).

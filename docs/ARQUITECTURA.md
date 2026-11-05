@@ -160,3 +160,16 @@ El endpoint de restauración conserva su comportamiento no destructivo por defec
 **Integridad de UUID en JSON:** el remapeo para `as_copy=true` registra y transforma UUID tanto en **valores como en claves** de objetos JSON estructurados, necesario para `world_states.relationships`, `world_state_edits` y snapshots de mundo. No sustituye UUID en los campos de prosa libre. [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) valida 231 pruebas Python y 52 Playwright.
 
 **Onboarding con enlace directo:** completar la configuración inicial solo redirige a Model Hub si el usuario ya está en Model Hub; un destino `#/historia/{id}` permanece intacto. `#/creator` sin ID deselecciona el último proyecto activo. La navegación móvil abre el menú antes de interactuar con sus botones.
+
+
+## Modos del lector y controles de historial
+
+El lector mantiene una única fuente de verdad (`story_turns`) y cambia solo la representación del estado `reader_layout` guardado en `workspace_preferences`: `immersive` (VN con escena), `classic` (Libro) y `chat` (mensajes diferenciados). El diálogo Backlog busca las escenas cargadas por `StoryStudio`; no realiza escritura, truncamiento ni consulta de recuerdos privados. El modo HUD oculta controles sin eliminar la narración, y mantiene botón visible de restauración. Los atajos están condicionados a `shortcuts_enabled` y no actúan mientras se escribe en campos editables. No confundir este backlog local con la búsqueda FTS de intervenciones antiguas del jugador.
+
+## Director visual y caché por contexto (sin GPU implícita)
+
+`VisualDirector` calcula una clave determinista `noble-bg-v1:sha256(contexto)` con `world_states.location/time_of_day/weather` o escena visual y `scene_plans.shot/lighting`. Normaliza con NFKC, casefold y espacios. La emoción del personaje no entra en el hash: una expresión distinta no tiene por qué producir un paisaje distinto. La decisión se devuelve como acción, razón y fondo existente, sin inferencia. Las acciones de sprites/CG son planes, no activos ya generados.
+
+Registrar un fondo requiere **acción explícita del autor** y una versión de galería de origen `manual`, con recurso existente y firma esperada del contexto. La clave se almacena en el `visual_assets.render_signature` ya versionado; esto permite reutilizar assets entre escenas de la **misma historia** sin una nueva tabla y conserva el comportamiento de fork/backup. No se sobrescribe la firma del render ComfyUI. Aplicar el fondo vuelve a validar el contexto y la selección, y solo cambia `visual_current` + imagen legacy; no genera nuevos bytes ni modifica la narración. Los recursos de Creator Studio con coincidencia de caption conservan su prioridad visual habitual y pueden superponerse al artwork de galería.
+
+La comprobación y selección no son una garantía de atomicidad frente a carreras de rutas bajo cambios concurrentes de symlinks o fallos eléctricos. [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317) verifica comportamiento local SQLite/archivos, no hardware GPU real.

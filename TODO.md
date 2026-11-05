@@ -120,8 +120,8 @@
 
 ### AUD-007 y AUD-009 — Composición visual
 - [x] Estado visual, galería de escenas y recursos de creador `background/foreground/cover` reutilizables; portada editorial independiente.
-- [ ] Director determinista con decisiones `REUSE_BACKGROUND / UPDATE_SPRITE_EMOTION / GENERATE_NEW_BACKGROUND / GENERATE_EVENT_CG`.
-- [ ] Caché de fondos por ubicación, hora, clima y cámara; no generar nuevo fondo por un cambio de emoción.
+- [x] **Director visual determinista** con cuatro decisiones `REUSE_BACKGROUND / UPDATE_SPRITE_EMOTION / GENERATE_NEW_BACKGROUND / GENERATE_EVENT_CG`. Preview y registro/aplicación explícita de fondos, sin generación automática ni afirmaciones de identidad; API y UI probadas en [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317): **239 Python + 58 Playwright PASS**. Crear sprites/CG de verdad continúa como tarea aparte.
+- [x] **Caché de fondos manuales por ubicación, hora, clima, encuadre/plano e iluminación**, con clave Unicode estable y selección sin GPU; la emoción no invalida el fondo y cambiar condiciones sí. Los recursos clonados y restaurados mantienen la clave, sin romper firmas de generación ComfyUI. [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317). Orientación de cámara avanzada y registro automático de imágenes generadas quedan en planificación visual futura.
 - [ ] Escenario VN multicapa con fondo, hasta 3 sprites por emoción/pose, iluminación de hablante, transición crossfade y caja inferior.
 - [ ] Caché de sprites y expresiones `neutral/joy/anger/sadness/surprise`; pruebas de 10 turnos sin regeneración de fondo.
 
@@ -136,7 +136,8 @@
 ### AUD-008 — Interfaz por espacios
 - [x] **Navegación profunda por URL hash:** Biblioteca, detalle, lector, Creator Studio con proyecto seleccionado, Model Hub, Descargas, Configuración y Diagnóstico/Infraestructura. Rutas compartibles, recarga, Atrás/Adelante, navegación móvil y primer inicio conservando el enlace; [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384): **231 Python + 52 Playwright PASS**, build Vite correcto. No requiere reescribir rutas en el backend.
 - [ ] Separar estado de `App.tsx` por dominio y vistas; medir renders y preservar rutas existentes.
-- [ ] Lector con VN/Libro/Chat, backlog, ocultar HUD, teclado, regeneración y selector rápido de rama.
+- [x] **Lector VN / Libro / Chat** con selección persistente (SQLite), backlog consultable de escenas cargadas, búsqueda, ocultar/restaurar HUD y atajos `Alt+1/2/3`, `Alt+B`, `Alt+H`, `Esc`; selector de rama ya integrado. [CI #42125311967](https://github.com/Mairon31/novel_ai/actions/runs/42125311967): **232 Python + 56 Playwright PASS** y [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317): **239 Python + 58 Playwright PASS**.
+- [ ] **Regeneración versionada de respuesta/escena** sin sobrescribir ni perder turnos y paginación del backlog histórico completo. Los modos actuales solo cambian presentación; la API de historia mantiene la ventana de turnos cargados.
 - [ ] UX móvil y escritorio verificadas visualmente; virtualización cuando la lista lo requiera (500 mensajes).
 - [ ] Creator Studio básico/avanzado con previsualización, personajes, historia, canon y Lorebook sin sobrecargar una página.
 

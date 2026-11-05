@@ -258,3 +258,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 
 - [x] [GitHub Actions #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384): **231 Python PASS, 52 Playwright PASS, build Vite PASS**. Incluye UUID en claves JSON de relaciones y escenarios de onboarding con enlace directo.
 - [x] Las nuevas pruebas del navegador recorren carga de historias por hash, F5, detalle→lector, cambio de rama, Atrás/Adelante y Creator Studio desde enlace, menú y móvil, sin invocar GPU.
+
+
+## P2 — Presentación del lector y director visual — CI verificada
+
+- [x] [CI #42125311967](https://github.com/Mairon31/novel_ai/actions/runs/42125311967): 232 Python y 56 Playwright PASS: modo VN/Libro/Chat persistido tras recarga, búsqueda en backlog y salto a escena, controles HUD, teclas Alt y estado de turno sin cambios.
+- [x] [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317): 239 Python, 58 Playwright PASS y compilación Vite: cuatro planes del director, contexto por lugar/hora/clima/plano/luz, fondo manual registrado, selección sin nuevas versiones ni llamadas a ComfyUI.
+- [x] Cambiar emoción no invalida la clave de fondo; cambiar hora, clima, plano o iluminación exige una nueva clave y no reutiliza incorrectamente la anterior. Aplicar un resultado obsoleto responde 409 y conserva selección actual.
+- [x] La caché y sus UUID sobreviven a bifurcación, exportación de familia, restauración y remapeo en importación como copia. Rechazar asset ajeno y no reemplazar el render_signature original de ComfyUI.
+- [ ] Por verificar: GPU real, consistencia de sprites en 10+ escenas, composición de hasta tres sprites, transiciones crossfade, regeneración versionada y paginación de backlog con 500+ mensajes.

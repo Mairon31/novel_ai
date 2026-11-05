@@ -243,3 +243,14 @@ Los enlaces `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creato
 
 
 **Validación de remapeos y rutas:** [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) **231 Python y 52 Playwright PASS**. El importador remapea UUID tanto en campos y valores como en **claves** JSON usadas por relaciones del mundo; el frontend conserva una ruta válida durante el onboarding inicial.
+
+
+## Director visual determinista
+
+`POST /api/v1/stories/{story_id}/visual-director/preview` con `{intent:"auto"|"background"|"emotion"|"event"}` (predeterminado auto) → `200 {scene_id,context:{location,time_of_day,weather,shot,lighting},cache_key,action,background_asset_id,background_url,background_cached,reason,inference_used:false,generation_started:false}`. Posibles decisiones: `REUSE_BACKGROUND`, `UPDATE_SPRITE_EMOTION`, `GENERATE_NEW_BACKGROUND`, `GENERATE_EVENT_CG`. El director es una consulta de planificación; no lanza ComfyUI, TTS ni LLM.
+
+`POST /api/v1/stories/{story_id}/visual-director/backgrounds/{asset_id}` con `{expected_cache_key:"noble-bg-v1:<sha256>"}` registra explícitamente un asset manual de la misma historia para reutilizarlo; responde con nueva previsualización. `422` para recurso ajeno, inexistente, firma ComfyUI original o archivo no confiable. `409` si cambió el contexto.
+
+`POST /api/v1/stories/{story_id}/visual-director/apply` con `{asset_id,expected_cache_key}` selecciona un fondo previamente registrado tras validar contexto, clave, versión e historia. Retorna `{selected_asset_id,action:"REUSE_BACKGROUND",inference_used:false,generation_started:false,background_cached:true,scene_id}`, `409` si cambió la escena o la versión de fondo; `422` si el asset no es válido. La aplicación no crea una ilustración nueva.
+
+**Gate:** [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317): 239 Python + 58 Playwright y build Vite PASS, incluyendo backup/restore/as_copy de firmas de caché.
