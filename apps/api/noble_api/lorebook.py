@@ -139,8 +139,11 @@ class LorebookService:
                  budget_chars: int = 6000) -> dict:
         budget_chars = max(512, min(budget_chars, 6000))
         searchable = activation_text[-12000:].casefold()
+        current = self.entries(story_id)
+        owner = self.narrative.get_story(story_id)
+        protagonist_name = owner.get("protagonist_name") or "Protagonista"
         ordered = sorted(
-            self.entries(story_id),
+            current,
             key=lambda entry: (-entry["priority"], entry["created_at"], entry["id"]),
         )
         chosen: list[dict] = []
@@ -164,8 +167,8 @@ class LorebookService:
                         continue
             # Never truncate a fact mid-sentence. If this entry does not fit,
             # lower-priority but smaller entries can still use the remaining room.
-            text = (f"[Lorebook: {entry['title']}]\n"
-                    f"{entry['content'].replace('{{user}}', self.narrative.get_story(story_id).get('protagonist_name') or 'Protagonista')}")
+            text = ("[Lorebook: " + entry["title"] + "]\n" +
+                    entry["content"].replace("{{user}}", protagonist_name))
             cost = len(text) + 2
             if used + cost > budget_chars:
                 skipped += 1
