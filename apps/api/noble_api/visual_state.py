@@ -149,6 +149,44 @@ class VisualState:
             conn.execute("""CREATE INDEX IF NOT EXISTS idx_visual_assets_signature
                 ON visual_assets(story_id, render_signature)""")
 
+        with self.store._conn() as db:
+            db.executescript("""
+                CREATE TABLE IF NOT EXISTS visual_turn_snapshots(
+                    turn_id TEXT PRIMARY KEY REFERENCES story_turns(id) ON DELETE CASCADE,
+                    story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+                    characters_json TEXT NOT NULL,
+                    asset_ids_json TEXT NOT NULL,
+                    selected_asset_id TEXT,
+                    plans_json TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_visual_turn_history
+                    ON visual_turn_snapshots(story_id,created_at,turn_id);
+            """)
+
+    def snapshot_turn_in_transaction(self, db, story_id: str,
+                                     turn_id: str, created_at: float) -> None:
+        """Keep an immutable checkpoint of gallery, character identity and plans."""
+        characters = [dict(row) for row in db.execute(
+            "SELECT * FROM visual_characters WHERE story_id=? ORDER BY updated_at,id",
+            (story_id,))]
+        gallery = [row["id"] for row in db.execute(
+            "SELECT id FROM visual_assets WHERE story_id=? ORDER BY created_at,id",
+            (story_id,))]
+        current = db.execute(
+            "SELECT asset_id FROM visual_current WHERE story_id=?", (story_id,)
+        ).fetchone()
+        plans = [dict(row) for row in db.execute(
+            "SELECT * FROM scene_plans WHERE story_id=? ORDER BY updated_at,scene_id",
+            (story_id,))]
+        db.execute(
+            "INSERT INTO visual_turn_snapshots "
+            "(turn_id,story_id,characters_json,asset_ids_json,"
+            "selected_asset_id,plans_json,created_at) VALUES (?,?,?,?,?,?,?)",
+            (turn_id, story_id, json.dumps(characters, ensure_ascii=False),
+             json.dumps(gallery), current["asset_id"] if current else None,
+             json.dumps(plans, ensure_ascii=False), created_at))
+
     def _exists(self, story_id: str) -> bool:
         with self.store._conn() as conn:
             return conn.execute("SELECT 1 FROM stories WHERE id=?", (story_id,)).fetchone() is not None
@@ -364,7 +402,21 @@ class VisualState:
                 "SELECT * FROM visual_characters WHERE story_id=?", (source_id,))]
             selected = db.execute(
                 "SELECT asset_id FROM visual_current WHERE story_id=?", (source_id,)).fetchone()
+            checkpoints = {
+                row["turn_id"]: dict(row)
+                for row in db.execute(
+                    "SELECT * FROM visual_turn_snapshots WHERE story_id=?", (source_id,))
+            }
         selected_id = selected["asset_id"] if selected else None
+        cutoff = checkpoints.get(next(reversed(turn_ids), None)) if partial else None
+        if partial:
+            # Exclude anything that appeared after the committed cutoff turn.
+            permitted = set(json.loads(cutoff["asset_ids_json"])) if cutoff else set()
+            gallery = [row for row in gallery if row["id"] in permitted]
+            chars = json.loads(cutoff["characters_json"]) if cutoff else []
+            selected_id = cutoff["selected_asset_id"] if cutoff else None
+        # None means copy current plans (full fork); [] means no old plan.
+        cutoff_plans = (json.loads(cutoff["plans_json"]) if cutoff else []) if partial else None
         allowed = []
         for scene in scenes:
             if not partial or (scene["source_turn_id"] in turn_ids or
@@ -422,15 +474,57 @@ class VisualState:
                 if selected_id in asset_map:
                     new_selected = asset_map[selected_id]
                 else:
-                    new_selected = next(reversed(asset_map.values()), None)
+                    new_selected = None if partial else next(reversed(asset_map.values()), None)
                 if new_selected:
                     db.execute("INSERT INTO visual_current VALUES (?,?)",
                                  (branch_id, new_selected))
+                # Historical entries remain valid for future nested rewinds.
+                for old_turn, new_turn in turn_ids.items():
+                    checkpoint = checkpoints.get(old_turn)
+                    if checkpoint is None:
+                        continue
+                    prior_characters = []
+                    for person in json.loads(checkpoint["characters_json"]):
+                        if person["id"] not in character_map:
+                            continue
+                        row = dict(person)
+                        row["id"] = character_map[person["id"]]
+                        row["story_id"] = branch_id
+                        row["reference_asset_id"] = asset_map.get(
+                            person.get("reference_asset_id"))
+                        prior_characters.append(row)
+                    prior_plans = []
+                    for plan in json.loads(checkpoint["plans_json"]):
+                        if plan["scene_id"] not in scene_map:
+                            continue
+                        row = dict(plan)
+                        row["scene_id"] = scene_map[plan["scene_id"]]
+                        row["story_id"] = branch_id
+                        row["visible_character_ids"] = json.dumps([
+                            character_map[ident] for ident in
+                            json.loads(plan["visible_character_ids"])
+                            if ident in character_map
+                        ])
+                        row["reference_character_id"] = character_map.get(
+                            plan["reference_character_id"])
+                        prior_plans.append(row)
+                    db.execute(
+                        "INSERT INTO visual_turn_snapshots "
+                        "(turn_id,story_id,characters_json,asset_ids_json,"
+                        "selected_asset_id,plans_json,created_at) VALUES (?,?,?,?,?,?,?)",
+                        (new_turn, branch_id,
+                         json.dumps(prior_characters, ensure_ascii=False),
+                         json.dumps([asset_map[ident] for ident in
+                                     json.loads(checkpoint["asset_ids_json"])
+                                     if ident in asset_map]),
+                         asset_map.get(checkpoint["selected_asset_id"]),
+                         json.dumps(prior_plans, ensure_ascii=False),
+                         checkpoint["created_at"]))
             if new_selected:
                 self.legacy_copy(branch_id, self._asset_path(branch_id, new_selected))
             if self.planner is not None:
                 self.planner.clone(source_id, branch_id, scene_map, character_map,
-                                   conn=conn)
+                                   historical_plans=cutoff_plans, conn=conn)
         except Exception:
             for copied in copied_paths:
                 copied.unlink(missing_ok=True)

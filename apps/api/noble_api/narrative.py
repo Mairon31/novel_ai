@@ -498,6 +498,7 @@ class NarrativeService:
                 transition = self.visual.observe_turn_in_transaction(db, story_id, turn)
                 if transition is not None:
                     turn["scene_transition"] = transition
+                self.visual.snapshot_turn_in_transaction(db, story_id, turn_id, now)
             if self.world is not None:
                 self.world.snapshot_turn_in_transaction(db, story_id, turn_id, now)
             if self.lorebook is not None:

@@ -150,10 +150,11 @@ class ScenePlanner:
 
     def clone(self, source: str, target: str,
               scene_ids: dict[str, str], character_ids: dict[str, str],
-              conn=None) -> None:
+              historical_plans: list[dict] | None = None, conn=None) -> None:
         with (nullcontext(conn) if conn is not None else self.visual.store._conn()) as db:
-            plans = [dict(row) for row in db.execute(
-                "SELECT * FROM scene_plans WHERE story_id=?", (source,))]
+            plans = (historical_plans if historical_plans is not None else
+                     [dict(row) for row in db.execute(
+                         "SELECT * FROM scene_plans WHERE story_id=?", (source,))])
             import json
             for item in plans:
                 if item["scene_id"] not in scene_ids:

@@ -55,12 +55,12 @@ class BranchTests(unittest.TestCase):
         self.assertEqual(fork["origin_turn_id"],self.turns[0]["id"])
         self.assertEqual(fork["canon"],"Aya todavía no conoce la identidad del guardián.")
         self.assertEqual(fork["protagonist_name"],"Aya")
-        self.assertTrue(fork["scene_image_url"])
+        self.assertIsNone(fork["scene_image_url"])  # Image arrived after the chosen turn
         branch_turns=self.client.get(f"/api/v1/stories/{fork['id']}/turns").json()["turns"]
         self.assertEqual(len(branch_turns),1)
         self.assertEqual(branch_turns[0]["assistant_text"],self.turns[0]["assistant_text"])
         self.assertNotEqual(branch_turns[0]["id"],self.turns[0]["id"])
-        self.assertEqual(
+        self.assertNotEqual(
             self.client.get(f"/api/v1/stories/{fork['id']}/scene-image").content,
             self.client.get(f"/api/v1/stories/{self.parent['id']}/scene-image").content)
 
@@ -86,7 +86,11 @@ class BranchTests(unittest.TestCase):
         added=self.client.post(
             f"/api/v1/stories/{self.parent['id']}/visual-characters",json=char)
         self.assertEqual(added.status_code,201,added.text)
-        prior_turn=self.turns[0]["id"]
+        # Checkpoint after adding the initial illustration and visual character.
+        # The later forest artwork must not be backdated into this scene.
+        prior_turn=self.app.state.narrative.append(
+            self.parent["id"],str(uuid.uuid4()),"do","Aira llega",
+            "Aira se queda junto a las ruinas.","fixture")["id"]
         next_turn=self.app.state.narrative.append(
             self.parent["id"],str(uuid.uuid4()),"continue","",
             "Llegaron al bosque oscuro. Aira observó las estrellas.","fixture")
