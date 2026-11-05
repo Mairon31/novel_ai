@@ -155,10 +155,18 @@ class VisualState:
     def scene(self, story_id: str) -> dict:
         if not self._exists(story_id):
             raise ValueError("Historia inexistente")
+        query = """SELECT * FROM visual_scenes WHERE story_id=?
+            ORDER BY created_at DESC,id DESC LIMIT 1"""
         with self.store._conn() as conn:
-            last = conn.execute(
-                "SELECT * FROM visual_scenes WHERE story_id=? ORDER BY created_at DESC,id DESC LIMIT 1",
-                (story_id,)).fetchone()
+            last = conn.execute(query, (story_id,)).fetchone()
+            if last:
+                return dict(last)
+        # Two independent API requests can both reach a missing initial
+        # scene. BEGIN IMMEDIATE protects the second read + insert as a single
+        # SQLite write transaction, preventing duplicated initial scenes.
+        with self.store._conn() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            last = conn.execute(query, (story_id,)).fetchone()
             if last:
                 return dict(last)
             ident, now = str(uuid.uuid4()), time.time()
