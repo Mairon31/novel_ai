@@ -275,3 +275,15 @@ No editar entradas anteriores para borrar un fallo; agregar una corrección fech
 - [ ] Integrar IPAdapter/FaceID o LoRA real para identidad multiimagen y combinaciones de varias referencias.
 - [ ] Scheduler con cola/cancelación de jobs, gestión por dispositivo y offload de memoria entre motores.
 - [ ] Benchmarks físicos de estabilidad y rendimiento de modelos multimedia en GPU.
+
+
+## UX/Creator/Model Hub — estructura de lectura y autoría independiente
+
+- Biblioteca con portadas y sin entrar automáticamente a la última historia.
+- Lector exclusivo de historia con navegación de vuelta a Biblioteca y panel de inspección secundario.
+- Creator Studio dedicado: sinopsis pública, trama para jugador, mundo secreto de IA, instrucciones, recordatorios, fichas NPC y múltiples aperturas.
+- Corrección de bug crítico: `NarrativeService.messages` conserva la acción actual del jugador en vez de sustituirla por preferencias de idioma.
+- Model Hub con ranking del catálogo, detalle enriquecido, estimación por cuantización/VRAM/RAM/KV y recomendación de GGUF.
+- Configuración organizada por inteligencia, multimedia, aplicación y conexión.
+- Documentación de investigación propia sobre Creator/Player de Isekai Zero y atribución MIT a Urakatsu.
+- Pendientes separados: compositor de sprites por expresión, capítulos/arcos con resúmenes, capas de publicación/distribución, instalador multimedia y pruebas físicas por GPU.
