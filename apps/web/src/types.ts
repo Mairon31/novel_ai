@@ -101,6 +101,16 @@ export type EpisodicSearch = {
     mode: StoryTurn['mode']; created_at: number; matched_terms: number;
   }>;
 };
+export type ContextPreview = {
+  story_id: string;
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+  sections: Array<{ name: string; characters: number; approx_tokens: number }>;
+  total_characters: number; estimated_prompt_tokens: number;
+  reserved_output_tokens: number; context_window_tokens: number;
+  estimated_total_tokens: number; estimated_overflow: boolean;
+  token_counts_exact: false; token_estimate_method: string;
+  runtime_kv_cache_measured: false;
+};
 export type GenerationEvent =
   | { event: 'status'; data: { phase: 'preparing' | 'connecting' | 'streaming'; message: string } }
   | { event: 'delta'; data: { text: string } }

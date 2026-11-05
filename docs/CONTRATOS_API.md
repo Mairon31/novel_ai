@@ -203,3 +203,8 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 ## Memoria episódica de intervenciones del jugador
 
 `GET /api/v1/stories/{story_id}/memory/search?q=<texto>&limit=6` → `{episodes:[{turn_id,story_id,mode,input_text,created_at,matched_terms},...],fts5:boolean,source:"player_input"}`. `q` exige 2–500 caracteres; `limit` 1–12. Error 404 para historia desconocida. Las búsquedas se limitan al proyecto solicitado y **no** exponen `assistant_text`, secretos del creador ni Lorebooks. Un índice FTS5 está disponible cuando lo soporta SQLite; el fallback léxico es local y no requiere modelos IA.
+
+
+## Inspector de contexto del narrador
+
+`POST /api/v1/stories/{story_id}/context/preview` con `{input_text: string (0–3000), mode: "do"|"say"|"story"|"continue"}` (entrada obligatoria salvo `continue`) → `{story_id,messages:[{role,content}],sections:[{name,characters,approx_tokens}],total_characters,estimated_prompt_tokens,reserved_output_tokens,context_window_tokens,estimated_total_tokens,estimated_overflow,token_counts_exact:false,token_estimate_method,runtime_kv_cache_measured:false}`. `404` historia inexistente; `422` solicitud inválida. Sin inferencia ni persistencia. Los mensajes contienen material privado del creador: interfaz solo para el autor.

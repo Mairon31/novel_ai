@@ -618,3 +618,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] `NarrativeService.messages` puede recuperar hasta 3 intervenciones antiguas fuera de la ventana reciente de 16 turnos. No sube estos recuerdos al mensaje de sistema: se insertan como mensajes históricos con rol `user` y etiqueta que prohíbe tratarlos como conocimiento confirmado de NPC.
 - [ ] UI de lector → «Historial» agrega consulta y resultados de búsqueda; pruebas `tests/test_episodic_memory.py` cubren recuperación tras 115 turnos, aislamiento de ramas, fallback, reinicio/migración, sanitización de consulta y rollback. E2E escritorio/móvil `story-memory.spec.ts`.
 - [ ] **CI pendiente**; la búsqueda es léxica, no hay embeddings ni resúmenes automáticos ni validación semántica de respuestas de modelos reales.
+
+
+## 2026-11-05 — P1: Inspector de contexto y presupuesto (CI pendiente)
+
+- [ ] Nuevo `POST /api/v1/stories/{story_id}/context/preview` llama al mismo `NarrativeService.messages` de producción, **sin inferencia ni escritura de turnos**. Devuelve mensajes completos para los adaptadores, desglose por secciones, ventana configurada, reserva de salida y posible exceso.
+- [ ] Segmentos del prompt: sistema/preferencias, premisa/protagonista, canon, directrices y fichas NPC, Lorebook activo, hechos de mundo, episodios recuperados (si existen), historial y entrada actual. El desglose conserva el número de caracteres; los tokens son **estimaciones explícitas** por `ceil(caracteres/4)` y overhead heurístico por mensaje. Nunca se atribuye esta cifra a un tokenizer de Gemma/Qwen/Llama ni se declara medición de KV-cache.
+- [ ] `NarrativeSettings.tsx` incorpora un panel para seleccionar historia, intervención y modo, consultar y desplegar secciones/prompt exacto. Los textos privados del creador solo se presentan en la configuración local de autor y no se exportan con el HTML público.
+- [ ] `tests/test_context_inspector.py` valida igualdad exacta de mensajes, desglose sin pérdida de caracteres, advertencia de overflow estimado, contrato de modos y ausencia de mutaciones. E2E `apps/web/tests/context-inspector.spec.ts` comprueba navegador desktop/mobile sin cargar GPU.
+- [ ] **CI pendiente**, incluidos los fixes de pruebas de exportación y memoria en la misma rama `master`.

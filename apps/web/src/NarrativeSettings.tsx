@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, CheckCircle2, Cpu, LoaderCircle, PlugZap, RefreshCw, Save } from 'lucide-react';
 import { api } from './api';
-import type { NarrativeConfig, ProviderModels } from './types';
+import type { NarrativeConfig, ProviderModels, ContextPreview, Story } from './types';
 
 const defaultConfig: NarrativeConfig = {
   provider: 'ollama', base_url: 'http://127.0.0.1:11434', model: '',
@@ -18,6 +18,13 @@ export function NarrativeSettings() {
   const [preparing, setPreparing] = useState(false);
   const [prepareElapsed, setPrepareElapsed] = useState(0);
   const [error, setError] = useState('');
+  const [stories, setStories] = useState<Story[]>([]);
+  const [inspectStory, setInspectStory] = useState('');
+  const [inspectMode, setInspectMode] = useState<'do'|'say'|'story'|'continue'>('do');
+  const [inspectText, setInspectText] = useState('Observo la escena.');
+  const [inspecting, setInspecting] = useState(false);
+  const [inspectorData, setInspectorData] = useState<ContextPreview | null>(null);
+  const [inspectorError, setInspectorError] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -27,6 +34,28 @@ export function NarrativeSettings() {
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    void api.stories().then(value => {
+      if (!alive) return;
+      setStories(value.stories);
+      setInspectStory(current => current || value.stories[0]?.id || '');
+    }).catch(() => { /* Context inspector is optional when stories cannot load. */ });
+    return () => { alive = false; };
+  }, []);
+
+  async function inspectContext() {
+    if (!inspectStory || inspecting) return;
+    setInspecting(true);
+    setInspectorError('');
+    setInspectorData(null);
+    try {
+      setInspectorData(await api.inspectStoryContext(
+        inspectStory, inspectText, inspectMode));
+    } catch (exc) { setInspectorError((exc as Error).message); }
+    finally { setInspecting(false); }
+  }
 
   function update<K extends keyof NarrativeConfig>(key: K, value: NarrativeConfig[K]) {
     setConfig(current => ({ ...current, [key]: value }));
@@ -175,6 +204,73 @@ export function NarrativeSettings() {
         Puede tardar en la primera carga. No se aplica a APIs remotas de OpenRouter.</p>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
         necesitan un runtime local para su ejecución. Ollama puede cargar su propio modelo al generar; KoboldCpp puede arrancarse desde Noble AI. OpenRouter usa su infraestructura remota y los workers utilizan una GPU externa autenticada.</p>
+      <section className="narrative-context-inspector" aria-label="Inspector de contexto narrativo">
+        <h3>Inspector del contexto narrativo</h3>
+        <p className="narrative-helper">Consulta los mensajes exactos preparados para el
+          proveedor antes de una generación. Incluye contexto privado del creador:
+          úsalo únicamente para revisar tus historias. No ejecuta modelos ni guarda turnos.</p>
+        {stories.length ? <>
+          <div className="narrative-settings-grid">
+            <label>Historia a inspeccionar
+              <select aria-label="Historia para inspeccionar" value={inspectStory}
+                onChange={e => { setInspectStory(e.target.value); setInspectorData(null); }}>
+                {stories.map(story => <option value={story.id} key={story.id}>{story.title}</option>)}
+              </select>
+            </label>
+            <label>Modo de intervención
+              <select aria-label="Modo para inspeccionar" value={inspectMode}
+                onChange={e => { setInspectMode(e.target.value as typeof inspectMode); setInspectorData(null); }}>
+                <option value="do">Acción</option>
+                <option value="say">Diálogo</option>
+                <option value="story">Dirección</option>
+                <option value="continue">Continuar</option>
+              </select>
+            </label>
+          </div>
+          <label>Intervención de ejemplo
+            <textarea aria-label="Intervención para inspeccionar"
+              rows={2} maxLength={3000} value={inspectText}
+              onChange={e => { setInspectText(e.target.value); setInspectorData(null); }}/>
+          </label>
+          <div className="settings-buttons">
+            <button className="secondary-button"
+              disabled={inspecting || (inspectMode !== 'continue' && !inspectText.trim())}
+              onClick={() => void inspectContext()}>
+              {inspecting ? <LoaderCircle size={16} className="rotating"/> : <BookOpen size={16}/>}
+              Inspeccionar contexto
+            </button>
+          </div>
+          {inspectorError && <p role="alert" className="narrative-error">{inspectorError}</p>}
+          {inspectorData && <div role="status" className="creator-hint">
+            <strong>Presupuesto estimado del prompt</strong>
+            <p>{inspectorData.estimated_prompt_tokens} tokens aproximados de entrada
+              + {inspectorData.reserved_output_tokens} reservados de salida
+              / {inspectorData.context_window_tokens} de ventana configurada.</p>
+            {inspectorData.estimated_overflow && <p role="alert">
+              Posible desbordamiento: entrada + salida estimadas superan la ventana.
+            </p>}
+            <p>Los tokens se estiman por caracteres, no mediante el tokenizador
+              del modelo. No se mide KV-cache ni se garantiza la longitud admitida
+              por el proveedor.</p>
+            <details>
+              <summary>Ver desglose por bloques</summary>
+              <ul>{inspectorData.sections.map((block, i) => <li key={i}>
+                {block.name}: {block.characters} caracteres · ~{block.approx_tokens} tokens
+              </li>)}</ul>
+            </details>
+            <details>
+              <summary>Ver todos los mensajes enviados al motor</summary>
+              {inspectorData.messages.map((message, i) => <div key={i}>
+                <strong>{i + 1}. {message.role}</strong>
+                <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                  {message.content}
+                </pre>
+              </div>)}
+            </details>
+          </div>}
+        </> : <p className="narrative-helper">Crea una historia para inspeccionar
+          su contexto narrativo.</p>}
+      </section>
     </>}
   </section>;
 }

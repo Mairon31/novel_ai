@@ -114,3 +114,10 @@ El archivo HTML es una exportación de **una sola línea narrativa**, con marca 
 El índice `narrative_turn_fts` contiene `turn_id,story_id,mode,input_text` y utiliza tokenizador `unicode61`; se reconstruye en archivos SQLite legados sin sobreescribir escenas. `story_turns` sigue siendo el registro de verdad. Nuevos turnos e índices y copias por rama se confirman juntos; ningún turno posterior al corte se recupera en una bifurcación. Al buscar, se filtra por `story_id` y se valida cada ID de turno contra `story_turns`; la alternativa léxica analiza como máximo los últimos 2500 turnos y usa los mismos límites de consultas.
 
 Se indexa **solo la entrada del jugador**, no el texto del LLM ni material privado de Creator/Lorebook. La recuperación automática de hasta tres recuerdos remotos los introduce con rol `user`, separadamente del prompt de sistema y del historial reciente, evitando la promoción directa de texto no confiable a instrucciones de sistema. Esto no atribuye hechos a NPC ni certifica causalidad; siguen pendientes búsqueda semántica, resúmenes con procedencia/testigos y tokenización real.
+
+
+## Inspector de mensaje enviado al adaptador
+
+`context_inspector.py` consume `NarrativeService.messages` directamente para reproducir el arreglo exacto de mensajes que se prepara para Ollama/KoboldCpp/OpenRouter/worker. La operación es solo lectura y no instancia modelos ni guarda mensajes. Secciona el contenido sin reescribirlo para desglose de sistema/preferencias, premisa, canon, datos del creador, Lorebook, estado del mundo, episodios e historial. Las secciones tienen conteos exactos de caracteres; la estimación `ceil(caracteres/4)+overhead` es **heurística**, no tokenización por modelo, y el límite de contexto solo se usa para mostrar una advertencia informativa de posible exceso. No se publican contadores inventados de KV-cache.
+
+El inspector forma parte de `NarrativeSettings` y es una herramienta local **para el autor** porque muestra instrucciones confidenciales de la novela. No se incorpora al lector público ni a la exportación HTML.

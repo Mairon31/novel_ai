@@ -48,7 +48,7 @@ class EpisodicMemoryTests(unittest.TestCase):
     def test_ftsearch_retrieves_old_player_action_but_not_assistant_secret(self):
         self.assertTrue(self.app.state.episodes.fts_enabled)
         first = self.turn("Recogí el medallón de cuarzo en la cripta",
-                          "La guardiana menciona un secreto prohibido y oculto.")
+                          reply="La guardiana menciona un secreto prohibido y oculto.")
         for i in range(115):
             self.turn("Camino por el sendero " + str(i))
         result = self.search("medallón cuarzo")

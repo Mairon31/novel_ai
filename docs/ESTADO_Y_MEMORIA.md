@@ -165,3 +165,8 @@ El mecanismo reduce filtraciones por recuperación de Lorebook pero **no equival
 ## Intervenciones antiguas y FTS5
 
 La memoria episódica indexa exclusivamente los textos ingresados por el jugador a la historia, no el diálogo generado por el modelo ni los secretos del creador. Cada turno y su índice se confirman en la misma transacción. Las ramas heredan solo los turnos copiados con IDs nuevos. La búsqueda manual y una recuperación automática limitada (máximo 3 recuerdos fuera de la ventana reciente de 16 turnos) permiten referenciar acciones antiguas como mensajes históricos de tipo `user`. Las acciones recordadas no confirman por sí mismas el conocimiento de ningún NPC ni reemplazan el estado del mundo verificado. SQLite FTS5 funciona si está presente; si falta, se mantiene una búsqueda léxica con límites de escaneo.
+
+
+## Inspector del contexto — origen de cada bloque
+
+El sistema permite consultar, sin generar ni persistir turnos, exactamente qué mensajes pasaría al adaptador narrativo ante una nueva intervención. Agrupa canon, Lorebook activo sujeto a testigos, estado del mundo, acciones episódicas recuperadas y ventana reciente; reporta caracteres exactos y **tokens aproximados**, dejando `token_counts_exact=false`. Las alertas de exceso son estimadas y no significan que Ollama, KoboldCpp o workers hayan confirmado el truncamiento. El inspector muestra instrucciones de autor y por eso se ubica en Configuración, no en el lector exportado.

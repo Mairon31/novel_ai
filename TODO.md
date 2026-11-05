@@ -110,9 +110,9 @@
 - [ ] Prefijo de prompt estable para KV cache, tokenizador apropiado y truncamiento consciente; prueba de 100–120 turnos con hechos remotos.
 
 ### AUD-014 — Inspector de contexto
-- [ ] Medidor por sistema/canon/personajes/lorebook/episodios/historial/reserva de salida en `NarrativeSettings.tsx`.
+- [ ] **Medidor de contexto del narrador** implementado en `NarrativeSettings.tsx`: desglosa sistema/preferencias, premisa, canon, contenido del creador, Lorebook, mundo, recuerdos e historial; reserva de salida y comparación con `num_ctx`, **pendiente CI**. Todos los tokens son estimados por caracteres, no tokenización real.
 - [x] Creator Studio: pestaña separada de Lorebook con alta/edición/eliminación, prioridad, activadores y previsualización del contexto realmente seleccionado; QA Playwright escritorio y móvil [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220), **30/30 PASS**.
-- [ ] Inspector de **prompt final completo**, presupuestos en tokens por bloque, advertencias de truncamiento y métricas KV-cache únicamente cuando las entregue el runtime.
+- [ ] **Inspector de prompt completo** implementado: vista previa de los mismos mensajes enviados al adaptador, advertencia de posible desbordamiento y lectura privada local de instrucciones de autor, **pendiente CI**. Quedan pendientes tokenizadores reales por proveedor, medición real de KV-cache y avisos de truncamiento por proveedor.
 
 ## Fase 4 — P1/P2: dirección escénica y multimedia
 
