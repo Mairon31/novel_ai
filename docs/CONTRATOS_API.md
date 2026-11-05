@@ -159,3 +159,15 @@ Todas las rutas se limitan al UUID de una historia existente. El contenido es pr
 - `POST /api/v1/stories/{story_id}/lorebook/preview` recibe `{"query":"Entro al bosque","budget_chars":6000}` y devuelve `{entries:[{id,title,priority,content}],context,used_chars,budget_chars,skipped_budget}`. Este preview activa únicamente por la cadena `query` proporcionada; la generación real incluye además cuatro turnos recientes.
 
 Campos de entrada: `title` (2–100), `content` (10–3500), `keys` (hasta 12), `secondary_keys` (hasta 8), `secondary_mode: any|all`, `match_whole_words`, `priority` 0–100, `enabled`, `always_active`. Es obligatorio definir claves primarias salvo con `always_active`; nunca se evalúan regex proporcionadas por el usuario. Los hechos activados respetan prioridad y se omiten completos si superan el límite de 512–6000 caracteres. El fork crea copias con IDs nuevos.
+
+
+## Estado del mundo y snapshots confirmados (2026-11-05)
+
+- `GET /api/v1/stories/{story_id}/world-state` → `{story_id, revision, updated_at, state}`. Una historia nueva devuelve revisión 0 y estado vacío, no inventa personajes ni hechos.
+- `PUT /api/v1/stories/{story_id}/world-state` recibe `{expected_revision: número, state: WorldStateInput}` y retorna la siguiente revisión completa. Dos actualizaciones concurrentes con la misma revisión no pueden confirmarse ambas: la posterior responde **409**. Datos inválidos o UUID de NPC ajenos responden 422.
+- `GET /api/v1/stories/{story_id}/world-state/turns/{turn_id}` → `{story_id, turn_id, created_at, canon, state}`. Responde 404 si el snapshot no pertenece a la historia o nunca se registró.
+- `WorldStateInput`: cadenas `location` (0–200), `time_of_day` (0–80), `weather` (0–100); arrays `present_character_ids` (hasta 30 UUID de NPC), `inventory` (hasta 60 objetos de 1–100 caracteres), `relationships` (hasta 30 mapeos UUID→texto 1–160), `flags` (hasta 60 claves booleanas) y `facts` (hasta 120).
+- `WorldFact`: `id` UUID, `text` (10–360), `public` booleano, `witness_character_ids` (hasta 16 UUID). Un hecho privado necesita testigos, todos de esa misma historia.
+- El guardado del turno inserta instantáneamente una fila inmutable de estado y canon bajo la misma transacción SQLite que el texto y escena. Las bifurcaciones en un turno histórico remapean personajes y restauran el canon de ese turno; los snapshots de turnos anteriores a la migración no se reconstruyen con estado futuro.
+
+Estos contratos describen hechos **confirmados por el autor**, no cambios que el narrador pueda ejecutar sin aprobación. El contexto enviado a la IA omite los hechos privados cuyos testigos están ausentes, aunque todavía no garantiza que una IA jamás atribuya mal otro conocimiento.
