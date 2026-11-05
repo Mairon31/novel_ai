@@ -25,3 +25,13 @@ El listado con casillas y dependencias se mantiene en [`TODO.md`](../TODO.md). L
 - **Rendimiento:** TTFT, TPS, latencia visual y uso GPU medidos en máquinas especificadas; las metas de la auditoría no constituyen datos reales. Comparar código y logs por commit.
 
 Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de hardware en [`PROGRESO.md`](PROGRESO.md). Una prueba simulada no prueba los tiempos en una RTX 5060 Ti.
+
+## Evidencia P0 incremental — 2026-11-05 (Argon)
+
+- [x] **Atomicidad entre turno y transición visual:** `test_turn_and_inferred_scene_roll_back_together` fuerza un fallo de SQLite dentro del observador de escena, verifica ausencia de turno y escena y confirma un reintento idempotente exitoso. `test_scene_transition_and_turn_commit_once_under_same_idempotency_key` evita duplicaciones. Incluidas en [CI #41996621807](https://github.com/Mairon31/novel_ai/actions/runs/41996621807), completada exitosamente.
+- [x] **Seguridad visual:** tests de symlinks hacia archivos externos en imagen de galería/legado, bloqueo de temporales, rollback del registro/selección en fallo de copia; [CI #41997120265](https://github.com/Mairon31/novel_ai/actions/runs/41997120265) **109 Python + 24 Playwright PASS**.
+- [x] **HTTP Range completo:** pruebas con offset incorrecto, longitud total falsa, formato corrupto, 206 no solicitado y EOF de fragmento incompleto sin checksum upstream. [CI #41997636863](https://github.com/Mairon31/novel_ai/actions/runs/41997636863) **112 Python + 24 Playwright PASS**.
+- [ ] **Persistencia integral:** validar intercalado real de canon/ramas/imagen/TTS con rollback y recuperación ante corte abrupto; la prueba de atomicidad de turno + transición no incluye todas esas capas.
+- [ ] **Seguridad avanzada de archivos:** probar carreras entre chequeo de ruta y apertura del fichero, manipulación de directorios en caliente y política de archivos aportados por terceros.
+- [ ] **Transferencia real:** cortes de red aleatorios a 25/50/75%, verificación SHA real de peso grande y publicación tras interrupción de proceso. Las pruebas anteriores usan transporte HTTP simulado; no verifican CDN en producción.
+- [ ] **Cancelación/VRAM real:** desconectar lector a mitad del SSE, confirmar liberación de proceso/GPU en Ollama/KoboldCpp/worker y medir tiempos en hardware concreto.
