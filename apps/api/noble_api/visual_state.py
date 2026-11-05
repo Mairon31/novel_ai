@@ -188,14 +188,45 @@ class VisualState:
                          (ident, story_id, location, source_turn_id, detection, now))
         return self.scene(story_id)
 
-    def observe_turn(self, story_id: str, turn: dict) -> dict | None:
+    def observe_turn_in_transaction(self, conn, story_id: str, turn: dict) -> dict | None:
+        """Record an inferred transition in the *same* transaction as its turn.
+
+        Do not open another connection or commit independently. A failure must
+        roll back both the turn and the corresponding visual transition.
+        """
         location = infer_location(turn["assistant_text"])
         if not location:
             return None
-        prior = self.scene(story_id)
-        if prior["location"].casefold() == location.casefold():
+        current = conn.execute(
+            "SELECT * FROM visual_scenes WHERE story_id=? "
+            "ORDER BY created_at DESC,id DESC LIMIT 1", (story_id,)
+        ).fetchone()
+        if current is None:
+            initial_id = str(uuid.uuid4())
+            conn.execute(
+                "INSERT INTO visual_scenes VALUES (?,?,?,?,?,?)",
+                (initial_id, story_id, "Escena inicial", None, "initial", time.time()),
+            )
+            current = conn.execute(
+                "SELECT * FROM visual_scenes WHERE id=?", (initial_id,)
+            ).fetchone()
+        if current["location"].casefold() == location.casefold():
             return None
-        return self.set_scene(story_id, location, turn["id"], detection="heuristic")
+        ident = str(uuid.uuid4())
+        conn.execute(
+            "INSERT INTO visual_scenes VALUES (?,?,?,?,?,?)",
+            (ident, story_id, location, turn["id"], "heuristic", time.time()),
+        )
+        return dict(conn.execute(
+            "SELECT * FROM visual_scenes WHERE id=?", (ident,)
+        ).fetchone())
+
+    def observe_turn(self, story_id: str, turn: dict) -> dict | None:
+        """Compatibility wrapper for callers that do not own a transaction."""
+        if not self._exists(story_id):
+            raise ValueError("Historia inexistente")
+        with self.store._conn() as conn:
+            return self.observe_turn_in_transaction(conn, story_id, turn)
 
     def characters(self, story_id: str) -> list[dict]:
         self.scene(story_id)
