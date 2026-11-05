@@ -7,6 +7,7 @@ Entries are scoped to a single story; branches copy them into independent rows.
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 import re
 import time
 import uuid
@@ -182,9 +183,9 @@ class LorebookService:
             "context": "\n\n".join(entry["content"] for entry in chosen),
         }
 
-    def clone(self, source_id: str, target_id: str) -> None:
-        """Fork copies author facts; edits in either branch cannot leak."""
-        with self.store._conn() as db:
+    def clone(self, source_id: str, target_id: str, conn=None) -> None:
+        """Fork copies author facts in the caller's transaction if supplied."""
+        with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
             now = time.time()
             rows = db.execute(
                 "SELECT entry_json FROM lorebook_entries WHERE story_id=? "
