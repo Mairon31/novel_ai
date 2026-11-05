@@ -2,7 +2,7 @@
 
 **Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> **Estado: P1.1 experimental.** Model Hub, lectura narrativa con presentación visual, identidad del protagonista, ilustración manual por historia, Ollama/KoboldCpp/OpenRouter y worker LLM GPU remoto con proxy autenticado. Configuración organizada por idioma, apariencia, proveedores, runtimes, atajos, red y actualizaciones. **El código y las pruebas automáticas no demuestran inferencia real con GPU, generación de imágenes/TTS, Colab administrado ni actualizador instalado.**
+> **Estado: P1.4 experimental — desarrollo activo.** Model Hub, narración real (ensayo GGUF Colab T4 documentado), historias persistentes, canon editable, narrador con estados de preparación y cancelación; ComfyUI **bajo demanda** para checkpoints compatibles y Piper CPU **bajo demanda** para voces locales ONNX. También hay trabajadores remotos LLM autenticados y configuración de proveedores. **ComfyUI y Piper tienen código y pruebas de contrato, pero aún no benchmarks reales en GPU/CPU con estos proveedores.** El detector automático de cambios de escena, workflows avanzados, TTS GPU/API, ramificación completa y empaquetado Windows siguen pendientes.
 
 ## Ejecutar prototipo en Windows (sin Colab)
 
@@ -40,12 +40,12 @@ Noble AI UI (React/Vite/TS)
            │ REST + SSE / localhost
            ▼
 FastAPI Orchestrator + SQLite + Model Registry + Download Queue
-  ├─ Story Engine, event log, canon, ramas, memoria
+  ├─ Story Engine, turnos en SQLite + canon manual (ramas y memoria automática pendientes)
   ├─ Model Hub (Hugging Face/archivos locales/licencias/compatibilidad)
   ├─ Runtime supervisor (dispositivos, arranque/parada, cambio seguro)
   ├─ Narrador: KoboldCpp / Ollama / server compatible (texto interactivo)
-  ├─ Imágenes: ComfyUI (por evento de escena / explícito, caché)
-  └─ TTS: Chatterbox / otros (solo opt-in, lazy)
+  ├─ Imágenes: ComfyUI local (ilustrar explícitamente, WebP validado)
+  └─ TTS: Piper CPU (solo botón Escuchar, caché WAV); GPU/TTS cloud pendientes
            │
   Tauri 2 (candidato futuro de .exe; shell/sidecar, NO implementado)
 ```
@@ -65,7 +65,8 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 | [Repositorio OSS](docs/REPOSITORIOS_OPEN_SOURCE.md) | Catálogo completo de componentes existentes |
 | [API](docs/CONTRATOS_API.md) | Endpoints y eventos |
 | [Estado y memoria](docs/ESTADO_Y_MEMORIA.md) | Historias, continuidad, ramas |
-| [Imágenes](docs/IMAGENES.md) · [TTS](docs/TTS.md) | Políticas media |
+| [Imágenes](docs/IMAGENES.md) · [TTS](docs/TTS.md) | Adaptadores disponibles y planes |
+| [Integración multimedia](docs/MULTIMEDIA_LOCAL.md) | Preparar ComfyUI/Piper, configurar modelos, límites y fallos |
 | [Perfiles GPU](docs/PERFILES_GPU.md) | 12/16GB, VRAM y límites |
 | [Colab diagnóstico](docs/COLAB_A_LOCAL.md) | Pruebas opcionales, no UI |
 | [Colab worker GPU](notebooks/noble_worker_colab_gpu.ipynb) | GPU CUDA + llama.cpp + túnel autenticado + benchmark |
@@ -80,7 +81,7 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 
 ## Próximo resultado comprobable
 
-**Siguiente hito:** ejecutar la primera inferencia real con un GGUF en la RTX 5060 Ti, registrar tiempo hasta el primer token y VRAM pico, mejorar importación y configuración de runtimes, y después implementar memoria de canon, reintento/ramas e ilustraciones progresivas. Los tests de motores utilizan simuladores de protocolos; una prueba real de GPU sigue pendiente.
+**Siguiente hito:** validar los adaptadores ComfyUI y Piper con procesos reales, implementar identificación de escenas, administrar la VRAM compartida entre narrador/difusión/voz y avanzar en ramas, consistencia de personajes y empaquetado. El primer LLM GGUF real se validó en Colab T4; sigue pendiente probarlo en la RTX 5060 Ti y medir multimedia real.
 
 ## Laboratorio opcional de Colab
 

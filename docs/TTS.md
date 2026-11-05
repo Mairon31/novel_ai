@@ -1,6 +1,6 @@
 # Diseño TTS opt-in
 
-Estado: propuesta. Proveedor inicial: Chatterbox Multilingual; Qwen3-TTS alternativa.
+Estado: **P1.4 — Piper local CPU implementado con reproducción explícita**; Chatterbox Multilingual, Qwen3-TTS y modos GPU/API son siguientes adaptadores, no implementados.
 
 ## Invariantes
 
@@ -27,7 +27,7 @@ Estado: propuesta. Proveedor inicial: Chatterbox Multilingual; Qwen3-TTS alterna
 
 ## API
 
-`POST /api/v1/turns/{id}/speech`: exige intención explícita `request_source = "listen_button" | "user_enabled_autoread"` y `voice_id`. El servidor valida `tts_enabled`/permiso y texto de turno actual antes de encolar. Caché puede devolver asset inmediato sin sintetizar.
+`POST /api/v1/stories/{story_id}/turns/{turn_id}/speech`: solo acepta `{"voice_id":"archivo.onnx","request_source":"listen_button"}` en esta primera versión. `GET /api/v1/tts/voices` detecta voces locales. Se requiere activar `tts_enabled`. No está disponible la autolectura.
 
 ## Tests obligatorios
 
@@ -37,3 +37,13 @@ Estado: propuesta. Proveedor inicial: Chatterbox Multilingual; Qwen3-TTS alterna
 - Cambiar/editar rama evita audios huérfanos que suenan en escena distinta.
 - Proveedor TTS desconectado no afecta LLM/ComfyUI.
 - Prueba subjetiva de 10 frases ES-LA (entonación, nombres, diálogos, pronombres), con logs de modelo/VRAM/latencia.
+
+
+## P1.4 — Configuración real de Piper
+
+- Instala el ejecutable `piper` en `PATH`. El backend no instala runtimes ni lo arranca al abrir Noble AI.
+- Coloca cada voz ONNX y su archivo `.onnx.json` en `<NOBLE_DATA_DIR>/models/voices/`. La UI lista los archivos válidos del directorio, con protección contra nombres de voz que salgan de él.
+- Activa **Ajustes → Imágenes y voz → Activar botones de voz bajo demanda** y selecciona una voz en **Lector → UI/UX**.
+- Pulsa **Escuchar** en un turno guardado: Piper ejecuta la síntesis CPU de ese texto. Los WAV se guardan en `story-assets/{story_id}/speech/` y se reutilizan para la misma intervención/voz.
+- No se ejecuta al continuar una historia ni cuando `tts_enabled=false`; tampoco se habilita `tts_autoread`. Si falta Piper o la voz, se devuelve un error y la historia permanece disponible.
+- Solo una síntesis activa a la vez; límite de 3500 caracteres y 120 s por llamada; futuros adaptadores podrán chunkear frases y usar GPU.

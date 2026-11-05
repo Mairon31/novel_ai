@@ -58,3 +58,14 @@ Ver [Quickstart](QUICKSTART.md), [Progreso](PROGRESO.md) y pruebas `tests/test_n
 `GET /v1/health` en el **proxy remoto** devuelve contadores agregados y GPU/VRAM (best-effort), y también exige Bearer. El endpoint principal `GET /api/v1/workers/{uuid}/probe` recoge esa telemetría si está disponible sin fallar frente a una versión vieja de worker.
 
 La prueba no es una medición p95 ni una certificación de compatibilidad GPU. Ver [WORKERS.md](WORKERS.md).
+
+
+## P1.4 — generación bajo demanda y canon
+
+- \`PATCH /api/v1/stories/{uuid}/canon\` con \`{"canon":"..." }\` (hasta 5000 caracteres). Se guarda en SQLite y se añade al contexto del narrador; no reescribe turnos antiguos.
+- \`GET/PUT /api/v1/images/config\`: configuración persistente de ComfyUI.
+- \`GET /api/v1/images/status\`: sondeo del checkpoint instalado, conexión local con tiempo limitado.
+- \`POST /api/v1/stories/{uuid}/illustrate\` con \`{"prompt":"...","seed":123}\`: genera imagen SOLO si el usuario lo solicita. ComfyUI debe estar instalado y en marcha por separado. Puede devolver 409 ocupado, 422 config inválida, 503 offline y 502/504 error/timeout.
+- \`GET /api/v1/tts/voices\`: voces Piper detectadas (ONNX + JSON) en el directorio de modelos.
+- \`POST /api/v1/stories/{uuid}/turns/{uuid}/speech\` con \`{"voice_id":"es_MX.onnx","request_source":"listen_button"}\`: devuelve WAV, exige \`tts_enabled=true\`. No hay autolectura.
+- La narración \`POST /api/v1/stories/{uuid}/generate\` ahora emite eventos SSE adicionales \`status\` con \`phase=preparing|connecting|streaming\`, antes de \`delta/done/error\`. Los clientes anteriores pueden ignorar \`status\`.

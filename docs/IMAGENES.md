@@ -1,6 +1,6 @@
 # Diseño de generación progresiva de ilustraciones
 
-Estado: v0.1 — no implementado. Proveedor principal: ComfyUI.
+Estado: **P1.4 — adaptador ComfyUI local bajo demanda implementado**, workflow estándar integrado y almacenamiento WebP. Detección automática de escenas, planner inteligente, LoRAs/ControlNet, workers remotos de imagen y scheduler multi-GPU siguen pendientes.
 
 ## Contrato de producto
 
@@ -21,10 +21,10 @@ Cada recurso tiene `asset_id`, hash SHA-256, `story_id`, `character_id` si aplic
 
 | Evento | Acción por defecto |
 |---|---|
-| Primer acceso a historia sin ilustración | Mostrar portada o fondo neutro y encolar escena inicial en segundo plano **si imágenes están habilitadas** |
+| Primer acceso a historia sin ilustración | Mostrar fondo neutro; **no generar automáticamente en P1.4** |
 | Llega un nuevo personaje nunca visto | Reutilizar retrato si existe; sino planificar sprite al revelarse visualmente |
 | Personaje cambia solo de emoción | Usar variante existente; generar solo si se pidió expresamente o falta una variante importante |
-| Se cambia de localización | Buscar fondo compatible; si no existe, encolar fondo |
+| Se cambia de localización | Pendiente: detector de escena. **No genera automáticamente todavía** |
 | Se avanza un diálogo sin cambios visuales | **No generar imagen** |
 | Jugador pulsa "Ilustrar esta escena" | Crear/reusar imagen por revisión con prioridad explícita |
 | Cambio de vestuario/forma | Incrementar `appearance_revision` y crear variante nueva si es visible |
@@ -62,3 +62,17 @@ Perfiles 12/16GB con un worker de difusión como máximo; mantener LLM atendible
 - Una imagen que llega tarde a una rama descartada → se archiva, **no se muestra como actual**.
 - ComfyUI offline → historia jugable con fallback visual, job recuperable.
 - Consistencia: prueba de 10 escenas con mismo personaje, evaluación manual de identidad/ropa y metadatos.
+
+
+## P1.4 — API implementada (local, solo bajo demanda)
+
+- `GET /api/v1/images/config`: consulta configuración ComfyUI persistida.
+- `PUT /api/v1/images/config`: valida endpoint HTTP loopback y parámetros, incluido checkpoint, tamaño, pasos, CFG y prompt negativo.
+- `GET /api/v1/images/status`: consulta `GET /models/checkpoints` del ComfyUI local al pulsar «Buscar checkpoints».
+- `POST /api/v1/stories/{uuid}/illustrate`: acepta `{"prompt":"...","seed":123}` (seed opcional), ejecuta el workflow estándar `CheckpointLoaderSimple` → `CLIPTextEncode` → `EmptyLatentImage` → `KSampler` → `VAEDecode` → `SaveImage`.
+- Descarga del resultado mediante `/view`, validación Pillow y guardado WebP en `story-assets/{uuid}/scene.webp`, únicamente cuando el resultado es válido.
+- Cola simple de **una solicitud simultánea**; si está ocupado devuelve 409 en lugar de sobrecargar GPU.
+- El narrador nunca llama a ComfyUI al crear, abrir o continuar historias. El usuario debe pulsar «Ilustrar» y escribir el prompt.
+- La generación que falla no elimina ni sobrescribe una ilustración previa.
+- Workflow compatible principalmente con checkpoints que soportan los nodos estándar. Flux/SD3 y pipelines personalizados requieren plantillas específicas; no se afirma soporte universal.
+- Los tests con ComfyUI simulado validan flujo HTTP y una imagen real decodificada mediante Pillow; falta probar un motor ComfyUI con GPU física.

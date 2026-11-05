@@ -1,3 +1,20 @@
+
+## P1.4 — multimedia local conectable y canon permanente (IMPLEMENTADO EN CÓDIGO)
+
+- [x] Editor de canon persistente por historia; se incluye en los mensajes de contexto del narrador. Memoria automática derivada, reconciliación de estado y ramas todavía pendientes.
+- [x] Eventos SSE \`status\` para preparar contexto, conectar y transmitir; UI muestra segundos transcurridos y permite abortar.
+- [x] ComfyUI bajo demanda: checkpoint por UI, workflow de difusión estándar, seed, parámetros, polling y WebP local validado; motor desconectado no bloquea LLM.
+- [x] Piper CPU bajo demanda: detección de voces locales ONNX, validación de rutas, WAV por intervención con caché y botón Escuchar/Detener.
+- [x] UI de multimedia responsive, accesos a ilustración desde el lector, controles independientes en Ajustes.
+- [x] Pruebas simuladas ComfyUI + Pillow y Piper CLI falso + lectura WAV para verificar contratos.
+- [ ] ComfyUI real con un modelo de imagen instalado (sin benchmark por ahora).
+- [ ] Piper real con voz ES-LA, pruebas de entonación (sin benchmark por ahora).
+- [ ] Detección automática de escenas y planificación visual por cambios de estado.
+- [ ] Narración multicarácter, voces por personaje y TTS GPU/API.
+- [ ] Identidad visual consistente, caché por versión de escena y planner GPU 12/16 GB.
+- [ ] Ramas, resúmenes y mantenimiento automático del canon.
+- **Gate P1.4:** CI verde en pruebas Python/React/Playwright, seguido de validación funcional con herramientas reales.
+
 # Noble AI — Roadmap APP-FIRST y Definition of Done
 
 Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: **P1 — Model Hub y prototipo narrativo ejecutables; sin pruebas de inferencia GPU real**. El orden de dependencias ha cambiado: el **Model Hub/Onboarding precede al núcleo narrativo**; Colab es diagnóstico opcional, no interfaz principal.

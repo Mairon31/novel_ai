@@ -189,6 +189,20 @@ Ver [Resultados QA v1.3](COLAB_QA_V13_RESULTADOS.md). **No se generó contenido 
 
 Ver [informe del primer ensayo GPU real](COLAB_QA_V14_RESULTADOS.md). Los números de VRAM/latencia se refieren solamente al Qwen 4B en Tesla T4, no a cualquier modelo.
 
+## 2026-11-04 · P1.4 — servicios multimedia y canon sin nueva ronda de benchmarks GPU
+
+- [x] Servicio ComfyUI local exclusivamente por botón; ninguna carga al inicio de la app.
+- [x] Pipeline API nativo con checkpoint y prompt explícitos, polling y WebP validado; se conserva la escena previa ante error.
+- [x] Servicio Piper CPU bajo demanda, voces instaladas en modelos/voices, WAV cacheado y rechazo de voz deshabilitada.
+- [x] Lector con diálogo Escuchar/Detener, solicitud Ilustrar, estados de preparación, tiempo transcurrido y opción de cancelar.
+- [x] Canon de historia editable y persistente; integración del contexto confirmado en el siguiente prompt LLM.
+- [x] Tests independientes para imágenes, síntesis ficticia, almacenamiento, flujo SSE y ataques de ruta.
+- [ ] Motor de detección automática del cambio de escena y de identidad de personajes.
+- [ ] Entorno ComfyUI real, TTS Piper real y capacidad de compartir VRAM.
+- [ ] Modelos especializados y voz GPU/servicios por API, instalador Windows.
+
+**Evidencia:** commits del historial \`master\` y GitHub Actions. Tests de contrato con proveedores simulados, no benchmark real ComfyUI/Piper.
+
 ## Plantilla para futuras entradas
 
 ```md
