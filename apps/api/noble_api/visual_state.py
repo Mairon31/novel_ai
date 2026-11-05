@@ -311,7 +311,7 @@ class VisualState:
 
     def clone_branch(self, source_id: str, branch_id: str,
                      turn_ids: dict[str, str], partial: bool = False,
-                     cutoff_created_at: float | None = None) -> None:
+                     cutoff_created_at: float | None = None) -> dict[str, str]:
         """Fork visual history with independent scene/character/art identifiers.
 
         A partial fork only receives scenes that existed at its selected turn.
@@ -400,6 +400,7 @@ class VisualState:
             for copied in copied_paths:
                 copied.unlink(missing_ok=True)
             raise
+        return character_map
 
     def _asset_path(self, story_id: str, asset_id: str) -> Path:
         return self.store.root / "story-assets" / story_id / "images" / (asset_id + ".webp")

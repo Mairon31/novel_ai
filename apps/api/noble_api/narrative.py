@@ -285,8 +285,9 @@ class NarrativeService:
                     (cloned_turn_id, new_id, str(uuid.uuid4()), turn["mode"],
                      turn["input_text"], turn["assistant_text"], turn["model"],
                      now + idx * 0.000001))
+        visual_character_map = {}
         if self.visual is not None:
-            self.visual.clone_branch(story_id, new_id, turn_map, partial=bool(until_turn_id),
+            visual_character_map = self.visual.clone_branch(story_id, new_id, turn_map, partial=bool(until_turn_id),
                 cutoff_created_at=existing[-1]["created_at"] if existing and until_turn_id else None)
         else:
             prior_art = self.store.root / "story-assets" / story_id / "scene.webp"
@@ -296,7 +297,7 @@ class NarrativeService:
                 shutil.copy2(prior_art, copy_art)
         character_ids = {}
         if self.creator is not None:
-            character_ids = self.creator.clone(story_id, new_id)
+            character_ids = self.creator.clone(story_id, new_id, visual_character_map)
         if self.creator_media is not None:
             self.creator_media.clone(story_id, new_id, character_ids)
         return self.get_story(new_id)
