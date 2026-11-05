@@ -122,6 +122,66 @@ class Store:
             conn.execute("UPDATE downloads SET " + sql + " WHERE id=?",
                          [*fields.values(), job_id])
 
+    def transition_download(self, job_id: str, from_statuses: tuple[str, ...],
+                            to_status: str, **fields) -> bool:
+        """Atomically change a download status only from allowed source states.
+
+        A stale UI action cannot overwrite a completed install or revive a
+        cancelled transfer through a time-of-check/time-of-use race.
+        """
+        if not from_statuses or not set(fields).issubset({"error", "received_bytes"}):
+            raise ValueError("Transición de descarga inválida")
+        placeholders = ",".join("?" for _ in from_statuses)
+        values = {"status": to_status, "updated_at": time.time(), **fields}
+        setters = ", ".join(key + "=?" for key in values)
+        with self._conn() as conn:
+            updated = conn.execute(
+                f"UPDATE downloads SET {setters} WHERE id=? AND status IN ({placeholders})",
+                (*values.values(), job_id, *from_statuses),
+            )
+            return updated.rowcount == 1
+
+    def complete_download(self, job: dict, part: Path, target: Path,
+                          digest: str, integrity: str) -> bool:
+        """Publish a verified file and its DB registration under a write lock.
+
+        Pause/cancel use conditional updates against the same SQLite writer.
+        If the DB insert fails, attempt to restore the .part file; a hard power
+        loss still requires a separate startup-reconciliation mechanism.
+        """
+        moved = False
+        try:
+            with self._conn() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                current = conn.execute(
+                    "SELECT status FROM downloads WHERE id=?", (job["id"],)
+                ).fetchone()
+                if not current or current["status"] != "verifying":
+                    return False
+                part.replace(target)
+                moved = True
+                previous = conn.execute(
+                    "SELECT id FROM installed WHERE repo_id=? AND revision=? AND filename=?",
+                    (job["repo_id"], job["revision"], job["filename"]),
+                ).fetchone()
+                if previous is None:
+                    conn.execute(
+                        "INSERT INTO installed "
+                        "(id,repo_id,revision,filename,size_bytes,sha256,integrity_status,filepath,created_at) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        (str(uuid.uuid4()), job["repo_id"], job["revision"], job["filename"],
+                         target.stat().st_size, digest, integrity, str(target), time.time()),
+                    )
+                conn.execute(
+                    "UPDATE downloads SET status='completed',received_bytes=?,error=NULL,updated_at=? "
+                    "WHERE id=?", (target.stat().st_size, time.time(), job["id"]),
+                )
+        except Exception:
+            if moved and target.is_file() and not part.exists():
+                target.replace(part)
+            raise
+        return True
+
     def installed(self):
         with self._conn() as conn:
             return [dict(r) for r in conn.execute(
