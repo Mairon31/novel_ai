@@ -24,9 +24,9 @@ export const api = {
   settings: () => request<Settings>('/settings'),
   patchSettings: (data: Partial<Settings>) =>
     request<Settings>('/settings', { method: 'PATCH', body: JSON.stringify(data) }),
-  search: (query: string, role: ModelRole) =>
+  search: (query: string, role: ModelRole, sort = 'downloads') =>
     request<SearchResponse>('/models/search?q=' + encodeURIComponent(query) +
-      '&role=' + encodeURIComponent(role)),
+      '&role=' + encodeURIComponent(role) + '&sort=' + encodeURIComponent(sort)),
   details: (repo: string) => request<ModelDetail>('/models/' + repo.split('/').map(encodeURIComponent).join('/')),
   installed: () => request<{ models: InstalledModel[] }>('/models/installed'),
   downloads: () => request<{ downloads: DownloadJob[] }>('/downloads'),

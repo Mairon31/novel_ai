@@ -13,9 +13,27 @@ export type Variant = {
   filename: string; size_bytes: number | null;
   sha256: string | null; supported: boolean;
 };
+export type ModelFitVariant = {
+  filename: string; quantization: string | null;
+  fit: 'full_gpu' | 'partial_offload' | 'cpu' | 'too_large' | 'unsupported' | 'unknown';
+  estimated_required_bytes: number | null; estimated_kv_bytes: number | null;
+  gpu_share: number; disk_ok: boolean | null; note: string;
+};
+export type HardwareFit = {
+  context_tokens: number; gpu: Hardware['gpus'][number] | null;
+  vram_usable_bytes: number; ram_usable_bytes: number;
+  metadata_source: 'gguf_header' | 'fallback_estimate';
+  architecture: string | null; parameter_count: number | null;
+  confidence: string; warning: string;
+  recommended_filename: string | null; variants: ModelFitVariant[];
+};
 export type ModelDetail = {
   repo_id: string; revision: string; license: string; gated: boolean;
   variants: Variant[]; supports_install: boolean; url: string;
+  author?: string; downloads?: number; likes?: number;
+  last_modified?: string | null; library?: string | null;
+  tags?: string[]; summary?: string; base_model?: string | string[] | null;
+  hardware_fit?: HardwareFit;
 };
 export type InstalledModel = {
   id: string; repo_id: string; revision: string; filename: string;

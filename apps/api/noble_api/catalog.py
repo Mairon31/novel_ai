@@ -82,16 +82,19 @@ class HfCatalog:
             self._cache[key] = (time.monotonic(), result)
         return result
 
-    def search(self, query: str, role: str, limit: int = 20) -> dict:
+    def search(self, query: str, role: str, limit: int = 20,
+               sort: str = "downloads") -> dict:
         if role not in ROLES:
             raise CatalogError(400, "Rol de modelo inválido")
         query = query.strip()[:100]
         if len(query) < 2:
             raise CatalogError(400, "Busca al menos dos caracteres")
         limit = max(1, min(limit, 30))
+        if sort not in {"downloads", "likes", "lastModified", "trendingScore"}:
+            raise CatalogError(400, "Orden de catálogo inválido")
         params = {"search": query, "filter": ROLE_FILTERS[role],
-                  "sort": "downloads", "direction": "-1", "limit": limit}
-        data = self._cached(("search", role, query.lower(), limit),
+                  "sort": sort, "direction": "-1", "limit": limit}
+        data = self._cached(("search", role, query.lower(), limit, sort),
                             lambda: self._get("/api/models", params))
         if not isinstance(data, list):
             raise CatalogError(502, "Respuesta de catálogo inesperada")
@@ -115,6 +118,7 @@ class HfCatalog:
                 "role": role,
             })
         return {"source": "huggingface", "role": role, "query": query,
+                "sort": sort,
                 "results": items, "installation_supported": role == "narrator",
                 "cached_seconds": 300}
 

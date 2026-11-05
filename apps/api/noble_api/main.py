@@ -166,8 +166,9 @@ def create_app(
 
     @service.get("/api/v1/models/search")
     def search(q: str = Query(min_length=2, max_length=100),
-               role: str = "narrator", limit: int = Query(20, ge=1, le=30)):
-        return catalog.search(q, role, limit)
+               role: str = "narrator", limit: int = Query(20, ge=1, le=30),
+               sort: str = "downloads"):
+        return catalog.search(q, role, limit, sort)
 
     @service.get("/api/v1/models/installed")
     def installed():
