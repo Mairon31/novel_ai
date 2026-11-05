@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 import httpx
+from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "apps" / "api"))
@@ -16,6 +17,7 @@ sys.path.insert(0, str(ROOT / "apps" / "api"))
 from noble_api.catalog import HfCatalog
 from noble_api.downloads import DownloadManager
 from noble_api.store import Store
+from noble_api.main import create_app
 
 REPO = "crash-test/tiny-gguf"
 REV = "c" * 40
@@ -78,6 +80,20 @@ class CrashRecoveryTests(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), PAYLOAD)
         self.assertEqual(manager.store.installed()[0]["sha256"], SHA)
         self.assertEqual(manager.store.installed()[0]["integrity_status"], "sha256_verified")
+
+    def test_recovery_counts_are_visible_in_real_api_without_exposing_paths(self):
+        self.target.write_bytes(PAYLOAD)
+        app = create_app(self.root, catalog_transport=httpx.MockTransport(no_network))
+        with TestClient(app) as client:
+            response = client.get("/api/v1/downloads/recovery")
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(
+                response.json(), {"recovered": 1, "conflicts": 0, "skipped": 0})
+            self.assertEqual(
+                client.get("/api/v1/downloads").json()["downloads"][0]["status"],
+                "paused")
+        self.assertEqual(self.part.read_bytes(), PAYLOAD)
+        self.assertFalse(self.target.exists())
 
     def test_both_final_and_part_exist_keeps_both_untouched(self):
         self.target.write_bytes(PAYLOAD)
