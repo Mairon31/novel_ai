@@ -84,15 +84,25 @@ class DownloadManager:
         job = self.store.download(job_id)
         if not job:
             raise CatalogError(404, "No existe esa descarga")
-        if action == "pause" and job["status"] in ("queued", "downloading"):
-            self.store.update_download(job_id, status="paused")
-        elif action == "cancel" and job["status"] in ("queued", "downloading", "paused", "failed"):
-            self.store.update_download(job_id, status="cancelled")
-        elif action == "resume" and job["status"] in ("paused", "failed", "cancelled"):
-            self.store.update_download(job_id, status="queued", error=None)
+        transitions = {
+            "pause": (("queued", "downloading", "verifying"), "paused"),
+            "cancel": (("queued", "downloading", "verifying", "paused", "failed"), "cancelled"),
+            "resume": (("paused", "failed", "cancelled"), "queued"),
+        }
+        if action not in transitions:
+            raise CatalogError(400, "Acción de descarga desconocida")
+        permitted, destination = transitions[action]
+        changed = self.store.transition_download(
+            job_id, permitted, destination,
+            **({"error": None} if action == "resume" else {}),
+        )
+        if not changed:
+            actual = self.store.download(job_id)
+            raise CatalogError(409,
+                "No se puede " + action + " desde el estado " +
+                (actual["status"] if actual else "inexistente"))
+        if action == "resume":
             self._start(job_id)
-        else:
-            raise CatalogError(409, "No se puede " + action + " desde el estado " + job["status"])
         return self.store.download(job_id)
 
     def _run(self, job_id: str):
@@ -117,7 +127,9 @@ class DownloadManager:
             # Check again after mkdir in case the path already existed as a link.
             if not target.parent.resolve().is_relative_to(root):
                 raise RuntimeError("Directorio de descarga no confiable")
-            self.store.update_download(job_id, status="downloading", error=None)
+            if not self.store.transition_download(
+                    job_id, ("queued",), "downloading", error=None):
+                return
             offset = part.stat().st_size if part.exists() else 0
             headers = {"Range": "bytes=" + str(offset) + "-"} if offset else {}
             url = ("https://huggingface.co/" +
@@ -177,29 +189,31 @@ class DownloadManager:
                     raise RuntimeError("El servidor entregó un fragmento Range incompleto")
                 self.store.update_download(job_id, received_bytes=received)
 
-            if self.store.download(job_id)["status"] in ("paused", "cancelled"):
+            if not self.store.transition_download(
+                    job_id, ("downloading",), "verifying"):
                 return
-            self.store.update_download(job_id, status="verifying")
             expected_size = job["expected_size"]
             if expected_size is not None and part.stat().st_size != expected_size:
                 raise RuntimeError("Tamaño incorrecto: descarga incompleta o variante modificada")
             digest = hashlib.sha256()
+            last_check = 0.0
             with part.open("rb") as stream:
                 for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    # Large GGUF files can require substantial hash time.
+                    # Pause/cancel is checked at least every 100 ms.
+                    if time.monotonic() - last_check >= 0.1:
+                        if self.store.download(job_id)["status"] != "verifying":
+                            return
+                        last_check = time.monotonic()
                     digest.update(chunk)
             actual = digest.hexdigest()
             expected_sha = job["expected_sha256"]
             if expected_sha and actual.lower() != expected_sha.lower():
                 raise RuntimeError("SHA-256 diferente al anunciado por Hugging Face")
-            if self.store.download(job_id)["status"] in ("paused", "cancelled"):
-                return
-            part.replace(target)
-            self.store.register_model(
-                job, target, actual,
+            self.store.complete_download(
+                job, part, target, actual,
                 "sha256_verified" if expected_sha else "local_hash_only",
             )
-            self.store.update_download(job_id, status="completed",
-                                       received_bytes=target.stat().st_size, error=None)
         except Exception as exc:
             status = self.store.download(job_id)
             if status and status["status"] not in ("paused", "cancelled"):
