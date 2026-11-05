@@ -409,3 +409,21 @@
 .noble-prompt-preview strong{font-size:11px;color:#e1dafa}
 .noble-prompt-preview p{font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;color:#c7cadb}
 @media(max-width:360px){.noble-version-gallery{grid-template-columns:1fr}}
+
+
+/* Scene composition and reference management */
+.noble-cast-choice {
+  display:flex;align-items:center;gap:9px;
+  padding:7px 9px;margin:5px 0;
+  border:1px solid #444766;border-radius:8px;
+  background:rgba(51,50,88,.38);font-size:12px;
+}
+.noble-cast-choice input[type=checkbox] {
+  flex:none;width:16px;height:16px;accent-color:#a38afe;
+}
+.noble-character-reference-preview {
+  display:block;width:100%;max-height:270px;
+  object-fit:contain;border-radius:8px;
+  border:1px solid #4f4b76;background:#17152d;
+  margin:9px 0;
+}

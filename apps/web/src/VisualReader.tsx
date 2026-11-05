@@ -220,6 +220,7 @@ export function VisualReader({
       await api.setCharacterReference(active.id, editingCharacterId,
         characterReferenceId || null);
       await refreshVisual(active.id);
+      setPreviewPrompt('');
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
@@ -236,6 +237,7 @@ export function VisualReader({
       };
       const saved = await api.saveScenePlan(active.id, plan);
       setScenePlan(saved);
+      setPreviewPrompt('');
       setIllustrationNotice('Plan de escena guardado. Se utilizará para las próximas ilustraciones.');
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
@@ -506,6 +508,10 @@ export function VisualReader({
                 </option>)}
               </select>
             </label>
+            {characterReferenceId && visual?.assets.some(asset => asset.id === characterReferenceId) &&
+              <img className="noble-character-reference-preview"
+                src={visual.assets.find(asset => asset.id === characterReferenceId)?.url}
+                alt={'Referencia visual del personaje ' + character.name}/>}
             <button className="secondary-button" disabled={visualBusy}
               onClick={() => void saveCharacterReference()}>Guardar referencia visual</button>
           </div>}
