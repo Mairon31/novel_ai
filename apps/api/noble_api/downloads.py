@@ -170,6 +170,10 @@ class DownloadManager:
             # Check again after mkdir in case the path already existed as a link.
             if not target.parent.resolve().is_relative_to(root):
                 raise RuntimeError("Directorio de descarga no confiable")
+            # A failed crash-reconciliation conflict must not be bypassed by
+            # manually pressing Resume: never overwrite the existing final.
+            if target.exists() or target.is_symlink():
+                raise RuntimeError("Ya existe un GGUF final; resolver conflicto antes de reanudar")
             if not self.store.transition_download(
                     job_id, ("queued",), "downloading", error=None):
                 return
@@ -266,6 +270,7 @@ class DownloadManager:
                 "sha256_verified" if expected_sha else "local_hash_only",
             )
         except Exception as exc:
-            status = self.store.download(job_id)
-            if status and status["status"] not in ("paused", "cancelled"):
-                self.store.update_download(job_id, status="failed", error=str(exc)[:600])
+            self.store.transition_download(
+                job_id, ("queued", "downloading", "verifying"), "failed",
+                error=str(exc)[:600],
+            )
