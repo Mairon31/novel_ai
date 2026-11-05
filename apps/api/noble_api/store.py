@@ -26,14 +26,16 @@ class Store:
     def _conn(self):
         conn = sqlite3.connect(self.db, timeout=15)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        conn.execute("PRAGMA foreign_keys=ON")
+        # WAL is persisted in the DB header and is initialized once. Repeating
+        # journal_mode on every connection can contend with concurrent writers.
         conn.execute("PRAGMA busy_timeout=15000")
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA synchronous=NORMAL")
         return conn
 
     def _init_db(self):
         with self._conn() as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS settings (
                     name TEXT PRIMARY KEY, value TEXT NOT NULL
