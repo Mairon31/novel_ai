@@ -200,14 +200,16 @@ class NarrativeTests(unittest.TestCase):
         narrative = self.app.state.narrative
 
         async def scenario():
-            stalled = asyncio.Event()
+            waiting_for_next = asyncio.Event()
+            upstream_never_finishes = asyncio.Event()
             disconnect_flag = asyncio.Event()
             upstream_closed = asyncio.Event()
 
             async def fake_generate(_config, _messages):
                 try:
                     yield "Un primer fragmento"
-                    await stalled.wait()  # Upstream never sends another token.
+                    waiting_for_next.set()
+                    await upstream_never_finishes.wait()  # No second token.
                 finally:
                     upstream_closed.set()
 
@@ -225,7 +227,7 @@ class NarrativeTests(unittest.TestCase):
                         packets.append(packet)
                         if "event: delta" in packet:
                             async def drop_connection_when_upstream_stalls():
-                                await stalled.wait()
+                                await waiting_for_next.wait()
                                 disconnect_flag.set()
                             asyncio.create_task(drop_connection_when_upstream_stalls())
                 await asyncio.wait_for(consume(), timeout=2.5)
