@@ -403,3 +403,25 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Nueva suite `tests/test_sqlite_concurrency.py` prueba 50 commits de turnos concurrentes en 12 threads, unicidad/lectura completa, rollback ante error intermedio y FK de historia inexistente. Commit `676e79387378`.
 - [x] [CI run #41995580802](https://github.com/Mairon31/novel_ai/actions/runs/41995580802) — ejecución **completa y exitosa**: Python **104/104 OK**, frontend compilado y **24/24 Playwright PASS**, incluidas las tres pruebas nuevas. No hubo benchmark físico de GPU.
 - [ ] Esta prueba concurrente **no** certifica simultaneidad con imágenes/ComfyUI, atomicidad de turno + escena, ni comportamiento GPU; las tareas correspondientes siguen abiertas en `TODO.md`.
+
+## 2026-11-05 — P0: commit atómico narrativo, galería segura y descargas HTTP Range
+
+**Rama:** `master`, sin PR ni rama adicional. **Referencia:** `TODO.md` (AUD-001 y AUD-003), `ARGON_AUDITORIA.md` §§05, 18, 19, 21.
+
+### Entregado y probado
+
+- [x] `narrative.py` ahora guarda el turno, `stories.updated_at` y la transición heurística de escenario en una sola transacción. `visual_state.py` ofrece `observe_turn_in_transaction(conn, ...)`, sin abrir otra conexión ni confirmar por separado. Fallar en esa operación revierte el turno. Commits `0ac1eaf3ecea`, `855a18201dd8`.
+- [x] `tests/test_sqlite_concurrency.py`: pruebas de rollback por fallo visual, reintento idempotente tras rollback y ausencia de transición duplicada. Commit `7c47226e0800`. [CI #41996621807](https://github.com/Mairon31/novel_ai/actions/runs/41996621807): exitosa.
+- [x] `visual_state.py` exige UUID canónico y rutas bajo `story-assets` para versiones de galería y arte legado, rechazando symlinks que salgan de la carpeta. `media.py` aplica esa validación antes de entregar `scene.webp`. Las rutas inválidas responden 404. Commits `5149d75fa349`, `329949af2ccb`, `f65911fb04fd`.
+- [x] Los archivos temporales de escritura (`*.webp.part`) se validan antes de usarse; si falla `legacy_copy`, la publicación de imagen revierte la nueva fila de galería y su selección, sin dejar un registro activado a medias. Commits `c664d0c7649d`, `4dc27ae329a6`.
+- [x] `tests/test_visual_state.py` añade ataques de enlace simbólico a galería/legacy, rechazo de temporal enlazado y rollback de publicación. Commit `3d770ec4a076`. [CI #41997120265](https://github.com/Mairon31/novel_ai/actions/runs/41997120265): **109/109 Python + 24/24 Playwright PASS**.
+- [x] `downloads.py` valida respuesta 206 completa (`start/end/total`, `Content-Length` si existe y bytes entregados), rechaza 206 sin solicitud de Range y no registra fragmentos truncados como modelo instalado. Commits `6e4725d6e085`, `9334c83df501`, `81cb36acd232`.
+- [x] `tests/test_api_model_hub.py` añade escenarios de Content-Range corrupto, rango no solicitado y descarga truncada incluso sin tamaño/hash upstream. Commits `35c34856a078`, `21bf0d94e238`, `accf29454aa5`. [CI #41997636863](https://github.com/Mairon31/novel_ai/actions/runs/41997636863): **112/112 Python + 24/24 Playwright PASS**.
+- [x] `Store.assign` ahora rechaza archivos GGUF de registros externos y symlinks fuera de `models_dir`; prueba nueva `test_installed_model_outside_storage_cannot_be_assigned` (commits `6ebde66a6fd0`, `f4e5a4871906`). La comprobación de CI de este último SHA se registra por separado.
+
+### Límites y próxima intervención
+
+- [ ] La atomicidad recién introducida cubre el turno y la **transición visual heurística**, no todas las mutaciones del canon, de `scene_plans` ni las copias de activos entre ramas. Aún falta migración/Unit of Work integral.
+- [ ] Aunque se validan rutas antes de operar, quedan posibles carreras TOCTOU con symlinks manipulados entre comprobación y apertura; para máxima protección revisar apertura por descriptor de archivo y modo sin seguimiento de enlaces.
+- [ ] Completar pruebas de pausa durante red, interrupción de hash, checksum no anunciado y recuperación tras corte, con registro de byte y commit. Los tests actuales son offline/mocks, **no descargas reales de modelos enormes**.
+- [ ] Cancelación real de cómputo en runtime/worker, VRAM bajo ciclos LLM/ComfyUI, memoria híbrida, Lorebooks y sprites siguen abiertos en `TODO.md`.
