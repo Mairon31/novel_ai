@@ -71,10 +71,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     api.stories().then(result => {
       if (live) {
         setStories(result.stories);
-        if (initialStoryId) {
-          setActive(result.stories.find(story => story.id === initialStoryId) || null);
-          setSection('story');
-        }
+        setActive(initialStoryId
+          ? result.stories.find(story => story.id === initialStoryId) || null
+          : null);
+        setSection('story');
       }
     }).catch((exc: Error) => { if (live) setError(exc.message); })
       .finally(() => { if (live) setLoading(false); });

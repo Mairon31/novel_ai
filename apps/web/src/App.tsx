@@ -409,8 +409,12 @@ export default function App() {
       const result = await api.patchSettings({ setup_complete: true, image_mode: imageMode });
       setSettings(result);
       setShowSetup(false);
-      changePage('modelos');
-      setNotice('Configuración inicial guardada. Ahora puedes buscar tu modelo narrativo.');
+      // Completing initial setup must not silently discard a bookmarked
+      // story/reader/creator URL. The default unlinked start is Model Hub.
+      if (route.page === 'modelos') changePage('modelos');
+      setNotice(route.page === 'modelos'
+        ? 'Configuración inicial guardada. Ahora puedes buscar tu modelo narrativo.'
+        : 'Configuración inicial guardada. El enlace solicitado sigue abierto.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }

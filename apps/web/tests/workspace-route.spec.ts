@@ -62,6 +62,9 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   await expect(page.getByRole('heading', { name: story.title })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: story.title })).toBeVisible();
+  await page.getByRole('button', { name: 'Creator Studio' }).click();
+  await expect(page).toHaveURL(/#\/creator$/);
+  await expect(page.getByText('Selecciona una historia para editarla')).toBeVisible();
 
   await page.goto('/#/infraestructura');
   await expect(page.getByRole('heading', { name: /Diagnóstico/ })).toBeVisible();
@@ -69,4 +72,32 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
   await page.goto('/#/modelos');
   await expect(page.getByRole('heading', { name: /Centro de modelos/ })).toBeVisible();
+});
+
+test('first-time setup does not discard a bookmarked story URL', async ({ page }) => {
+  const created = await page.request.post('/api/v1/stories', { data: {
+    title: 'Enlace inicial ' + test.info().project.name,
+    premise: 'Una investigadora despierta en un antiguo reino subterráneo.',
+    protagonist_name: 'Iris',
+  } });
+  expect(created.status()).toBe(201);
+  const story = await created.json();
+  // Simulate a fresh UI profile without mutating the shared backend setting.
+  await page.route('**/api/v1/settings', async route => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    const response = await route.fetch();
+    const settings = await response.json();
+    await route.fulfill({ response, json: { ...settings, setup_complete: false } });
+  });
+  await page.goto('/#/historia/' + story.id);
+  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  await expect(setup).toBeVisible();
+  await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+  await expect(setup).toBeHidden();
+  await expect(page).toHaveURL(new RegExp('#/historia/' + story.id + '$'));
+  await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
+    .toBeVisible();
 });
