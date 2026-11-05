@@ -163,6 +163,24 @@ class VisualRegistryTests(unittest.TestCase):
             self.assertEqual(stored["characters"][0]["revision"], 2)
             self.assertEqual(stored["characters"][0]["id"], ident)
 
+    def test_existing_legacy_art_is_migrated_once(self):
+        legacy=self.path/"story-assets"/self.story/"scene.webp"
+        legacy.parent.mkdir(parents=True,exist_ok=True)
+        original=Image.new("RGB",(60,70),(130,70,45))
+        original.save(legacy,"WEBP")
+        self.assertEqual(len(self.app.state.visual.all(self.story)["assets"]),1)
+        first=self.app.state.visual.all(self.story)
+        self.assertEqual(len(first["assets"]),1)
+        self.assertEqual(first["assets"][0]["origin"],"manual")
+        self.assertEqual(len(self.client.get(
+            f"/api/v1/stories/{self.story}/scene-image").content)>44,True)
+        app2=create_app(self.path)
+        with TestClient(app2) as client:
+            again=client.get(f"/api/v1/stories/{self.story}/visual-state")
+            self.assertEqual(again.status_code,200,again.text)
+            self.assertEqual(len(again.json()["assets"]),1)
+            self.assertEqual(again.json()["selected_asset_id"],first["selected_asset_id"])
+
     def test_invalid_images_dont_destroy_gallery(self):
         self.assertEqual(self.upload().status_code, 200)
         earlier = self.state()
