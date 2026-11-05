@@ -5,7 +5,7 @@ import {
   Sparkles, UploadCloud, UserRound, X,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -50,6 +50,14 @@ export function VisualReader({
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
+  const [visual, setVisual] = useState<VisualState | null>(null);
+  const [sceneLocation, setSceneLocation] = useState('');
+  const [visualBusy, setVisualBusy] = useState(false);
+  const [previewPrompt, setPreviewPrompt] = useState('');
+  const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
+  const [character, setCharacter] = useState<VisualCharacterDraft>({
+    name: '', appearance: '', outfit: '', distinguishing_features: '',
+  });
   const [elapsed, setElapsed] = useState(0);
   const [imagePrompt, setImagePrompt] = useState(active?.premise || '');
   const [illustrating, setIllustrating] = useState(false);
@@ -71,6 +79,17 @@ export function VisualReader({
   useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
   useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
   useEffect(() => { setImagePrompt(active?.premise || ''); }, [active?.id]);
+  useEffect(() => {
+    if (!active) { setVisual(null); return; }
+    let live = true;
+    setVisual(null); setPreviewPrompt('');
+    api.visualState(active.id).then(current => {
+      if (!live) return;
+      setVisual(current);
+      setSceneLocation(current.current_scene.location);
+    }).catch(() => { /* gallery remains optional and doesn't block reading */ });
+    return () => { live = false; };
+  }, [active?.id, turns.length]);
   useEffect(() => {
     if (!generating) { setElapsed(0); return; }
     const start = Date.now();
@@ -127,10 +146,62 @@ export function VisualReader({
   async function upload(file: File | undefined) {
     if (!active || !file) return;
     setUpdating(true); setReaderError('');
-    try { onUpdateStory(await api.uploadSceneImage(active.id, file)); setTab('gallery'); }
+    try { onUpdateStory(await api.uploadSceneImage(active.id, file)); await refreshVisual(active.id); setTab('gallery'); }
     catch (e) { setReaderError((e as Error).message); }
     finally { setUpdating(false); }
   }
+  async function refreshVisual(storyId: string) {
+    const next = await api.visualState(storyId);
+    setVisual(next);
+    setSceneLocation(next.current_scene.location);
+  }
+  async function saveSceneLocation() {
+    if (!active || sceneLocation.trim().length < 2) return;
+    setVisualBusy(true); setReaderError('');
+    try {
+      const next = await api.setSceneLocation(active.id, sceneLocation.trim());
+      setVisual(next); setSceneLocation(next.current_scene.location);
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setVisualBusy(false); }
+  }
+  async function chooseArtwork(assetId: string) {
+    if (!active) return;
+    setVisualBusy(true); setReaderError('');
+    try {
+      const next = await api.chooseSceneImage(active.id, assetId);
+      setVisual(next);
+      onUpdateStory({
+        ...active, scene_image_url: '/api/v1/stories/' + active.id + '/scene-image?v=' + Date.now(),
+      });
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setVisualBusy(false); }
+  }
+  function editVisualCharacter(person: VisualState['characters'][number]) {
+    setEditingCharacterId(person.id);
+    setCharacter({ name: person.name, appearance: person.appearance,
+      outfit: person.outfit, distinguishing_features: person.distinguishing_features });
+  }
+  async function saveCharacter() {
+    if (!active || !character.name.trim() || character.appearance.trim().length < 12) return;
+    setVisualBusy(true); setReaderError('');
+    try {
+      await api.saveVisualCharacter(active.id, character, editingCharacterId || undefined);
+      await refreshVisual(active.id);
+      setEditingCharacterId(null);
+      setCharacter({ name: '', appearance: '', outfit: '', distinguishing_features: '' });
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setVisualBusy(false); }
+  }
+  async function previewIllustrationPrompt() {
+    if (!active || imagePrompt.trim().length < 8) return;
+    setVisualBusy(true); setReaderError('');
+    try {
+      const result = await api.imagePromptPreview(active.id, imagePrompt.trim());
+      setPreviewPrompt(result.prompt);
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setVisualBusy(false); }
+  }
+
   async function illustrateScene() {
     if (!active || !imagePrompt.trim() || illustrating) return;
     setIllustrating(true); setReaderError('');
@@ -142,7 +213,7 @@ export function VisualReader({
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
         story.scene_image_url + '?v=' + Date.now() : null });
-      if (revision === mediaRevision.current) setTab('gallery');
+      if (revision === mediaRevision.current) { await refreshVisual(requestedStoryId); setTab('gallery'); }
     } catch (e) { setReaderError((e as Error).message); }
     finally { setIllustrating(false); }
   }
@@ -330,6 +401,36 @@ export function VisualReader({
             onClick={() => void saveCanon()}><Check size={15}/> Guardar canon</button>
           <h4>Estado</h4>
           <p>{turns.length} escenas guardadas · último modelo: {turns.at(-1)?.model || 'Sin iniciar'}</p>
+          <h4>Fichas de identidad visual</h4>
+          <p>Establece rasgos y vestuario para mantenerlos en cada prompt de ComfyUI.</p>
+          {visual?.characters.map(person =>
+            <button className="noble-character-entry" key={person.id}
+              onClick={() => editVisualCharacter(person)} title="Editar ficha visual">
+              <span>{person.name}</span><small>Revisión {person.revision} · Editar</small>
+            </button>)}
+          <label className="noble-inspector-field">Nombre del personaje
+            <input value={character.name} maxLength={80} aria-label="Nombre visual"
+              onChange={e => setCharacter(x => ({ ...x, name: e.target.value }))}/></label>
+          <label className="noble-inspector-field">Apariencia consistente
+            <textarea value={character.appearance} maxLength={1500} rows={4}
+              aria-label="Apariencia visual" placeholder="Cabello, ojos, edad aparente, silueta, especie..."
+              onChange={e => setCharacter(x => ({ ...x, appearance: e.target.value }))}/></label>
+          <label className="noble-inspector-field">Vestuario
+            <input value={character.outfit} maxLength={650} aria-label="Vestuario visual"
+              onChange={e => setCharacter(x => ({ ...x, outfit: e.target.value }))}/></label>
+          <label className="noble-inspector-field">Rasgos distintivos
+            <input value={character.distinguishing_features} maxLength={650} aria-label="Rasgos visuales"
+              onChange={e => setCharacter(x => ({ ...x, distinguishing_features: e.target.value }))}/></label>
+          <button className="secondary-button"
+            disabled={visualBusy || character.appearance.trim().length < 12 || !character.name.trim()}
+            onClick={() => void saveCharacter()}>
+            <Check size={15}/>{editingCharacterId ? 'Guardar ficha visual' : 'Añadir personaje visual'}
+          </button>
+          {editingCharacterId && <button className="secondary-button" onClick={() => {
+            setEditingCharacterId(null);
+            setCharacter({ name: '', appearance: '', outfit: '', distinguishing_features: '' });
+          }}>Cancelar edición</button>}
+
           {active.origin_story_id && <p className="noble-inspector-hint">
             Esta historia es una rama independiente. Las decisiones futuras no modifican la original.
           </p>}
@@ -348,10 +449,34 @@ export function VisualReader({
             </div>) : <p>Todavía no se han generado escenas.</p>}
         </>}
         {tab === 'gallery' && <>
-          <h4>Galería de esta historia</h4>
+          <h4>Escena y localización</h4>
+          {visual && <p className="noble-inspector-hint">
+            {visual.current_scene.detection === 'heuristic' ?
+              'Cambio detectado por texto: verifica que el lugar sea correcto.' :
+              'Ubicación registrada para esta historia.'}
+            {' '}Escenas registradas: {visual.scenes.length}.
+          </p>}
+          <label className="noble-inspector-field">Lugar actual
+            <input aria-label="Lugar actual" value={sceneLocation} maxLength={120}
+              onChange={e => setSceneLocation(e.target.value)}/></label>
+          <button className="secondary-button" disabled={visualBusy || sceneLocation.trim().length < 2}
+            onClick={() => void saveSceneLocation()}><Check size={15}/> Confirmar escenario</button>
+          <h4>Galería versionada ({visual?.assets.length || 0})</h4>
           {active.scene_image_url ? <img className="noble-gallery-image"
             src={active.scene_image_url} alt={'Ilustración de ' + active.title}/> :
             <p>Aún no hay una ilustración en esta historia.</p>}
+          {!!visual?.assets.length && <div className="noble-version-gallery">
+            {visual.assets.map(asset => <div key={asset.id} className={'noble-art-version ' +
+              (asset.selected ? 'is-selected' : '')}>
+              <img src={asset.url} loading="lazy"
+                alt={'Versión ilustrada ' + asset.id.slice(0, 8)}/>
+              <small>{asset.origin === 'comfyui' ? 'ComfyUI' : 'Importada'}
+                {asset.seed != null ? ' · Seed ' + asset.seed : ''}</small>
+              <button disabled={visualBusy || asset.selected}
+                onClick={() => void chooseArtwork(asset.id)}>
+                {asset.selected ? 'En uso' : 'Usar esta versión'}</button>
+            </div>)}
+          </div>}
           <button className="secondary-button" disabled={updating}
             onClick={() => fileRef.current?.click()}><UploadCloud size={16}/> Importar ilustración</button>
           {imageMode !== 'off' && <>
@@ -359,6 +484,11 @@ export function VisualReader({
               <textarea rows={4} minLength={8} maxLength={2400}
                 value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
                 placeholder="Personajes, lugar, luz, expresión y estilo visual..."/></label>
+            <button className="secondary-button" disabled={visualBusy || imagePrompt.trim().length < 8}
+              onClick={() => void previewIllustrationPrompt()}>Ver prompt completo y fichas</button>
+            {previewPrompt && <div className="noble-prompt-preview">
+              <strong>Prompt que recibirá ComfyUI</strong><p>{previewPrompt}</p>
+            </div>}
             <button className="primary-button" disabled={illustrating || imagePrompt.trim().length < 8}
               onClick={() => void illustrateScene()}>
               {illustrating ? <LoaderCircle className="rotating" size={16}/> : <Image size={16}/>}
