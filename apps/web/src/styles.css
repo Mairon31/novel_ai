@@ -1084,3 +1084,10 @@
   .creator-cover-preview-copy strong{font-size:15px}
   .creator-cover-preview-copy p{font-size:11px}
 }
+
+/* Lorebook context preview: preserve author facts without horizontal overflow. */
+.creator-lorebook-preview{margin-top:12px;border-top:1px solid #424963;padding-top:12px}
+.creator-lorebook-preview summary{cursor:pointer;color:#d1c7ed;font-size:12px}
+.creator-lorebook-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;
+  max-height:280px;overflow:auto;margin:12px 0 0;padding:15px;border-radius:10px;
+  background:#151c2d;color:#d1dcef;font:12px/1.65 ui-monospace,SFMono-Regular,monospace}
