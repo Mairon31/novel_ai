@@ -433,11 +433,41 @@ class VisualState:
             raise
         return character_map
 
+    def _story_assets_root(self, story_id: str) -> Path:
+        """Keep all gallery files inside Noble's own UUID-scoped directory."""
+        try:
+            if str(uuid.UUID(story_id)) != story_id:
+                raise ValueError("UUID no canónico")
+        except (TypeError, AttributeError, ValueError) as exc:
+            raise ValueError("Identificador de historia inválido") from exc
+        base = self.store.root.resolve() / "story-assets"
+        target = base / story_id
+        if (base.is_symlink() or target.is_symlink() or
+                not target.resolve().is_relative_to(base)):
+            raise ValueError("Directorio visual fuera del espacio administrado")
+        return target
+
     def _asset_path(self, story_id: str, asset_id: str) -> Path:
-        return self.store.root / "story-assets" / story_id / "images" / (asset_id + ".webp")
+        try:
+            if str(uuid.UUID(asset_id)) != asset_id:
+                raise ValueError("UUID no canónico")
+        except (TypeError, AttributeError, ValueError) as exc:
+            raise ValueError("Identificador de ilustración inválido") from exc
+        story_root = self._story_assets_root(story_id)
+        asset = story_root / "images" / (asset_id + ".webp")
+        if asset.is_symlink() or not asset.resolve().is_relative_to(story_root):
+            raise ValueError("Archivo visual fuera del espacio administrado")
+        return asset
+
+    def legacy_path(self, story_id: str) -> Path:
+        story_root = self._story_assets_root(story_id)
+        legacy = story_root / "scene.webp"
+        if legacy.is_symlink() or not legacy.resolve().is_relative_to(story_root):
+            raise ValueError("Ruta de ilustración fuera del espacio administrado")
+        return legacy
 
     def legacy_copy(self, story_id: str, source: Path) -> None:
-        legacy = self.store.root / "story-assets" / story_id / "scene.webp"
+        legacy = self.legacy_path(story_id)
         legacy.parent.mkdir(parents=True, exist_ok=True)
         temp = legacy.with_suffix(".webp.part")
         try:
