@@ -4,9 +4,15 @@ El módulo Creator Studio → Imágenes permite componer una novela visual utili
 
 ## Importación
 
-Abre Creator Studio, elige un proyecto y entra en Imágenes. Selecciona un Fondo de escenario o Personaje / primer plano. Escribe un nombre y una descripción breve (caption), como «castillo iluminado en la ciudad» o «Aira sonríe en el castillo». Puedes vincular el retrato a un NPC de la misma historia.
+Abre Creator Studio, elige un proyecto y entra en Imágenes. Selecciona Portada editorial, Fondo de escenario o Personaje / primer plano. Escribe un nombre y una descripción breve (caption), como «castillo iluminado en la ciudad» o «Aira sonríe en el castillo». Puedes vincular el retrato a un NPC de la misma historia.
 
-Los archivos admitidos son PNG, JPEG y WebP hasta 12 MiB. Se comprueba la imagen con Pillow y se limita la resolución. El fondo queda como WebP RGB y el primer plano como PNG RGBA para conservar la transparencia.
+Los archivos admitidos son PNG, JPEG y WebP hasta 12 MiB. Se comprueba la imagen con Pillow y se limita la resolución. La portada y el fondo quedan como WebP RGB y el primer plano como PNG RGBA para conservar la transparencia.
+
+## Portada de la historia
+
+Una portada es un recurso editorial independiente de las imágenes que genera o selecciona el narrador. Al importar una imagen como `Portada editorial`, Creator Studio la elige para esa historia. Puedes subir varias, marcar otra con `Usar como portada` o desvincularla mediante `Quitar portada` sin borrar la historia.
+
+La Biblioteca y la ficha de historia muestran `cover_image_url` cuando está disponible. En historias sin portada se sigue usando el arte de escena anterior como alternativa, sin pérdida de contenido. La selección se conserva en SQLite como `stories.cover_asset_id`; durante un fork se clona el archivo y se remapea a un ID propio de la nueva historia. Eliminar el archivo que está seleccionado desactiva la portada para esa historia. Las portadas no forman parte de la detección de escenas del lector.
 
 ## Selección durante la lectura
 
@@ -18,12 +24,13 @@ La operación usa archivos locales guardados. No solicita generación ni descarg
 
 - GET /api/v1/stories/{id}/creator/assets — lista de recursos y URLs.
 - POST /api/v1/stories/{id}/creator/assets — multipart con kind, label, caption, file y character_id opcional.
+- PUT /api/v1/stories/{id}/creator/cover — selecciona o quita la portada con `{"asset_id":"uuid"}` o `{"asset_id":null}`.
 - GET /api/v1/stories/{id}/creator/assets/scene — background, foreground y selection.
 - GET /api/v1/stories/{id}/creator/assets/{asset_id}/file — entrega el archivo validado según su historia.
 - PUT /api/v1/stories/{id}/creator/assets/{asset_id} — actualiza nombre y caption.
 - DELETE /api/v1/stories/{id}/creator/assets/{asset_id} — elimina el recurso.
 
-Tabla SQLite: creator_media_assets. Al crear una rama se copian los archivos con UUID propios y se remapea la asociación del personaje.
+Tablas SQLite: creator_media_assets y stories.cover_asset_id. Al crear una rama se copian los archivos con UUID propios y se remapean tanto la asociación del personaje como la portada.
 
 ## Próximas mejoras de este módulo
 
