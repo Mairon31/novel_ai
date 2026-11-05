@@ -1265,3 +1265,11 @@
   .noble-reader-layout[data-reader-mode="chat"] .noble-reader-user{max-width:93%}
   .noble-reader-layout[data-reader-mode="chat"] .noble-narration{max-width:94%}
 }
+
+
+/* Deterministic visual director: planning and manual background reuse only. */
+.noble-director-result{border:1px solid #4a5a81;background:linear-gradient(140deg,#242b47,#171e34);border-radius:11px;padding:14px;margin:12px 0 18px}
+.noble-director-result strong{color:#c5b7ff;font-size:12px;letter-spacing:.7px;overflow-wrap:anywhere}
+.noble-director-result p{line-height:1.65}
+.noble-director-result small{display:block;margin:8px 0 12px;color:#aab8d9;font-size:10px;line-height:1.8;overflow-wrap:anywhere}
+.noble-director-result .secondary-button{margin-top:8px}

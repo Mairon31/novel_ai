@@ -242,6 +242,26 @@ export type VisualState = {
   selected_asset_id: string | null;
 };
 
+export type VisualDirectorAction =
+  | 'REUSE_BACKGROUND'
+  | 'UPDATE_SPRITE_EMOTION'
+  | 'GENERATE_NEW_BACKGROUND'
+  | 'GENERATE_EVENT_CG';
+export type VisualDirectorIntent = 'auto' | 'background' | 'emotion' | 'event';
+export type VisualDirectorPreview = {
+  scene_id: string;
+  cache_key: string;
+  context: {
+    location: string; time_of_day: string; weather: string;
+    shot: ScenePlan['shot']; lighting: ScenePlan['lighting'];
+  };
+  action: VisualDirectorAction; reason: string;
+  background_asset_id: string | null;
+  background_url: string | null;
+  background_cached: boolean;
+  inference_used: false; generation_started: false;
+};
+
 export type ResourceConfig = {
   mode: 'monitor' | 'guard'; gpu_index: number; minimum_free_mib: number;
   serialize_local_gpu: boolean;

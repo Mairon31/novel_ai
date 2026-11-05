@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -73,6 +73,17 @@ export const api = {
     '/provider-credentials/openrouter', { method: 'DELETE' }),
   scenePlan: (storyId: string) => request<ScenePlan>(
     '/stories/' + encodeURIComponent(storyId) + '/scene-plan'),
+  previewVisualDirector: (storyId: string, intent: VisualDirectorIntent) =>
+    request<VisualDirectorPreview>('/stories/' + encodeURIComponent(storyId) +
+      '/visual-director/preview', json({ intent })),
+  registerVisualBackground: (storyId: string, assetId: string, expected_cache_key: string) =>
+    request<VisualDirectorPreview>('/stories/' + encodeURIComponent(storyId) +
+      '/visual-director/backgrounds/' + encodeURIComponent(assetId),
+      json({ expected_cache_key })),
+  applyVisualBackground: (storyId: string, assetId: string, expected_cache_key: string) =>
+    request<{ selected_asset_id: string; action: string; background_cached: boolean }>(
+      '/stories/' + encodeURIComponent(storyId) + '/visual-director/apply',
+      json({ asset_id: assetId, expected_cache_key })),
   saveScenePlan: (storyId: string, plan: ScenePlanInput) => request<ScenePlan>(
     '/stories/' + encodeURIComponent(storyId) + '/scene-plan',
     { method: 'PUT', body: JSON.stringify(plan) }),

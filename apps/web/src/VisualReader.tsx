@@ -5,7 +5,7 @@ import {
   Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download, EyeOff, History,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot, EpisodicSearch } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot, EpisodicSearch, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -91,6 +91,11 @@ export function VisualReader({
   const [characterReferenceId, setCharacterReferenceId] = useState('');
   const [visualBusy, setVisualBusy] = useState(false);
   const [previewPrompt, setPreviewPrompt] = useState('');
+  const [directorIntent, setDirectorIntent] = useState<VisualDirectorIntent>('auto');
+  const [directorPreview, setDirectorPreview] = useState<VisualDirectorPreview | null>(null);
+  const [directorBusy, setDirectorBusy] = useState(false);
+  const [directorError, setDirectorError] = useState('');
+  const directorRequest = useRef(0);
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
   const [character, setCharacter] = useState<VisualCharacterDraft>({
     name: '', appearance: '', outfit: '', distinguishing_features: '',
@@ -151,6 +156,10 @@ export function VisualReader({
     setImagePrompt(active?.premise || '');
     setReferenceAssetId('');
     setIllustrationNotice('');
+    directorRequest.current += 1;
+    setDirectorPreview(null);
+    setDirectorError('');
+    setDirectorIntent('auto');
   }, [active?.id]);
   useEffect(() => {
     if (!active) { setVisual(null); return; }
@@ -247,7 +256,12 @@ export function VisualReader({
   async function upload(file: File | undefined) {
     if (!active || !file) return;
     setUpdating(true); setReaderError('');
-    try { onUpdateStory(await api.uploadSceneImage(active.id, file)); await refreshVisual(active.id); setTab('gallery'); }
+    try {
+      onUpdateStory(await api.uploadSceneImage(active.id, file));
+      await refreshVisual(active.id);
+      setDirectorPreview(null);
+      setTab('gallery');
+    }
     catch (e) { setReaderError((e as Error).message); }
     finally { setUpdating(false); }
   }
@@ -266,6 +280,7 @@ export function VisualReader({
       visualLoadRevision.current += 1;
       setVisual(next); setSceneLocation(next.current_scene.location);
       setScenePlan(await api.scenePlan(active.id));
+      setDirectorPreview(null);
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
@@ -324,11 +339,53 @@ export function VisualReader({
       const saved = await api.saveScenePlan(active.id, plan);
       setScenePlan(saved);
       setPreviewPrompt('');
+      setDirectorPreview(null);
       setIllustrationNotice('Plan de escena guardado. Se utilizará para las próximas ilustraciones.');
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
 
+  async function inspectVisualDirector() {
+    if (!active) return;
+    const sequence = ++directorRequest.current;
+    setDirectorBusy(true); setDirectorError('');
+    try {
+      const preview = await api.previewVisualDirector(active.id, directorIntent);
+      if (directorRequest.current === sequence) setDirectorPreview(preview);
+    } catch (exc) {
+      if (directorRequest.current === sequence) setDirectorError((exc as Error).message);
+    } finally { if (directorRequest.current === sequence) setDirectorBusy(false); }
+  }
+  async function registerDirectorBackground(assetId: string) {
+    if (!active || !directorPreview) return;
+    const sequence = ++directorRequest.current;
+    setDirectorBusy(true); setDirectorError('');
+    try {
+      const preview = await api.registerVisualBackground(
+        active.id, assetId, directorPreview.cache_key);
+      if (directorRequest.current === sequence) setDirectorPreview(preview);
+    } catch (exc) {
+      if (directorRequest.current === sequence) setDirectorError((exc as Error).message);
+    } finally { if (directorRequest.current === sequence) setDirectorBusy(false); }
+  }
+  async function reuseDirectorBackground() {
+    if (!active || !directorPreview?.background_asset_id) return;
+    const story = active;
+    const sequence = ++directorRequest.current;
+    setDirectorBusy(true); setDirectorError('');
+    try {
+      await api.applyVisualBackground(
+        story.id, directorPreview.background_asset_id, directorPreview.cache_key);
+      if (directorRequest.current !== sequence) return;
+      await refreshVisual(story.id);
+      onUpdateStory({
+        ...story, scene_image_url: '/api/v1/stories/' + story.id + '/scene-image?v=' + Date.now(),
+      });
+      setIllustrationNotice('Fondo reutilizado desde la galería. No se ejecutó ComfyUI.');
+    } catch (exc) {
+      if (directorRequest.current === sequence) setDirectorError((exc as Error).message);
+    } finally { if (directorRequest.current === sequence) setDirectorBusy(false); }
+  }
   function toggleVisibleCharacter(id: string, present: boolean) {
     setScenePlan(plan => plan ? {
       ...plan,
@@ -764,6 +821,53 @@ export function VisualReader({
               <Check size={15}/> Guardar plan de escena
             </button>
           </>}
+          <h4>Director visual y caché de fondos</h4>
+          <p className="noble-inspector-hint">Decide de forma determinista si reutilizar un
+            fondo importado o recomendar arte nuevo. El contexto incluye lugar, hora,
+            clima, plano y luz; la emoción no cambia la clave de fondo.
+            Ninguna evaluación ejecuta modelos.</p>
+          <label className="noble-inspector-field">Tipo de cambio visual
+            <select aria-label="Intención visual del director" value={directorIntent}
+              onChange={event => {
+                setDirectorIntent(event.target.value as VisualDirectorIntent);
+                setDirectorPreview(null);
+              }}>
+              <option value="auto">Automático / mismo escenario</option>
+              <option value="background">Buscar fondo</option>
+              <option value="emotion">Cambiar expresión del personaje</option>
+              <option value="event">Ilustración especial de evento</option>
+            </select>
+          </label>
+          <button className="secondary-button" disabled={directorBusy}
+            onClick={() => void inspectVisualDirector()}>
+            <Palette size={16}/> {directorBusy ? 'Evaluando...' : 'Evaluar director visual'}
+          </button>
+          {directorError && <p className="narrative-error" role="alert">{directorError}</p>}
+          {directorPreview && <div className="noble-director-result" role="status">
+            <strong>{directorPreview.action.replaceAll('_', ' ')}</strong>
+            <p>{directorPreview.reason}</p>
+            <small>Contexto: {directorPreview.context.location || 'sin lugar'}
+              {' · '}{directorPreview.context.time_of_day || 'hora no confirmada'}
+              {' · '}{directorPreview.context.weather || 'clima no confirmado'}
+              {' · '}{directorPreview.context.shot}
+              {' · '}{directorPreview.context.lighting}</small>
+            {directorPreview.background_cached && directorPreview.background_asset_id &&
+              <button className="secondary-button" disabled={directorBusy}
+                onClick={() => void reuseDirectorBackground()}>
+                <Image size={16}/> Reutilizar fondo sin generar
+              </button>}
+            {!directorPreview.background_cached && visual?.selected_asset_id &&
+              visual.assets.some(asset => asset.id === visual.selected_asset_id &&
+                asset.origin === 'manual') &&
+              <button className="secondary-button" disabled={directorBusy}
+                onClick={() => void registerDirectorBackground(visual.selected_asset_id!)}>
+                <Check size={16}/> Registrar fondo manual para este contexto
+              </button>}
+            <p className="noble-inspector-hint">El director prepara decisiones.
+              Las emociones y CG requieren sprites o generación por separado;
+              no se ha producido ninguna imagen automáticamente. Un recurso de
+              Creator Studio con coincidencia de pie de foto puede tener prioridad visual.</p>
+          </div>}
           <h4>Galería versionada ({visual?.assets.length || 0})</h4>
           {active.scene_image_url ? <img className="noble-gallery-image"
             src={active.scene_image_url} alt={'Ilustración de ' + active.title}/> :
