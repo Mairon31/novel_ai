@@ -615,7 +615,10 @@ def mount_visual_routes(app, visual: VisualState):
 
     @app.get("/api/v1/stories/{story_id}/gallery/{asset_id}")
     def image(story_id: uuid.UUID, asset_id: uuid.UUID):
-        return visual.asset_response(str(story_id), str(asset_id))
+        try:
+            return visual.asset_response(str(story_id), str(asset_id))
+        except ValueError as exc:
+            raise HTTPException(404, "Ruta de ilustración no válida") from exc
 
     @app.post("/api/v1/stories/{story_id}/gallery/{asset_id}/select")
     def select(story_id: uuid.UUID, asset_id: uuid.UUID):
