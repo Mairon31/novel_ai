@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import io
 import json
+import re
 import secrets
 import time
 import uuid
@@ -38,12 +39,15 @@ class ImageSettings(BaseModel):
 class SceneIllustration(BaseModel):
     prompt: str = Field(min_length=8, max_length=2400)
     seed: int | None = Field(default=None, ge=0, le=2**53 - 1)
+    reference_asset_id: uuid.UUID | None = None
+    denoise: float = Field(default=0.62, ge=0.2, le=0.95)
 
 
-def workflow(settings: dict, prompt: str, seed: int) -> dict:
-    """ComfyUI API format: vanilla checkpoint -> sampler -> VAE -> SaveImage."""
+def workflow(settings: dict, prompt: str, seed: int,
+             reference_name: str | None = None, denoise: float = 0.62) -> dict:
+    """ComfyUI native img2img when a previously saved reference was selected."""
     model = settings["checkpoint"]
-    return {
+    nodes = {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": model}},
         "2": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["1", 1]}},
         "3": {"class_type": "CLIPTextEncode", "inputs": {
@@ -52,14 +56,32 @@ def workflow(settings: dict, prompt: str, seed: int) -> dict:
             "width": settings["width"], "height": settings["height"], "batch_size": 1}},
         "5": {"class_type": "KSampler", "inputs": {
             "seed": seed, "steps": settings["steps"], "cfg": settings["cfg"],
-            "sampler_name": "euler", "scheduler": "normal", "denoise": 1,
+            "sampler_name": "euler", "scheduler": "normal",
+            "denoise": denoise if reference_name else 1,
             "model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0],
-            "latent_image": ["4", 0]}},
+            "latent_image": ["9", 0] if reference_name else ["4", 0]}},
         "6": {"class_type": "VAEDecode", "inputs": {
             "samples": ["5", 0], "vae": ["1", 2]}},
         "7": {"class_type": "SaveImage", "inputs": {
             "filename_prefix": "NobleAI-Scene", "images": ["6", 0]}},
     }
+    if reference_name:
+        nodes["8"] = {"class_type": "LoadImage", "inputs": {"image": reference_name}}
+        nodes["9"] = {"class_type": "VAEEncode", "inputs": {
+            "pixels": ["8", 0], "vae": ["1", 2]}}
+        nodes.pop("4")
+    return nodes
+
+
+def resized_reference_png(raw: bytes, width: int, height: int) -> bytes:
+    """Normalize a story-owned WebP into a deterministic core LoadImage input."""
+    with Image.open(io.BytesIO(raw)) as source:
+        source.load()
+        source = ImageOps.exif_transpose(source).convert("RGB")
+        image = ImageOps.fit(source, (width, height), Image.Resampling.LANCZOS)
+        data = io.BytesIO()
+        image.save(data, format="PNG")
+        return data.getvalue()
 
 
 def save_webp(data: bytes, target) -> None:
@@ -144,10 +166,20 @@ class SceneImageService:
                 raise HTTPException(422, "Selecciona un checkpoint ComfyUI en Ajustes de imagen")
             seed = request.seed if request.seed is not None else secrets.randbelow(2**53)
             visual_prompt = self.narrative.visual.enriched_prompt(story_id, request.prompt)
+            reference = None
+            reference_digest = None
+            if request.reference_asset_id is not None:
+                try:
+                    reference, reference_digest = self.narrative.visual.reference_bytes(
+                        story_id, str(request.reference_asset_id))
+                except ValueError as exc:
+                    raise HTTPException(422, str(exc)) from exc
             active_scene = self.narrative.visual.scene(story_id)
             signature = hashlib.sha256(json.dumps({
                 "scene_id": active_scene["id"], "prompt": visual_prompt,
-                "config": config, "seed": seed, "workflow_version": "comfy-vanilla-v1",
+                "config": config, "seed": seed, "workflow_version": "comfy-native-v2",
+                "reference_sha256": reference_digest,
+                "denoise": request.denoise if reference is not None else None,
             }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
             started = time.monotonic()
             # If the user supplied a deterministic seed, an identical image
@@ -169,8 +201,24 @@ class SceneImageService:
             async with httpx.AsyncClient(
                     transport=self.transport, trust_env=False,
                     timeout=httpx.Timeout(25, connect=5)) as client:
+                reference_name = None
+                if reference is not None:
+                    reference_png = resized_reference_png(
+                        reference, config["width"], config["height"])
+                    uploaded = await client.post(
+                        config["base_url"] + "/upload/image",
+                        files={"image": ("NobleAI-Reference.png", reference_png, "image/png")},
+                        data={"type": "input", "overwrite": "false"},
+                        follow_redirects=False)
+                    uploaded.raise_for_status()
+                    meta = uploaded.json()
+                    reference_name = meta.get("name") if isinstance(meta, dict) else None
+                    if not isinstance(reference_name, str) or not re.fullmatch(
+                            r"[a-zA-Z0-9_.-]{1,180}", reference_name):
+                        raise HTTPException(502, "ComfyUI devolvió una referencia de imagen inválida")
                 response = await client.post(config["base_url"] + "/prompt",
-                    json={"prompt": workflow(config, visual_prompt, seed),
+                    json={"prompt": workflow(config, visual_prompt, seed,
+                        reference_name, request.denoise),
                           "client_id": str(uuid.uuid4())}, follow_redirects=False)
                 response.raise_for_status()
                 ident = response.json().get("prompt_id")
