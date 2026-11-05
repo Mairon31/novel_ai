@@ -34,7 +34,8 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.getByLabel('Simular activación Lorebook').fill('Entro en las ruinas.');
   await page.getByRole('button', { name: 'Previsualizar Lorebook' }).click();
   await expect(page.getByText('1 entrada(s) activada(s)')).toBeVisible();
-  await expect(page.getByText('Mapa de las ruinas · prioridad 95')).toBeVisible();
+  await expect(page.locator('.creator-hint[role="status"]').getByText(
+    'Mapa de las ruinas · prioridad 95')).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-lorebook.png', fullPage: true,
   });
