@@ -1,10 +1,10 @@
-"""Compile every Python cell of the published Colab QA v1.2 notebook."""
+"""Compile every Python cell of the published Colab supported QA v1.5 notebook."""
 import ast
 import json
 import unittest
 from pathlib import Path
 
-NOTEBOOK = Path(__file__).resolve().parents[1] / "notebooks" / "noble_ai_colab_qa_integral_v1_2.ipynb"
+NOTEBOOK = Path(__file__).resolve().parents[1] / "notebooks" / "noble_ai_colab_qa_integral_v1_5.ipynb"
 
 
 class ColabIntegralQaTests(unittest.TestCase):
@@ -24,7 +24,7 @@ class ColabIntegralQaTests(unittest.TestCase):
                        "python_tests", "web_build", "browser_tests",
                        "gpu_benchmark", "llama-server", "MODEL_REPO",
                        "ESTADO_ACTUAL.txt", "NOBLE_E2E_BASE_URL",
-                       "Noble_AI_Colab_QA_v1_2.zip", "files.download"):
+                       "Noble_AI_Colab_QA_v1_5.zip", "files.download"):
             self.assertIn(marker, code)
 
 

@@ -88,19 +88,12 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 
 No se incluyen checkpoints pesados, credenciales ni datos privados en Git. Respeta copyright/licencias de fuentes, modelos y recursos.
 
-### Google Colab: laboratorio integral QA
+### Colab QA — versión vigente
 
-Abre el [notebook integral v1.2 con logs y progreso en vivo](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_2.ipynb). Despliega Noble AI en localhost, prueba backend/navegador, ensaya GGUF con GPU si existe y descarga un ZIP con métricas, evidencias y logs. Si interrumpes una etapa, la celda de exportación permite recuperar un informe parcial. No publica túneles ni demuestra por sí sola rendimiento en GPU antes de ejecutarlo.
+El notebook oficial es **[Noble AI QA Integral v1.5](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_5.ipynb)**, ubicado en `notebooks/noble_ai_colab_qa_integral_v1_5.ipynb`.
 
-### Colab QA sin compilación CUDA de 30 minutos
+Despliega React y FastAPI en Colab, prueba Python y Playwright, descarga un GGUF Qwen3 4B con revisión y SHA256 fijados, ejecuta inferencia en NVIDIA cuando está disponible y exporta `Noble_AI_Colab_QA_v1_5.zip` con logs y métricas. **Separa la primera generación en frío de las posteriores**, comprueba turnos guardados en SQLite y puede incluir muestras del texto ficticio generado para evaluar coherencia (solo historia de prueba del notebook; se puede desactivar con `CAPTURE_SYNTHETIC_TEXT = False`).
 
-[Notebook integral v1.3](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_3.ipynb) · [Diagnóstico y correcciones del primer ensayo](docs/COLAB_QA_2026-11-05.md). Descarga llama.cpp CUDA precompilado con SHA256 y usa `npm install` para el frontend sin lockfile. Requiere ejecutar Colab para certificar resultados de GPU; no hay benchmark físico aún.
+**Primera evidencia GPU real:** [Informe QA v1.4](docs/COLAB_QA_V14_RESULTADOS.md) — Tesla T4, 20 etapas PASS, 3/3 respuestas narrativas reales, 3.161 MiB de VRAM máxima observada. La primera respuesta tardó 53,53 s y las dos siguientes 2,43 s; todavía no se conoce la causa precisa del tiempo en frío. No demuestra automáticamente rendimiento en una RTX 5060 Ti de 16 GB, generación de imágenes, TTS ni uso del túnel de workers.
 
-### Colab QA v1.4 — archivo GGUF validado antes de descargar
-
-[Ejecutar notebook v1.4](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_4.ipynb) · [Segundo ensayo y correcciones](docs/COLAB_QA_V13_RESULTADOS.md). Resuelve nombres de archivos del catálogo real de Hugging Face, ancla la revisión y calcula SHA256. El ensayo v1.3 aprobó API, React y Playwright; no alcanzó el benchmark por HTTP 404 del GGUF.
-
-
-### Primer LLM real verificado en Colab T4 (QA v1.4)
-
-El [ensayo documentado](docs/COLAB_QA_V14_RESULTADOS.md) completó **20/20 etapas**, incluidos 42 tests Python, 8 pruebas Playwright y **3 generaciones narrativas reales** con un GGUF Qwen3 4B Q4_K_M en Tesla T4. VRAM observada: **3.161 MiB**. El primer turno tardó **53,53 s**, los dos siguientes **2,43 s** cada uno; aún falta separar arranque en frío y estabilidad con más repeticiones. Las pruebas de imagen/TTS, workers por túnel y hardware de 12/16 GB permanecen pendientes.
+Historial de fallos conservado: [v1.2](docs/COLAB_QA_2026-11-05.md) (dependencias y compilación CUDA), [v1.3](docs/COLAB_QA_V13_RESULTADOS.md) (archivo GGUF 404). Los notebooks antiguos fueron retirados; los tests de regresión sobre logs y CUDA ahora comprueban la versión vigente para que GitHub Actions no dependa de archivos archivados.

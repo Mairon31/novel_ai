@@ -1,4 +1,4 @@
-"""Offline contract for fast Colab QA v1.3 and pinned CUDA prebuilt installer.
+"""Offline contract for fast Colab current notebook's pinned CUDA prebuilt installer.
 
 Checks only notebook syntax and configured behavior, not GPU performance.
 """
@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-NOTEBOOK=ROOT/"notebooks/noble_ai_colab_qa_integral_v1_3.ipynb"
+NOTEBOOK=ROOT/"notebooks/noble_ai_colab_qa_integral_v1_5.ipynb"
 
 class ColabQaV13Tests(unittest.TestCase):
     def test_cell_syntax_and_intended_setup(self):
@@ -29,7 +29,7 @@ class ColabQaV13Tests(unittest.TestCase):
         content="\n".join(scripts)
         for wanted in ("npm\",\"install\",\"--no-audit","llama_prebuilt",
                        "b12119","sha256","LD_LIBRARY_PATH","llama_linker",
-                       "Noble_AI_Colab_QA_v1_3.zip","gpu_benchmark",
+                       "Noble_AI_Colab_QA_v1_5.zip","gpu_benchmark",
                        "ACTIVO","ESTADO_ACTUAL.txt","files.download"):
             self.assertIn(wanted,content)
         self.assertNotIn('"npm","ci"',content)
