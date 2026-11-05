@@ -120,3 +120,11 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Snapshots del turno participan del rollback SQLite; los forks sin imagen histórica o sin snapshot fallan sin publicar una copia inconsistente.
 - [x] [GitHub Actions #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045) para `dc124a1`: **184/184 Python y 34/34 Playwright PASS**, incluyendo escritorio y móvil. Sin GPU física.
 - [ ] Aislamiento de recursos de galería y planes visuales por turno, pruebas de corte eléctrico y fsync.
+
+## P1 — Regresiones de galería y composición por turno · 2026-11-05
+
+- [x] `tests/test_visual_timeline.py` comprueba que rama antigua no recibe galería nueva, vestimenta futura, referencia asignada después ni cambios nuevos de plan; que se respeten medias y seleccionadas al bifurcar; y que los snapshots remapeados sostienen bifurcaciones posteriores.
+- [x] Sin instantánea visual en un turno anterior a la migración, la nueva rama no consulta perfiles o imágenes actuales para inventar historia. Un error inyectado al guardar snapshot revierte turno y recursos del commit.
+- [x] Tests de compatibilidad `tests/test_story_branches.py` dejan de considerar correcto que una imagen importada posteriormente aparezca en un turno previo.
+- [x] Python CI: [#42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974), **189/189 PASS**. No incluye medición física de GPU.
+- [ ] Playwright del mismo commit debe confirmar recorrido de escritorio y móvil. **No contabilizar PASS hasta finalizar el job frontend.**

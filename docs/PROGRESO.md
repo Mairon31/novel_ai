@@ -532,3 +532,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] [GitHub Actions #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045) finalizó con **184/184 Python y 34/34 Playwright PASS** para el commit `dc124a1`, verificados en logs de ambos jobs. Incluye `tests/test_creator_media_timeline.py`, backend SQLite/Pillow y frontend escritorio/móvil.
 - [ ] El aislamiento temporal de `visual_state.py` y `scene_planner.py` sigue pendiente: **la CI verde no demuestra que imágenes de galería ni planes de composición antiguos estén correctamente versionados**.
+
+## 2026-11-05 — P1: memoria visual histórica y planes de escena
+
+- [x] Commit [`a49ca05`](https://github.com/Mairon31/novel_ai/commit/a49ca0591222837d28b344798646dd113ea567c4): `visual_turn_snapshots` persiste por turno las fichas visuales de personaje, referencia de imagen, inventario de galería, selección y planes de escena. La misma transacción SQLite confirma el turno y los snapshots; una falla revierte la escritura.
+- [x] El clonador `VisualState.clone_branch` filtra recursos con el checkpoint del turno elegido y restaura la versión histórica de las fichas. El clonador `ScenePlanner.clone` puede recibir el plan histórico (sin importar cambios futuros); la bifurcación completa conserva el presente y remapea snapshots para futuros rebobinados de esa rama.
+- [x] Nueva suite `tests/test_visual_timeline.py`: identidad/vestimenta, nuevo arte en misma escena, selección de imagen, referencia, plan escénico, ramas anidadas, turno antiguo sin snapshot y rollback inyectado. Se corrigió `tests/test_story_branches.py` para no exigir arte importado después del turno de corte.
+- [x] **Python CI verificada:** [#42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974), **189/189 PASS**, backend SQLite/Pillow real; inferencia de modelos simulada.
+- [ ] **Playwright CI:** al registrar esta entrada, el job frontend seguía instalando Chromium. No afirmar 34/34 hasta la conclusión oficial del workflow. Sin cambios visuales de UI en este bloque.
+- [ ] Pendiente de la auditoría: rebobinado destructivo con archivado/restauración, aislamiento cognitivo de Lorebooks por testigo, recolección segura de bytes históricos, fsync de directorios y pruebas de corte eléctrico y GPU reales.

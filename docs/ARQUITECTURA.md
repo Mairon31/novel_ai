@@ -48,4 +48,12 @@ La estrategia conserva límites de durabilidad ante corte eléctrico abrupto y T
 
 La eliminación borra el registro activo y deja de servir la URL, pero conserva los bytes físicos si existe un turno que los referencie. Una rama histórica puede restaurarlos; si falta el archivo requerido, el fork se revierte por completo. Este mecanismo se apoya en el staging y la compensación de archivos de la bifurcación. La recolección de basura deberá considerar los recursos históricos y la seguridad TOCTOU de rutas sigue pendiente.
 
-**Verificación:** [CI #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045), **184 Python + 34 Playwright PASS**. Las imágenes de galería, referencias de `VisualState` y planes de `ScenePlanner` todavía no están protegidos por snapshots equivalentes.
+**Verificación de medios editoriales:** [CI #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045), **184 Python + 34 Playwright PASS**.
+
+## Snapshots por turno de galería, referencias y composición
+
+`VisualState` también dispone de `visual_turn_snapshots`: al confirmar el turno registra fichas visuales (incluidas referencias de imagen), IDs de galería existentes, selección de imagen y filas de `scene_plans`. Se usa la conexión SQLite de `NarrativeService.append`, sin segundo commit independiente. El clonador de una rama parcial restringe galería y perfiles a lo que existía en el turno de corte y pasa un plan histórico a `ScenePlanner.clone`; no importa la imagen o edición de referencia posterior. Una rama total copia el estado vivo y reescribe la cadena de snapshots con nuevos identificadores para que se pueda rebobinar también desde ella.
+
+Ante un turno heredado sin checkpoint visual, el fork parcial no adivina perfiles, imágenes ni planes mirando el presente. Se mantiene la limitación de que los archivos externos a SQLite necesitan compensación y recuperación tras interrupciones. No se han añadido workers GPU, generación automática de escenas ni un mecanismo de expiración/GC para los bytes históricos.
+
+**Evidencia backend:** commit [`a49ca05`](https://github.com/Mairon31/novel_ai/commit/a49ca0591222837d28b344798646dd113ea567c4), [CI #42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974) con **189 Python PASS**; Playwright estaba pendiente al registrar esta nota.
