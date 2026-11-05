@@ -29,7 +29,7 @@ export const api = {
       '&role=' + encodeURIComponent(role) + '&sort=' + encodeURIComponent(sort)),
   details: (repo: string, contextTokens = 4096) => request<ModelDetail>(
     '/models/' + repo.split('/').map(encodeURIComponent).join('/') +
-    '?context_tokens=' + contextTokens),
+    (contextTokens === 4096 ? '' : '?context_tokens=' + contextTokens)),
   installed: () => request<{ models: InstalledModel[] }>('/models/installed'),
   downloads: () => request<{ downloads: DownloadJob[] }>('/downloads'),
   install: (data: { repo_id: string; revision: string; filename: string }) =>

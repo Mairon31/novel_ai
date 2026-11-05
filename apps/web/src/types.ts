@@ -31,6 +31,7 @@ export type ModelDetail = {
   repo_id: string; revision: string; license: string; gated: boolean;
   variants: Variant[]; supports_install: boolean; url: string;
   author?: string; downloads?: number; likes?: number;
+  pipeline_tag?: string | null;
   last_modified?: string | null; library?: string | null;
   tags?: string[]; summary?: string; base_model?: string | string[] | null;
   hardware_fit?: HardwareFit;
