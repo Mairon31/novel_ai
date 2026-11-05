@@ -208,6 +208,8 @@ class DownloadManager:
                         complete_at_eof = True
                     if not complete_at_eof:
                         response.raise_for_status()
+                        if response.status_code not in (200, 206):
+                            raise RuntimeError("Respuesta HTTP no válida para un archivo GGUF")
                     if not complete_at_eof:
                         continued = offset > 0 and response.status_code == 206
                         if response.status_code == 206 and not continued:
@@ -223,6 +225,8 @@ class DownloadManager:
                                 raise RuntimeError("Content-Range ausente o con formato inválido")
                             start, end = int(match[1]), int(match[2])
                             total = None if match[3] == "*" else int(match[3])
+                            # The response must carry the entire remaining tail.
+                            # An intermediate 206 never proves transfer completion.
                             if (start != expected_offset or end < start or
                                     (total is not None and (total <= end or total <= 0)) or
                                     (total is not None and end != total - 1) or
@@ -230,8 +234,6 @@ class DownloadManager:
                                      total != job["expected_size"]) or
                                     (total is None and job["expected_size"] is None) or
                                     (total is None and end != job["expected_size"] - 1)):
-                            # All bytes after the resume offset must be returned;
-                            # a valid but intermediate 206 must not be installed.
                                 raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
                             expected_chunk_bytes = end - start + 1
                             length = response.headers.get("content-length")
@@ -270,6 +272,11 @@ class DownloadManager:
             expected_size = job["expected_size"]
             if expected_size is not None and part.stat().st_size != expected_size:
                 raise RuntimeError("Tamaño incorrecto: descarga incompleta o variante modificada")
+            # The extension is not evidence of GGUF content. Reject empty
+            # responses and HTML/JSON error pages before registering a model.
+            with part.open("rb") as probe:
+                if probe.read(4) != b"GGUF":
+                    raise RuntimeError("Contenido GGUF inválido o archivo vacío")
             digest = hashlib.sha256()
             last_check = 0.0
             with part.open("rb") as stream:
