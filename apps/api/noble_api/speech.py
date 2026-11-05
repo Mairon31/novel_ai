@@ -15,9 +15,14 @@ from pathlib import Path
 
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .narrative import NarrativeService
+
+
+class SpeechPreferences(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    default_voice_id: str = Field(default="", max_length=180)
 
 
 class SpeechRequest(BaseModel):
@@ -31,6 +36,26 @@ class SpeechService:
         self.root = (narrative.store.models_dir / "voices").resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.lock = asyncio.Lock()
+        with narrative.store._conn() as conn:
+            conn.execute("""CREATE TABLE IF NOT EXISTS tts_preferences(
+                id INTEGER PRIMARY KEY CHECK(id=1), default_voice_id TEXT NOT NULL
+            )""")
+            conn.execute("INSERT OR IGNORE INTO tts_preferences VALUES(1,'')")
+
+    def preferences(self) -> dict:
+        with self.narrative.store._conn() as db:
+            row = db.execute("SELECT default_voice_id FROM tts_preferences WHERE id=1").fetchone()
+        return {"default_voice_id": row["default_voice_id"] if row else ""}
+
+    def set_preferences(self, data: SpeechPreferences) -> dict:
+        voice = data.default_voice_id.strip()
+        if voice:
+            # A selected model must actually be present and accompanied by its
+            # Piper config. Selection does not launch or synthesize anything.
+            self.voice_path(voice)
+        with self.narrative.store._conn() as db:
+            db.execute("UPDATE tts_preferences SET default_voice_id=? WHERE id=1", (voice,))
+        return self.preferences()
 
     def voices(self) -> dict:
         detected = []
@@ -122,6 +147,14 @@ class SpeechService:
 
 
 def mount_speech_routes(app, speech: SpeechService):
+    @app.get("/api/v1/tts/config")
+    def get_voice_preferences():
+        return speech.preferences()
+
+    @app.put("/api/v1/tts/config")
+    def save_voice_preferences(body: SpeechPreferences):
+        return speech.set_preferences(body)
+
     @app.get("/api/v1/tts/voices")
     def voices():
         return speech.voices()
