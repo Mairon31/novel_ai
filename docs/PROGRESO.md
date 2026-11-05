@@ -401,5 +401,5 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] `store.py` inicializa WAL **una vez** en el arranque, y configura `busy_timeout`, `foreign_keys`, `synchronous=NORMAL` por conexión; evita repetir una operación que puede competir con escritores activos. Commit `5baa2c12a5ce`.
 - [x] Nueva suite `tests/test_sqlite_concurrency.py` prueba 50 commits de turnos concurrentes en 12 threads, unicidad/lectura completa, rollback ante error intermedio y FK de historia inexistente. Commit `676e79387378`.
-- [x] [CI run #41995580802](https://github.com/Mairon31/novel_ai/actions/runs/41995580802) — **etapa Python 104/104 OK**, incluidas las tres nuevas pruebas. El frontend del mismo run seguía en curso al registrar esta línea; verificar conclusión antes de declarar CI completo.
+- [x] [CI run #41995580802](https://github.com/Mairon31/novel_ai/actions/runs/41995580802) — ejecución **completa y exitosa**: Python **104/104 OK**, frontend compilado y **24/24 Playwright PASS**, incluidas las tres pruebas nuevas. No hubo benchmark físico de GPU.
 - [ ] Esta prueba concurrente **no** certifica simultaneidad con imágenes/ComfyUI, atomicidad de turno + escena, ni comportamiento GPU; las tareas correspondientes siguen abiertas en `TODO.md`.
