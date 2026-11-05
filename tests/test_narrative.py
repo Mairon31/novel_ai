@@ -192,6 +192,51 @@ class NarrativeTests(unittest.TestCase):
         self.assertEqual(self.app.state.narrative.turns(story_id), [])
         self.assertIsNone(self.app.state.resources.active_workload()["active"])
 
+    def test_idle_upstream_disconnection_cancels_pending_read_without_commit(self):
+        """Disconnect during a stalled LLM read, not only between emitted tokens."""
+        self.assertEqual(self.settings().status_code, 200)
+        story_id = self.story()
+        request_id = str(uuid.uuid4())
+        narrative = self.app.state.narrative
+
+        async def scenario():
+            stalled = asyncio.Event()
+            upstream_closed = asyncio.Event()
+
+            async def fake_generate(_config, _messages):
+                try:
+                    yield "Un primer fragmento"
+                    await stalled.wait()  # Upstream never sends another token.
+                finally:
+                    upstream_closed.set()
+
+            async def disconnected():
+                return stalled.is_set()
+
+            packets = []
+            original_generate = narrative.generate
+            narrative.generate = fake_generate
+            try:
+                async def consume():
+                    async for packet in narrative.stream_turn(
+                            story_id, request_id, "do", "Abro la puerta",
+                            disconnected=disconnected):
+                        packets.append(packet)
+                        if "event: delta" in packet:
+                            stalled.set()
+                await asyncio.wait_for(consume(), timeout=2.5)
+                self.assertTrue(upstream_closed.is_set(),
+                                "La lectura del motor debe cerrarse al cortar el SSE")
+            finally:
+                narrative.generate = original_generate
+
+            self.assertTrue(any("event: delta" in packet for packet in packets))
+            self.assertFalse(any("event: done" in packet for packet in packets))
+            self.assertEqual(narrative.turns(story_id), [])
+            self.assertIsNone(self.app.state.resources.active_workload()["active"])
+
+        asyncio.run(scenario())
+
     def test_story_survives_restart(self):
         self.settings()
         s = self.story()
