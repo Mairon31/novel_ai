@@ -1,4 +1,5 @@
-undefined
+# Noble AI — contratos de API
+
 ## Endpoints reales disponibles en P1 (2026-11-04)
 
 Los bloques anteriores describen **diseño futuro**, no deben confundirse con implementación completa. Esta es la tabla de endpoints **implementados ahora** para la etapa narrativa:
@@ -111,3 +112,17 @@ El modo guard consulta `nvidia-smi` **solo** antes de enviar una generación de 
 - `PUT /api/v1/resources/config`: además de la política de VRAM acepta `serialize_local_gpu:boolean` (predeterminado `true`). Una operación local ocupada devuelve HTTP 409. No hay cola de jobs oculta.
 
 Los cambios de escena no realizan ningún trabajo de GPU automáticamente. Las rutas anteriores mantienen sus parámetros originales compatibles.
+
+## Evolución de contratos según Argon (2026-11-05)
+
+**Actual:** `POST /api/v1/stories/{id}/generate` devuelve SSE `status`, `delta`, `done`, `error` a través de `narrative.stream_turn`, no un JSON completo; los proveedores Ollama/Kobold emiten stream; el cliente web consume los fragmentos. No marcar «streaming inexistente». **Pendiente:** desconexión y cancelación efectiva de inferencia, telemetría TTFT y SSE adicionales para multimedia/descargas.
+
+**Contrato objetivo (sin declarar implementado):**
+
+- `POST /api/v1/stories/{id}/generate`: recibir `request_id` idempotente, `mode`, `input_text`; devolver eventos tipados progresivos, errores estructurados y `done` solo cuando el turno se confirmó transaccionalmente. `AbortSignal` debe cerrar el upstream y liberar la reserva de GPU.
+- `GET /api/v1/stories/{id}/context/preview` (propuesto): desglose de tokens y recuerdos activados, sin efectuar inferencia ni filtrar secretos de otros personajes a consumidores no autorizados.
+- `/api/v1/stories/{id}/lorebook` (propuesto): CRUD validado por historia, claves, secundarios, prioridad, presupuesto, activación y límites de regex.
+- `/api/v1/stories/{id}/stage` (propuesto): estado multicapa, decisión de reutilizar/generar fondos, personajes/expresiones y revisiones de assets.
+- `/api/v1/models/downloads/*` (evolución de endpoints existentes): bytes, velocidad y reanudación verificada; hashes con estado distinguible.
+
+El frontend no construirá prompts ni inferirá estados canónicos: esas decisiones pertenecen al backend. Ver [TODO](../TODO.md), [auditoría §§14, 20](ARGON_AUDITORIA.md) y [QA](QA_Y_ACEPTACION.md).
