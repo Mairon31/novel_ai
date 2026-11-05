@@ -108,3 +108,14 @@ Estado: la base actual persiste historias, canon, turnos y clones; **no constitu
 6. **Validación:** historias simuladas de 100–120 turnos, hecho remoto recuperado, aislamiento de testigos, ramas sin contaminación, límite de contexto respetado y persistencia tras reinicio. Sin esta evidencia las tareas quedan abiertas.
 
 Referencias: [auditoría §§09–10, 14, 19, 21](ARGON_AUDITORIA.md), [arquitectura](ARQUITECTURA.md), [roadmap](ROADMAP.md).
+
+
+## Implementación P1: Lorebook local condicionado (2026-11-05)
+
+El creador dispone de `GET/POST/PUT/DELETE /api/v1/stories/{uuid}/lorebook` y `POST .../lorebook/preview`. Cada entrada conserva contenido autoral privado, palabras clave primarias y secundarias, modo `any/all` para secundarias, coincidencia de palabra completa con `re.escape` (nunca regex arbitraria), estado habilitado o siempre activo, y prioridad de 0–100. Se limita el contenido por entrada (3500 caracteres) y el contexto activado (6000 caracteres). Los hechos se incluyen íntegros o se omiten si no caben. Es un límite por **caracteres**, no por tokens.
+
+La activación del narrador analiza la intervención presente y los últimos cuatro turnos (sin utilizar `ai_plot` oculto como disparador), y añade los hechos pertinentes al mensaje de sistema sin enseñarlos como respuesta al jugador. `NarrativeService.fork_story` copia las entradas en filas UUID nuevas para poder editar ramas sin alterar la historia origen. Se ha comprobado una historia de 110 turnos: un hecho escrito previamente en Lorebook no se inyecta de forma omnipresente, pero vuelve a entrar cuando la acción actual contiene su clave.
+
+La interfaz Creator Studio incluye pestaña propia de Lorebook con editor, prioridades, activadores y previsualización del texto exacto añadido. API y pruebas `tests/test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
+
+**No implementado todavía:** scopes de personaje/testigos (control de omnisciencia), snapshots de canon por turno, recuperación semántica de memorias episódicas, regex con timeout, recursión de Lorebooks y reparto del contexto con tokenizador del runtime. Estas tareas siguen abiertas en [TODO](../TODO.md).
