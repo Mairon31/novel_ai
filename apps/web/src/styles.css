@@ -968,3 +968,40 @@
 @media(max-width:750px){
   .workspace-settings-overview-grid{grid-template-columns:1fr}
 }
+
+
+/* Model storage facts adapted from Urakatsu's MIT ModelsStorage/UsageBar UX. */
+.hub-storage-summary{display:grid;gap:18px;padding:22px 24px;margin:0 0 24px;
+  border:1px solid #414966;border-radius:18px;
+  background:linear-gradient(135deg,#222b40,#171c2e)}
+.hub-storage-heading{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.hub-storage-heading>div{min-width:0}
+.hub-storage-heading strong{display:block;color:#edeaf8;font-size:16px}
+.hub-storage-heading small{display:block;color:#9ea9c6;font-size:11px;
+  margin-top:7px;overflow-wrap:anywhere}
+.hub-storage-heading>span{display:inline-flex;align-items:center;gap:6px;
+  background:#363451;border:1px solid #605a79;border-radius:20px;
+  padding:7px 11px;color:#c5b8ee;font-size:10px;white-space:nowrap}
+.hub-storage-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hub-storage-metrics>div{display:flex;flex-direction:column;gap:7px;min-width:0}
+.hub-storage-metrics span{color:#adb7d1;font-size:11px}
+.hub-storage-metrics strong{font:750 clamp(17px,2.5vw,24px) 'Outfit',sans-serif;color:#fff}
+.hub-storage-metrics small{color:#9099b6;font-size:10px}
+.hub-storage-meter{display:flex;width:100%;height:12px;background:#363a52;
+  border:1px solid #59607a;border-radius:10px;overflow:hidden}
+.hub-storage-meter>div{height:100%;background:#a189ed;min-width:0}
+.hub-storage-meter>div.hub-storage-partial{background:#cfad68}
+.hub-storage-summary>p{font-size:11px;color:#9fabca;line-height:1.6;margin:0}
+.hub-storage-files{border-top:1px solid #454a60;padding-top:13px;color:#bcb4db}
+.hub-storage-files summary{font-size:12px;cursor:pointer;font-weight:750}
+.hub-storage-files>div{margin-top:12px;max-height:260px;overflow:auto}
+.hub-storage-files>div>div{display:flex;justify-content:space-between;gap:15px;
+  border-bottom:1px solid #40485e;padding:10px 0;font-size:11px}
+.hub-storage-files>div>div span{min-width:0;overflow-wrap:anywhere}
+.hub-storage-files>div>div strong{flex:none;color:#eeebf7;font-weight:700}
+.hub-file-missing{color:#ffb2ba!important}
+@media(max-width:680px){
+  .hub-storage-summary{padding:17px}
+  .hub-storage-metrics{grid-template-columns:1fr;gap:14px}
+  .hub-storage-heading{flex-direction:column}
+}
