@@ -3,6 +3,7 @@
 Uses the production API + SQLite + Pillow; never invokes a real GPU.
 """
 import io
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
 import unittest
@@ -149,6 +150,17 @@ class ScenePlanningTests(unittest.TestCase):
         self.assertIsNone(self.client.get(
             f"/api/v1/stories/{self.story}/visual-state").json()["characters"][0]
             ["reference_asset_id"])
+
+    def test_first_visual_scene_is_atomic_with_concurrent_readers(self):
+        other=self.client.post("/api/v1/stories",json={
+            "title":"Escena simultánea","premise":"Una joven despierta en un bosque."}).json()["id"]
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            scenes=list(pool.map(lambda _: self.app.state.visual.scene(other),range(30)))
+        self.assertEqual(len({scene["id"] for scene in scenes}),1)
+        with self.app.state.store._conn() as conn:
+            count=conn.execute(
+                "SELECT COUNT(*) FROM visual_scenes WHERE story_id=?",(other,)).fetchone()[0]
+        self.assertEqual(count,1)
 
     def test_plan_survives_api_restart(self):
         self.client.put(f"/api/v1/stories/{self.story}/scene-plan",json={
