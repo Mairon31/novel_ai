@@ -35,7 +35,8 @@
 
 ### AUD-004 — Streaming, cancelación y contratos
 - [x] Endpoint narrativo SSE, streaming incremental y cliente con `AbortController` + control Detener existentes (inspección de `narrative.py`, `api.ts`, `StoryStudio.tsx`, `VisualReader.tsx`).
-- [ ] Probar y garantizar que **Detener** cancela cómputo en Ollama/KoboldCpp/worker remoto (no solo fetch), propaga desconexión, no persiste turnos incompletos y libera VRAM en un tiempo medible.
+- [x] El backend comprueba la desconexión SSE antes de confirmar el turno y entre deltas; el cierre anticipado del generador libera el lease local y no persiste texto incompleto. Pruebas `test_disconnect_between_tokens_prevents_commit_and_releases_gpu` y `test_closing_sse_generator_after_delta_rolls_back_unfinished_turn` (**115 Python PASS** en CI #41998507145).
+- [ ] Verificar y garantizar que **Detener** cancela físicamente cómputo en Ollama/KoboldCpp/worker remoto (no solo fetch), incluidas desconexiones sin nuevos tokens, y medir caída de VRAM/latencia de cancelación en hardware real.
 - [ ] Pruebas con cliente que desconecta a mitad del stream: no persistir turno incompleto, liberar recursos, no dejar worker generando.
 - [ ] Eventos tipados `token/state_delta/scene_plan/done/error`, gestión de reconexión y códigos estructurados `VRAM_EXHAUSTED`, `WORKER_UNREACHABLE`, `CONTEXT_OVERFLOW`.
 - [ ] Medir TTFT y tiempo de cancelación en hardware real: metas de Argon sujetas a validación, no valores garantizados.
