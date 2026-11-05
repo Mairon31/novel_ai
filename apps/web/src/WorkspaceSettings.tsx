@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  ArrowUpRight, Check, Cpu, Download, ExternalLink, Globe2,
+  ArrowUpRight, ArrowRight, Check, Cpu, Download, ExternalLink, Globe2,
   KeyRound, Keyboard, Languages, LoaderCircle, LockKeyhole, MonitorCog,
   MoonStar, Palette, RefreshCcw, Server, Settings2, ShieldCheck,
   SlidersHorizontal, Trash2, Volume2,
@@ -15,10 +15,11 @@ import { RuntimeManager } from './RuntimeManager';
 import { RemoteWorkers } from './RemoteWorkers';
 import { CreativeSettings } from './CreativeSettings';
 
-type Tab = 'narration' | 'multimedia' | 'languages' | 'providers' | 'appearance' |
+type Tab = 'overview' | 'narration' | 'multimedia' | 'languages' | 'providers' | 'appearance' |
   'runtimes' | 'shortcuts' | 'network' | 'about';
 
 const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
+  { id: 'overview', label: 'Panel general', icon: Settings2 },
   { id: 'narration', label: 'Narración', icon: SlidersHorizontal },
   { id: 'multimedia', label: 'Imágenes y voz', icon: Volume2 },
   { id: 'languages', label: 'Idiomas y traducción', icon: Languages },
@@ -31,6 +32,8 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
 ];
 
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
+  {title:'RESUMEN', description:'Acceso rápido a tus preferencias',
+    sections:['overview']},
   {title:'INTELIGENCIA',description:'Narrador y proveedores',
     sections:['narration','providers','languages']},
   {title:'CREACIÓN MULTIMEDIA',description:'Generación visual y voces',
@@ -56,7 +59,7 @@ interface Props {
 }
 
 export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrativeRevision, onNarratorActivated }: Props) {
-  const [tab, setTab] = useState<Tab>('narration');
+  const [tab, setTab] = useState<Tab>('overview');
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const [about, setAbout] = useState<About | null>(null);
   const [release, setRelease] = useState<Updates | null>(null);
@@ -158,6 +161,52 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         {!prefs && <div className="loading"><LoaderCircle className="rotating" size={18}/> Cargando preferencias...</div>}
         {error && <p className="narrative-error" role="alert">{error}</p>}
         {feedback && <p className="narrative-saved" role="status"><Check size={16}/>{feedback}</p>}
+
+        {tab === 'overview' && <div className="workspace-settings-overview">
+          <div className="setting-section-intro">
+            <span className="overline">CONTROL DE TU ESTUDIO</span>
+            <h2>Tu espacio de trabajo, a tu manera</h2>
+            <p>Configura cada sistema por separado. Las opciones del narrador no se mezclan
+              con los ajustes visuales, la red ni los modelos instalados.</p>
+          </div>
+          <div className="workspace-settings-snapshot">
+            <div><Languages size={17}/><small>Idioma de narración</small>
+              <strong>{prefs?.target_language === 'es-419' ? 'Español latinoamericano' :
+                prefs?.target_language || 'Consultando...'}</strong></div>
+            <div><Volume2 size={17}/><small>Ilustraciones</small>
+              <strong>{imageMode === 'off' ? 'Desactivadas' :
+                imageMode === 'manual' ? 'Bajo demanda' : 'Por escena'}</strong></div>
+            <div><KeyRound size={17}/><small>OpenRouter</small>
+              <strong>{credential?.configured ? 'Clave configurada' : 'Sin clave'}</strong></div>
+            <div><Cpu size={17}/><small>Versión local</small>
+              <strong>{about?.version || 'Consultando...'}</strong></div>
+          </div>
+          <div className="workspace-settings-overview-grid">
+            {[
+              {id:'narration',title:'Motor narrativo',summary:'Conectar tu LLM, contexto, parámetros y modelo.'},
+              {id:'multimedia',title:'Imágenes y voces',summary:'ComfyUI, Piper, generación y controles de VRAM.'},
+              {id:'providers',title:'Servicios y claves',summary:'Accesos, proveedores y credenciales externas.'},
+              {id:'languages',title:'Idiomas y estilo',summary:'Español latinoamericano, traducción y narración.'},
+              {id:'appearance',title:'Interfaz de lectura',summary:'Tema, presentación de novela visual y tipografía.'},
+              {id:'runtimes',title:'Modelos y ejecutables',summary:'Paquetes locales detectados y diagnóstico de motores.'},
+              {id:'network',title:'GPU remotas y red',summary:'Workers, conexiones seguras y red local.'},
+              {id:'shortcuts',title:'Atajos de teclado',summary:'Combinaciones para navegar y jugar.'},
+            ].map(item => {
+              const section = tabs.find(candidate => candidate.id === item.id)!;
+              return <button className="workspace-overview-card" key={item.id}
+                onClick={() => { setTab(section.id); setError(''); setFeedback(''); }}>
+                <span className="workspace-overview-icon"><section.icon size={22}/></span>
+                <span><strong>{item.title}</strong><small>{item.summary}</small></span>
+                <ArrowRight size={17}/>
+              </button>;
+            })}
+          </div>
+          <div className="workspace-panel workspace-overview-storage">
+            <h3>Almacenamiento de modelos</h3>
+            <code title={modelsDir}>{modelsDir || 'Ruta todavía no disponible'}</code>
+            <p>Las rutas y ejecutables se administran desde sus apartados correspondientes.</p>
+          </div>
+        </div>}
 
         {tab === 'narration' && <>
           <div className="setting-section-intro"><h2>Motor narrativo</h2>
