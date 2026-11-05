@@ -7,6 +7,7 @@ models or explicitly requests an illustration.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import io
 import json
 import secrets
@@ -141,14 +142,30 @@ class SceneImageService:
             config = self.config()
             if not config["checkpoint"]:
                 raise HTTPException(422, "Selecciona un checkpoint ComfyUI en Ajustes de imagen")
+            seed = request.seed if request.seed is not None else secrets.randbelow(2**53)
+            visual_prompt = self.narrative.visual.enriched_prompt(story_id, request.prompt)
+            active_scene = self.narrative.visual.scene(story_id)
+            signature = hashlib.sha256(json.dumps({
+                "scene_id": active_scene["id"], "prompt": visual_prompt,
+                "config": config, "seed": seed, "workflow_version": "comfy-vanilla-v1",
+            }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+            started = time.monotonic()
+            # If the user supplied a deterministic seed, an identical image
+            # is already available without starting the diffusion provider.
+            if request.seed is not None:
+                hit = self.narrative.visual.cached(story_id, signature)
+                if hit:
+                    self.narrative.visual.choose(story_id, hit["id"])
+                    return {"story": self.narrative.get_story(story_id),
+                            "asset_id": hit["id"], "seed": seed,
+                            "checkpoint": config["checkpoint"],
+                            "duration_ms": round((time.monotonic()-started)*1000, 1),
+                            "cached": True}
             connected = await self.status()
             if not connected["online"]:
                 raise HTTPException(503, "ComfyUI no está disponible")
             if config["checkpoint"] not in connected["checkpoints"]:
                 raise HTTPException(422, "El checkpoint seleccionado ya no está disponible")
-            seed = request.seed if request.seed is not None else secrets.randbelow(2**53)
-            visual_prompt = self.narrative.visual.enriched_prompt(story_id, request.prompt)
-            started = time.monotonic()
             async with httpx.AsyncClient(
                     transport=self.transport, trust_env=False,
                     timeout=httpx.Timeout(25, connect=5)) as client:
@@ -188,11 +205,13 @@ class SceneImageService:
                 view.raise_for_status()
                 gallery = self.narrative.visual.publish(
                     story_id, view.content, origin="comfyui",
-                    prompt=visual_prompt, checkpoint=config["checkpoint"], seed=seed)
+                    prompt=visual_prompt, checkpoint=config["checkpoint"], seed=seed,
+                    render_signature=signature)
             return {"story": self.narrative.get_story(story_id),
                     "asset_id": gallery["selected_asset_id"],
                     "seed": seed, "checkpoint": config["checkpoint"],
-                    "duration_ms": round((time.monotonic() - started) * 1000, 1)}
+                    "duration_ms": round((time.monotonic() - started) * 1000, 1),
+                    "cached": False}
         except (httpx.HTTPError, ValueError) as exc:
             raise HTTPException(502, "Error de ComfyUI: " + str(exc)[:180]) from exc
         finally:
