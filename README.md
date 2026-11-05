@@ -168,6 +168,9 @@ La aplicación no descarga automáticamente todos estos motores. Sus configuraci
 
 ## 📚 Documentación
 
+**Auditoría y tareas de desarrollo:** [TODO verificable](TODO.md) · [Auditoría integral Argon](docs/ARGON_AUDITORIA.md) · [Hoja de ruta](docs/ROADMAP.md) · [Bitácora de cambios y pruebas](docs/PROGRESO.md). La auditoría es una evaluación estática; el TODO diferencia capacidades presentes, implementaciones pendientes y validación física de GPU.
+
+
 | Guía | Descripción |
 |---|---|
 | [Primer inicio](docs/QUICKSTART.md) | Instalación, Model Hub y narrador |
