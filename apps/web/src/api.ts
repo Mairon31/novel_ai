@@ -36,6 +36,8 @@ export const api = {
   installed: () => request<{ models: InstalledModel[] }>('/models/installed'),
   modelStorage: () => request<ModelStorage>('/models/storage'),
   downloads: () => request<{ downloads: DownloadJob[] }>('/downloads'),
+  downloadRecovery: () => request<{ recovered: number; conflicts: number; skipped: number }>(
+    '/downloads/recovery'),
   install: (data: { repo_id: string; revision: string; filename: string }) =>
     request<DownloadJob>('/models/install', json(data)),
   control: (jobId: string, action: 'pause' | 'resume' | 'cancel') =>
