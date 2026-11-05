@@ -173,6 +173,22 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 
 Ver [Resultados QA v1.3](COLAB_QA_V13_RESULTADOS.md). **No se generó contenido en v1.3; benchmarks vacío.**
 
+## 2026-11-04 (CR) / 2026-11-05 (UTC) · Primer benchmark real del narrador en Colab
+
+- [x] ZIP v1.4 revisado: **20 PASS, 0 FAIL, 0 SKIP**; duración 279,4 segundos; commit ensayado `191a71e`.
+- [x] Tesla T4 con Qwen3 4B Instruct Q4_K_M, carga real vía llama.cpp CUDA 12.8 y API FastAPI.
+- [x] Modelo: 2.381,59 MiB, revisión HF `ae44f08e1...`, SHA256 verificado y registrado.
+- [x] **3/3 turnos narrativos reales**: primer TTFT 51,255 s; segundos TTFT 159 ms y 146 ms; respuesta completa de cada uno en 53,53/2,43/2,43 s.
+- [x] Pico de VRAM **muestreado** 3.161 MiB; uso GPU máximo observado 96%.
+- [x] Frontend React, 42 pruebas Python y 8 de navegador aprobados (navegador con LLM fixture).
+- [ ] Medir fase cold vs. warm con intervalos confiables (n=2 para warm, insuficiente para percentiles robustos).
+- [ ] Obtener muestras de texto sintético para evaluar calidad, coherencia y español latinoamericano.
+- [ ] Medir workers **por túnel**: este ensayo utilizó localhost en Colab, no conexión remota real.
+- [ ] Ejecutar imagen/TTS y hardware RTX 5060 Ti 16 GB u otros perfiles con evidencia física.
+- [ ] Corregir campo de metadatos `version: 1.3` heredado en el notebook v1.4.
+
+Ver [informe del primer ensayo GPU real](COLAB_QA_V14_RESULTADOS.md). Los números de VRAM/latencia se refieren solamente al Qwen 4B en Tesla T4, no a cualquier modelo.
+
 ## Plantilla para futuras entradas
 
 ```md

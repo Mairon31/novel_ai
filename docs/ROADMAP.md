@@ -74,6 +74,17 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [ ] Medir perfiles reales de tarjetas de 12/16 GB.
 - **Gate P1.2:** benchmark real ejecutado y adjuntado. Sigue pendiente.
 
+## Fase P1.3 — Informe GPU real y siguiente validación de calidad (PARCIAL)
+
+- [x] Primer LLM GGUF real funcionando con la API Noble AI: Qwen3-4B-Instruct-2507 Q4_K_M / Tesla T4, 3 generaciones completadas.
+- [x] Registro reproducible del entorno, SHA256 del modelo y métricas de TTFT, duración, caracteres, uso GPU y VRAM muestreada.
+- [x] Informe de hallazgos cold vs. warm con limitaciones de la muestra.
+- [ ] Explicar y minimizar demora del primer turno en frío; progreso de inicialización en interfaz.
+- [ ] Mejorar medición: estado de calentamiento, más respuestas steady-state y calidad textual.
+- [ ] Confirmar narrador por túnel Cloudflare desde otra computadora (el benchmark local de Colab NO cubre conexión remota).
+- [ ] Modelos mayores y 12/16 GB reales; difusión y TTS bajo control de GPU.
+- **Gate P1.3:** calidad narrativa y arranque frío medidos separadamente en escenarios repetibles, sin falsear tokens/s.
+
 ## Fase P2 — ComfyUI, identidad y recursos visuales progresivos
 
 [Issue #6](https://github.com/Mairon31/novel_ai/issues/6)

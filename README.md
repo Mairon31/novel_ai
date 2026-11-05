@@ -99,3 +99,8 @@ Abre el [notebook integral v1.2 con logs y progreso en vivo](https://colab.resea
 ### Colab QA v1.4 — archivo GGUF validado antes de descargar
 
 [Ejecutar notebook v1.4](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_4.ipynb) · [Segundo ensayo y correcciones](docs/COLAB_QA_V13_RESULTADOS.md). Resuelve nombres de archivos del catálogo real de Hugging Face, ancla la revisión y calcula SHA256. El ensayo v1.3 aprobó API, React y Playwright; no alcanzó el benchmark por HTTP 404 del GGUF.
+
+
+### Primer LLM real verificado en Colab T4 (QA v1.4)
+
+El [ensayo documentado](docs/COLAB_QA_V14_RESULTADOS.md) completó **20/20 etapas**, incluidos 42 tests Python, 8 pruebas Playwright y **3 generaciones narrativas reales** con un GGUF Qwen3 4B Q4_K_M en Tesla T4. VRAM observada: **3.161 MiB**. El primer turno tardó **53,53 s**, los dos siguientes **2,43 s** cada uno; aún falta separar arranque en frío y estabilidad con más repeticiones. Las pruebas de imagen/TTS, workers por túnel y hardware de 12/16 GB permanecen pendientes.
