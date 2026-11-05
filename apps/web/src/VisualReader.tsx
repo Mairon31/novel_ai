@@ -60,6 +60,8 @@ export function VisualReader({
   });
   const [elapsed, setElapsed] = useState(0);
   const [imagePrompt, setImagePrompt] = useState(active?.premise || '');
+  const [imageSeed, setImageSeed] = useState('');
+  const [illustrationNotice, setIllustrationNotice] = useState('');
   const [illustrating, setIllustrating] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('manual');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -204,11 +206,16 @@ export function VisualReader({
 
   async function illustrateScene() {
     if (!active || !imagePrompt.trim() || illustrating) return;
-    setIllustrating(true); setReaderError('');
+    setIllustrating(true); setReaderError(''); setIllustrationNotice('');
     const requestedStoryId = active.id;
     const revision = mediaRevision.current;
     try {
-      const result = await api.illustrate(requestedStoryId, imagePrompt.trim());
+      const seed = imageSeed.trim() ? Number(imageSeed) : undefined;
+      if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
+        throw new Error('La semilla debe ser un número entero positivo.');
+      const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed);
+      setIllustrationNotice(result.cached ? 'Ilustración recuperada de la caché.' :
+        'Ilustración nueva guardada como versión independiente.');
       // Force refreshing a previous scene despite using a stable asset path.
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
@@ -484,6 +491,10 @@ export function VisualReader({
               <textarea rows={4} minLength={8} maxLength={2400}
                 value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
                 placeholder="Personajes, lugar, luz, expresión y estilo visual..."/></label>
+            <label className="noble-inspector-field">Semilla (opcional para reproducir y reutilizar)
+              <input aria-label="Semilla de imagen" type="number" min={0} step={1}
+                value={imageSeed} onChange={e => setImageSeed(e.target.value)}
+                placeholder="Aleatoria si se deja vacía"/></label>
             <button className="secondary-button" disabled={visualBusy || imagePrompt.trim().length < 8}
               onClick={() => void previewIllustrationPrompt()}>Ver prompt completo y fichas</button>
             {previewPrompt && <div className="noble-prompt-preview">
@@ -494,6 +505,7 @@ export function VisualReader({
               {illustrating ? <LoaderCircle className="rotating" size={16}/> : <Image size={16}/>}
               {illustrating ? 'ComfyUI está generando...' : 'Ilustrar escena con ComfyUI'}</button>
           </>}
+          {illustrationNotice && <p role="status" className="narrative-saved">{illustrationNotice}</p>}
           <p className="noble-inspector-hint">Las ilustraciones se generan solo cuando las solicitas. Requiere ComfyUI conectado y un checkpoint configurado en Ajustes → Imágenes y voz. La historia puede continuar sin imágenes.</p>
         </>}
         {tab === 'reader' && <>
