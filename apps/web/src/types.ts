@@ -250,3 +250,13 @@ export type CreatorCharacter = {
   voice_id: string; updated_at: number;
 };
 export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;
+
+export type CreatorMediaAsset = {
+  id: string; story_id: string; kind: 'background' | 'foreground';
+  label: string; caption: string; character_id: string | null;
+  filename: string; media_type: string; created_at: number; url: string;
+};
+export type ScenePresentation = {
+  background: CreatorMediaAsset | null; foreground: CreatorMediaAsset | null;
+  selection: 'caption_match' | 'no_match'; context_excerpt: string; generated: false;
+};

@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -138,6 +138,34 @@ export const api = {
     '/runtime/kobold/stop', { method: 'POST' }),
   koboldActivate: () => request<NarrativeConfig>(
     '/runtime/kobold/activate', { method: 'POST' }),
+  creatorAssets: (storyId: string) => request<{ assets: CreatorMediaAsset[] }>(
+    '/stories/' + encodeURIComponent(storyId) + '/creator/assets'),
+  scenePresentation: (storyId: string) => request<ScenePresentation>(
+    '/stories/' + encodeURIComponent(storyId) + '/creator/assets/scene'),
+  async uploadCreatorAsset(storyId: string, data: {
+    kind: 'background' | 'foreground'; label: string; caption: string;
+    character_id?: string; file: File;
+  }): Promise<CreatorMediaAsset> {
+    const body = new FormData();
+    body.append('kind', data.kind); body.append('label', data.label);
+    body.append('caption', data.caption);
+    if (data.character_id) body.append('character_id', data.character_id);
+    body.append('file', data.file);
+    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
+      '/creator/assets', { method: 'POST', body });
+    if (!response.ok) {
+      const error: { detail?: string } = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'No se pudo guardar el recurso visual');
+    }
+    return response.json() as Promise<CreatorMediaAsset>;
+  },
+  editCreatorAsset: (storyId: string, assetId: string, label: string, caption: string) =>
+    request<CreatorMediaAsset>('/stories/' + encodeURIComponent(storyId) +
+      '/creator/assets/' + encodeURIComponent(assetId),
+      { method: 'PUT', body: JSON.stringify({ label, caption }) }),
+  deleteCreatorAsset: (storyId: string, assetId: string) =>
+    request<void>('/stories/' + encodeURIComponent(storyId) + '/creator/assets/' +
+      encodeURIComponent(assetId), { method: 'DELETE' }),
   creatorBlueprint: (id: string) => request<CreatorBlueprint>(
     '/stories/' + encodeURIComponent(id) + '/creator'),
   saveCreatorBlueprint: (id: string, input: CreatorBlueprintDraft) => request<CreatorBlueprint>(
