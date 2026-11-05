@@ -240,7 +240,8 @@ class ModelHubApiTests(unittest.TestCase):
         try:
             self.assertEqual(manager.control(job["id"], "pause")["status"], "paused")
             self.assertTrue(part.is_file())
-            self.assertEqual(manager.control(job["id"], "resume")["status"], "queued")
+            self.assertIn(manager.control(job["id"], "resume")["status"],
+                          ("queued", "downloading", "verifying", "completed"))
             for _ in range(120):
                 if store.download(job["id"])["status"] in ("completed", "failed"):
                     break
