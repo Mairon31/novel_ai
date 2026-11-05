@@ -85,8 +85,8 @@ test('safe rewind previews historical facts and creates an independent route', a
   // Cancel is a no-op; only explicit confirmation creates a new route.
   await dialog.getByRole('button', { name: 'Mantenerme aquí' }).click();
   await expect(dialog).toBeHidden();
-  let stories = (await (await page.request.get('/api/v1/stories')).json())
-    as { stories: Array<{ id: string; origin_story_id: string | null }> };
+  type StoryList = { stories: Array<{ id: string; origin_story_id: string | null }> };
+  let stories: StoryList = await (await page.request.get('/api/v1/stories')).json();
   expect(stories.stories.filter(item => item.origin_story_id === storyId)).toHaveLength(0);
 
   await page.getByRole('button', { name: 'Rebobinar aquí' }).click();
@@ -95,8 +95,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   await expect(dialog).toBeHidden();
   await expect(page.locator('.noble-reader-chapter')).toContainText('(rama)');
 
-  stories = (await (await page.request.get('/api/v1/stories')).json()) as
-    { stories: Array<{ id: string; origin_story_id: string | null }> };
+  stories = await (await page.request.get('/api/v1/stories')).json();
   const branch = stories.stories.find(item => item.origin_story_id === storyId);
   expect(branch?.id).toBeTruthy();
   expect(branch?.id).not.toBe(storyId);
