@@ -5,7 +5,7 @@ import {
   Sparkles, UploadCloud, UserRound, X,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -51,6 +51,7 @@ export function VisualReader({
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
   const [playerPlot, setPlayerPlot] = useState('');
+  const [sceneMedia, setSceneMedia] = useState<ScenePresentation | null>(null);
   const [visual, setVisual] = useState<VisualState | null>(null);
   const [sceneLocation, setSceneLocation] = useState('');
   const [scenePlan, setScenePlan] = useState<ScenePlan | null>(null);
@@ -96,6 +97,15 @@ export function VisualReader({
     }).catch(() => { /* Older histories still use their original premise. */ });
     return () => { live=false; };
   }, [active?.id]);
+  useEffect(() => {
+    if (!active) { setSceneMedia(null); return; }
+    let current = true;
+    setSceneMedia(null);
+    api.scenePresentation(active.id).then(data => {
+      if (current) setSceneMedia(data);
+    }).catch(() => { /* Reader stays usable without optional creator imagery. */ });
+    return () => { current = false; };
+  }, [active?.id, turns.length]);
   useEffect(() => {
     setImagePrompt(active?.premise || '');
     setReferenceAssetId('');
@@ -349,18 +359,24 @@ export function VisualReader({
     <button className="primary-button" onClick={onCreate}><Sparkles size={17}/> Crear mi primera historia</button>
   </div>;
 
+  const displayedBackground = sceneMedia?.background?.url || active.scene_image_url;
   return <div className="noble-reader-layout">
-    <aside className={'noble-scene-panel ' + (active.scene_image_url ? 'has-art' : '')}>
+    <aside className={'noble-scene-panel ' + (displayedBackground ? 'has-art' : '')}>
       <div className="noble-scene-art"
-        style={active.scene_image_url ? { backgroundImage: 'url("' + active.scene_image_url + '")' } : undefined}>
+        style={displayedBackground ? { backgroundImage: 'url("' + displayedBackground + '")' } : undefined}>
         <div className="noble-scene-wash"/>
-        {!active.scene_image_url && <div className="noble-scene-empty">
+        {sceneMedia?.foreground && <img className="noble-character-sprite"
+          src={sceneMedia.foreground.url}
+          alt={'Personaje presente: ' + sceneMedia.foreground.label}/>}
+        {!displayedBackground && <div className="noble-scene-empty">
           <Image size={34}/><strong>Tu escena, tu mundo</strong>
           <p>Agrega una ilustración para acompañar la lectura.</p>
         </div>}
         <div className="noble-scene-bottom">
           <span className="overline">NOBLE VISUAL NOVEL</span>
           <h3>{active.title}</h3>
+          {sceneMedia?.selection === 'caption_match' &&
+            <small className="noble-visual-caption">Recursos del creador según la escena</small>}
           <p><UserRound size={14}/>{active.protagonist_name}</p>
           <button className="noble-scene-upload" disabled={updating}
             onClick={() => fileRef.current?.click()}><Camera size={15}/>
