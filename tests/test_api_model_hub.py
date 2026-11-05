@@ -127,6 +127,65 @@ class ModelHubApiTests(unittest.TestCase):
         self.assertEqual(role.status_code, 200)
         self.assertFalse(role.json()["runtime_connected"])
 
+    def test_resume_rejects_malformed_or_inconsistent_http_range(self):
+        from noble_api.downloads import DownloadManager
+        from noble_api.store import Store
+        from noble_api.catalog import HfCatalog
+        broken = [
+            ("wrong-start", "bytes 31-{} /{}".format(len(PAYLOAD) - 1, len(PAYLOAD)).replace(" ", "")),
+            ("wrong-total", "bytes 30-{}/{}".format(len(PAYLOAD) - 1, len(PAYLOAD) + 99)),
+            ("invalid", "bytes 30-/{}".format(len(PAYLOAD))),
+        ]
+        for label, header in broken:
+            with self.subTest(label=label):
+                def transport(request: httpx.Request):
+                    if "/resolve/" in request.url.path:
+                        return httpx.Response(206, content=PAYLOAD[30:],
+                                              headers={"Content-Range": header})
+                    return hf_mock(request)
+                store = Store(Path(self.temp.name) / ("range-" + label))
+                catalog = HfCatalog(httpx.MockTransport(transport))
+                manager = DownloadManager(store, catalog)
+                part = (store.models_dir / "hf" / REPO / REV / "tiny.Q4_K_M.gguf.part")
+                part.parent.mkdir(parents=True, exist_ok=True)
+                part.write_bytes(PAYLOAD[:30])
+                job, _ = store.enqueue(REPO, REV, "tiny.Q4_K_M.gguf", len(PAYLOAD), SHA)
+                try:
+                    manager._run(job["id"])
+                    state = store.download(job["id"])
+                    self.assertEqual(state["status"], "failed", state)
+                    self.assertIn("rango", state["error"].lower())
+                    self.assertEqual(part.read_bytes(), PAYLOAD[:30])
+                    self.assertEqual(store.installed(), [])
+                finally:
+                    manager.shutdown()
+                    catalog.close()
+
+    def test_partial_response_without_range_request_is_not_accepted(self):
+        from noble_api.downloads import DownloadManager
+        from noble_api.store import Store
+        from noble_api.catalog import HfCatalog
+        def transport(request: httpx.Request):
+            if "/resolve/" in request.url.path:
+                return httpx.Response(206, content=PAYLOAD[10:],
+                    headers={"Content-Range": "bytes 10-{}/{}".format(
+                        len(PAYLOAD) - 1, len(PAYLOAD))})
+            return hf_mock(request)
+        store = Store(Path(self.temp.name) / "unexpected-206")
+        catalog = HfCatalog(httpx.MockTransport(transport))
+        manager = DownloadManager(store, catalog)
+        job, _ = store.enqueue(REPO, REV, "tiny.Q4_K_M.gguf", len(PAYLOAD), SHA)
+        try:
+            manager._run(job["id"])
+            state = store.download(job["id"])
+            self.assertEqual(state["status"], "failed", state)
+            self.assertEqual(store.installed(), [])
+            partial = store.models_dir / "hf" / REPO / REV / "tiny.Q4_K_M.gguf.part"
+            self.assertFalse(partial.exists())
+        finally:
+            manager.shutdown()
+            catalog.close()
+
     def test_resume_from_partial_file(self):
         # HTTP 206 is handled, without duplicating bytes.
         from noble_api.downloads import DownloadManager
