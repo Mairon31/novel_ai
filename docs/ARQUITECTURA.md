@@ -69,3 +69,10 @@ El alcance es de **control de inclusión de datos en el prompt**, no un sistema 
 
 
 **Evidencia de regresión para Lorebook por testigos:** commit `cef3a99`, fix E2E `cb687ec`, [GitHub Actions #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216): **193 Python y 36 Playwright PASS**. Es un filtro explícito y determinista de contexto, no una garantía de que la IA nunca produzca un secreto por inferencia.
+
+
+## Unidad de bifurcación: orden de durabilidad de archivos y WAL
+
+La bifurcación escribe un marcador UUID antes de copiar y lo sincroniza con `os.fsync`; en POSIX también sincroniza el directorio `fork-staging` y su padre para persistir la entrada. Tras clonar la galería, portada y recursos editoriales, recorre solamente el directorio UUID destino, rechaza symlinks y sincroniza todos sus archivos y entradas de directorio **antes** de confirmar la conexión SQLite. `fork_story` usa `PRAGMA synchronous=FULL` para ese commit WAL, sin cambiar el comportamiento general del Store (`NORMAL`). Los fallos de sincronización antes del commit se tratan como fallos de fork, con rollback y compensación de archivos.
+
+En Windows no hay `fsync` portable para directorios en Python; se sincronizan archivos accesibles pero el flush de metadatos se registra como límite. En ambos sistemas, incluso con `FULL`, SQLite y filesystem siguen siendo dominios de fallo distintos: no existe una transacción distribuida atómica, ni prueba de hardware físico, ni garantía frente a controladores que mientan sobre flush. El marcador y recuperación de inicio continúan como segunda barrera.

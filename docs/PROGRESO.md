@@ -558,3 +558,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] La primera [CI #42097551698](https://github.com/Mairon31/novel_ai/actions/runs/42097551698) registró 193 Python PASS, pero solo 34/36 Playwright debido a una aserción ambigua: coincidía con el título de la entrada y con la vista previa. `cb687ec` limitó el selector al panel de activación; no ocultar la ejecución inicial fallida.
 - [x] Criterios verificados: entradas generales anteriores siguen activándose, las privadas requieren testigo del mismo proyecto presente en el estado del mundo, no se activan por mención/always_active cuando nadie las conoce, y remapean IDs de testigo en bifurcaciones parciales/completas. Las restricciones persisten al reiniciar.
 - [ ] Sin medir GPU ni evaluar generación semántica con modelo real; falta aislamiento de otras fuentes de contexto del narrador y presupuesto por tokens.
+
+
+## 2026-11-05 — P0: cierre de ventana crash de archivos en fork (CI pendiente)
+
+- [ ] En `NarrativeService.fork_story` solo se activa `PRAGMA synchronous=FULL` para su conexión SQLite, conservando el valor `NORMAL` para el resto de operaciones. Los archivos nuevos y entradas de directorio se sincronizan antes del COMMIT. Un fallo de `fsync` inicia el mismo rollback SQLite y limpieza de archivos de staging; no se publica una rama parcial.
+- [ ] `_fsync_directory` fuerza metadatos de directorio en POSIX con `O_DIRECTORY/O_NOFOLLOW` cuando están disponibles; Windows no proporciona esta primitiva de forma portable y continúa como best-effort. `_sync_fork_files` recorre únicamente carpeta UUID de la nueva rama, rechaza symlinks y sincroniza contenidos, subdirectorios y directorio propietario.
+- [ ] `tests/test_fork_atomicity.py` se amplió para contar las tablas de snapshots históricas en rollback y probar fsync real, inyección de fallo de disco/metadata, rechazo de symlink externo y conservación de la fuente.
+- [ ] **No declararlo resistente a apagón físico ni CI PASS todavía.** Pendientes ejecución de corte eléctrico real, procesos independientes terminados con `SIGKILL`, análisis de journaling Windows/NTFS, corrupción filesystem, copias de seguridad y restauración.

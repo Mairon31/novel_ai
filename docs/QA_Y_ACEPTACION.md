@@ -141,3 +141,11 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Evidencia: [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216), `193/193` Python y `36/36` Playwright aprobadas; frontend compiló. Commits `cef3a99` (funcionalidad) y `cb687ec` (selector E2E corregido).
 - [x] La primera CI [#42097551698](https://github.com/Mairon31/novel_ai/actions/runs/42097551698) falló solo por un selector Playwright que coincidía con el título de la ficha y con la entrada previsualizada. La aserción se restringió a `.creator-hint[role="status"]`; ambos proyectos (desktop/mobile) pasaron después.
 - [ ] Pendiente: evaluación del contenido generado por un LLM real, aislamiento por testigos de resúmenes episódicos y diálogos, y detector de revelaciones/contradicciones. La prueba de ausencia verifica el prompt preparado, no la obediencia del modelo.
+
+
+## P0 — Gate de durabilidad de bifurcaciones (pendiente de CI)
+
+- [ ] Comprobar `os.fsync` real del marcador, archivos de portada/galería/legado y directorios POSIX antes del commit del fork. No basta con contar llamadas simuladas.
+- [ ] Forzar excepción de sincronización después de terminar copias, y de persistir el marcador antes del commit; verificar rollback de todas las tablas históricas, archivos de destino y ausencia de rama publicada.
+- [ ] Inyectar un symlink en la carpeta nueva y comprobar que el sincronizador se niega a recorrerlo sin borrar el archivo externo.
+- [ ] Suite Python completa y Playwright verde; GPU y power-loss físicos **no** cubiertos por los tests automáticos. Contar aparte futuras pruebas Linux/Windows de procesos muertos y apagones.

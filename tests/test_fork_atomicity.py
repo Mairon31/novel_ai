@@ -7,6 +7,7 @@ no cloned SQLite rows and no branch-owned files, while source data survives.
 from __future__ import annotations
 
 import io
+import os
 from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
@@ -34,7 +35,9 @@ TABLES = (
     "stories", "story_turns",
     "visual_scenes", "visual_assets", "visual_current", "visual_characters",
     "scene_plans", "creator_blueprints", "creator_characters",
-    "creator_media_assets", "lorebook_entries", "world_states",
+    "creator_media_assets", "creator_media_turn_snapshots",
+    "creator_turn_snapshots", "visual_turn_snapshots",
+    "lorebook_entries", "lorebook_turn_snapshots", "world_states",
     "world_state_edits", "world_turn_snapshots",
 )
 
@@ -194,6 +197,61 @@ class ForkAtomicityTests(unittest.TestCase):
         with patch.object(creator_media.shutil, "copyfile", side_effect=copy_then_fail):
             with self.assertRaisesRegex(OSError, "simulated disk copy failure"):
                 self.narrative.fork_story(self.story)
+        self.assert_unchanged()
+
+    def test_successful_fork_fsyncs_marker_and_copied_bytes(self):
+        # Captures actual os.fsync calls, not an in-memory fake write.
+        original = os.fsync
+        with patch("noble_api.narrative.os.fsync", wraps=original) as flushed:
+            branch = self.narrative.fork_story(self.story)
+        self.assertEqual(branch["origin_story_id"], self.story)
+        self.assertGreaterEqual(flushed.call_count, 3)
+        if os.name == "posix":
+            # POSIX also flushes the staging directory, branch subdirectories
+            # and the parent entry before SQLite's FULL WAL commit.
+            self.assertGreaterEqual(flushed.call_count, 6)
+        self.assertEqual(list((self.root / "fork-staging").glob("*.pending")), [])
+
+    def test_file_sync_failure_rolls_back_complete_branch(self):
+        with patch.object(self.narrative, "_sync_fork_files",
+                          side_effect=OSError("simulated fsync write failure")):
+            with self.assertRaisesRegex(OSError, "simulated fsync write failure"):
+                self.narrative.fork_story(self.story)
+        self.assert_unchanged()
+
+    def test_marker_directory_sync_failure_is_rolled_back(self):
+        stage = self.root / "fork-staging"
+        original = self.narrative._fsync_directory
+
+        def stop_at_marker(path):
+            if path == stage:
+                raise OSError("simulated staging fsync failure")
+            return original(path)
+
+        with patch.object(self.narrative, "_fsync_directory",
+                          side_effect=stop_at_marker):
+            with self.assertRaisesRegex(OSError, "simulated staging fsync failure"):
+                self.narrative.fork_story(self.story)
+        self.assert_unchanged()
+
+    def test_new_branch_symlink_is_rejected_during_durable_sync(self):
+        protected = self.root / "outside-private-file"
+        protected.write_bytes(b"never delete this")
+        original = self.narrative._sync_fork_files
+
+        def inject_symlink(folder):
+            alias = folder / "outside-link"
+            try:
+                alias.symlink_to(protected)
+            except (NotImplementedError, OSError):
+                self.skipTest("No se pueden crear symlinks para este usuario")
+            return original(folder)
+
+        with patch.object(self.narrative, "_sync_fork_files",
+                          side_effect=inject_symlink):
+            with self.assertRaisesRegex(ValueError, "simbólico"):
+                self.narrative.fork_story(self.story)
+        self.assertEqual(protected.read_bytes(), b"never delete this")
         self.assert_unchanged()
 
     def test_two_simultaneous_forks_commit_complete_independent_copies(self):
