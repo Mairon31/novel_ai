@@ -137,3 +137,18 @@ La galería incluye ahora un editor para **composición y acción**, plano (gene
 - La clonación de una historia copia los planes de las escenas conservadas y remapea todos los IDs de personajes y arte. Los planes de escenas que quedaron fuera de una rama no se copian.
 
 La referencia sigue utilizando el img2img básico de ComfyUI: una fotografía de referencia es condicionamiento espacial, pero no un identificador de rostro ni un control multi-personaje como IPAdapter. La vinculación sirve para continuidad explícita, no para prometer identidad perfecta.
+
+## Director escénico multicapa — requisitos de Argon (2026-11-05)
+
+**Decisión de producto:** priorizar reutilización de fondo y sprites sobre generar una imagen completa por cada turno. Las capacidades actuales de galería, fondo/primer plano del creador y plan escénico son una base, **no** un director emocional con caché por ubicación ni una hoja de sprites por NPC.
+
+El contrato objetivo será un `VisualStageState` con `location_id`, `time_of_day`, `weather`, `lighting`, `camera_shot`, `visible_characters[]` (ID, posición, expresión, voz) y `is_climactic_cg`. El planificador deberá emitir una de estas decisiones deterministas:
+
+- `REUSE_BACKGROUND`: mismo escenario/iluminación y recurso existente; no invocar ComfyUI.
+- `UPDATE_SPRITE_EMOTION`: cambiar solo sprite del personaje y énfasis visual, sin tocar el fondo.
+- `GENERATE_NEW_BACKGROUND`: no existe fondo compatible; conservar el anterior durante cola y fundir al concluir.
+- `GENERATE_EVENT_CG`: imagen extraordinaria únicamente por evento narrativo o petición explícita.
+
+La clave de caché prevista será `(location_id, time_of_day, weather, camera_shot)` con revisión del activo. Los sprites por expresión `neutral/joy/anger/sadness/surprise` se vincularán a identidad y apariencia inmutable (`visual_dna`, seed, LoRA opcional). `images.py` aceptará plantillas validadas para diferentes familias de ComfyUI y cargará referencias únicamente con consentimiento del usuario; no prometer consistencia facial perfecta.
+
+**Criterio de aceptación:** 10 turnos sucesivos en una misma ubicación no invocan regeneración de fondo; un cambio de emoción actualiza el sprite sin llamada a ComfyUI; al cambiar de lugar, transición visible sin bloquear narración; completar QA desktop y mobile. Control de GPU serializado, sin dejar pesos innecesarios residentes. Ver [TODO](../TODO.md) y [auditoría §§12, 19](ARGON_AUDITORIA.md).
