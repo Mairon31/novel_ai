@@ -254,7 +254,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
               if (file) void importArchive(file);
             }}/>
           {notice && <p className="story-notice" role="status">{notice}</p>}
-          {error && <p className="narrative-error" role="alert">{error}</p>
+          {error && <p className="narrative-error" role="alert">{error}</p>}
         </div>
         <div className="noble-library-hero-art" aria-hidden="true">
           <BookOpen size={72}/>
