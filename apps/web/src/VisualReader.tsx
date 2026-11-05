@@ -50,6 +50,7 @@ export function VisualReader({
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
+  const [playerPlot, setPlayerPlot] = useState('');
   const [visual, setVisual] = useState<VisualState | null>(null);
   const [sceneLocation, setSceneLocation] = useState('');
   const [scenePlan, setScenePlan] = useState<ScenePlan | null>(null);
@@ -86,6 +87,15 @@ export function VisualReader({
   const tail = useRef<HTMLDivElement | null>(null);
   useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
   useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
+  useEffect(() => {
+    setPlayerPlot('');
+    if (!active) return;
+    let live=true;
+    api.creatorBlueprint(active.id).then(data => {
+      if (live) setPlayerPlot(data.player_plot || '');
+    }).catch(() => { /* Older histories still use their original premise. */ });
+    return () => { live=false; };
+  }, [active?.id]);
   useEffect(() => {
     setImagePrompt(active?.premise || '');
     setReferenceAssetId('');
@@ -374,7 +384,7 @@ export function VisualReader({
       </header>
       <div className="noble-reader-prose" aria-live="polite">
         <div className="noble-reader-intro"><Sparkles size={17}/>
-          <div><span>LA HISTORIA COMIENZA</span><p>{active.premise}</p></div></div>
+          <div><span>LA HISTORIA COMIENZA</span><p>{playerPlot || active.premise}</p></div></div>
         {turns.map((turn, i) => <section className="noble-reading-turn"
           id={'noble-turn-' + turn.id} key={turn.id}>
           <small>ESCENA {String(i + 1).padStart(2, '0')}</small>
