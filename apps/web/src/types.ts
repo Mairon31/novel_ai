@@ -271,6 +271,11 @@ export type WorldTurnSnapshot = {
   canon: string; state: WorldStateData;
 };
 
+export type LorebookTurnSnapshot = {
+  story_id: string; turn_id: string; created_at: number;
+  entries: LorebookEntry[];
+};
+
 export type LorebookEntry = {
   id: string; story_id: string; title: string; content: string;
   keys: string[]; secondary_keys: string[];
