@@ -91,3 +91,7 @@ No se incluyen checkpoints pesados, credenciales ni datos privados en Git. Respe
 ### Google Colab: laboratorio integral QA
 
 Abre el [notebook integral v1.2 con logs y progreso en vivo](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_2.ipynb). Despliega Noble AI en localhost, prueba backend/navegador, ensaya GGUF con GPU si existe y descarga un ZIP con métricas, evidencias y logs. Si interrumpes una etapa, la celda de exportación permite recuperar un informe parcial. No publica túneles ni demuestra por sí sola rendimiento en GPU antes de ejecutarlo.
+
+### Colab QA sin compilación CUDA de 30 minutos
+
+[Notebook integral v1.3](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_3.ipynb) · [Diagnóstico y correcciones del primer ensayo](docs/COLAB_QA_2026-11-05.md). Descarga llama.cpp CUDA precompilado con SHA256 y usa `npm install` para el frontend sin lockfile. Requiere ejecutar Colab para certificar resultados de GPU; no hay benchmark físico aún.
