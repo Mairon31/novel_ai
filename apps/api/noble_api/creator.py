@@ -7,6 +7,7 @@ Everything is local/private until Noble AI has identity and sharing controls.
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 import sqlite3
 import time
 import uuid
@@ -173,8 +174,11 @@ class CreatorService:
         return self.narrative.append(story_id,str(uuid.uuid4()),"story","",
                                      content,"inicio-del-creador")
 
-    def clone(self, source_id: str, target_id: str, character_ids: dict | None = None) -> dict[str, str]:
-        with self.store._conn() as db:
+    def clone(self, source_id: str, target_id: str, character_ids: dict | None = None,
+              conn=None) -> dict[str, str]:
+        # The caller may supply the fork's shared SQLite transaction.
+        # nullcontext never commits an inner transaction early.
+        with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
             blueprint=db.execute("""SELECT config_json FROM creator_blueprints
                 WHERE story_id=?""",(source_id,)).fetchone()
             characters=[dict(x) for x in db.execute("""SELECT id,config_json
