@@ -1,0 +1,375 @@
+import { useEffect, useState } from 'react';
+import {
+  ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
+  Plus, Save, Sparkles, UserRound, Users, X,
+} from 'lucide-react';
+import { api } from './api';
+import type {
+  Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter,
+  CreatorCharacterDraft,
+} from './types';
+
+type Section = 'story' | 'cast' | 'openings';
+
+const blankBlueprint: CreatorBlueprintDraft = {
+  synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
+  opening_scenarios: [], genre: '', tags: [], language: 'es-419',
+};
+const blankCharacter: CreatorCharacterDraft = {
+  name: '', description: '', personality: '', dialogue_examples: '',
+  visual_character_id: null, voice_id: '',
+};
+
+interface Props {
+  onOpenLibrary: () => void;
+}
+
+export function CreatorStudio({ onOpenLibrary }: Props) {
+  const [stories, setStories] = useState<Story[]>([]);
+  const [active, setActive] = useState<Story | null>(null);
+  const [section, setSection] = useState<Section>('story');
+  const [blueprint, setBlueprint] = useState<CreatorBlueprintDraft>(blankBlueprint);
+  const [characters, setCharacters] = useState<CreatorCharacter[]>([]);
+  const [character, setCharacter] = useState<CreatorCharacterDraft>(blankCharacter);
+  const [editingCharacter, setEditingCharacter] = useState<string | null>(null);
+  const [openingDraft, setOpeningDraft] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [createNew, setCreateNew] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newPremise, setNewPremise] = useState('');
+  const [newProtagonist, setNewProtagonist] = useState('');
+  const [working, setWorking] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    let live = true;
+    api.stories().then(result => {
+      if (live) setStories(result.stories);
+    }).catch((exc: Error) => { if (live) setError(exc.message); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    let live = true;
+    setLoading(true);
+    setError(''); setNotice(''); setCharacters([]);
+    setEditingCharacter(null); setCharacter(blankCharacter);
+    Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id)])
+      .then(([data, cast]) => {
+        if (!live) return;
+        const { synopsis, player_plot, ai_plot, guidelines, reminder,
+          opening_scenarios, genre, tags, language } = data;
+        setBlueprint({ synopsis, player_plot, ai_plot, guidelines, reminder,
+          opening_scenarios, genre, tags, language });
+        setTagsInput(tags.join(', '));
+        setCharacters(cast.characters);
+      })
+      .catch((exc: Error) => { if (live) setError(exc.message); })
+      .finally(() => { if (live) setLoading(false); });
+    return () => { live = false; };
+  }, [active?.id]);
+
+  function update<K extends keyof CreatorBlueprintDraft>(key: K, value: CreatorBlueprintDraft[K]) {
+    setBlueprint(previous => ({ ...previous, [key]: value }));
+  }
+
+  async function createStory() {
+    if (newTitle.trim().length < 2 || newPremise.trim().length < 10 ||
+        !newProtagonist.trim()) return;
+    setWorking(true); setError('');
+    try {
+      const saved = await api.createStory(newTitle.trim(), newPremise.trim(), newProtagonist.trim());
+      setStories(previous => [saved, ...previous]);
+      setActive(saved); setSection('story'); setCreateNew(false);
+      setNewTitle(''); setNewPremise(''); setNewProtagonist('');
+      setNotice('Historia creada. Puedes preparar su contenido antes de jugarla.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function saveBlueprint() {
+    if (!active) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      const draft = { ...blueprint, tags: tagsInput.split(',').map(v => v.trim()).filter(Boolean) };
+      const saved: CreatorBlueprint = await api.saveCreatorBlueprint(active.id, draft);
+      setBlueprint({
+        synopsis: saved.synopsis, player_plot: saved.player_plot,
+        ai_plot: saved.ai_plot, guidelines: saved.guidelines,
+        reminder: saved.reminder, opening_scenarios: saved.opening_scenarios,
+        genre: saved.genre, tags: saved.tags, language: saved.language,
+      });
+      setTagsInput(saved.tags.join(', '));
+      setNotice('Contenido del creador guardado. El narrador utilizará las instrucciones privadas.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  function editCharacter(value: CreatorCharacter) {
+    setEditingCharacter(value.id);
+    setCharacter({
+      name: value.name, description: value.description,
+      personality: value.personality, dialogue_examples: value.dialogue_examples,
+      visual_character_id: value.visual_character_id, voice_id: value.voice_id,
+    });
+  }
+
+  async function saveCharacter() {
+    if (!active) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      await api.saveCreatorCharacter(active.id, character, editingCharacter || undefined);
+      setCharacters((await api.creatorCharacters(active.id)).characters);
+      setEditingCharacter(null); setCharacter(blankCharacter);
+      setNotice('Ficha narrativa del personaje guardada.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function startOpening(index: number) {
+    if (!active) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      await api.startCreatorOpening(active.id, index);
+      setNotice('La apertura se guardó como primer turno. Abre la historia desde Biblioteca para continuar.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  return <section className="creator-studio" aria-label="Estudio de creación de historias">
+    <div className="creator-heading">
+      <button className="creator-return" onClick={onOpenLibrary}>
+        <ArrowLeft size={16}/> Biblioteca
+      </button>
+      <span className="overline"><Feather size={15}/> NOBLE CREATOR STUDIO</span>
+      <h1>Construye historias con intención.</h1>
+      <p>Separa lo que ve el jugador de lo que conoce el narrador. Define personajes,
+        reglas, escenas de apertura y el tono de tu mundo sin mezclarlos con la lectura.</p>
+    </div>
+
+    <div className="creator-layout">
+      <aside className="creator-projects" aria-label="Historias para crear">
+        <div className="creator-projects-head">
+          <div><span className="overline">TUS MUNDOS</span><strong>Proyectos</strong></div>
+          <button title="Nuevo proyecto" aria-label="Crear proyecto" onClick={() => setCreateNew(true)}>
+            <Plus size={18}/>
+          </button>
+        </div>
+        {loading && !active && <p className="creator-placeholder"><LoaderCircle size={15} className="rotating"/> Cargando...</p>}
+        {stories.map(story => <button className={'creator-project ' +
+          (active?.id === story.id ? 'is-selected' : '')} key={story.id}
+          onClick={() => { setActive(story); setSection('story'); }}>
+          <BookOpen size={18}/><span><strong>{story.title}</strong>
+          <small>{story.protagonist_name || 'Protagonista'}</small></span><ChevronRight size={15}/>
+        </button>)}
+        {!stories.length && !loading && <p className="creator-placeholder">
+          Aún no hay historias. Crea tu primer proyecto para diseñar su mundo.</p>}
+        <button className="creator-new" onClick={() => setCreateNew(true)}>
+          <Plus size={17}/> Nuevo proyecto
+        </button>
+      </aside>
+
+      <div className="creator-editor">
+        {error && <p className="narrative-error" role="alert">{error}</p>}
+        {notice && <p className="narrative-saved" role="status"><Check size={16}/>{notice}</p>}
+        {!active ? <div className="creator-welcome">
+          <Sparkles size={40}/><h2>Selecciona una historia para editarla</h2>
+          <p>Desde aquí puedes escribir la trama para el jugador, la información
+            interna para el modelo, las fichas de personajes y los distintos inicios.</p>
+          <button className="primary-button" onClick={() => setCreateNew(true)}>
+            <Plus size={16}/> Crear nueva historia
+          </button>
+        </div> : <>
+          <div className="creator-editor-title">
+            <div><span className="overline">EDITANDO PROYECTO</span>
+              <h2>{active.title}</h2>
+              <small>El jugador controla a {active.protagonist_name || 'Protagonista'}.</small></div>
+            <button className="secondary-button" onClick={onOpenLibrary}>
+              <BookOpen size={15}/> Ir a Biblioteca
+            </button>
+          </div>
+          <nav className="creator-editor-tabs" aria-label="Herramientas de creación">
+            <button className={section === 'story' ? 'selected' : ''}
+              onClick={() => setSection('story')}><FileText size={17}/> Trama y contexto</button>
+            <button className={section === 'cast' ? 'selected' : ''}
+              onClick={() => setSection('cast')}><Users size={17}/> Personajes ({characters.length})</button>
+            <button className={section === 'openings' ? 'selected' : ''}
+              onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
+          </nav>
+
+          {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando contenido...</div> :
+            section === 'story' ? <div className="creator-fields">
+              <div className="creator-section-intro">
+                <h3>Identidad y trama de tu historia</h3>
+                <p>La descripción pública presenta el mundo. El contexto interno y
+                  las directrices se entregan al narrador, no al texto del jugador.</p>
+              </div>
+              <div className="creator-double">
+                <label>Género
+                  <input aria-label="Género de la historia" value={blueprint.genre}
+                    maxLength={80} placeholder="Fantasía, romance, misterio..."
+                    onChange={e => update('genre', e.target.value)}/>
+                </label>
+                <label>Idioma
+                  <select aria-label="Idioma de la historia" value={blueprint.language}
+                    onChange={e => update('language', e.target.value)}>
+                    <option value="es-419">Español latinoamericano</option>
+                    <option value="en">English</option><option value="ja">日本語</option>
+                    <option value="ko">한국어</option><option value="pt-BR">Português (Brasil)</option>
+                    <option value="fr">Français</option>
+                  </select>
+                </label>
+              </div>
+              <label>Sinopsis breve para lectores
+                <textarea rows={3} aria-label="Sinopsis para lectores" maxLength={250}
+                  value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}
+                  placeholder="Lo primero que verá el jugador al descubrir la historia."/>
+              </label>
+              <label>Trama que conoce el jugador
+                <textarea rows={5} maxLength={4000} aria-label="Trama visible"
+                  value={blueprint.player_plot}
+                  onChange={e => update('player_plot', e.target.value)}
+                  placeholder="Punto de partida, situación y expectativas sin revelar secretos."/>
+              </label>
+              <label>Contexto interno para la IA
+                <textarea rows={8} maxLength={12000} aria-label="Contexto interno de la IA"
+                  value={blueprint.ai_plot}
+                  onChange={e => update('ai_plot', e.target.value)}
+                  placeholder="Reglas del mundo, relaciones, secretos y sucesos que el narrador sí debe conocer."/>
+                <small>No aparece directamente en la historia, pero influye en su generación.</small>
+              </label>
+              <label>Directrices narrativas
+                <textarea rows={5} maxLength={4000} aria-label="Directrices de narración"
+                  value={blueprint.guidelines}
+                  onChange={e => update('guidelines', e.target.value)}
+                  placeholder="Estilo, ritmo, personajes que controla el narrador, detalles de continuidad..."/>
+              </label>
+              <label>Recordatorio persistente
+                <textarea rows={3} maxLength={1200} aria-label="Recordatorio persistente"
+                  value={blueprint.reminder} onChange={e => update('reminder', e.target.value)}
+                  placeholder="Una instrucción breve que importa en cada turno."/>
+              </label>
+              <label>Etiquetas (separadas por coma)
+                <input maxLength={500} aria-label="Etiquetas de la historia" value={tagsInput}
+                  onChange={e => setTagsInput(e.target.value)} placeholder="isekai, aventura, magia"/>
+              </label>
+              <button className="primary-button" disabled={working} onClick={() => void saveBlueprint()}>
+                <Save size={16}/>{working ? 'Guardando...' : 'Guardar trama y contexto'}
+              </button>
+            </div> : section === 'cast' ? <div className="creator-fields">
+              <div className="creator-section-intro">
+                <h3>Personajes de la novela</h3>
+                <p>Define personalidad, historia y ejemplos de habla de los NPC.
+                  Es un sistema narrativo independiente de las fichas visuales.</p>
+              </div>
+              <div className="creator-character-list">
+                {characters.map(person => <button key={person.id}
+                  onClick={() => editCharacter(person)}>
+                  <UserRound size={19}/><span><strong>{person.name}</strong>
+                    <small>{person.personality || person.description}</small></span>
+                  <ChevronRight size={16}/></button>)}
+              </div>
+              <label>Nombre
+                <input aria-label="Nombre de NPC" maxLength={80}
+                  value={character.name} onChange={e => setCharacter(v => ({...v,name:e.target.value}))}/>
+              </label>
+              <label>Trasfondo y descripción
+                <textarea rows={5} maxLength={3000} aria-label="Descripción de NPC"
+                  value={character.description} onChange={e => setCharacter(v => ({
+                    ...v,description:e.target.value,
+                  }))}/>
+              </label>
+              <label>Personalidad y motivaciones
+                <textarea rows={4} maxLength={1500} aria-label="Personalidad de NPC"
+                  value={character.personality} onChange={e => setCharacter(v => ({
+                    ...v,personality:e.target.value,
+                  }))}/>
+              </label>
+              <label>Ejemplos de diálogo
+                <textarea rows={4} maxLength={3000} aria-label="Diálogos de ejemplo"
+                  value={character.dialogue_examples} onChange={e => setCharacter(v => ({
+                    ...v,dialogue_examples:e.target.value,
+                  }))} placeholder="Cómo habla, expresiones habituales y forma de responder."/>
+              </label>
+              <div className="creator-actions">
+                <button className="primary-button" disabled={working || !character.name.trim() ||
+                    character.description.trim().length < 20} onClick={() => void saveCharacter()}>
+                  <Save size={16}/>{editingCharacter ? 'Actualizar personaje' : 'Añadir personaje'}
+                </button>
+                {editingCharacter && <button className="secondary-button" onClick={() => {
+                  setEditingCharacter(null); setCharacter(blankCharacter);
+                }}><X size={15}/> Cancelar edición</button>}
+              </div>
+            </div> : <div className="creator-fields">
+              <div className="creator-section-intro">
+                <h3>Distintas formas de comenzar</h3>
+                <p>Prepara hasta seis escenas iniciales. El jugador podrá elegir
+                  una al iniciar. Puedes usar <code>{'{{user}}'}</code> como referencia al protagonista.</p>
+              </div>
+              {blueprint.opening_scenarios.map((opening,index) =>
+                <div className="creator-opening" key={index}>
+                  <div><strong>Apertura {index+1}</strong>
+                    <button disabled={working} aria-label={'Quitar apertura '+(index+1)}
+                      onClick={() => update('opening_scenarios',
+                        blueprint.opening_scenarios.filter((_,i)=>i!==index))}><X size={15}/></button>
+                  </div>
+                  <textarea aria-label={'Texto de apertura '+(index+1)} rows={5}
+                    maxLength={3000} value={opening}
+                    onChange={e => update('opening_scenarios',
+                      blueprint.opening_scenarios.map((v,i)=>i===index?e.target.value:v))}/>
+                  <button className="secondary-button" disabled={working || opening.trim().length<15}
+                    onClick={() => void startOpening(index)}>
+                    <BookOpen size={15}/> Utilizar como inicio de esta historia
+                  </button>
+                </div>)}
+              <label>Escribir otra apertura
+                <textarea rows={5} aria-label="Nueva apertura" maxLength={3000}
+                  value={openingDraft} onChange={e=>setOpeningDraft(e.target.value)}
+                  placeholder="Describe la primera escena tal como debería leerla el jugador."/>
+              </label>
+              <div className="creator-actions">
+                <button className="secondary-button" disabled={working ||
+                    blueprint.opening_scenarios.length >= 6 || openingDraft.trim().length<15}
+                  onClick={() => {
+                    update('opening_scenarios',[...blueprint.opening_scenarios, openingDraft.trim()]);
+                    setOpeningDraft('');
+                  }}><Plus size={16}/> Añadir apertura</button>
+                <button className="primary-button" disabled={working}
+                  onClick={() => void saveBlueprint()}><Save size={16}/> Guardar aperturas</button>
+              </div>
+              <p className="creator-hint">Guarda las aperturas antes de activar un inicio.
+                No se reemplaza automáticamente una historia que ya tenga turnos.</p>
+            </div>}
+        </>}
+      </div>
+    </div>
+    {createNew && <div className="welcome-scrim">
+      <section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Crear proyecto narrativo">
+        <div className="story-create-heading"><span className="overline">NUEVA HISTORIA</span>
+          <button aria-label="Cerrar proyecto" className="icon-button"
+            onClick={() => setCreateNew(false)}><X size={18}/></button></div>
+        <h2>Crea tu próximo mundo</h2>
+        <p>Primero crea el proyecto. Después tendrás herramientas independientes para
+          la trama, personajes y aperturas.</p>
+        <label className="form-label">Título
+          <input value={newTitle} maxLength={100}
+            onChange={e => setNewTitle(e.target.value)}/></label>
+        <label className="form-label">Premisa del mundo
+          <textarea rows={4} maxLength={4000} value={newPremise}
+            onChange={e => setNewPremise(e.target.value)}/></label>
+        <label className="form-label">Protagonista
+          <input value={newProtagonist} maxLength={60}
+            onChange={e => setNewProtagonist(e.target.value)}/></label>
+        {error && <p role="alert" className="narrative-error">{error}</p>}
+        <button className="primary-button full" disabled={working || newTitle.trim().length<2 ||
+          newPremise.trim().length<10 || !newProtagonist.trim()} onClick={() => void createStory()}>
+          <Plus size={16}/> Crear proyecto
+        </button>
+      </section>
+    </div>}
+  </section>;
+}
