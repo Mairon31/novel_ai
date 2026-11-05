@@ -239,3 +239,16 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Pruebas `test_story_archive.py` cubren exportación/importación a segunda instalación, fidelidad de ramas e imágenes, FTS restaurado, archivo ZIP corrupto, ID externo, conflicto 409 y rollback; `test_branch_map.py` cubre navegación, aislamiento y ciclos.
 - [x] E2E `story-archive.spec.ts` comprueba descarga `.noble.zip` y protección al intentar importar sobre ID existente, y `branch-tree.spec.ts` navega raíz, descendientes y selector en lector.
 - [ ] Compatibilidad con lectores/instalaciones de esquemas nuevos, importación con remapeo de UUID, datasets de más de 192 MiB y resistencia a cortes eléctricos físicos no están cubiertas por la suite actual.
+
+
+## P1 — Gate de duplicación de respaldos (CI verificada)
+
+- [x] Importar un `.noble.zip` existente sin `as_copy` → 409 y cero modificaciones. Repetir la importación con `as_copy=true` crea familias independientes cada vez, conserva relaciones padre/hija, reindexa intervenciones y restaura portadas/escenas con IDs distintos.
+- [x] Instantáneas visuales, editoriales, Lorebook y mundo conservan los enlaces a nuevos `turn_id`; imágenes y nombres físicos cambian de UUID. Los textos narrativos con UUID literales no se reescriben.
+- [x] ZIP con WebP manipulado y checksum roto sigue respondiendo 422 incluso al intentar copiarlo. [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321), **230 Python + 46 Playwright PASS** (escritorio y móvil).
+
+## P2 — Gate de enlaces profundos al lector y Creator (pendiente CI)
+
+- [ ] Compartir `#/historia/<uuid>` carga detalle tras navegación directa y recarga; `#/historia/<uuid>/leer` carga lector con historia correcta. Volver/adelante restaura rutas y selección de ramas.
+- [ ] `#/creator/<uuid>` selecciona proyecto concreto incluso tras F5; Creator Studio actualiza URL al cambiar proyecto. Atajos y menú sincronizan hash para Biblioteca/Modelos/Configuración/Infraestructura.
+- [ ] IDs inválidos nunca generan llamadas con nombres de ruta arbitrarios; ID válido inexistente da error no destructivo. Playwright real desktop/móvil y build Vite deben pasar.

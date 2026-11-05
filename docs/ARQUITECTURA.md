@@ -146,3 +146,12 @@ Para restaurar, obtiene el bloqueo de escritor SQLite, comprueba colisiones, cre
 
 
 **Gate de backup/ramas:** [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) confirmó 226/226 Python, 46/46 Playwright y build, incluido el ajuste móvil del `z-index` del botón de retorno. Se preservan UUID de la familia; el importador retorna 409 en conflictos en lugar de sobreescribir datos.
+
+
+## Duplicación de familias sin colisiones
+
+El endpoint de restauración conserva su comportamiento no destructivo por defecto (`409` si existe una historia). El modo explícito `as_copy=true` ejecuta primero la validación completa del ZIP, después genera un mapa `UUID original → UUID nuevo` para entidades del archivo, referencias relacionales, entradas JSON estructuradas y medios del árbol; **no** transforma prosa ni campos narrativos de texto libre. Reconstruye las rutas de `story-assets`, títulos con «(copia)» y enlaces entre padre/hija, y reutiliza la misma transacción SQLite, marcadores durables y compensación en caso de errores. Responde con el mapa de IDs de historias para navegar la copia importada. [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321).
+
+## Enrutamiento local compartible
+
+`workspaceRoute.ts` maneja rutas de UI en el fragmento de URL (`#/biblioteca`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`, etc.), distinguiendo estado de navegación de cada dominio visual. `App.tsx` es el punto de coordinación del hash; `StoryStudio` y `CreatorStudio` reciben destino por props y notifican cuando el usuario abre otra historia o proyecto. El uso de hash permite recarga y favoritos dentro de instalaciones locales FastAPI/desktop sin agregar rutas backend para cada vista, preservando la API `/api/v1`. El enrutamiento no borra ni fusiona turnos ni anula el límite de aislamiento de ramas.

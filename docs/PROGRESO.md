@@ -670,3 +670,19 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] El lector y la página editorial navegan rutas conectadas con controles adaptados a escritorio/móvil. El botón «Volver a biblioteca» dejó de quedar cubierto por la cabecera en móvil; se corrigió su `z-index`.
 - [x] Las regresiones previas se corrigieron: `d65d9da` detectó expresión JSX sin cierre; `1b6740c` pasó compilación pero el botón volver estaba interceptado en móvil; `ce52550` añadió el mapa, y `abf114e` fijó la selección exacta de historia raíz en el E2E.
 - [ ] Limitaciones declaradas: el respaldo v1 no importa colisiones como copias renombradas, admite hasta 64 historias y 192 MiB de recursos, no incluye pesos de modelos ni configuración global. No se han validado apagones físicos/NTFS, hardware GPU ni compatibilidad de archivo con versiones futuras del esquema.
+
+
+## 2026-11-05 — P1: Importar familia repetida como copia independiente (CI verificada)
+
+- [x] `POST /api/v1/stories/archive/import?as_copy=true` mantiene validación original de ZIP y SHA, crea **un UUID nuevo por cada entidad y referencia de la familia**, incluido material histórico solo presente en snapshots JSON, medios y nombres de archivos. Actualiza `origin_story_id` y `origin_turn_id` para que los nuevos nodos formen un árbol independiente; texto literario, diálogos y canon libre permanecen intactos.
+- [x] El modo sin parámetro conserva IDs originales y rechaza duplicación con 409. El modo copia renombra títulos con «(copia)», devuelve `story_id_map` y usa el mismo staging, `fsync`, transacción e indexación FTS que la importación original. Biblioteca ofrece checkbox visible para solicitar explícitamente la duplicación sin sobreescribir.
+- [x] `tests/test_story_archive.py` verifica la duplicación repetida del mismo ZIP, independencia de familias, remapeo de instantáneas, recursos WebP/portadas, búsqueda FTS por rama, preservación de texto libre con UUID literal y rechazo sin escritura de hash corrupto. Playwright comprueba el checkbox en escritorio y móvil.
+- [x] [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321): **230/230 Python y 46/46 Playwright PASS**, build frontend correcto.
+
+## 2026-11-05 — P2: Enlaces profundos mediante URL local (CI pendiente)
+
+- [ ] `workspaceRoute.ts` define parseo y serialización de rutas hash con UUID canónico. Admite `#/biblioteca`, `#/historia/<uuid>`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico` y alias `#/infraestructura`.
+- [ ] `App.tsx` sincroniza menú, atajos de teclado, back/forward del navegador y enlaces externos con el hash. `StoryStudio.tsx` carga una historia por UUID desde la URL al iniciar o recargar; selección, lectura, retorno, bifurcación y cambio de rama actualizan la ruta. `CreatorStudio.tsx` sincroniza proyecto seleccionado y nuevos proyectos.
+- [ ] Ruta hash elegida para que los enlaces funcionen en backend/instalación empaquetada **sin configurar fallback de servidor web**. Una ruta desconocida abre Model Hub; las rutas con ID válido pero inexistente muestran error sin tocar datos.
+- [ ] `apps/web/tests/workspace-route.spec.ts` comprueba carga directa, recarga, navegación de detalle→lector→otra ruta, Back/Forward, Creator Studio y enlace de infraestructura en ambos tamaños.
+- [ ] **CI pendiente**, no sustituye la separación interna por dominios de `App.tsx` ni añade historial URL por cada escena/turno.

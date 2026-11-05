@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
 import { StoryStudio } from './StoryStudio';
+import { parseWorkspaceHash, hashForWorkspaceRoute } from './workspaceRoute';
+import type { WorkspaceRoute } from './workspaceRoute';
 import { CreatorStudio } from './CreatorStudio';
 import { WorkspaceSettings } from './WorkspaceSettings';
 import { readModelDetails, readModelSearch, searchCacheKey,
@@ -69,9 +71,16 @@ function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
 }
 
 export default function App() {
-  const [page, setPage] = useState<Page>('modelos');
-  const [reading, setReading] = useState(false);
-  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+  const [route, setRoute] = useState<WorkspaceRoute>(
+    () => parseWorkspaceHash(window.location.hash));
+  const [page, setPage] = useState<Page>(
+    () => parseWorkspaceHash(window.location.hash).page);
+  const [reading, setReading] = useState(
+    () => Boolean(parseWorkspaceHash(window.location.hash).reading));
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(() => {
+    const current = parseWorkspaceHash(window.location.hash);
+    return current.page === 'crear' ? current.storyId || null : null;
+  });
   const [narrativeRevision, setNarrativeRevision] = useState(0);
   const [keyboardActive, setKeyboardActive] = useState(true);
   const [releaseNotice, setReleaseNotice] = useState<{ name: string; url: string; label: string } | null>(null);
@@ -112,6 +121,21 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('scene');
+
+  // Hash routing keeps direct links usable in the packaged local frontend:
+  // no server-side SPA catch-all rewrite is required.
+  useEffect(() => {
+    const onHashChange = () => {
+      const next = parseWorkspaceHash(window.location.hash);
+      setRoute(next);
+      setPage(next.page);
+      setEditingStoryId(next.page === 'crear' ? next.storyId || null : null);
+      setReading(next.page === 'inicio' && Boolean(next.reading));
+      setNavOpen(false);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1350px)');
@@ -161,8 +185,7 @@ export default function App() {
         '1': 'inicio', '2': 'modelos', '3': 'ajustes',
       };
       if (destinations[e.key]) {
-        e.preventDefault(); setPage(destinations[e.key]);
-        setNavOpen(false); setNotice(''); setError('');
+        e.preventDefault(); changePage(destinations[e.key]);
       }
     };
     window.addEventListener('keydown', handler);
@@ -254,10 +277,18 @@ export default function App() {
     detailRequest.current += 1;
     setDetail(null); setDetailLoading(false); setFitBusy(false);
   }
-  function changePage(next: Page) {
+  function navigateRoute(next: WorkspaceRoute) {
     closeModelDetail();
-    setEditingStoryId(null);
-    setPage(next); setNavOpen(false); setNotice(''); setError('');
+    setRoute(next);
+    setEditingStoryId(next.page === 'crear' ? next.storyId || null : null);
+    setReading(next.page === 'inicio' && Boolean(next.reading));
+    setPage(next.page);
+    setNavOpen(false); setNotice(''); setError('');
+    const target = hashForWorkspaceRoute(next);
+    if (window.location.hash !== target) window.location.hash = target;
+  }
+  function changePage(next: Page) {
+    navigateRoute({ page: next });
   }
   function applyModelDetail(info: ModelDetail) {
     setDetail(info);
@@ -459,7 +490,8 @@ export default function App() {
         {!ready && <Loading/>}
 
         {page === 'crear' && <CreatorStudio initialStoryId={editingStoryId}
-          onOpenLibrary={() => changePage('inicio')}/>}
+          onOpenLibrary={() => changePage('inicio')}
+          onStoryChange={id => navigateRoute({ page: 'crear', storyId: id })}/>}
         {page === 'modelos' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> ECOSISTEMA LOCAL DE IA</div>
             <h1>Centro de modelos<span className="title-dot">.</span></h1>
@@ -661,9 +693,13 @@ export default function App() {
         </section>}
 
         {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}
-              onReadingChange={setReading} onEditStory={storyId => {
-                setEditingStoryId(storyId); setReading(false); setPage('crear');
-              }}/>}
+              routeStoryId={route.page === 'inicio' ? route.storyId || null : null}
+              routeReading={Boolean(route.reading)}
+              onRouteChange={(storyId, isReading) => navigateRoute({
+                page: 'inicio', storyId, reading: isReading,
+              })}
+              onReadingChange={setReading}
+              onEditStory={storyId => navigateRoute({ page: 'crear', storyId })}/>}
 
         {page === 'ajustes' && <WorkspaceSettings
           modelsDir={settings?.models_dir || ''}

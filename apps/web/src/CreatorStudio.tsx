@@ -30,9 +30,10 @@ const blankLorebook: LorebookEntryDraft = {
 interface Props {
   onOpenLibrary: () => void;
   initialStoryId?: string | null;
+  onStoryChange?: (id: string) => void;
 }
 
-export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
+export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: Props) {
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [section, setSection] = useState<Section>('story');
@@ -119,6 +120,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
       const saved = await api.createStory(newTitle.trim(), newPremise.trim(), newProtagonist.trim());
       setStories(previous => [saved, ...previous]);
       setActive(saved); setSection('story'); setCreateNew(false);
+      onStoryChange?.(saved.id);
       setNewTitle(''); setNewPremise(''); setNewProtagonist('');
       setNotice('Historia creada. Puedes preparar su contenido antes de jugarla.');
     } catch (exc) { setError((exc as Error).message); }
@@ -317,7 +319,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
         {loading && !active && <p className="creator-placeholder"><LoaderCircle size={15} className="rotating"/> Cargando...</p>}
         {stories.map(story => <button className={'creator-project ' +
           (active?.id === story.id ? 'is-selected' : '')} key={story.id}
-          onClick={() => { setActive(story); setSection('story'); }}>
+          onClick={() => {
+            setActive(story); setSection('story');
+            onStoryChange?.(story.id);
+          }}>
           <BookOpen size={18}/><span><strong>{story.title}</strong>
           <small>{story.protagonist_name || 'Protagonista'}</small></span><ChevronRight size={15}/>
         </button>)}

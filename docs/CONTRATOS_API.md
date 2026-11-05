@@ -231,3 +231,12 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 
 
 **Validación de contratos de backups/ramas:** [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293): 226 Python + 46 Playwright PASS. El backup importado en un espacio distinto preserva el árbol de historias y la indexación de intervenciones sin tocar la instalación origen.
+
+
+## Importar respaldos de historias como copia
+
+`POST /api/v1/stories/archive/import?as_copy=false` (valor predeterminado) mantiene restauración con UUID originales y devuelve `409` ante colisiones. `?as_copy=true` asigna nuevos UUID a toda la familia, incluidos turnos, escenas, personajes, medios, hechos y referencias de snapshots; conserva recursos y cronología, sin alterar historia existente. Respuesta `201 {root_story_id,restored_stories,restored_files,story_ids,imported_as_copy,original_root_story_id,story_id_map}`, donde `story_id_map` mapea cada ID de historia original al nuevo. ZIP corrupto/incompatible → `422` también en modo copia. El cliente debe activar el modo explícitamente.
+
+## Contrato de enlaces de la interfaz
+
+Los enlaces `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creator/{id}`, `#/creator`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico` y `#/infraestructura` son rutas de **frontend** (hash), no llamadas HTTP de API. Los IDs se validan como UUID. Navegar o recargar no genera ni modifica turnos.

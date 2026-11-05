@@ -134,7 +134,7 @@
 ## Fase 5 — P1/P2: UX, compatibilidad e inmersión
 
 ### AUD-008 — Interfaz por espacios
-- [ ] Navegación profunda y desacoplada por URL: Biblioteca, Lector, Creator Studio, Infraestructura.
+- [ ] **Navegación profunda mediante hash URL implementada, CI pendiente**: Biblioteca, detalle, lector, Creator Studio (historia seleccionada), Model Hub, Descargas, Configuración y Diagnóstico/Infraestructura. Botones, menú, enlaces directos, recarga y atrás/adelante se sincronizan; no requiere catch-all del servidor local.
 - [ ] Separar estado de `App.tsx` por dominio y vistas; medir renders y preservar rutas existentes.
 - [ ] Lector con VN/Libro/Chat, backlog, ocultar HUD, teclado, regeneración y selector rápido de rama.
 - [ ] UX móvil y escritorio verificadas visualmente; virtualización cuando la lista lo requiera (500 mensajes).
@@ -143,7 +143,8 @@
 ### AUD-012 — Interoperabilidad
 - [ ] Importación/exportación **Character Card PNG V2/V3** con metadatos `chara`/`ccv3` y validación de límites, tipos y caracteres.
 - [ ] Arrastrar tarjeta a creador, mapa de campos/persona, activos incrustados y Lorebook, exportación redonda.
-- [x] **Respaldo y restauración portátil `.noble.zip`:** manifest v1, árbol conectado de ramas, turnos, canon, Creator, Lorebooks, instantáneas y medios; hashes SHA-256 y validación previa de entradas, restauración transaccional con staging, sin sobrescribir UUID existentes. [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) **226 Python + 46 Playwright PASS**. Restauración con UUID remapeados para reimportar en el mismo espacio queda fuera del contrato v1.
+- [x] **Respaldo y restauración portátil `.noble.zip`:** manifest v1, árbol conectado de ramas, turnos, canon, Creator, Lorebooks, instantáneas y medios; hashes SHA-256 y validación previa de entradas, restauración transaccional con staging, sin sobrescribir UUID existentes. [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) **226 Python + 46 Playwright PASS**. Modo normal conserva UUID y devuelve 409 si colisionan; modo `as_copy=true` crea copias independientes sin sobrescribir, con [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321), 230 Python + 46 Playwright PASS.
+- [x] **Importación de backup como copia independiente:** remapeo completo de UUID de historias, ramas, turnos, escenas, imágenes, personajes, Lorebooks y referencias JSON de instantáneas; renombra títulos de copias, reconstruye índice FTS y preserva textos de usuario. Checkbox en Biblioteca, 4 regresiones backend + Playwright desktop/móvil; [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321): **230 Python + 46 Playwright PASS**.
 
 ## Fase 6 — P2/P3: distribución, QA, investigación
 

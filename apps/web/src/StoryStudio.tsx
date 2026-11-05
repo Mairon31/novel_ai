@@ -9,9 +9,15 @@ interface StoryStudioProps {
   onOpenSettings: () => void;
   onReadingChange?: (reading: boolean) => void;
   onEditStory?: (storyId: string) => void;
+  routeStoryId?: string | null;
+  routeReading?: boolean;
+  onRouteChange?: (storyId: string | null, reading: boolean) => void;
 }
 
-export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: StoryStudioProps) {
+export function StoryStudio({
+  onOpenSettings, onReadingChange, onEditStory,
+  routeStoryId, routeReading = false, onRouteChange,
+}: StoryStudioProps) {
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [reading, setReading] = useState(false);
@@ -56,6 +62,31 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   useEffect(() => {
     onReadingChange?.(Boolean(active && reading));
   }, [active?.id, reading, onReadingChange]);
+  useEffect(() => {
+    let alive = true;
+    const current = activeStoryId.current;
+    if (!routeStoryId) {
+      if (current) abortCurrentNarration();
+      setActive(null);
+      setReading(false);
+    } else if (current === routeStoryId) {
+      setReading(routeReading);
+    } else {
+      void api.story(routeStoryId).then(story => {
+        if (!alive) return;
+        abortCurrentNarration();
+        setActive(story);
+        setReading(routeReading);
+      }).catch((exc: Error) => {
+        if (!alive) return;
+        setActive(null);
+        setReading(false);
+        setError('No se pudo abrir el enlace de la historia: ' + exc.message);
+      });
+    }
+    return () => { alive = false; };
+    // URL route drives navigation; callback identity must not reset the reader.
+  }, [routeStoryId, routeReading]);
   useEffect(() => {
     let live = true;
     setStoryMetadata(null);
@@ -106,6 +137,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       setStories(fresh.stories);
       setActive(null);
       setReading(false);
+      onRouteChange?.(null, false);
       setNotice((result.imported_as_copy ? 'Copia independiente creada: ' : 'Respaldo restaurado: ') +
         result.restored_stories + ' historias y ' + result.restored_files + ' recursos.');
     } catch (e) { setError((e as Error).message); }
@@ -119,6 +151,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       const story = await api.createStory(title.trim(), premise.trim(), protagonistName.trim());
       setStories(previous => [story, ...previous]);
       setActive(story); setReading(true);
+      onRouteChange?.(story.id, true);
       setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice('Historia creada. Puedes comenzar cuando quieras.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setLoading(false); }
@@ -177,6 +210,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       setStories(previous => previous.map(story => story.id === storyId ?
         { ...story, updated_at: Date.now() / 1000 } : story));
       setReading(true);
+      onRouteChange?.(storyId, true);
     } catch (exc) {
       if (activeStoryId.current === storyId) setError((exc as Error).message);
     } finally {
@@ -193,6 +227,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       setStories(existing => [copy, ...existing]);
       setActive(current => current?.id === originalId ? copy : current);
       setReading(true);
+      onRouteChange?.(copy.id, true);
       setDraft('');
       setNotice('Rama creada. Puedes continuar por una ruta diferente sin modificar la historia original.');
     } catch (e) { setError((e as Error).message); }
@@ -224,14 +259,17 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     abortCurrentNarration();
     setGenerating(false); setStreamText('');
     setDraft(''); setActive(story); setReading(false); setCreating(false);
+    onRouteChange?.(story.id, false);
   }
   async function switchBranch(storyId: string, read = false) {
     if (generating || storyId === active?.id) return;
     setError('');
     try {
       const next = await api.story(storyId);
-      selectStory(next);
-      setReading(read);
+      abortCurrentNarration();
+      setGenerating(false); setStreamText(''); setDraft('');
+      setActive(next); setReading(read); setCreating(false);
+      onRouteChange?.(next.id, read);
     } catch (exc) { setError((exc as Error).message); }
   }
 
@@ -241,6 +279,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       <button className="noble-return-library" aria-label="Volver a biblioteca" onClick={() => {
         abortCurrentNarration();
         setGenerating(false); setStreamText(''); setDraft(''); setActive(null); setReading(false);
+        onRouteChange?.(null, false);
       }}><ArrowLeft size={19}/> Biblioteca</button>
       <div className="noble-reading-navigation-title">
         <strong>{active.title}</strong><span>Jugando como {active.protagonist_name || 'Protagonista'}</span>
@@ -256,8 +295,8 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
       characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
       error={error}
-      onBack={() => { setActive(null); setReading(false); }}
-      onContinue={() => setReading(true)}
+      onBack={() => { setActive(null); setReading(false); onRouteChange?.(null, false); }}
+      onContinue={() => { setReading(true); onRouteChange?.(active.id, true); }}
       onStartOpening={index => void startOpening(index)}
       branches={branchTree?.branches || []}
       onChooseBranch={id => void switchBranch(id)}
