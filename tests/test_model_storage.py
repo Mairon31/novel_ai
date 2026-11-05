@@ -92,6 +92,25 @@ class ModelStorageTests(unittest.TestCase):
         self.assertFalse(next(item for item in again["items"] if item["id"] == mid)
                          ["file_present"])
 
+    def test_installed_model_outside_storage_cannot_be_assigned(self):
+        outside = Path(self.tmp.name) / "outside-gguf.gguf"
+        outside.write_bytes(b"GGUF" + b"test-weights")
+        external_id = self._register("outside-gguf.gguf", outside)
+        response = self.client.put("/api/v1/model-roles/narrator",
+                                   json={"installed_id": external_id})
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertIn("fuera del directorio", response.text)
+        link = self.store.models_dir / "linked-weights.gguf"
+        try:
+            link.symlink_to(outside)
+        except (OSError, NotImplementedError):
+            self.skipTest("Filesystem disallows file symlinks")
+        linked_id = self._register("linked-weights.gguf", link)
+        response = self.client.put("/api/v1/model-roles/narrator",
+                                   json={"installed_id": linked_id})
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(self.store.roles(), {})
+
     def test_registered_external_or_symlink_path_is_not_counted(self):
         outside = Path(self.tmp.name) / "private.gguf"
         outside.write_bytes(b"not-owned" * 400)
