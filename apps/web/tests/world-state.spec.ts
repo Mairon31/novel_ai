@@ -50,7 +50,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByRole('checkbox', { name: 'Hecho público 1' }).uncheck();
   await page.getByRole('checkbox', { name: 'Testigo Aira del hecho 1' }).check();
   await page.getByRole('button', { name: 'Guardar estado del mundo' }).click();
-  await expect(page.getByText(/Estado confirmado/)).toBeVisible();
+  await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('Estado confirmado.');
 
   const response = await page.request.get('/api/v1/stories');
   expect(response.ok()).toBeTruthy();
@@ -80,7 +80,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
 
   await page.getByLabel('Lugar del mundo').fill('Bosque del futuro');
   await page.getByRole('button', { name: 'Guardar estado del mundo' }).click();
-  await expect(page.getByText(/Estado confirmado/)).toBeVisible();
+  await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('Estado confirmado.');
   const archived = await page.request.get(base + '/world-state/turns/' + turnId);
   expect(archived.ok()).toBeTruthy();
   expect((await archived.json()).state.location).toBe('Puerto de niebla');
