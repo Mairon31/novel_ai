@@ -50,6 +50,31 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await expect(restore).toHaveCount(1);
   await restore.click();
   await expect(page.getByText('Galería versionada (2)')).toBeVisible();
+  // Existing art can be used as actual img2img input without losing the original.
+  const reference = page.getByRole('combobox', { name: 'Referencia visual' });
+  const referenceId = await reference.locator('option').nth(1).getAttribute('value');
+  expect(referenceId).toBeTruthy();
+  await reference.selectOption(referenceId!);
+  await expect(page.getByRole('slider', { name: 'Intensidad de transformación' })).toBeVisible();
+  await page.getByLabel('Semilla de imagen').fill('1739');
+  let observedReference = false;
+  await page.route('**/api/v1/stories/*/illustrate', async route => {
+    const payload = route.request().postDataJSON() as {
+      reference_asset_id?: string; denoise?: number; seed?: number;
+      allow_low_vram?: boolean;
+    };
+    expect(payload.reference_asset_id).toBe(referenceId);
+    expect(payload.denoise).toBeGreaterThanOrEqual(0.2);
+    expect(payload.denoise).toBeLessThanOrEqual(0.95);
+    expect(payload.seed).toBe(1739);
+    expect(payload.allow_low_vram).toBe(false);
+    observedReference = true;
+    await route.fulfill({ status: 503, json: { detail: 'Motor ComfyUI no disponible en la prueba' } });
+  });
+  await page.getByRole('button', { name: 'Ilustrar escena con ComfyUI' }).click();
+  await expect(page.getByRole('alert').getByText(/Motor ComfyUI no disponible/)).toBeVisible();
+  expect(observedReference).toBeTruthy();
+  await expect(page.getByText('Galería versionada (2)')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
     '-visual-version-gallery.png', fullPage: true });
 });
