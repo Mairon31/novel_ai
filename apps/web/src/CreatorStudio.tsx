@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
-  Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X,
+  Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X, BookKey,
 } from 'lucide-react';
 import { api } from './api';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter,
-  CreatorCharacterDraft, CreatorMediaAsset,
+  CreatorCharacterDraft, CreatorMediaAsset, LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
-type Section = 'story' | 'cast' | 'openings' | 'media';
+type Section = 'story' | 'cast' | 'lorebook' | 'openings' | 'media';
 
 const blankBlueprint: CreatorBlueprintDraft = {
   synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
@@ -18,6 +18,11 @@ const blankBlueprint: CreatorBlueprintDraft = {
 const blankCharacter: CreatorCharacterDraft = {
   name: '', description: '', personality: '', dialogue_examples: '',
   visual_character_id: null, voice_id: '',
+};
+
+const blankLorebook: LorebookEntryDraft = {
+  title: '', content: '', keys: [], secondary_keys: [], secondary_mode: 'any',
+  match_whole_words: true, priority: 50, enabled: true, always_active: false,
 };
 
 interface Props {
@@ -31,6 +36,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
   const [section, setSection] = useState<Section>('story');
   const [blueprint, setBlueprint] = useState<CreatorBlueprintDraft>(blankBlueprint);
   const [characters, setCharacters] = useState<CreatorCharacter[]>([]);
+  const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([]);
+  const [lorebookDraft, setLorebookDraft] = useState<LorebookEntryDraft>(blankLorebook);
+  const [editingLorebook, setEditingLorebook] = useState<string | null>(null);
+  const [loreKeysInput, setLoreKeysInput] = useState('');
+  const [loreSecondaryInput, setLoreSecondaryInput] = useState('');
+  const [loreQuery, setLoreQuery] = useState('');
+  const [lorePreview, setLorePreview] = useState<LorebookPreview | null>(null);
   const [character, setCharacter] = useState<CreatorCharacterDraft>(blankCharacter);
   const [editingCharacter, setEditingCharacter] = useState<string | null>(null);
   const [openingDraft, setOpeningDraft] = useState('');
@@ -70,12 +82,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
     if (!active) return;
     let live = true;
     setLoading(true);
-    setError(''); setNotice(''); setCharacters([]);
+    setError(''); setNotice(''); setCharacters([]); setLorebookEntries([]);
+    setEditingLorebook(null); setLorebookDraft(blankLorebook);
+    setLoreKeysInput(''); setLoreSecondaryInput(''); setLorePreview(null);
     setEditingCharacter(null); setCharacter(blankCharacter);
     setAssets([]); setMediaFile(null);
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
-                 api.creatorAssets(active.id)])
-      .then(([data, cast, media]) => {
+                 api.creatorAssets(active.id), api.lorebookEntries(active.id)])
+      .then(([data, cast, media, lorebook]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
           opening_scenarios, genre, tags, language } = data;
@@ -84,6 +98,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
         setAssets(media.assets);
+        setLorebookEntries(lorebook.entries);
       })
       .catch((exc: Error) => { if (live) setError(exc.message); })
       .finally(() => { if (live) setLoading(false); });
@@ -144,6 +159,62 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
       setEditingCharacter(null); setCharacter(blankCharacter);
       setNotice('Ficha narrativa del personaje guardada.');
     } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  function editLorebook(entry: LorebookEntry) {
+    setEditingLorebook(entry.id);
+    setLorebookDraft({
+      title: entry.title, content: entry.content, keys: entry.keys,
+      secondary_keys: entry.secondary_keys, secondary_mode: entry.secondary_mode,
+      match_whole_words: entry.match_whole_words, priority: entry.priority,
+      enabled: entry.enabled, always_active: entry.always_active,
+    });
+    setLoreKeysInput(entry.keys.join(', '));
+    setLoreSecondaryInput(entry.secondary_keys.join(', '));
+    setLorePreview(null);
+  }
+
+  function resetLorebookEditor() {
+    setEditingLorebook(null); setLorebookDraft(blankLorebook);
+    setLoreKeysInput(''); setLoreSecondaryInput('');
+  }
+
+  async function saveLorebook() {
+    if (!active || working) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      await api.saveLorebookEntry(active.id, {
+        ...lorebookDraft,
+        keys: loreKeysInput.split(',').map(value => value.trim()).filter(Boolean),
+        secondary_keys: loreSecondaryInput.split(',').map(value => value.trim()).filter(Boolean),
+      }, editingLorebook || undefined);
+      setLorebookEntries((await api.lorebookEntries(active.id)).entries);
+      resetLorebookEditor();
+      setLorePreview(null);
+      setNotice('Entrada de Lorebook guardada. Se activará según sus palabras clave.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function removeLorebook(entry: LorebookEntry) {
+    if (!active || working || !window.confirm('¿Eliminar esta entrada del Lorebook?')) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      await api.deleteLorebookEntry(active.id, entry.id);
+      setLorebookEntries((await api.lorebookEntries(active.id)).entries);
+      if (editingLorebook === entry.id) resetLorebookEditor();
+      setLorePreview(null);
+      setNotice('Entrada eliminada del Lorebook.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function previewLorebookActivation() {
+    if (!active) return;
+    setWorking(true); setError(''); setLorePreview(null);
+    try { setLorePreview(await api.previewLorebook(active.id, loreQuery)); }
+    catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
 
@@ -277,6 +348,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
               onClick={() => setSection('story')}><FileText size={17}/> Trama y contexto</button>
             <button className={section === 'cast' ? 'selected' : ''}
               onClick={() => setSection('cast')}><Users size={17}/> Personajes ({characters.length})</button>
+            <button className={section === 'lorebook' ? 'selected' : ''}
+              onClick={() => setSection('lorebook')}><BookKey size={17}/> Lorebook ({lorebookEntries.length})</button>
             <button className={section === 'openings' ? 'selected' : ''}
               onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
             <button className={section === 'media' ? 'selected' : ''}
@@ -381,6 +454,120 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                   {editingAsset && <button className="secondary-button"
                     onClick={resetMediaEditor}>Cancelar edición</button>}
                 </div>
+              </div>
+            </div> :
+            section === 'lorebook' ? <div className="creator-fields">
+              <div className="creator-section-intro">
+                <h3>Lorebook · conocimiento condicional</h3>
+                <p>Guarda secretos, lugares y reglas que el narrador consulta cuando aparecen
+                  palabras activadoras en la intervención o en la escena reciente. El jugador
+                  no recibe estos textos directamente. Cada rama conserva su propia copia.</p>
+              </div>
+              <div className="creator-character-list">
+                {lorebookEntries.map(entry => <div className="creator-opening" key={entry.id}>
+                  <div><strong>{entry.title} · prioridad {entry.priority}</strong>
+                    <button className="creator-media-delete" disabled={working}
+                      aria-label={'Eliminar Lorebook ' + entry.title}
+                      onClick={() => void removeLorebook(entry)}><Trash2 size={15}/></button>
+                  </div>
+                  <p>{entry.always_active ? 'Siempre activo' :
+                    'Claves: ' + entry.keys.join(', ')}
+                    {entry.enabled ? '' : ' · Deshabilitado'}</p>
+                  <p>{entry.content.slice(0, 170)}{entry.content.length > 170 ? '…' : ''}</p>
+                  <button className="secondary-button" disabled={working}
+                    onClick={() => editLorebook(entry)}>Editar entrada</button>
+                </div>)}
+                {!lorebookEntries.length && <p className="creator-placeholder">
+                  Todavía no hay entradas. Crea hechos que deban recordarse
+                  únicamente en escenas relevantes.</p>}
+              </div>
+              <div className="creator-media-form">
+                <h4>{editingLorebook ? 'Editar entrada del Lorebook' : 'Nueva entrada del Lorebook'}</h4>
+                <label>Título
+                  <input aria-label="Título de Lorebook" value={lorebookDraft.title}
+                    maxLength={100} onChange={e => setLorebookDraft(v => ({
+                      ...v, title: e.target.value,
+                    }))} placeholder="Bosque de cristal, pacto secreto..."/>
+                </label>
+                <label>Hechos que debe recordar el narrador
+                  <textarea aria-label="Contenido de Lorebook" rows={5} maxLength={3500}
+                    value={lorebookDraft.content} onChange={e => setLorebookDraft(v => ({
+                      ...v, content: e.target.value,
+                    }))} placeholder="Describe reglas, secretos o información canónica del mundo."/>
+                </label>
+                <div className="creator-double">
+                  <label>Claves principales (separadas por coma)
+                    <input aria-label="Claves de Lorebook" value={loreKeysInput}
+                      onChange={e => setLoreKeysInput(e.target.value)}
+                      placeholder="bosque, ruinas, mapa"/>
+                  </label>
+                  <label>Claves secundarias opcionales
+                    <input aria-label="Claves secundarias de Lorebook" value={loreSecondaryInput}
+                      onChange={e => setLoreSecondaryInput(e.target.value)}
+                      placeholder="noche, guardia"/>
+                  </label>
+                </div>
+                <div className="creator-double">
+                  <label>Prioridad (0–100)
+                    <input aria-label="Prioridad de Lorebook" type="number" min={0} max={100}
+                      value={lorebookDraft.priority}
+                      onChange={e => setLorebookDraft(v => ({ ...v,
+                        priority: Number(e.target.value),
+                      }))}/>
+                  </label>
+                  <label>Activación secundaria
+                    <select aria-label="Condición secundaria de Lorebook"
+                      value={lorebookDraft.secondary_mode}
+                      onChange={e => setLorebookDraft(v => ({
+                        ...v, secondary_mode: e.target.value as 'any'|'all',
+                      }))}>
+                      <option value="any">Cualquiera</option>
+                      <option value="all">Todas</option>
+                    </select>
+                  </label>
+                </div>
+                <label><input type="checkbox" checked={lorebookDraft.enabled}
+                  onChange={e => setLorebookDraft(v => ({...v, enabled: e.target.checked}))}/>
+                  Entrada habilitada</label>
+                <label><input type="checkbox" checked={lorebookDraft.always_active}
+                  onChange={e => setLorebookDraft(v => ({...v, always_active: e.target.checked}))}/>
+                  Siempre activo (sin claves)</label>
+                <label><input type="checkbox" checked={lorebookDraft.match_whole_words}
+                  onChange={e => setLorebookDraft(v => ({
+                    ...v, match_whole_words: e.target.checked,
+                  }))}/> Coincidir palabras completas</label>
+                <div className="creator-actions">
+                  <button className="primary-button" disabled={working ||
+                    lorebookDraft.title.trim().length < 2 ||
+                    lorebookDraft.content.trim().length < 10}
+                    onClick={() => void saveLorebook()}><Save size={16}/>
+                    {editingLorebook ? 'Actualizar Lorebook' : 'Crear entrada de Lorebook'}
+                  </button>
+                  {editingLorebook && <button className="secondary-button"
+                    onClick={resetLorebookEditor}>Cancelar edición</button>}
+                </div>
+              </div>
+              <div className="creator-media-form">
+                <h4>Comprobar activaciones antes de jugar</h4>
+                <p>Escribe una acción o frase. Se muestran las entradas que recibiría el
+                  narrador y el presupuesto realmente utilizado (máximo 6000 caracteres).</p>
+                <label>Simular una intervención
+                  <textarea rows={3} aria-label="Simular activación Lorebook"
+                    maxLength={3000} value={loreQuery}
+                    onChange={e => { setLoreQuery(e.target.value); setLorePreview(null); }}
+                    placeholder="Entro en las ruinas del bosque..."/>
+                </label>
+                <button className="secondary-button" disabled={working}
+                  onClick={() => void previewLorebookActivation()}>
+                  <BookKey size={16}/> Previsualizar Lorebook
+                </button>
+                {lorePreview && <div role="status" className="creator-hint">
+                  <strong>{lorePreview.entries.length} entrada(s) activada(s)</strong>
+                  <p>{lorePreview.used_chars} de {lorePreview.budget_chars} caracteres
+                    · {lorePreview.skipped_budget} excluidas por presupuesto</p>
+                  {lorePreview.entries.map(entry => <p key={entry.id}>
+                    {entry.title} · prioridad {entry.priority}</p>)}
+                </div>}
               </div>
             </div> :
             section === 'story' ? <div className="creator-fields">
