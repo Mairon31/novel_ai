@@ -152,3 +152,14 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 ## Enlaces
 
 [Model Hub](MODEL_HUB.md) · [Onboarding](ONBOARDING_Y_UI.md) · [Referencias Urakatsu/Koharu](REFERENCIAS_URAKATSU_KOHARU.md) · [App desktop](DESKTOP_Y_DESPLIEGUE.md) · [Issues](https://github.com/Mairon31/novel_ai/issues)
+
+### P1.4 — ampliación funcional completada
+
+- [x] Canon editable por historia, reinyectado al contexto del narrador.
+- [x] Ramas independientes desde cualquier turno guardado con copia de historia/imagen y enlace a origen.
+- [x] Preparación manual del modelo vía API sin escribir turnos de prueba ni cargar GPU en startup.
+- [x] UI de progreso de inferencia, espera y cancelación.
+- [ ] Árbol de ramas, merge/rewind, gestión de conflictos y cache por rama.
+- [ ] Extracción automática, auditable y configurable de hechos de los capítulos.
+- [ ] Controlador GPU/CPU multinivel de ComfyUI, LLM y TTS.
+

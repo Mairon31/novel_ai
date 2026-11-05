@@ -69,3 +69,14 @@ La prueba no es una medición p95 ni una certificación de compatibilidad GPU. V
 - \`GET /api/v1/tts/voices\`: voces Piper detectadas (ONNX + JSON) en el directorio de modelos.
 - \`POST /api/v1/stories/{uuid}/turns/{uuid}/speech\` con \`{"voice_id":"es_MX.onnx","request_source":"listen_button"}\`: devuelve WAV, exige \`tts_enabled=true\`. No hay autolectura.
 - La narración \`POST /api/v1/stories/{uuid}/generate\` ahora emite eventos SSE adicionales \`status\` con \`phase=preparing|connecting|streaming\`, antes de \`delta/done/error\`. Los clientes anteriores pueden ignorar \`status\`.
+
+
+## P1.4 — canon, ramificación y preparación explícita
+
+| Método | Ruta | Estado |
+|---|---|---|
+| PATCH | `/api/v1/stories/{uuid}/canon` | Guarda notas persistentes de historia (hasta 5000 caracteres) |
+| POST | `/api/v1/stories/{uuid}/fork` | Clona la historia hasta `until_turn_id` incluido, o completa si null |
+| POST | `/api/v1/narrative/prepare` | Inferencia corta para preparar motor local/worker sin crear un turno |
+
+La operación fork retorna una historia con `origin_story_id` y `origin_turn_id`, además de otros campos. No edita ni borra el origen. No existe todavía API de fusionar ramas. La llamada de preparación no está habilitada para OpenRouter; debe solicitarse explícitamente desde la UI y no sustituye pruebas de calidad/rendimiento reales.

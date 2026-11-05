@@ -203,6 +203,16 @@ Ver [informe del primer ensayo GPU real](COLAB_QA_V14_RESULTADOS.md). Los númer
 
 **Evidencia:** commits del historial \`master\` y GitHub Actions. Tests de contrato con proveedores simulados, no benchmark real ComfyUI/Piper.
 
+## 2026-11-04 · P1.4 (extensión) — ramas independientes y preparación del narrador
+
+- [x] Migración de SQLite para \`origin_story_id\` y \`origin_turn_id\` sin perder historias anteriores.
+- [x] Servicio \`fork_story\`: copia premisa, canon, protagonista, turnos históricos y WebP; turnos futuros no cambian el original.
+- [x] UI Historia → Historial → Crear rama con cambio automático a la nueva historia.
+- [x] \`POST /api/v1/narrative/prepare\`: llamada breve bajo demanda al LLM, sin registrar datos como turnos.
+- [x] Pruebas de aislación de rama/SQLite/imagen y pre-calentamiento con motores simulados.
+- [ ] Árbol de ramas, variantes por personaje, diffs de canon, editor avanzado de estado.
+- [ ] Test ComfyUI/Piper con motores y checkpoints reales (pospuesto hasta fase de QA agrupada).
+
 ## Plantilla para futuras entradas
 
 ```md

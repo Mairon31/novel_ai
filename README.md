@@ -2,7 +2,7 @@
 
 **Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> **Estado: P1.4 experimental — desarrollo activo.** Model Hub, narración real (ensayo GGUF Colab T4 documentado), historias persistentes, canon editable, narrador con estados de preparación y cancelación; ComfyUI **bajo demanda** para checkpoints compatibles y Piper CPU **bajo demanda** para voces locales ONNX. También hay trabajadores remotos LLM autenticados y configuración de proveedores. **ComfyUI y Piper tienen código y pruebas de contrato, pero aún no benchmarks reales en GPU/CPU con estos proveedores.** El detector automático de cambios de escena, workflows avanzados, TTS GPU/API, ramificación completa y empaquetado Windows siguen pendientes.
+> **Estado: P1.4 experimental — desarrollo activo.** Model Hub, narración real (ensayo GGUF Colab T4 documentado), historias persistentes, canon editable, ramas alternativas por intervención, preparación opcional del modelo y estados visibles de generación; ComfyUI **bajo demanda** para checkpoints compatibles y Piper CPU **bajo demanda** para voces locales ONNX. También hay trabajadores remotos LLM autenticados y configuración de proveedores. **ComfyUI y Piper tienen código y pruebas de contrato, pero aún no benchmarks reales en GPU/CPU con estos proveedores.** El detector automático de cambios de escena, workflows avanzados, TTS GPU/API, árbol visual de ramas avanzado, reconciliación automática del canon y empaquetado Windows siguen pendientes.
 
 ## Ejecutar prototipo en Windows (sin Colab)
 
@@ -40,7 +40,7 @@ Noble AI UI (React/Vite/TS)
            │ REST + SSE / localhost
            ▼
 FastAPI Orchestrator + SQLite + Model Registry + Download Queue
-  ├─ Story Engine, turnos en SQLite + canon manual (ramas y memoria automática pendientes)
+  ├─ Story Engine, turnos SQLite + canon persistente + fork de ramas (estado automático pendiente)
   ├─ Model Hub (Hugging Face/archivos locales/licencias/compatibilidad)
   ├─ Runtime supervisor (dispositivos, arranque/parada, cambio seguro)
   ├─ Narrador: KoboldCpp / Ollama / server compatible (texto interactivo)
@@ -81,7 +81,7 @@ Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB 
 
 ## Próximo resultado comprobable
 
-**Siguiente hito:** validar los adaptadores ComfyUI y Piper con procesos reales, implementar identificación de escenas, administrar la VRAM compartida entre narrador/difusión/voz y avanzar en ramas, consistencia de personajes y empaquetado. El primer LLM GGUF real se validó en Colab T4; sigue pendiente probarlo en la RTX 5060 Ti y medir multimedia real.
+**Siguiente hito:** validar los adaptadores ComfyUI y Piper con procesos reales, implementar identificación de escenas, administrar la VRAM compartida entre narrador/difusión/voz y avanzar en árbol visual de ramas, consistencia de personajes y empaquetado. El primer LLM GGUF real se validó en Colab T4; sigue pendiente probarlo en la RTX 5060 Ti y medir multimedia real.
 
 ## Laboratorio opcional de Colab
 

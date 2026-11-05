@@ -74,3 +74,19 @@ Si se edita turno 2, los resúmenes desde turno 2, el estado derivado y las imá
 ## Migraciones y copias
 
 SQLite con migraciones Alembic en cada cambio de esquema. Copia transaccional/SQLite backup API antes de versiones destructivas, export JSON/ZIP con manifest+hash+schema_version, import con IDs mapeados y verificación de integridad.
+
+## P1.4 — Canon y bifurcación real disponibles
+
+**Estado verificado por tests de API/SQLite.** Cada historia posee el campo `canon`, texto editable hasta 5000 caracteres. Se guarda como atributo permanente de la historia, además de la premisa y protagonista. La generación narradora añade este canon al mensaje del sistema para mantener reglas del mundo y hechos confirmados, aunque el historial reciente ya no contenga esos turnos.
+
+- `PATCH /api/v1/stories/{uuid}/canon` recibe `{"canon":"..."}` y retorna la historia.
+- `POST /api/v1/stories/{uuid}/fork` con `{"until_turn_id":"uuid"}` crea una **historia nueva independiente** que copia todos los turnos hasta e incluyendo el indicado. `{}` copia el historial completo. Nunca borra el original.
+- La copia tiene un UUID propio, conserva premisa, protagonista, canon y escena WebP; los turnos reciben IDs y request_id nuevos.
+- Se guardan `origin_story_id` y `origin_turn_id` en SQLite para futura navegación mediante árbol de ramas.
+- UI: **Biblioteca → Historial → Crear rama**; después puedes elegir original o alternativa en la biblioteca.
+- La copia se realiza en una transacción SQLite. Aún no hay árbol visual interactivo, fusión de ramas ni estado automático derivado de los turnos.
+- La memoria de corto plazo sigue usando una ventana de los 16 turnos más recientes. El canon es manual: Noble AI no deduce ni inventa automáticamente eventos canónicos nuevos.
+
+**Preparación del motor:** `POST /api/v1/narrative/prepare` ejecuta una generación mínima y explícita para precalentar Ollama/KoboldCpp/worker. No añade capítulos, no actualiza canon y no se activa al abrir la aplicación. OpenRouter no ofrece esta precarga y queda excluido. El botón muestra el tiempo de espera, pero no garantiza que la GPU conserve indefinidamente el modelo cargado.
+
+**Futuro:** memoria por escenas, inventario y relaciones, resúmenes semánticos auditables, identificación de cambios de escenario, decisiones visuales, árbol de ramas y control de conflictos.
