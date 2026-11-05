@@ -933,3 +933,38 @@
     max-width:640px
   }
 }
+
+
+/* Settings homepage: separate subsystems instead of opening advanced LLM fields. */
+.workspace-settings-overview{display:flex;flex-direction:column;gap:25px}
+.workspace-settings-overview .setting-section-intro h2{
+  margin:11px 0;font:750 clamp(24px,2.9vw,34px)/1.15 'Outfit',sans-serif;
+  letter-spacing:-.7px
+}
+.workspace-settings-snapshot{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.workspace-settings-snapshot>div{min-width:0;display:flex;flex-direction:column;gap:10px;
+  padding:16px;background:#1d2335;border:1px solid #42465f;border-radius:12px}
+.workspace-settings-snapshot svg{color:#beaff2}
+.workspace-settings-snapshot small{color:#a8b3cf;font-size:11px}
+.workspace-settings-snapshot strong{font-size:12px;color:#f0eaff;overflow-wrap:anywhere}
+.workspace-settings-overview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.workspace-overview-card{display:flex;align-items:center;gap:14px;text-align:left;
+  padding:19px;background:linear-gradient(145deg,#242a40,#171e30);
+  border:1px solid #444965;border-radius:14px;min-height:97px;color:#e5e5f8;
+  transition:border-color .15s ease,transform .15s ease}
+.workspace-overview-card:hover{transform:translateY(-2px);border-color:#a597e9;background:#2a2c48}
+.workspace-overview-card>span:nth-child(2){display:flex;flex:1;flex-direction:column;min-width:0;gap:7px}
+.workspace-overview-card strong{font-size:13px}
+.workspace-overview-card small{font-size:11px;color:#a7b4d0;line-height:1.5}
+.workspace-overview-card>svg:last-child{flex:none;color:#ac9ee1}
+.workspace-overview-icon{display:grid;place-items:center;flex:none;width:44px;height:44px;
+  border-radius:12px;background:#3c355a;color:#cbb5ff}
+.workspace-overview-storage{display:flex;flex-direction:column;gap:8px}
+.workspace-overview-storage code{display:block;padding:10px 12px;background:#101525;
+  border-radius:8px;overflow-wrap:anywhere;font-size:11px;color:#c7d5f5}
+@media(max-width:1140px){
+  .workspace-settings-snapshot{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:750px){
+  .workspace-settings-overview-grid{grid-template-columns:1fr}
+}
