@@ -305,7 +305,10 @@ def _copy_archive_ids(manifest: dict, files: list[tuple[str, bytes]]
 
     def visit(value):
         if isinstance(value, dict):
-            for nested in value.values():
+            # WorldState relationships use character UUIDs as JSON *keys*.
+            # These are references just like IDs in lists and JSON values.
+            for key, nested in value.items():
+                register(key)
                 visit(nested)
         elif isinstance(value, list):
             for nested in value:
@@ -335,7 +338,8 @@ def _copy_archive_ids(manifest: dict, files: list[tuple[str, bytes]]
         if isinstance(value, list):
             return [transform(x) for x in value]
         if isinstance(value, dict):
-            return {key: transform(x) for key, x in value.items()}
+            return {id_map.get(key, key): transform(x)
+                    for key, x in value.items()}
         return value
 
     copied_tables = {}

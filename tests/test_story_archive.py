@@ -269,6 +269,60 @@ class StoryArchiveTests(unittest.TestCase):
                             self.a.get(f"/api/v1/stories/{self.root_id}/turns"
                                        ).json()["turns"][-1]["id"])
 
+    def test_copy_remaps_uuid_dictionary_keys_in_world_relationships(self):
+        self.setup_family(art=False)
+        npc = self.a.post(
+            f"/api/v1/stories/{self.root_id}/creator/characters", json={
+                "name": "Aira", "description":
+                    "Aira es una guardiana del bosque y conserva todos los mapas del reino.",
+            })
+        self.assertEqual(npc.status_code, 201, npc.text)
+        npc_id = npc.json()["id"]
+        fact_id = str(uuid.uuid4())
+        update = self.a.put(
+            f"/api/v1/stories/{self.root_id}/world-state", json={
+                "expected_revision": 0,
+                "state": {
+                    "location": "Biblioteca", "time_of_day": "noche",
+                    "weather": "lluvia",
+                    "present_character_ids": [npc_id],
+                    "inventory": ["libro azul"],
+                    "relationships": {npc_id: "protege a la protagonista"},
+                    "flags": {"puerta_abierta": False},
+                    "facts": [{
+                        "id": fact_id,
+                        "text": "La guardiana conoce el paradero del sello dorado.",
+                        "public": False, "witness_character_ids": [npc_id],
+                    }],
+                },
+            })
+        self.assertEqual(update.status_code, 200, update.text)
+        self.turn(self.root_id, "Entro a la biblioteca y saludo a Aira")
+        result = self.restore(self.export(), self.a, as_copy=True)
+        self.assertEqual(result.status_code, 201, result.text)
+        copied_root = result.json()["root_story_id"]
+        world = self.a.get(f"/api/v1/stories/{copied_root}/world-state")
+        self.assertEqual(world.status_code, 200, world.text)
+        state = world.json()["state"]
+        self.assertEqual(len(state["present_character_ids"]), 1)
+        copied_npc = state["present_character_ids"][0]
+        self.assertNotEqual(copied_npc, npc_id)
+        self.assertEqual(state["relationships"],
+                         {copied_npc: "protege a la protagonista"})
+        self.assertEqual(state["facts"][0]["witness_character_ids"], [copied_npc])
+        self.assertNotEqual(state["facts"][0]["id"], fact_id)
+        original = self.a.get(f"/api/v1/stories/{self.root_id}/world-state"
+                              ).json()["state"]
+        self.assertEqual(original["relationships"],
+                         {npc_id: "protege a la protagonista"})
+        snapshot = self.a.get(
+            f"/api/v1/stories/{copied_root}/turns").json()["turns"][-1]
+        historical = self.a.get(
+            f"/api/v1/stories/{copied_root}/world-state/turns/{snapshot['id']}")
+        self.assertEqual(historical.status_code, 200, historical.text)
+        self.assertIn(copied_npc,
+                      historical.json()["state"]["relationships"])
+
     def test_copy_still_rejects_corrupt_media_without_mutating_original(self):
         self.setup_family()
         archive = self.export()
