@@ -208,6 +208,10 @@ class Store:
                 ).fetchone()
                 if not current or current["status"] != "verifying":
                     return False
+                # Never replace a previous final GGUF, even if this job was
+                # manually resumed after a startup conflict was reported.
+                if target.exists() or target.is_symlink():
+                    raise RuntimeError("Existe un GGUF final; recuperación manual requerida")
                 part.replace(target)
                 moved = True
                 previous = conn.execute(
