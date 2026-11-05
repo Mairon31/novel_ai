@@ -89,3 +89,17 @@ VRAM libre es variable.
 Las pruebas funcionales comprueban apertura de ficha, sugerencia de GGUF,
 filtro, caché, descripción extendida del modelo, inventario de disco, rutas
 ajenas a la instalación y controles móviles.
+
+## Auditoría Argon: Model Hub V2 y recursos (2026-11-05)
+
+Estado confirmado en `master`: catálogo HF, fichas GGUF de archivo único, estimador local, persistencia de descargas `.part`, validación de revisión y SHA-256 **condicional al checksum publicado**, medidor físico de almacenamiento y monitor GPU con `nvidia-smi`. No confundir la métrica de *ajuste estimado* con velocidad medida ni con garantía de carga simultánea con ComfyUI.
+
+**Próximos entregables, por orden de dependencia (ver [TODO](../TODO.md)):**
+
+1. Proteger la ruta efectiva de toda operación de descarga/copia/borrado y probar enlaces simbólicos, nombres falsos, Range incorrecto y fallos de checksum.
+2. Completar la comparación por cuantización (Q4/Q5/Q6/Q8/IQ) con tamaño físico, memoria estimada de pesos y KV a 8k/16k, margen de seguridad y clasificación **Óptimo / Híbrido / Inviable**. Mostrar fuente y grado de incertidumbre de los cálculos.
+3. Exponer roles separados de narrador, imagen y voz; políticas de VRAM **Exclusivo / Compartido / Secuencial** y el runtime responsable de descargar pesos *propios* antes de ComfyUI. El `asyncio.Lock` actual serializa solicitudes pero no libera pesos del motor ya cargado.
+4. Ficha técnica ampliada y detalle sin perder la búsqueda, cola visible con MB/s, progreso exacto, pausa/reanudación y diagnóstico al usuario, escritorio y móvil.
+5. Benchmarks reales de ciclo LLM+ComfyUI sobre 16 GB y fallback para equipos inferiores; ninguna cifra de TPS inferida debe presentarse como resultado experimental.
+
+Para reutilizar UI y lógica de Urakatsu bajo MIT, documentar los archivos copiados, su revisión y licencia en [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md). Referencias: [auditoría §§11, 18–19](ARGON_AUDITORIA.md), [gestión GPU](RECURSOS_GPU.md).
