@@ -155,12 +155,14 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 
 - [x] [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) — 197 Python + 36 Playwright PASS y compilación frontend, commit `eca8166`; se verificó flush real de archivos/dir POSIX y rollback por error de `fsync`.
 - [x] `test_real_process_crash_after_copy_recovers_without_partial_branch`: el proceso termina realmente con `os._exit(41)` tras copiar medios y antes del COMMIT; el reinicio elimina exclusivamente UUID huérfano, sin alterar historia fuente. [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453): **198 Python + 36 Playwright PASS**.
-- [ ] Pendiente prueba de crash después de COMMIT con marcador sin borrar, y terminación simultánea de procesos/energía física.
+- [x] Crash después del COMMIT y antes de borrar el marcador cubierto por `test_sigkill_after_sqlite_commit_retains_complete_branch`, [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771). Siguen pendientes apagones físicos.
 
 
-### P0 — Tres escenarios nuevos de SIGKILL multiproceso (CI pendiente)
+### P0 — Tres escenarios nuevos de SIGKILL multiproceso (CI verificada)
 
-- [ ] **Fork anterior al commit con competidor:** proceso A mantiene el lock SQLite tras sincronizar medios; proceso B inicia otra instancia y espera. `SIGKILL` de A debe liberar el lock. B recupera el marcador de A, crea su propia rama completa y conserva la historia original sin ramas parciales.
-- [ ] **Fork confirmado, marcador aún presente:** proceso A se bloquea al entrar en `Path.unlink` del marcador, después del COMMIT. Al terminarlo con `SIGKILL`, una app nueva debe detectar la fila ya confirmada, conservar galería, medios, turnos y eliminar únicamente el marcador obsoleto.
-- [ ] **Dos procesos eliminados:** A queda detenido antes del COMMIT; B espera para iniciar. Tras matar A, B recupera sus archivos, alcanza su propia fase pre-COMMIT y también recibe `SIGKILL`. La tercera instancia recupera el segundo residuo y el origen sigue íntegro.
-- [ ] Handshakes de archivos con `Path.replace` atómico para conocer exactamente el estado del proceso, `Popen.kill()` (SIGKILL POSIX / TerminateProcess Windows), timeout y limpieza de todos los procesos hijos. No simular el kill con excepciones. No confundir esto con corte eléctrico ni fsync de directorio Windows.
+- [x] **Fork anterior al commit con competidor:** proceso A mantiene el lock SQLite tras sincronizar medios; proceso B inicia otra instancia y espera. `SIGKILL` de A debe liberar el lock. B recupera el marcador de A, crea su propia rama completa y conserva la historia original sin ramas parciales.
+- [x] **Fork confirmado, marcador aún presente:** proceso A se bloquea al entrar en `Path.unlink` del marcador, después del COMMIT. Al terminarlo con `SIGKILL`, una app nueva debe detectar la fila ya confirmada, conservar galería, medios, turnos y eliminar únicamente el marcador obsoleto.
+- [x] **Dos procesos eliminados:** A queda detenido antes del COMMIT; B espera para iniciar. Tras matar A, B recupera sus archivos, alcanza su propia fase pre-COMMIT y también recibe `SIGKILL`. La tercera instancia recupera el segundo residuo y el origen sigue íntegro.
+- [x] Handshakes de archivos con `Path.replace` atómico para conocer exactamente el estado del proceso, `Popen.kill()` (SIGKILL POSIX / TerminateProcess Windows), timeout y limpieza de todos los procesos hijos. No simular el kill con excepciones. No confundir esto con corte eléctrico ni fsync de directorio Windows.
+
+- [x] [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771) completada: **201 Python + 36 Playwright PASS**. Las tres pruebas nuevas funcionan con procesos OS reales; no implican pruebas de hardware de apagón físico ni cobertura de la totalidad de puntos internos del COMMIT.

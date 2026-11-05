@@ -571,7 +571,7 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 ### Gate fsync inicial confirmado
 
 - [x] [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) finalizada con **197/197 Python y 36/36 Playwright PASS**, build React/Vite PASS. Cuatro regresiones nuevas en `test_fork_atomicity.py` ejercitan `os.fsync` real y fallos inyectados de sync/metadata con rollback de todos los snapshots.
-- [ ] Ahora se añade una prueba de **terminación real de otro proceso** con `os._exit(41)` tras copiar los medios editoriales. Debe dejar marcador y carpeta de rama inconclusa, sin fila SQLite confirmada; el inicio de otra instancia los debe reconciliar conservando el origen. Pendiente de CI del commit que la incorpora. No equivale a ensayo de corte eléctrico físico.
+- [x] Prueba **`os._exit(41)`** tras copiar medios validada posteriormente en [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453) (198 Python + 36 Playwright PASS): sin fila confirmada, nueva instancia reconcilia el UUID sin dañar origen. No equivale a ensayo eléctrico.
 
 
 ### Gate de proceso externo terminado abruptamente — verificado
@@ -581,10 +581,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Limitación explícita: `os._exit` no es un corte de corriente ni prueba que el filesystem persista bytes ya confirmados; la recuperación tras abortar en COMMIT/limpieza, fallos multi-proceso simultáneos, filesystem corrupto, guardado duradero de metadatos Windows y pruebas físicas continúan pendientes.
 
 
-## 2026-11-05 — P0: SIGKILL multiproceso en bifurcaciones (CI pendiente)
+## 2026-11-05 — P0: SIGKILL multiproceso en bifurcaciones (CI verificada)
 
-- [ ] Tres pruebas de integración multiproceso añadidas a `tests/test_fork_atomicity.py` para evaluar el bloqueo de escrituras SQLite y la recuperación del staging durante distintas interrupciones. La señal de cada hijo se publica con `Path.replace`, para que el padre sepa si el fork está antes o después del COMMIT sin depender del reloj ni de un `sleep` arbitrario.
-- [ ] En escenario A el hijo permanece detenido al finalizar el fsync previo al COMMIT; un segundo proceso inicia el mismo proyecto, espera el lock, y tras matar al primero recupera el huérfano y confirma una única rama válida.
-- [ ] En escenario B la historia ya fue confirmada en la base, pero el proceso muere al iniciar `marker.unlink`; el siguiente arranque conserva los recursos y limpia el marcador sin borrar la rama.
-- [ ] En escenario C dos procesos son terminados con `SIGKILL` en secuencia antes de confirmar. La instancia B debe limpiar el huérfano A; una instancia C limpia el huérfano B; ninguna fila parcial debe aparecer.
-- [ ] Ejecutar CI Python, frontend y Playwright; no reportar `PASS` ni marcar TODO hasta verificar GitHub Actions. Permanece excluida la durabilidad ante apagón físico.
+- [x] Tres pruebas de integración multiproceso añadidas a `tests/test_fork_atomicity.py` para evaluar el bloqueo de escrituras SQLite y la recuperación del staging durante distintas interrupciones. La señal de cada hijo se publica con `Path.replace`, para que el padre sepa si el fork está antes o después del COMMIT sin depender del reloj ni de un `sleep` arbitrario.
+- [x] En escenario A el hijo permanece detenido al finalizar el fsync previo al COMMIT; un segundo proceso inicia el mismo proyecto, espera el lock, y tras matar al primero recupera el huérfano y confirma una única rama válida.
+- [x] En escenario B la historia ya fue confirmada en la base, pero el proceso muere al iniciar `marker.unlink`; el siguiente arranque conserva los recursos y limpia el marcador sin borrar la rama.
+- [x] En escenario C dos procesos son terminados con `SIGKILL` en secuencia antes de confirmar. La instancia B debe limpiar el huérfano A; una instancia C limpia el huérfano B; ninguna fila parcial debe aparecer.
+- [x] [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771) verificada para `f684580`: **201/201 Python + 36/36 Playwright PASS**, frontend compilado. Todos los tres nuevos ensayos de procesos muertos por `SIGKILL` aprobaron.
+- [ ] No cubierto: corte eléctrico real, corrupción filesystem, Windows y terminación exactamente dentro del COMMIT WAL.
