@@ -6,6 +6,7 @@ composition to the current scene and visual identities belonging to the story.
 from __future__ import annotations
 
 import re
+from contextlib import nullcontext
 import sqlite3
 import time
 import uuid
@@ -148,8 +149,9 @@ class ScenePlanner:
         return None
 
     def clone(self, source: str, target: str,
-              scene_ids: dict[str, str], character_ids: dict[str, str]) -> None:
-        with self.visual.store._conn() as db:
+              scene_ids: dict[str, str], character_ids: dict[str, str],
+              conn=None) -> None:
+        with (nullcontext(conn) if conn is not None else self.visual.store._conn()) as db:
             plans = [dict(row) for row in db.execute(
                 "SELECT * FROM scene_plans WHERE story_id=?", (source,))]
             import json
