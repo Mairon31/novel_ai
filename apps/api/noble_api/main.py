@@ -31,6 +31,7 @@ from .visual_state import VisualState, mount_visual_routes
 from .scene_planner import ScenePlanner, mount_scene_plan_routes
 from .creator import CreatorService, mount_creator_routes
 from .lorebook import LorebookService, mount_lorebook_routes
+from .world_state import WorldStateService, mount_world_state_routes
 from .creator_media import CreatorMediaService, mount_creator_media_routes
 from .resource_policy import ResourceController, mount_resource_routes
 from .workers import WorkerRegistry, mount_worker_routes
@@ -98,6 +99,8 @@ def create_app(
     narrative.creator = creator
     lorebook = LorebookService(narrative)
     narrative.lorebook = lorebook
+    world = WorldStateService(narrative)
+    narrative.world = world
     creator_media = CreatorMediaService(narrative)
     narrative.creator_media = creator_media
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
@@ -133,6 +136,7 @@ def create_app(
     service.state.scene_planner = planner
     service.state.creator = creator
     service.state.lorebook = lorebook
+    service.state.world = world
     service.state.creator_media = creator_media
 
     @service.exception_handler(CatalogError)
@@ -263,6 +267,7 @@ def create_app(
     mount_scene_plan_routes(service, planner)
     mount_creator_routes(service, creator)
     mount_lorebook_routes(service, lorebook)
+    mount_world_state_routes(service, world)
     mount_creator_media_routes(service, creator_media)
     mount_image_routes(service, images)
     mount_resource_routes(service, resources)
