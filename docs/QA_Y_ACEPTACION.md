@@ -35,3 +35,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] **Seguridad avanzada de archivos:** probar carreras entre chequeo de ruta y apertura del fichero, manipulación de directorios en caliente y política de archivos aportados por terceros.
 - [ ] **Transferencia real:** cortes de red aleatorios a 25/50/75%, verificación SHA real de peso grande y publicación tras interrupción de proceso. Las pruebas anteriores usan transporte HTTP simulado; no verifican CDN en producción.
 - [ ] **Cancelación/VRAM real:** desconectar lector a mitad del SSE, confirmar liberación de proceso/GPU en Ollama/KoboldCpp/worker y medir tiempos en hardware concreto.
+
+
+## Gates de cancelación narrativa — auditoría Argon 2026-11-05
+
+- [x] Prueba de interrupción **sin más tokens**: el proveedor simulado queda bloqueado tras el primer delta, el servidor observa la desconexión, cancela el siguiente `anext`, cierra el generador y no confirma el turno; lease local liberado.
+- [x] Prueba de señal explícita por `story_id` y `request_id`: la operación correcta recibe `cancel_requested=true`; las no activas indican `false`; no se duplica la operación.
+- [x] [CI #42050811867](https://github.com/Mairon31/novel_ai/actions/runs/42050811867): **118 Python + 24 Playwright aprobadas**, incluyendo las pruebas backend nuevas. La comprobación E2E específica del botón Detener se agregó posteriormente.
+- [ ] Comprobar en Playwright escritorio/móvil el botón Detener con inferencia retenida, validando que envíe el UUID exacto de la historia y petición. Prueba nueva: `apps/web/tests/story-cancellation.spec.ts` (CI por verificar).
+- [ ] Medir tiempo real hasta detener inferencia y bajar VRAM con un modelo local bajo carga, worker remoto/Colab y conexión abruptamente cortada. No confundir cancelación de HTTP con descarga física de pesos.
