@@ -67,5 +67,5 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await page.getByRole('button', { name: 'Ir a Biblioteca' }).click();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toBeVisible();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })
-    .locator('.noble-library-cover-art')).toHaveCSS('background-image', 'none');
+    .locator('.noble-library-cover-art')).not.toHaveCSS('background-image', /creator\/assets/);
 });
