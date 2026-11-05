@@ -1145,3 +1145,33 @@
   .world-fact{padding:13px}
   .world-history{padding:13px}
 }
+
+/* Rewind creates a new timeline: never silently discard later turns. */
+.noble-rewind-scrim{position:fixed;inset:0;z-index:500;
+  background:rgba(6,11,24,.82);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.noble-rewind-dialog{width:min(100%,560px);max-height:min(90vh,900px);overflow:auto;
+  border:1px solid #455475;background:#1a2338;color:#e4eafa;
+  border-radius:18px;box-shadow:0 28px 80px rgba(0,0,0,.55);
+  padding:27px;display:flex;flex-direction:column;gap:19px}
+.noble-rewind-header{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.noble-rewind-header .overline{display:flex;align-items:center;gap:7px;color:#bfb0f7}
+.noble-rewind-header h2{margin:7px 0 0;font:700 clamp(22px,3vw,30px) 'Outfit',sans-serif}
+.noble-rewind-dialog>p{margin:0;color:#c4cde0;line-height:1.65;font-size:13px}
+.noble-rewind-selected{padding:17px;border:1px solid #465777;
+  border-radius:12px;background:#232e47}
+.noble-rewind-selected strong{font-size:13px;color:#ded4fa}
+.noble-rewind-selected p{margin:8px 0;color:#e2eafa;line-height:1.6;overflow-wrap:anywhere}
+.noble-rewind-selected small{font-size:11px;color:#bac6dc;line-height:1.5}
+.noble-rewind-checkpoint{display:flex;flex-direction:column;gap:11px;
+  padding:15px;border-radius:12px;background:#141d30;
+  border:1px solid #3f4c69;color:#b8c9e2;font-size:12px}
+.noble-rewind-checkpoint div,.noble-rewind-checkpoint span{display:flex;align-items:center;gap:9px}
+.noble-rewind-checkpoint svg{flex:none}
+.noble-rewind-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.noble-rewind-actions button{justify-content:center}
+@media(max-width:640px){.noble-rewind-scrim{align-items:flex-end;padding:0}
+  .noble-rewind-dialog{width:100%;max-height:88dvh;padding:21px 17px 25px;
+    border-radius:19px 19px 0 0}
+  .noble-rewind-actions{flex-direction:column-reverse}
+  .noble-rewind-actions button{width:100%}}
