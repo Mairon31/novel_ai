@@ -35,7 +35,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
   const [editingCharacter, setEditingCharacter] = useState<string | null>(null);
   const [openingDraft, setOpeningDraft] = useState('');
   const [assets, setAssets] = useState<CreatorMediaAsset[]>([]);
-  const [mediaKind, setMediaKind] = useState<'background' | 'foreground'>('background');
+  const [mediaKind, setMediaKind] = useState<CreatorMediaAsset['kind']>('background');
   const [mediaLabel, setMediaLabel] = useState('');
   const [mediaCaption, setMediaCaption] = useState('');
   const [mediaCharacter, setMediaCharacter] = useState('');
@@ -147,6 +147,22 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
     finally { setWorking(false); }
   }
 
+  function rememberStory(updated: Story) {
+    setActive(current => current?.id === updated.id ? updated : current);
+    setStories(previous => previous.map(story => story.id === updated.id ? updated : story));
+  }
+
+  async function chooseCover(assetId: string | null) {
+    if (!active || working) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      rememberStory(await api.setStoryCover(active.id, assetId));
+      setNotice(assetId ? 'Portada editorial seleccionada para la biblioteca.' :
+        'Se quitó la portada editorial. La historia permanece intacta.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
   function editAsset(asset: CreatorMediaAsset) {
     setEditingAsset(asset.id); setMediaKind(asset.kind);
     setMediaLabel(asset.label); setMediaCaption(asset.caption);
@@ -164,15 +180,18 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
         await api.editCreatorAsset(active.id, editingAsset, mediaLabel.trim(), mediaCaption.trim());
       } else {
         if (!mediaFile) throw new Error('Selecciona un archivo de imagen.');
-        await api.uploadCreatorAsset(active.id, {
+        const imported = await api.uploadCreatorAsset(active.id, {
           kind: mediaKind, label: mediaLabel.trim(), caption: mediaCaption.trim(),
           character_id: mediaKind === 'foreground' ? (mediaCharacter || undefined) : undefined,
           file: mediaFile,
         });
+        if (mediaKind === 'cover') rememberStory(await api.setStoryCover(active.id, imported.id));
       }
       setAssets((await api.creatorAssets(active.id)).assets);
       resetMediaEditor();
-      setNotice('Recurso visual guardado para su selección durante la lectura.');
+      setNotice(mediaKind === 'cover' && !editingAsset ?
+        'Portada editorial guardada y seleccionada para la biblioteca.' :
+        'Recurso visual guardado para su selección durante la lectura.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -181,6 +200,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
     setWorking(true); setError('');
     try {
       await api.deleteCreatorAsset(active.id, asset.id);
+      if (active.cover_asset_id === asset.id) {
+        rememberStory({ ...active, cover_asset_id: null, cover_image_url: null });
+      }
       setAssets((await api.creatorAssets(active.id)).assets);
       if (editingAsset === asset.id) resetMediaEditor();
       setNotice('Recurso visual eliminado.');
@@ -264,10 +286,25 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
           {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando contenido...</div> :
             section === 'media' ? <div className="creator-fields creator-media-library">
               <div className="creator-section-intro">
-                <h3>Fondos y personajes en primer plano</h3>
-                <p>Organiza fondos de lugares y retratos transparentes. Describe cuándo deben
-                  aparecer para que el lector pueda reutilizar imágenes ya guardadas.
+                <h3>Portadas, escenarios y personajes</h3>
+                <p>Elige una portada fija para la biblioteca, prepara fondos de escenarios
+                  y retratos transparentes para las escenas narrativas.
                   No se generan imágenes automáticamente.</p>
+              </div>
+              <div className="creator-cover-preview" aria-label="Portada editorial actual">
+                <div className="creator-cover-preview-art">
+                  {active.cover_image_url ?
+                    <img src={active.cover_image_url} alt={'Portada de ' + active.title}/> :
+                    <BookOpen size={42} aria-hidden="true"/>}
+                </div>
+                <div className="creator-cover-preview-copy">
+                  <span className="overline">PORTADA DE LA HISTORIA</span>
+                  <strong>{active.cover_image_url ? 'Portada personalizada' : 'Sin portada personalizada'}</strong>
+                  <p>Se muestra en Biblioteca y en el detalle de la historia.
+                    No cambia cuando avanzas o generas una nueva escena.</p>
+                  {active.cover_asset_id && <button className="secondary-button" disabled={working}
+                    onClick={() => void chooseCover(null)}>Quitar portada</button>}
+                </div>
               </div>
               <div className="creator-media-grid">
                 {assets.map(asset => <article className="creator-media-card" key={asset.id}>
@@ -275,9 +312,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                     <img src={asset.url} loading="lazy" alt={'Imagen: ' + asset.label}/>
                   </div>
                   <div className="creator-media-copy">
-                    <small>{asset.kind === 'background' ? 'FONDO' : 'PRIMER PLANO'}</small>
+                    <small>{asset.kind === 'cover' ? 'PORTADA' :
+                      asset.kind === 'background' ? 'FONDO' : 'PRIMER PLANO'}
+                      {asset.id === active.cover_asset_id ? ' · ACTUAL' : ''}</small>
                     <strong>{asset.label}</strong><p>{asset.caption}</p>
                     <div>
+                      {asset.kind === 'cover' && asset.id !== active.cover_asset_id &&
+                        <button className="secondary-button" disabled={working}
+                          onClick={() => void chooseCover(asset.id)}>Usar como portada</button>}
                       <button className="secondary-button" disabled={working}
                         onClick={() => editAsset(asset)}>Editar descripción</button>
                       <button aria-label={'Eliminar imagen ' + asset.label}
@@ -296,7 +338,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                 {!editingAsset && <div className="creator-double">
                   <label>Tipo de recurso
                     <select aria-label="Tipo de recurso visual" value={mediaKind}
-                      onChange={e => setMediaKind(e.target.value as 'background' | 'foreground')}>
+                      onChange={e => setMediaKind(e.target.value as CreatorMediaAsset['kind'])}>
+                      <option value="cover">Portada editorial</option>
                       <option value="background">Fondo de escenario</option>
                       <option value="foreground">Personaje / primer plano</option>
                     </select>
@@ -325,6 +368,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                     onChange={e => setMediaFile(e.target.files?.[0] || null)}/>
                   {mediaKind === 'foreground' && <small>
                     La transparencia se conserva en PNG para superponer personajes sobre el fondo.
+                  </small>}
+                  {mediaKind === 'cover' && <small>
+                    La portada se guarda como WebP y se selecciona automáticamente al importar.
                   </small>}
                 </label>}
                 <div className="creator-actions">
