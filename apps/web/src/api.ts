@@ -213,6 +213,10 @@ export const api = {
   },
   storyTurns: (storyId: string) => request<{ turns: StoryTurn[] }>(
     '/stories/' + encodeURIComponent(storyId) + '/turns'),
+  cancelNarration: (storyId: string, requestId: string) => request<{
+    request_id: string; cancel_requested: boolean;
+  }>('/stories/' + encodeURIComponent(storyId) + '/generate/' +
+    encodeURIComponent(requestId) + '/cancel', { method: 'POST' }),
   async streamTurn(
     storyId: string,
     body: { mode: StoryTurn['mode']; input_text: string; request_id: string },
