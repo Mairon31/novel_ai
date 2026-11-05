@@ -130,12 +130,27 @@ class DownloadManager:
                     raise RuntimeError("Acceso denegado; revisa los permisos del modelo")
                 response.raise_for_status()
                 continued = offset > 0 and response.status_code == 206
-                if continued:
-                    content_range = response.headers.get("content-range", "")
-                    if not re.match(r"^bytes " + str(offset) + r"-", content_range):
+                if response.status_code == 206:
+                    # A bare prefix check ("bytes 20-") is insufficient: a
+                    # truncated or forged range can silently corrupt a file.
+                    content_range = response.headers.get("content-range", "").strip()
+                    match = re.fullmatch(r"bytes (\\d+)-(\\d+)/(\\d+|\\*)", content_range)
+                    expected_offset = offset if continued else 0
+                    if not match:
+                        raise RuntimeError("Content-Range ausente o con formato inválido")
+                    start, end = int(match[1]), int(match[2])
+                    total = None if match[3] == "*" else int(match[3])
+                    if (start != expected_offset or end < start or
+                            (total is not None and (total <= end or total <= 0)) or
+                            (job["expected_size"] is not None and total is not None and
+                             total != job["expected_size"])):
                         raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
+                    length = response.headers.get("content-length")
+                    if length is not None and (not length.isdigit() or
+                                               int(length) != end - start + 1):
+                        raise RuntimeError("Content-Length no coincide con Content-Range")
                 else:
-                    # Server may ignore Range; restart cleanly to prevent corruption.
+                    # Server may ignore Range with HTTP 200; restart cleanly.
                     offset = 0
                 mode = "ab" if continued else "wb"
                 received = offset
