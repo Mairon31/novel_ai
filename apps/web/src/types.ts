@@ -267,7 +267,8 @@ export type WorldStateDocument = {
   state: WorldStateData;
 };
 export type WorldTurnSnapshot = {
-  story_id: string; turn_id: string; created_at: number; state: WorldStateData;
+  story_id: string; turn_id: string; created_at: number;
+  canon: string; state: WorldStateData;
 };
 
 export type LorebookEntry = {
