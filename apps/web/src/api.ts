@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -180,6 +180,18 @@ export const api = {
   saveCreatorBlueprint: (id: string, input: CreatorBlueprintDraft) => request<CreatorBlueprint>(
     '/stories/' + encodeURIComponent(id) + '/creator',
     { method: 'PUT', body: JSON.stringify(input) }),
+  lorebookEntries: (id: string) => request<{ entries: LorebookEntry[] }>(
+    '/stories/' + encodeURIComponent(id) + '/lorebook'),
+  saveLorebookEntry: (id: string, entry: LorebookEntryDraft, entryId?: string) =>
+    request<LorebookEntry>('/stories/' + encodeURIComponent(id) + '/lorebook' +
+      (entryId ? '/' + encodeURIComponent(entryId) : ''),
+    { method: entryId ? 'PUT' : 'POST', body: JSON.stringify(entry) }),
+  deleteLorebookEntry: (id: string, entryId: string) => request<void>(
+    '/stories/' + encodeURIComponent(id) + '/lorebook/' + encodeURIComponent(entryId),
+    { method: 'DELETE' }),
+  previewLorebook: (id: string, query: string, budget_chars = 6000) =>
+    request<LorebookPreview>('/stories/' + encodeURIComponent(id) + '/lorebook/preview',
+    { method: 'POST', body: JSON.stringify({ query, budget_chars }) }),
   creatorCharacters: (id: string) => request<{characters: CreatorCharacter[]}>(
     '/stories/' + encodeURIComponent(id) + '/creator/characters'),
   saveCreatorCharacter: (id: string, input: CreatorCharacterDraft, characterId?: string) =>
