@@ -14,7 +14,7 @@ import { readModelDetails, readModelSearch, searchCacheKey,
   writeModelDetails, writeModelSearch } from './modelCatalogCache';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
-  ModelRole, Page, Settings,
+  ModelRole, ModelCardResponse, Page, Settings,
 } from './types';
 
 const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
@@ -66,6 +66,10 @@ export default function App() {
   const detailRequest = useRef(0);
   const [dockedDetail, setDockedDetail] = useState(false);
   const [detail, setDetail] = useState<ModelDetail | null>(null);
+  const [cardVisible, setCardVisible] = useState(false);
+  const [cardBusy, setCardBusy] = useState(false);
+  const [cardData, setCardData] = useState<ModelCardResponse | null>(null);
+  const cardRequest = useRef(0);
   const [pickedVariant, setPickedVariant] = useState('');
   const [variantFilter, setVariantFilter] = useState<'all' | 'full_gpu' | 'partial_offload' | 'cpu'>('all');
   const [hardware, setHardware] = useState<Hardware | null>(null);
@@ -198,6 +202,8 @@ export default function App() {
   }, [refreshDownloads]);
 
   function closeModelDetail() {
+    cardRequest.current += 1;
+    setCardVisible(false); setCardData(null); setCardBusy(false);
     detailRequest.current += 1;
     setDetail(null); setDetailLoading(false); setFitBusy(false);
   }
@@ -213,6 +219,7 @@ export default function App() {
   }
 
   async function viewModel(model: CatalogEntry) {
+    cardRequest.current += 1; setCardVisible(false); setCardData(null); setCardBusy(false);
     const requestId = ++detailRequest.current;
     setDetail(null); setPickedVariant(''); setVariantFilter('all'); setDetailLoading(true);
     const cached = readModelDetails(model.repo_id, modelContext);
@@ -230,6 +237,26 @@ export default function App() {
       if (requestId === detailRequest.current) setError((exc as Error).message);
     } finally {
       if (requestId === detailRequest.current) setDetailLoading(false);
+    }
+  }
+
+  async function toggleModelCard() {
+    if (cardVisible) { setCardVisible(false); return; }
+    if (!detail) return;
+    setCardVisible(true);
+    if (cardData) return;
+    const sequence = ++cardRequest.current;
+    setCardBusy(true);
+    try {
+      const result = await api.modelCard(detail.repo_id, detail.revision);
+      if (sequence === cardRequest.current) setCardData(result);
+    } catch (exc) {
+      if (sequence === cardRequest.current) {
+        setError((exc as Error).message);
+        setCardVisible(false);
+      }
+    } finally {
+      if (sequence === cardRequest.current) setCardBusy(false);
     }
   }
 
@@ -717,6 +744,22 @@ export default function App() {
               'No hay un archivo GGUF individual admitido por el descargador actual.' :
               'Este catálogo permite consultar metadatos; el instalador de imágenes y voces se configura desde su proveedor.'}
           </div>}
+          <section className="hub-model-card-section">
+            <div className="hub-model-card-heading">
+              <div><h3>Ficha del modelo</h3>
+                <p>Documento original del autor en Hugging Face.</p></div>
+              <button type="button" className="secondary-button"
+                aria-expanded={cardVisible} onClick={() => void toggleModelCard()}>
+                {cardVisible ? 'Ocultar ficha' : 'Leer ficha completa'}
+              </button>
+            </div>
+            {cardVisible && (cardBusy ?
+              <p role="status">Cargando README.md...</p> : cardData?.available ?
+                <div>
+                  {cardData.truncated && <p>Mostrando los primeros 128 KiB del documento.</p>}
+                  <pre className="hub-model-readme">{cardData.readme || 'Documento vacío.'}</pre>
+                </div> : <p>Este modelo no publica un README.md en la revisión seleccionada.</p>)}
+          </section>
         </>}
       </section>
     </div>}

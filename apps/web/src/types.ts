@@ -27,6 +27,7 @@ export type HardwareFit = {
   confidence: string; warning: string;
   recommended_filename: string | null; variants: ModelFitVariant[];
 };
+export type ModelCardResponse = { readme: string; truncated: boolean; available: boolean };
 export type ModelDetail = {
   repo_id: string; revision: string; license: string; gated: boolean;
   variants: Variant[]; supports_install: boolean; url: string;
