@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -63,6 +63,22 @@ export const api = {
     '/provider-credentials/openrouter', { method: 'PUT', body: JSON.stringify({ api_key }) }),
   deleteOpenRouterCredential: () => request<ProviderCredentialStatus>(
     '/provider-credentials/openrouter', { method: 'DELETE' }),
+  visualState: (storyId: string) => request<VisualState>(
+    '/stories/' + encodeURIComponent(storyId) + '/visual-state'),
+  setSceneLocation: (storyId: string, location: string) => request<VisualState>(
+    '/stories/' + encodeURIComponent(storyId) + '/scene',
+    { method: 'PUT', body: JSON.stringify({ location }) }),
+  saveVisualCharacter: (storyId: string, character: VisualCharacterDraft,
+                         characterId?: string) => request<VisualCharacter>(
+    '/stories/' + encodeURIComponent(storyId) + '/visual-characters' +
+      (characterId ? '/' + encodeURIComponent(characterId) : ''),
+    { method: characterId ? 'PUT' : 'POST', body: JSON.stringify(character) }),
+  chooseSceneImage: (storyId: string, assetId: string) => request<VisualState>(
+    '/stories/' + encodeURIComponent(storyId) + '/gallery/' + encodeURIComponent(assetId) + '/select',
+    { method: 'POST' }),
+  imagePromptPreview: (storyId: string, prompt: string) => request<{ prompt: string; inference_used: boolean }>(
+    '/stories/' + encodeURIComponent(storyId) + '/illustration-prompt',
+    { method: 'POST', body: JSON.stringify({ prompt }) }),
   imageConfig: () => request<ImageSettings>('/images/config'),
   saveImageConfig: (config: ImageSettings) => request<ImageSettings>(
     '/images/config', { method: 'PUT', body: JSON.stringify(config) }),

@@ -170,3 +170,27 @@ export type NarratorPrepareResult = {
   ready: boolean; provider: string; model: string; duration_ms: number;
   first_text_ms: number | null; message: string;
 };
+
+export type VisualScene = {
+  id: string; story_id: string; location: string;
+  source_turn_id: string | null; detection: 'initial' | 'heuristic' | 'confirmed';
+  created_at: number;
+};
+export type VisualAsset = {
+  id: string; story_id: string; scene_id: string; file_name: string;
+  content_sha256: string; origin: 'manual' | 'comfyui';
+  prompt: string; checkpoint: string | null; seed: number | null;
+  created_at: number; selected: boolean; url: string;
+};
+export type VisualCharacter = {
+  id: string; story_id: string; name: string; appearance: string;
+  outfit: string; distinguishing_features: string;
+  revision: number; updated_at: number;
+};
+export type VisualCharacterDraft = Pick<VisualCharacter,
+  'name' | 'appearance' | 'outfit' | 'distinguishing_features'>;
+export type VisualState = {
+  current_scene: VisualScene; scenes: VisualScene[];
+  assets: VisualAsset[]; characters: VisualCharacter[];
+  selected_asset_id: string | null;
+};
