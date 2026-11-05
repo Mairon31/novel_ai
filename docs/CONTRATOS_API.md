@@ -126,3 +126,14 @@ Los cambios de escena no realizan ningún trabajo de GPU automáticamente. Las r
 - `/api/v1/models/downloads/*` (evolución de endpoints existentes): bytes, velocidad y reanudación verificada; hashes con estado distinguible.
 
 El frontend no construirá prompts ni inferirá estados canónicos: esas decisiones pertenecen al backend. Ver [TODO](../TODO.md), [auditoría §§14, 20](ARGON_AUDITORIA.md) y [QA](QA_Y_ACEPTACION.md).
+
+## Contrato SSE tras endurecimiento P0 (2026-11-05)
+
+El endpoint ya implementado `POST /api/v1/stories/{story_id}/generate` mantiene eventos `status`, `delta`, `done` y `error`. Recibe un UUID `request_id` idempotente y no confirma un mensaje por el mero hecho de haber emitido deltas.
+
+- La ruta entrega `Request.is_disconnected` al generador. El servidor verifica el estado de conexión antes de generar, entre fragmentos y antes del commit. Si se desconecta el lector, el flujo se abandona sin persistir el texto parcial; el `finally` libera la reserva local de GPU.
+- La escritura de un turno completo y la transición heurística de escenario comparten una transacción SQLite; un fallo del observador visual implica rollback de ambos. El evento `done` solo se emite tras confirmar el turno. Un reintento de `request_id` confirmado se responde sin nueva inferencia.
+- El cierre del generador y las comprobaciones de desconexión están cubiertos por pruebas con proveedor simulado. El tiempo necesario para detener **el cómputo del motor** y liberar pesos en Ollama/KoboldCpp/worker remoto sigue pendiente de certificación física; no prometer cancelación en menos de 250 ms.
+- Descargas GGUF: una respuesta HTTP 206 solo se acepta tras una petición `Range` explícita, verificando inicio, final, longitud total si conocida y longitud real de la respuesta. El modelo se registra únicamente tras comprobaciones de tamaño/hash disponibles.
+
+Referencias: [TODO](../TODO.md), [QA](QA_Y_ACEPTACION.md), [PROGRESO](PROGRESO.md).
