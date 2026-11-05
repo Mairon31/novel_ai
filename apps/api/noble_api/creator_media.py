@@ -101,6 +101,15 @@ class CreatorMediaService:
                 );
                 CREATE INDEX IF NOT EXISTS creator_media_by_story
                     ON creator_media_assets(story_id,kind,created_at);
+                CREATE TABLE IF NOT EXISTS creator_media_turn_snapshots(
+                    turn_id TEXT PRIMARY KEY REFERENCES story_turns(id) ON DELETE CASCADE,
+                    story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+                    assets_json TEXT NOT NULL,
+                    cover_asset_id TEXT,
+                    created_at REAL NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS creator_media_turn_history
+                    ON creator_media_turn_snapshots(story_id,created_at,turn_id);
             """)
 
     def _require_story(self, story_id: str) -> None:
@@ -212,11 +221,20 @@ class CreatorMediaService:
         item = self.get(story_id, asset_id)
         file = self._path(story_id, asset_id, item["kind"])
         with self.store._conn() as db:
+            # Preserve immutable bytes needed to rewind a committed turn;
+            # live records and URLs are still removed immediately.
+            keep_historical = any(
+                any(asset["id"] == asset_id for asset in json.loads(row["assets_json"]))
+                for row in db.execute(
+                    "SELECT assets_json FROM creator_media_turn_snapshots WHERE story_id=?",
+                    (story_id,))
+            )
             db.execute("DELETE FROM creator_media_assets WHERE story_id=? AND id=?",
                        (story_id, asset_id))
             db.execute("UPDATE stories SET cover_asset_id=NULL,updated_at=? "
                        "WHERE id=? AND cover_asset_id=?", (time.time(), story_id, asset_id))
-        file.unlink(missing_ok=True)
+        if not keep_historical:
+            file.unlink(missing_ok=True)
 
     def file(self, story_id: str, asset_id: str) -> FileResponse:
         item = self.get(story_id, asset_id)
@@ -261,37 +279,109 @@ class CreatorMediaService:
             "generated": False,
         }
 
+    def snapshot_turn_in_transaction(self, db, story_id: str,
+                                     turn_id: str, created_at: float) -> None:
+        """Checkpoint editorial assets/cover in the same transaction as a turn."""
+        assets = [dict(row) for row in db.execute(
+            "SELECT * FROM creator_media_assets WHERE story_id=? "
+            "ORDER BY created_at,id", (story_id,))]
+        story = db.execute("SELECT cover_asset_id FROM stories WHERE id=?",
+                           (story_id,)).fetchone()
+        db.execute(
+            "INSERT INTO creator_media_turn_snapshots "
+            "(turn_id,story_id,assets_json,cover_asset_id,created_at) "
+            "VALUES (?,?,?,?,?)",
+            (turn_id, story_id, json.dumps(assets, ensure_ascii=False),
+             story["cover_asset_id"] if story else None, created_at)
+        )
+
     def clone(self, source_id: str, target_id: str,
-              character_ids: dict[str, str] | None = None, conn=None) -> None:
-        # The destination is uncommitted during a transactional fork: do not
-        # query it using another connection or commit each asset separately.
+              character_ids: dict[str, str] | None = None,
+              turn_map: dict[str, str] | None = None,
+              until_turn_id: str | None = None, conn=None) -> None:
+        """Copy only editorial knowledge present at the selected moment.
+
+        Deleted assets referenced in historical snapshots are copied as
+        historical bytes, but never reappear in the current library. A partial
+        fork without a checkpoint fails closed, rather than leaking future art.
+        """
         if conn is None:
             self._require_story(target_id)
         with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
-            rows = [dict(row) for row in db.execute(
-                "SELECT * FROM creator_media_assets WHERE story_id=?", (source_id,))]
-            cover_map: dict[str, str] = {}
-            for row in rows:
-                source = self._path(source_id, row["id"], row["kind"])
+            snapshots = {
+                row["turn_id"]: dict(row)
+                for row in db.execute(
+                    "SELECT * FROM creator_media_turn_snapshots WHERE story_id=?",
+                    (source_id,))
+            }
+            if until_turn_id is None:
+                active = [dict(row) for row in db.execute(
+                    "SELECT * FROM creator_media_assets WHERE story_id=? "
+                    "ORDER BY created_at,id", (source_id,))]
+                story = db.execute(
+                    "SELECT cover_asset_id FROM stories WHERE id=?", (source_id,)
+                ).fetchone()
+                chosen_cover = story["cover_asset_id"] if story else None
+            else:
+                selected = snapshots.get(until_turn_id)
+                active = json.loads(selected["assets_json"]) if selected else []
+                chosen_cover = selected["cover_asset_id"] if selected else None
+
+            all_assets: dict[str, dict] = {}
+            for old_turn in (turn_map or {}):
+                snap = snapshots.get(old_turn)
+                if snap is not None:
+                    for asset in json.loads(snap["assets_json"]):
+                        all_assets.setdefault(asset["id"], asset)
+            for asset in active:
+                all_assets.setdefault(asset["id"], asset)
+
+            mapped: dict[str, str] = {}
+            for asset in all_assets.values():
+                source = self._path(source_id, asset["id"], asset["kind"])
                 if not source.is_file() or source.is_symlink():
-                    # Existing, referenced assets must not silently disappear
-                    # from the new branch when a copy fails or source is gone.
-                    raise ValueError("No está disponible un archivo editorial de la historia original")
-                new_id = str(uuid.uuid4())
-                target = self._path(target_id, new_id, row["kind"])
+                    raise ValueError(
+                        "No está disponible un archivo editorial histórico de la historia original")
+                fresh_id = str(uuid.uuid4())
+                target = self._path(target_id, fresh_id, asset["kind"])
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source, target)
-                cover_map[row["id"]] = new_id
-                db.execute("INSERT INTO creator_media_assets VALUES(?,?,?,?,?,?,?,?,?)",
-                           (new_id, target_id, row["kind"], row["label"],
-                            row["caption"], (character_ids or {}).get(row["character_id"]),
-                            target.name, row["media_type"], time.time()))
-            original = db.execute(
-                "SELECT cover_asset_id FROM stories WHERE id=?", (source_id,)).fetchone()
-            chosen = cover_map.get(original["cover_asset_id"]) if original else None
-            if chosen:
+                mapped[asset["id"]] = fresh_id
+
+            def remap(asset: dict) -> dict:
+                result = dict(asset)
+                result["id"] = mapped[asset["id"]]
+                result["story_id"] = target_id
+                result["character_id"] = (character_ids or {}).get(asset["character_id"])
+                result["filename"] = self._path(
+                    target_id, result["id"], result["kind"]).name
+                return result
+
+            for old_turn, new_turn in (turn_map or {}).items():
+                snapshot = snapshots.get(old_turn)
+                if snapshot is None:
+                    continue
+                historic = [remap(row) for row in json.loads(snapshot["assets_json"])]
+                db.execute(
+                    "INSERT INTO creator_media_turn_snapshots "
+                    "(turn_id,story_id,assets_json,cover_asset_id,created_at) "
+                    "VALUES (?,?,?,?,?)",
+                    (new_turn, target_id, json.dumps(historic, ensure_ascii=False),
+                     mapped.get(snapshot["cover_asset_id"]), snapshot["created_at"])
+                )
+            for asset in active:
+                row = remap(asset)
+                db.execute(
+                    "INSERT INTO creator_media_assets "
+                    "(id,story_id,kind,label,caption,character_id,filename,media_type,created_at) "
+                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    (row["id"], row["story_id"], row["kind"], row["label"],
+                     row["caption"], row["character_id"], row["filename"],
+                     row["media_type"], time.time())
+                )
+            if chosen_cover and chosen_cover in {item["id"] for item in active}:
                 db.execute("UPDATE stories SET cover_asset_id=? WHERE id=?",
-                           (chosen, target_id))
+                           (mapped[chosen_cover], target_id))
 
 
 class CoverSelection(BaseModel):

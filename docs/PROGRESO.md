@@ -519,3 +519,10 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] `apps/web/package.json` fija `"@playwright/test": "1.64.1"`, versión estable publicada. Commit `686f7151a174`.
 - [x] [CI #42085965085](https://github.com/Mairon31/novel_ai/actions/runs/42085965085) para ese commit: **179 pruebas Python + 34 Playwright PASS**, `npm install`, compilación web y navegador escritorio/móvil correctos.
 - [ ] Se recomienda incorporar `apps/web/package-lock.json` generado con npm en un entorno con registro accesible y migrar CI a `npm ci` para fijar **todas** las dependencias transitivas; por ahora se ha fijado únicamente Playwright y siguen existiendo otros rangos semver sin archivo de bloqueo.
+
+
+## 2026-11-05 — Aislamiento temporal de imágenes editoriales (pendiente de CI)
+
+- [ ] `creator_media_turn_snapshots` guarda inventario de medios del creador, metadatos y portada seleccionada en el commit SQLite del turno. La bifurcación parcial restaura exclusivamente ese checkpoint (sin traer medios futuros); la completa mantiene el estado presente.
+- [ ] Se remapean UUID de medios y NPC en toda la línea de snapshots; los bytes históricos de un medio borrado se conservan cuando hay turnos que lo referencian, aunque el recurso deje de estar disponible desde la biblioteca activa. La falta de un archivo requerido aborta la bifurcación sin publicar media ni filas parciales.
+- [ ] Pruebas creadas en `tests/test_creator_media_timeline.py`; hasta obtener CI, **no declarar PASS**. Continúa pendiente la recuperación histórica de referencias visuales y planes de escena, GC de medios históricos y durabilidad tras apagón.
