@@ -6,6 +6,7 @@ Policy 'guard' acts only on an explicit ComfyUI request; 'monitor' is default.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import subprocess
 import time
@@ -21,6 +22,7 @@ class ResourceConfig(BaseModel):
     mode: str = "monitor"
     gpu_index: int = Field(default=0, ge=0, le=31)
     minimum_free_mib: int = Field(default=3072, ge=0, le=65536)
+    serialize_local_gpu: bool = True
 
 
 def gpu_snapshot() -> list[dict]:
@@ -56,6 +58,8 @@ def gpu_snapshot() -> list[dict]:
 class ResourceController:
     def __init__(self, store: Store):
         self.store = store
+        self._gpu_lock = asyncio.Lock()
+        self._active: dict | None = None
         with store._conn() as conn:
             conn.execute("""CREATE TABLE IF NOT EXISTS resource_preferences(
                 id INTEGER PRIMARY KEY CHECK(id=1), config_json TEXT NOT NULL
@@ -75,6 +79,32 @@ class ResourceController:
             conn.execute("UPDATE resource_preferences SET config_json=? WHERE id=1",
                          (config.model_dump_json(),))
         return self.config()
+
+    def active_workload(self) -> dict:
+        return {"active": dict(self._active) if self._active is not None else None,
+                "serialization_enabled": self.config()["serialize_local_gpu"]}
+
+    async def claim_local_gpu(self, kind: str) -> bool:
+        """Serialize only requests known to share the local GPU.
+
+        Does not unload models or manage external processes. A busy resource
+        immediately rejects new work; there is no hidden background queue.
+        """
+        if not self.config()["serialize_local_gpu"]:
+            return False
+        if self._gpu_lock.locked():
+            current = self._active["kind"] if self._active else "otra operación"
+            raise HTTPException(409,
+                "GPU local ocupada por " + current +
+                ". Espera a que termine o desactiva la coordinación en Ajustes.")
+        await self._gpu_lock.acquire()
+        self._active = {"kind": kind, "started_at": time.time()}
+        return True
+
+    def release_local_gpu(self, acquired: bool) -> None:
+        if acquired:
+            self._active = None
+            self._gpu_lock.release()
 
     def inspect(self) -> dict:
         policy = self.config()
@@ -96,6 +126,7 @@ class ResourceController:
             "policy": policy, "gpus": devices, "selected_gpu": chosen,
             "status": status, "observed_at": time.time(), "message": detail,
             "monitor_only": policy["mode"] == "monitor",
+            "workload": self.active_workload(),
         }
 
     def allow_image_request(self, allow_low_vram: bool = False) -> dict:
@@ -110,6 +141,10 @@ class ResourceController:
 
 
 def mount_resource_routes(app, resources: ResourceController):
+    @app.get("/api/v1/resources/active")
+    def active_resource_workload():
+        return resources.active_workload()
+
     @app.get("/api/v1/resources/status")
     def resource_status():
         return resources.inspect()
