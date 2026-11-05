@@ -364,16 +364,20 @@ class NarrativeService:
                     exists = db.execute(
                         "SELECT 1 FROM stories WHERE id=?", (candidate,)
                     ).fetchone() is not None
-                    if exists:
-                        # The DB commit succeeded, but the marker delete did not.
-                        report["retained_stories"] += 1
-                    else:
-                        if folder.exists():
-                            if not folder.is_dir():
-                                raise ValueError("La ruta de rama incompleta no es un directorio")
-                            shutil.rmtree(folder)
-                        report["removed_orphans"] += 1
+                    if not exists and folder.exists():
+                        if not folder.is_dir():
+                            raise ValueError("La ruta de rama incompleta no es un directorio")
+                        shutil.rmtree(folder)
+                        # The orphan's directory entry must also be flushed;
+                        # otherwise a second crash may resurrect its filename.
+                        self._fsync_directory(assets_root)
+                    # Only a committed story may keep its media directory.
+                    # Sync the marker deletion as well, on systems supporting
+                    # directory fsync (POSIX). Mark recovery incomplete if it
+                    # fails, rather than reporting successful cleanup.
                     marker.unlink()
+                    self._fsync_directory(staging)
+                    report["retained_stories" if exists else "removed_orphans"] += 1
                 except (ValueError, OSError) as exc:
                     report["conflicts"] += 1
                     LOG.warning("No se limpió staging de rama %s: %s", candidate, exc)

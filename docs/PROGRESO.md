@@ -589,3 +589,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] En escenario C dos procesos son terminados con `SIGKILL` en secuencia antes de confirmar. La instancia B debe limpiar el huérfano A; una instancia C limpia el huérfano B; ninguna fila parcial debe aparecer.
 - [x] [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771) verificada para `f684580`: **201/201 Python + 36/36 Playwright PASS**, frontend compilado. Todos los tres nuevos ensayos de procesos muertos por `SIGKILL` aprobaron.
 - [ ] No cubierto: corte eléctrico real, corrupción filesystem, Windows y terminación exactamente dentro del COMMIT WAL.
+
+
+## 2026-11-05 — P0: durabilidad de la limpieza de staging al recuperar (CI pendiente)
+
+- [ ] `NarrativeService.recover_incomplete_forks` sincroniza con `fsync` el directorio padre de recursos al eliminar carpeta de rama abandonada, antes de eliminar el marcador UUID. Después de `marker.unlink`, sincroniza el directorio `fork-staging` (POSIX); solo entonces incrementa `removed_orphans` o `retained_stories`.
+- [ ] Si falla el flush del directorio tras eliminar archivos, el proceso deja el marcador para un intento posterior y cuenta `conflicts` en lugar de informar eliminación exitosa. La recuperación al reiniciar es idempotente cuando los archivos ya se eliminaron.
+- [ ] Regresiones añadidas a `tests/test_fork_atomicity.py`: recuperación mixta de rama confirmada+huérfana verificando sincronización de los dos directorios; fallo de `fsync` de la carpeta de recursos seguido de recuperación sin pérdida de la historia original. **CI pendiente.**
+- [ ] El test usa `fsync` real en runner Linux; no simula pérdida de energía, corrupción real de filesystem ni flush portable de directorio Windows.

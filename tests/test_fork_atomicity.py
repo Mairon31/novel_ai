@@ -501,6 +501,75 @@ publish(json.dumps({
         self.assertEqual(self.narrative.get_story(self.story)["title"],
                          "La guardiana del faro")
 
+
+    def test_recovery_flushes_orphan_directory_and_stale_marker_removal(self):
+        from noble_api.narrative import NarrativeService
+
+        completed = self.narrative.fork_story(self.story)
+        committed_id = completed["id"]
+        orphan_id = str(uuid.uuid4())
+        orphan_folder = self.assets_root / orphan_id
+        orphan_folder.mkdir(parents=True)
+        (orphan_folder / "aborted.webp").write_bytes(b"unfinished")
+        stage = self.root / "fork-staging"
+        stage.mkdir(exist_ok=True)
+        for branch_id in (committed_id, orphan_id):
+            (stage / (branch_id + ".pending")).write_text(
+                branch_id, encoding="utf-8")
+
+        actual_sync = NarrativeService._fsync_directory
+        synchronized = []
+
+        def trace_directory(path):
+            synchronized.append(path)
+            return actual_sync(path)
+
+        with patch.object(NarrativeService, "_fsync_directory",
+                          staticmethod(trace_directory)):
+            recovered = create_app(self.root)
+        self.assertEqual(recovered.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 1, "retained_stories": 1, "conflicts": 0})
+        self.assertIn(self.assets_root, synchronized)
+        self.assertGreaterEqual(synchronized.count(stage), 2)
+        self.assertFalse(orphan_folder.exists())
+        self.assertFalse(list(stage.glob("*.pending")))
+        self.assertTrue((self.assets_root / committed_id / "scene.webp").is_file())
+        self.assertIsNotNone(self.narrative.get_story(self.story))
+
+    def test_failed_recovery_directory_sync_keeps_marker_for_retry(self):
+        from noble_api.narrative import NarrativeService
+
+        orphan_id = str(uuid.uuid4())
+        folder = self.assets_root / orphan_id
+        folder.mkdir(parents=True)
+        (folder / "aborted.webp").write_bytes(b"unfinished")
+        stage = self.root / "fork-staging"
+        stage.mkdir(exist_ok=True)
+        marker = stage / (orphan_id + ".pending")
+        marker.write_text(orphan_id, encoding="utf-8")
+        original_sync = NarrativeService._fsync_directory
+
+        def fail_parent_sync(path):
+            if path == self.assets_root:
+                raise OSError("simulated recovery directory sync failure")
+            return original_sync(path)
+
+        with patch.object(NarrativeService, "_fsync_directory",
+                          staticmethod(fail_parent_sync)):
+            incomplete = create_app(self.root)
+        self.assertEqual(incomplete.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 0, "retained_stories": 0, "conflicts": 1})
+        self.assertTrue(marker.exists())
+        self.assertFalse(folder.exists())
+
+        recovered = create_app(self.root)
+        self.assertEqual(recovered.state.narrative.fork_recovery_report,
+                         {"removed_orphans": 1, "retained_stories": 0, "conflicts": 0})
+        self.assertFalse(marker.exists())
+        self.assertEqual(self.counts(), self.start_counts)
+        self.assertEqual(self.branch_dirs(), self.start_dirs)
+        self.assertIsNotNone(self.narrative.get_story(self.story))
+
     def test_stale_marker_after_successful_commit_keeps_story_and_media(self):
         complete = self.narrative.fork_story(self.story)
         branch_id = complete["id"]

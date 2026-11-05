@@ -92,3 +92,8 @@ No se añadieron retardos ni modos de prueba a la API de producción. El mismo c
 
 
 **Gate multiproceso confirmado:** [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771) aprobó 201/201 Python y 36/36 Playwright para el commit `f684580`. Se verificaron tres puntos: antes del COMMIT con otro escritor esperando, después del COMMIT antes de limpiar marcador, y recuperación serializada de dos procesos eliminados. No sustituye pruebas de apagón eléctrico, durabilidad NTFS ni kill dentro del COMMIT.
+
+
+## Sincronización en la fase de recuperación
+
+El protocolo de staging ya fuerza las copias y metadatos antes del COMMIT. El **protocolo inverso** de recuperación completa ese ciclo: una vez determinada la ausencia de fila confirmada de la rama, se elimina su carpeta UUID y se sincroniza `story-assets`; tras eliminar un marcador `.pending` de rama abandonada o confirmada, se sincroniza `fork-staging`. Los contadores de recuperación exitosa se incrementan únicamente si terminan estos pasos. Un `fsync` fallido en la carpeta principal conserva el marcador para el siguiente inicio; las operaciones son seguras al repetirlas con carpeta ya ausente. El comportamiento sigue condicionado a plataformas con sincronización de directorios (POSIX), sin prometer atomicidad entre SQLite y el filesystem ni durabilidad ante cortes reales de energía.
