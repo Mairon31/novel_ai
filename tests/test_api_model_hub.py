@@ -187,6 +187,34 @@ class ModelHubApiTests(unittest.TestCase):
             manager.shutdown()
             catalog.close()
 
+    def test_truncated_range_body_never_registers_unverified_model(self):
+        from noble_api.downloads import DownloadManager
+        from noble_api.store import Store
+        from noble_api.catalog import HfCatalog
+        def transport(request: httpx.Request):
+            if "/resolve/" in request.url.path:
+                return httpx.Response(206, stream=httpx.ByteStream(PAYLOAD[30:-7]),
+                    headers={"Content-Range": "bytes 30-{}/{}".format(
+                        len(PAYLOAD) - 1, len(PAYLOAD))})
+            return hf_mock(request)
+        store = Store(Path(self.temp.name) / "truncated-206")
+        catalog = HfCatalog(httpx.MockTransport(transport))
+        manager = DownloadManager(store, catalog)
+        part = store.models_dir / "hf" / REPO / REV / "tiny.Q4_K_M.gguf.part"
+        part.parent.mkdir(parents=True, exist_ok=True)
+        part.write_bytes(PAYLOAD[:30])
+        job, _ = store.enqueue(REPO, REV, "tiny.Q4_K_M.gguf", None, None)
+        try:
+            manager._run(job["id"])
+            state = store.download(job["id"])
+            self.assertEqual(state["status"], "failed", state)
+            self.assertIn("incompleto", state["error"])
+            self.assertEqual(store.installed(), [])
+            self.assertEqual(part.read_bytes(), PAYLOAD[:-7])
+        finally:
+            manager.shutdown()
+            catalog.close()
+
     def test_resume_from_partial_file(self):
         # HTTP 206 is handled, without duplicating bytes.
         from noble_api.downloads import DownloadManager
