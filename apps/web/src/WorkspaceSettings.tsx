@@ -13,12 +13,14 @@ import type {
 import { NarrativeSettings } from './NarrativeSettings';
 import { RuntimeManager } from './RuntimeManager';
 import { RemoteWorkers } from './RemoteWorkers';
+import { CreativeSettings } from './CreativeSettings';
 
-type Tab = 'narration' | 'languages' | 'providers' | 'appearance' |
+type Tab = 'narration' | 'multimedia' | 'languages' | 'providers' | 'appearance' |
   'runtimes' | 'shortcuts' | 'network' | 'about';
 
 const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'narration', label: 'Narración', icon: SlidersHorizontal },
+  { id: 'multimedia', label: 'Imágenes y voz', icon: Volume2 },
   { id: 'languages', label: 'Idiomas y traducción', icon: Languages },
   { id: 'providers', label: 'Proveedores', icon: Globe2 },
   { id: 'appearance', label: 'Apariencia', icon: Palette },
@@ -143,18 +145,9 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <p>Elige entre un LLM local o una API de pago. Configura muestreo, razonamiento y contexto.</p></div>
           <NarrativeSettings key={narrativeRevision}/>
           <RuntimeManager onActivated={onNarratorActivated}/>
-          <div className="workspace-panel">
-            <h3><Volume2 size={18}/> Creación multimedia</h3>
-            <p>Las imágenes se generarán cuando cambie la escena y solo si hay motor configurado. TTS permanece manual y desactivado hasta integrar su adaptador.</p>
-            {option('Política de imágenes', imageMode,
-              [['scene', 'Al cambiar la escena'], ['manual', 'Solo con solicitud'], ['off', 'Desactivadas']],
-              onImageMode)}
-            <div className="workspace-muted-grid">
-              <span>Imágenes · ComfyUI / Stable Diffusion.cpp <small>Adaptador pendiente</small></span>
-              <span>Voces · Chatterbox / Qwen3-TTS <small>Adaptador pendiente, CPU/GPU configurable</small></span>
-            </div>
-          </div>
         </>}
+
+        {tab === 'multimedia' && <CreativeSettings imageMode={imageMode} onImageMode={onImageMode}/>}
 
         {tab === 'languages' && prefs && <>
           <div className="setting-section-intro"><h2>Idioma y traducción</h2>
@@ -181,7 +174,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
         {tab === 'providers' && <>
           <div className="setting-section-intro"><h2>Proveedores y servicios</h2>
-            <p>Conecta modelos externos para narrar sin consumir tu GPU. Imagen y TTS tendrán sus propias credenciales y perfiles por tarea.</p></div>
+            <p>Conecta modelos externos para narrar sin consumir tu GPU. ComfyUI y Piper se configuran en «Imágenes y voz»; los proveedores de pago para estas tareas siguen pendientes.</p></div>
           <div className="workspace-panel">
             <div className="workspace-provider-head"><span className="provider-icon">OR</span><div>
               <h3>OpenRouter</h3><p>Modelos de lenguaje en la nube, con consumo según el proveedor.</p></div>
@@ -203,9 +196,9 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-panel">
             <h3>Catálogo de proveedores por herramienta</h3>
             <div className="workspace-service-row"><strong>Narración</strong><span>Ollama, KoboldCpp y OpenRouter</span><b>Integrados</b></div>
-            <div className="workspace-service-row"><strong>Imágenes</strong><span>ComfyUI, Stable Diffusion.cpp, servicios por API</span><b>Por integrar</b></div>
-            <div className="workspace-service-row"><strong>Voces</strong><span>Chatterbox, Qwen3-TTS, API TTS</span><b>Por integrar</b></div>
-            <div className="workspace-service-row"><strong>Workers</strong><span>GPU de Colab, segunda PC o servidor</span><b>Por integrar</b></div>
+            <div className="workspace-service-row"><strong>Imágenes</strong><span>ComfyUI local bajo demanda</span><b>Conectable</b></div>
+            <div className="workspace-service-row"><strong>Voces</strong><span>Piper local CPU bajo demanda</span><b>Conectable</b></div>
+            <div className="workspace-service-row"><strong>Workers</strong><span>Worker remoto LLM autenticado</span><b>Conectable</b></div>
           </div>
         </>}
 
