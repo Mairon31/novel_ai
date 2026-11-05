@@ -67,3 +67,16 @@ adapted to Noble AI's story-narration model categories and independent runtimes.
 - Archivos de Noble AI derivados/adaptados: `apps/web/src/App.tsx`, `apps/web/src/modelCatalogCache.ts`, `apps/web/src/styles.css`, `apps/api/noble_api/catalog.py`, `apps/api/noble_api/main.py`.
 - Origen: https://github.com/karrot0/Urakatsu/tree/main/web/src/components/ModelsPage.tsx
 - Licencia aplicable: MIT, con aviso íntegro y copyright preservados en este documento. Se adaptaron dependencias a React/FastAPI de Noble AI; no se importa su editor de traducción ni es requisito ejecutar la aplicación Urakatsu.
+
+## Urakatsu — ModelsStorage and UsageBar UI patterns
+
+Noble AI `apps/api/noble_api/model_storage.py` and its installed-model
+dashboard adapt the **behavior and visual presentation concepts** of
+`web/src/components/ModelsStorage.tsx` and `web/src/components/UsageBar.tsx`
+from Urakatsu (copyright (c) 2026 Urakatsu contributors, MIT). The
+implementation uses Noble AI's SQLite records, its own endpoints and
+independently written React/CSS, not an unmodified component import.
+
+Upstream revision: `165bf592716019b8487249bf7ca3ff3b708a23e7`.
+The original MIT permission and copyright notice for Urakatsu is retained
+in the first section of this document.

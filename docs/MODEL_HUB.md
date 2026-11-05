@@ -51,3 +51,41 @@ La ficha de modelo ofrece un botón **Leer ficha completa** que consulta bajo de
 Ruta: `GET /api/v1/model-cards/{namespace}/{model}?revision={sha40}`. El servidor valida los identificadores, utiliza únicamente el host de Hugging Face y limita tanto la lectura de red como la respuesta. Un repositorio sin README devuelve `available:false`; un modelo restringido informa el error correspondiente.
 
 El indicador de compatibilidad también expone la memoria estimada del archivo, la memoria KV asociada al contexto y el porcentaje aproximado de descarga GPU/RAM en su información accesible. Implementado mediante adaptación de `FitCell` del componente `ModelsPage.tsx` de Urakatsu (MIT). No se afirma compatibilidad empírica de CUDA ni medición de tokens por segundo.
+
+## Almacenamiento local registrado (API y UI reales)
+
+La pestaña **Instalados** muestra ahora un inventario de disco inspirado en
+`ModelsStorage.tsx` y `UsageBar` de Urakatsu. Es una implementación adaptada
+al almacenamiento SQLite propio de Noble AI, sin depender de las rutas y
+componentes de Urakatsu.
+
+- Ruta: `GET /api/v1/models/storage`.
+- Se obtiene capacidad usada, total y libre con `shutil.disk_usage` sobre
+  la carpeta de modelos. El espacio utilizado por el sistema puede incluir
+  ficheros no administrados por Noble AI y, en Linux, bloques reservados.
+- Los modelos registrados se contabilizan por tamaño **real** del archivo
+  cuando se encuentra dentro de la raíz administrada. Los enlaces simbólicos
+  y las rutas externas no suman almacenamiento.
+- Los trabajos incompletos se contabilizan por sus archivos `.part`
+  existentes, sin confundirlos con modelos instalados.
+- Si un archivo registrado ya no está presente, el Model Hub muestra su
+  estado y no permite elegirlo como narrador desde esa lista.
+- La lista de archivos permite inspeccionar los tamaños registrados; el
+  panel no borra ni mueve ficheros silenciosamente.
+
+El inventario no pretende medir todo el contenido no registrado de la carpeta
+ni calcula la capacidad GPU necesaria para cargar cada archivo. Es independiente
+del estimador de GGUF y del consumo real de VRAM.
+
+## Master/detail en escritorio y modal móvil
+
+En escritorio, la ficha del modelo se presenta a la derecha manteniendo la
+lista interactiva. En móvil continúa como un panel modal. Las búsquedas
+y fichas recientes se conservan de forma temporal dentro de la sesión
+(adaptación directa del patrón `recentSearches`/`recentDetails` de
+Urakatsu MIT). Los ajustes de compatibilidad tienen un TTL corto porque la
+VRAM libre es variable.
+
+Las pruebas funcionales comprueban apertura de ficha, sugerencia de GGUF,
+filtro, caché, descripción extendida del modelo, inventario de disco, rutas
+ajenas a la instalación y controles móviles.

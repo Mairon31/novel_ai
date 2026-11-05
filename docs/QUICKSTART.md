@@ -80,3 +80,17 @@ Playwright se ejecuta en GitHub Actions para escritorio y móvil. **Pruebas veri
 ## Referencias visuales y VRAM
 
 Puedes generar nuevas variantes de una ilustración guardada usando **ComfyUI → Imagen de referencia** y el control **Transformación**, que utiliza un workflow de imagen-a-imagen nativo. En **Configuración → Imágenes y voz** puedes consultar la VRAM libre observada y establecer una reserva mínima para trabajos de imagen. Esta política no instala un scheduler de GPU ni elimina procesos existentes. Ver [Guía multimedia](MULTIMEDIA_LOCAL.md) y [Imágenes](IMAGENES.md).
+
+## Espacios de navegación
+
+- **Biblioteca:** cada portada abre una ficha independiente con sinopsis,
+  protagonista, etiquetas y acciones para continuar o editar. Al continuar,
+  el lector se abre sin la biblioteca detrás.
+- **Creator Studio:** acceso desde el menú o directamente desde la ficha de
+  historia. Los proyectos mantienen su información privada y medios visuales.
+- **Model Hub:** en escritorio mantiene una lista de descubrimiento y un
+  inspector lateral de modelo. En móviles muestra el detalle superpuesto.
+  La pestaña Instalados presenta un inventario real del disco y archivos
+  parciales, sin afirmar instalaciones inexistentes.
+- **Configuración:** abre una vista general de sistemas y accesos directos.
+  Las preferencias avanzadas están separadas por secciones.
