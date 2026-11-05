@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from .catalog import CatalogError, HfCatalog, ROLES
 from .model_fit import assess_variants
+from .model_storage import inspect_model_storage
 from .downloads import DownloadManager
 from .hardware import snapshot
 from .store import Store
@@ -177,6 +178,10 @@ def create_app(
                role: str = "narrator", limit: int = Query(20, ge=1, le=30),
                sort: str = "downloads"):
         return catalog.search(q, role, limit, sort)
+
+    @service.get("/api/v1/models/storage")
+    def models_storage():
+        return inspect_model_storage(store)
 
     @service.get("/api/v1/models/installed")
     def installed():

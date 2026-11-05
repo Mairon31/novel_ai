@@ -261,3 +261,16 @@ export type ScenePresentation = {
   background: CreatorMediaAsset | null; foreground: CreatorMediaAsset | null;
   selection: 'caption_match' | 'no_match'; context_excerpt: string; generated: false;
 };
+
+export type ModelStorage = {
+  models_dir: string;
+  disk: { total_bytes: number; used_bytes: number; free_bytes: number };
+  installed: { count: number; bytes: number };
+  partial: { count: number; bytes: number };
+  items: Array<{
+    id: string; name: string; kind: 'installed' | 'partial';
+    size_bytes: number; file_present: boolean; repo_id: string;
+  }>;
+  observed_at: number;
+  scope: 'registered_and_partial_files_only';
+};
