@@ -253,6 +253,19 @@ export type CreatorCharacter = {
 };
 export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;
 
+export type LorebookEntry = {
+  id: string; story_id: string; title: string; content: string;
+  keys: string[]; secondary_keys: string[];
+  secondary_mode: 'any' | 'all'; match_whole_words: boolean;
+  priority: number; enabled: boolean; always_active: boolean;
+  created_at: number; updated_at: number;
+};
+export type LorebookEntryDraft = Omit<LorebookEntry, 'id'|'story_id'|'created_at'|'updated_at'>;
+export type LorebookPreview = {
+  entries: Array<{ id: string; title: string; priority: number; content: string }>;
+  context: string; used_chars: number; budget_chars: number; skipped_budget: number;
+};
+
 export type CreatorMediaAsset = {
   id: string; story_id: string; kind: 'cover' | 'background' | 'foreground';
   label: string; caption: string; character_id: string | null;
