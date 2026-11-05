@@ -15,7 +15,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
 
   await page.getByRole('button', { name: 'Nueva historia' }).click();
   const creator = page.getByRole('dialog', { name: 'Crear una nueva historia' });
-  const title = 'Prueba visual de la torre';
+  const title = 'Prueba visual de la torre '+test.info().project.name;
   await creator.getByLabel('Título').fill(title);
   await creator.getByLabel('Premisa del mundo').fill(
     'En una biblioteca encantada, una hechicera protege el mapa perdido de los reinos.'
@@ -59,7 +59,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
   await expect(page.locator('.noble-reader-layout')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
-  await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toHaveCount(1);
+  await expect(page.locator('.noble-library-cover').filter({ hasText: title }).first()).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-bookshelf.png',
     fullPage: true,

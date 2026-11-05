@@ -14,13 +14,14 @@ test('Creator Studio keeps author-only story data separate from reader', async (
 
   await page.getByRole('button',{name:'Crear proyecto',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Crear proyecto narrativo'});
-  await dialog.getByLabel('Título').fill('El mundo de Aira');
+  const projectTitle = 'El mundo de Aira '+test.info().project.name;
+  await dialog.getByLabel('Título').fill(projectTitle);
   await dialog.getByLabel('Premisa del mundo').fill(
     'La aventura comienza en una biblioteca secreta bajo una montaña encantada.');
   await dialog.getByLabel('Protagonista').fill('Luna');
   await dialog.getByRole('button',{name:'Crear proyecto',exact:true}).click();
   await expect(dialog).toBeHidden();
-  await expect(page.getByRole('heading',{name:'El mundo de Aira'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:projectTitle})).toBeVisible();
 
   await page.getByLabel('Sinopsis para lectores').fill(
     'Una ciudad repleta de misterios que nadie conoce.');
@@ -59,9 +60,9 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   if(test.info().project.name==='mobile')
     await page.getByRole('button',{name:'Abrir menú'}).click();
   await page.getByRole('button',{name:'Creator Studio'}).click();
-  await page.getByRole('button',{name:/El mundo de Aira/}).click();
+  await page.locator('.creator-project').filter({hasText:projectTitle}).first().click();
   await expect(page.getByLabel('Contexto interno de la IA')).toHaveValue(
     'El antiguo alcalde esconde la llave detrás del castillo.');
   await page.getByRole('button',{name:/Personajes \(1\)/}).click();
-  await expect(page.getByText('Aira')).toBeVisible();
+  await expect(page.locator('.creator-character-list button').filter({hasText:'Aira'}).first()).toBeVisible();
 });
