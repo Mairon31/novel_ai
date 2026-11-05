@@ -219,6 +219,50 @@ class ComfySceneTests(unittest.TestCase):
         self.assertEqual(len(self.client.get(
             f"/api/v1/stories/{self.story}/visual-state").json()["assets"]),1)
 
+    def test_saved_scene_plan_uses_named_character_reference_without_manual_asset_id(self):
+        self.setup_comfy()
+        sample=io.BytesIO()
+        Image.new("RGB",(64,64),(180,110,30)).save(sample,"PNG")
+        imported=self.client.post(f"/api/v1/stories/{self.story}/scene-image",
+            files={"file":("portrait.png",sample.getvalue(),"image/png")})
+        self.assertEqual(imported.status_code,200,imported.text)
+        asset=self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        character=self.client.post(
+            f"/api/v1/stories/{self.story}/visual-characters",
+            json={"name":"Luna","appearance":"Cabello azul oscuro y ojos ámbar, cabello trenzado.",
+                  "outfit":"Uniforme verde", "distinguishing_features":"Medallón blanco"})
+        self.assertEqual(character.status_code,201,character.text)
+        character_id=character.json()["id"]
+        linked=self.client.put(
+            f"/api/v1/stories/{self.story}/visual-characters/{character_id}/reference",
+            json={"asset_id":asset})
+        self.assertEqual(linked.status_code,200,linked.text)
+        saved=self.client.put(f"/api/v1/stories/{self.story}/scene-plan",json={
+            "shot":"medium","lighting":"sunset",
+            "direction":"Luna contempla las luces del castillo.",
+            "visible_character_ids":[character_id],
+            "reference_character_id":character_id})
+        self.assertEqual(saved.status_code,200,saved.text)
+
+        generated=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json={
+            "prompt":"Luna frente a Un castillo al anochecer", "seed":1234})
+        self.assertEqual(generated.status_code,200,generated.text)
+        self.assertEqual(generated.json()["reference_asset_id"],asset)
+        self.assertEqual(self.fixture.last_workflow["8"]["class_type"],"LoadImage")
+        self.assertEqual(self.fixture.last_workflow["9"]["class_type"],"VAEEncode")
+        self.assertIn("Luna",self.fixture.last_workflow["2"]["inputs"]["text"])
+        self.assertIn("atardecer",self.fixture.last_workflow["2"]["inputs"]["text"])
+        self.assertEqual(len([request for request in self.fixture.requests
+                              if request.url.path=="/upload/image"]),1)
+
+        repeated=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json={
+            "prompt":"Luna frente a Un castillo al anochecer","seed":1234})
+        self.assertEqual(repeated.status_code,200,repeated.text)
+        self.assertTrue(repeated.json()["cached"])
+        self.assertEqual(len([request for request in self.fixture.requests
+                              if request.url.path=="/upload/image"]),1)
+
     def test_security_and_model_validation(self):
         invalid = self.client.put("/api/v1/images/config", json={
             "base_url": "http://evil.example:8188"})
