@@ -79,3 +79,6 @@ En Windows no hay `fsync` portable para directorios en Python; se sincronizan ar
 
 
 **Primera verificación:** [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) — 197 Python + 36 Playwright PASS (commit `eca8166`). Se añadió como segundo nivel una prueba de `os._exit(41)` en un proceso externo después de copiar los archivos, pendiente de validación CI. No se debe interpretar como prueba de durabilidad contra fallo eléctrico.
+
+
+**Recuperación probada con proceso externo:** [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453) — 198 Python y 36 Playwright PASS. Una terminación con `os._exit(41)` después de copiar datos y antes del COMMIT deja el marcador durable y bytes sin fila SQLite. Al crear otra app, `recover_incomplete_forks` elimina solo esa carpeta marcada y conserva el proyecto original. La prueba no demuestra durabilidad física ante un apagón ni protección completa ante carreras de symlinks.

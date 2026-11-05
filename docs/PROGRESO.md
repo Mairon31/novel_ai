@@ -572,3 +572,10 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) finalizada con **197/197 Python y 36/36 Playwright PASS**, build React/Vite PASS. Cuatro regresiones nuevas en `test_fork_atomicity.py` ejercitan `os.fsync` real y fallos inyectados de sync/metadata con rollback de todos los snapshots.
 - [ ] Ahora se añade una prueba de **terminación real de otro proceso** con `os._exit(41)` tras copiar los medios editoriales. Debe dejar marcador y carpeta de rama inconclusa, sin fila SQLite confirmada; el inicio de otra instancia los debe reconciliar conservando el origen. Pendiente de CI del commit que la incorpora. No equivale a ensayo de corte eléctrico físico.
+
+
+### Gate de proceso externo terminado abruptamente — verificado
+
+- [x] Commit [`dea96ac`](https://github.com/Mairon31/novel_ai/commit/dea96ac6c62ce1289bdfc3626197f29472b5f55e): `tests/test_fork_atomicity.py` ejecuta un intérprete Python independiente, fuerza `os._exit(41)` después de copiar medios, comprueba rollback SQLite implícito por cierre del proceso, conserva el marcador UUID y archivos huérfanos, y verifica recuperación al iniciar otra instancia sin modificar la historia original.
+- [x] [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453): **198/198 pruebas Python + 36/36 Playwright PASS**, compilación Vite correcta, ambos jobs GitHub Actions en éxito.
+- [ ] Limitación explícita: `os._exit` no es un corte de corriente ni prueba que el filesystem persista bytes ya confirmados; la recuperación tras abortar en COMMIT/limpieza, fallos multi-proceso simultáneos, filesystem corrupto, guardado duradero de metadatos Windows y pruebas físicas continúan pendientes.

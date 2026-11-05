@@ -154,5 +154,5 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 ### Evidencia fsync y crash de proceso
 
 - [x] [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) — 197 Python + 36 Playwright PASS y compilación frontend, commit `eca8166`; se verificó flush real de archivos/dir POSIX y rollback por error de `fsync`.
-- [ ] `test_real_process_crash_after_copy_recovers_without_partial_branch`: proceso independiente termina con `os._exit(41)` tras clonar medios y antes del COMMIT, sin ejecutar `finally`. Una nueva app debe limpiar sólo el UUID huérfano, mantener origen y dejar sin marcador. Pendiente de CI.
+- [x] `test_real_process_crash_after_copy_recovers_without_partial_branch`: el proceso termina realmente con `os._exit(41)` tras copiar medios y antes del COMMIT; el reinicio elimina exclusivamente UUID huérfano, sin alterar historia fuente. [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453): **198 Python + 36 Playwright PASS**.
 - [ ] Pendiente prueba de crash después de COMMIT con marcador sin borrar, y terminación simultánea de procesos/energía física.
