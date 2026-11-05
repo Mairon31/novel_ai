@@ -374,9 +374,21 @@ class NarrativeService:
             config = self.config()
             collected: list[str] = []
             try:
-                async for piece in self.generate(config, self.messages(story, instruction, mode)):
+                yield encode_event("status", {
+                    "phase": "preparing", "message": "Preparando contexto de la historia..."})
+                messages = self.messages(story, instruction, mode)
+                yield encode_event("status", {
+                    "phase": "connecting", "message": "Conectando con el modelo narrador..."})
+                first_piece = True
+                total_length = 0
+                async for piece in self.generate(config, messages):
+                    if first_piece:
+                        yield encode_event("status", {
+                            "phase": "streaming", "message": "Narración en curso..."})
+                        first_piece = False
                     collected.append(piece)
-                    if sum(map(len, collected)) > 40000:
+                    total_length += len(piece)
+                    if total_length > 40000:
                         raise ValueError("La salida excedió el límite de longitud")
                     yield encode_event("delta", {"text": piece})
                 text = "".join(collected).strip()
