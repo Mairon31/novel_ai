@@ -25,7 +25,9 @@ test('story detail shows a non-destructive branch tree and reader switches route
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Abrir menú' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await page.locator('.noble-library-cover').filter({ hasText: title }).first().click();
+  await page.locator('.noble-library-cover').filter({
+    has: page.locator('.noble-library-cover-copy strong').getByText(title, { exact: true }),
+  }).click();
   const region = page.getByRole('region', { name: 'Árbol de rutas narrativas' });
   await expect(region).toBeVisible();
   await expect(region.locator('.noble-route-node')).toHaveCount(3);
