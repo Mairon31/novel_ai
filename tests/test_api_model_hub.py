@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import hashlib
+import threading
 import json
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import httpx
 from fastapi.testclient import TestClient
@@ -212,6 +214,92 @@ class ModelHubApiTests(unittest.TestCase):
             self.assertEqual(store.installed(), [])
             self.assertEqual(part.read_bytes(), PAYLOAD[:-7])
         finally:
+            manager.shutdown()
+            catalog.close()
+
+    def test_pause_during_verification_can_resume_without_extra_download(self):
+        from noble_api.downloads import DownloadManager
+        from noble_api.store import Store
+        from noble_api.catalog import HfCatalog
+
+        requests = []
+        def transport(request: httpx.Request):
+            if "/resolve/" in request.url.path:
+                requests.append(request.url.path)
+                return httpx.Response(500, text="Unexpected second download")
+            return hf_mock(request)
+
+        store = Store(Path(self.temp.name) / "verify-resume")
+        catalog = HfCatalog(httpx.MockTransport(transport))
+        manager = DownloadManager(store, catalog)
+        part = store.models_dir / "hf" / REPO / REV / "tiny.Q4_K_M.gguf.part"
+        part.parent.mkdir(parents=True, exist_ok=True)
+        part.write_bytes(PAYLOAD)
+        job, _ = store.enqueue(REPO, REV, "tiny.Q4_K_M.gguf", len(PAYLOAD), SHA)
+        self.assertTrue(store.transition_download(job["id"], ("queued",), "verifying"))
+        try:
+            self.assertEqual(manager.control(job["id"], "pause")["status"], "paused")
+            self.assertTrue(part.is_file())
+            self.assertEqual(manager.control(job["id"], "resume")["status"], "queued")
+            for _ in range(120):
+                if store.download(job["id"])["status"] in ("completed", "failed"):
+                    break
+                time.sleep(0.02)
+            self.assertEqual(store.download(job["id"])["status"], "completed",
+                             store.download(job["id"]))
+            self.assertEqual(requests, [])
+            self.assertEqual(store.installed()[0]["sha256"], SHA)
+            self.assertEqual(
+                (part.parent / "tiny.Q4_K_M.gguf").read_bytes(), PAYLOAD)
+        finally:
+            manager.shutdown()
+            catalog.close()
+
+    def test_cancel_during_sha_verification_cannot_register_a_model(self):
+        from noble_api.downloads import DownloadManager
+        from noble_api.store import Store
+        from noble_api.catalog import HfCatalog
+
+        store = Store(Path(self.temp.name) / "verify-cancel")
+        catalog = HfCatalog(httpx.MockTransport(hf_mock))
+        manager = DownloadManager(store, catalog)
+        part = store.models_dir / "hf" / REPO / REV / "tiny.Q4_K_M.gguf.part"
+        part.parent.mkdir(parents=True, exist_ok=True)
+        part.write_bytes(PAYLOAD)
+        job, _ = store.enqueue(REPO, REV, "tiny.Q4_K_M.gguf", len(PAYLOAD), SHA)
+        started = threading.Event()
+        proceed = threading.Event()
+        real_sha256 = hashlib.sha256
+
+        class PausableSHA:
+            def __init__(self):
+                self.inner = real_sha256()
+            def update(self, chunk):
+                started.set()
+                if not proceed.wait(timeout=3):
+                    raise AssertionError("El test no liberó la verificación")
+                self.inner.update(chunk)
+            def hexdigest(self):
+                return self.inner.hexdigest()
+
+        worker = threading.Thread(target=manager._run, args=(job["id"],))
+        try:
+            with patch("noble_api.downloads.hashlib.sha256", side_effect=PausableSHA):
+                worker.start()
+                self.assertTrue(started.wait(timeout=2),
+                                "La verificación SHA debe comenzar")
+                state = manager.control(job["id"], "cancel")
+                self.assertEqual(state["status"], "cancelled", state)
+                proceed.set()
+                worker.join(timeout=3)
+                self.assertFalse(worker.is_alive())
+            self.assertEqual(store.download(job["id"])["status"], "cancelled")
+            self.assertEqual(store.installed(), [])
+            self.assertEqual(part.read_bytes(), PAYLOAD)
+            self.assertFalse((part.parent / "tiny.Q4_K_M.gguf").exists())
+        finally:
+            proceed.set()
+            worker.join(timeout=3) if worker.ident is not None else None
             manager.shutdown()
             catalog.close()
 
