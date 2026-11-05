@@ -83,9 +83,13 @@ export const api = {
   saveImageConfig: (config: ImageSettings) => request<ImageSettings>(
     '/images/config', { method: 'PUT', body: JSON.stringify(config) }),
   imageStatus: () => request<ImageStatus>('/images/status'),
-  illustrate: (storyId: string, prompt: string, seed?: number) => request<IllustrationResult>(
+  illustrate: (storyId: string, prompt: string, seed?: number,
+               reference_asset_id?: string, denoise?: number) => request<IllustrationResult>(
     '/stories/' + encodeURIComponent(storyId) + '/illustrate',
-    { method: 'POST', body: JSON.stringify({ prompt, ...(seed === undefined ? {} : { seed }) }) }),
+    { method: 'POST', body: JSON.stringify({
+      prompt, ...(seed === undefined ? {} : { seed }),
+      ...(reference_asset_id ? { reference_asset_id, denoise: denoise ?? 0.62 } : {}),
+    }) }),
   speechVoices: () => request<SpeechVoices>('/tts/voices'),
   async requestSpeech(storyId: string, turnId: string, voice_id: string): Promise<Blob> {
     const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +

@@ -61,6 +61,8 @@ export function VisualReader({
   const [elapsed, setElapsed] = useState(0);
   const [imagePrompt, setImagePrompt] = useState(active?.premise || '');
   const [imageSeed, setImageSeed] = useState('');
+  const [referenceAssetId, setReferenceAssetId] = useState('');
+  const [denoise, setDenoise] = useState(0.62);
   const [illustrationNotice, setIllustrationNotice] = useState('');
   const [illustrating, setIllustrating] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('manual');
@@ -80,7 +82,11 @@ export function VisualReader({
   const tail = useRef<HTMLDivElement | null>(null);
   useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
   useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
-  useEffect(() => { setImagePrompt(active?.premise || ''); }, [active?.id]);
+  useEffect(() => {
+    setImagePrompt(active?.premise || '');
+    setReferenceAssetId('');
+    setIllustrationNotice('');
+  }, [active?.id]);
   useEffect(() => {
     if (!active) { setVisual(null); return; }
     let live = true;
@@ -213,7 +219,8 @@ export function VisualReader({
       const seed = imageSeed.trim() ? Number(imageSeed) : undefined;
       if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
         throw new Error('La semilla debe ser un número entero positivo.');
-      const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed);
+      const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed,
+        referenceAssetId || undefined, referenceAssetId ? denoise : undefined);
       setIllustrationNotice(result.cached ? 'Ilustración recuperada de la caché.' :
         'Ilustración nueva guardada como versión independiente.');
       // Force refreshing a previous scene despite using a stable asset path.
@@ -491,6 +498,30 @@ export function VisualReader({
               <textarea rows={4} minLength={8} maxLength={2400}
                 value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
                 placeholder="Personajes, lugar, luz, expresión y estilo visual..."/></label>
+            <label className="noble-inspector-field">Imagen de referencia (opcional)
+              <select aria-label="Referencia visual" value={referenceAssetId}
+                onChange={e => setReferenceAssetId(e.target.value)}>
+                <option value="">Sin referencia · texto a imagen</option>
+                {visual?.assets.map(asset =>
+                  <option key={asset.id} value={asset.id}>
+                    {asset.origin === 'comfyui' ? 'Ilustración IA' : 'Importada'}
+                    {' · '}{asset.id.slice(0, 8)}
+                    {asset.selected ? ' (actual)' : ''}
+                  </option>)}
+              </select>
+            </label>
+            {referenceAssetId && <>
+              <label className="noble-inspector-field">
+                Transformación de la referencia · {Math.round(denoise * 100)}%
+                <input aria-label="Intensidad de transformación" type="range"
+                  min={0.2} max={0.95} step={0.05} value={denoise}
+                  onChange={e => setDenoise(Number(e.target.value))}/>
+              </label>
+              <p className="noble-inspector-hint">
+                ComfyUI usará esta imagen como punto de partida (img2img).
+                Un valor bajo conserva más la composición; no garantiza identidad facial.
+              </p>
+            </>}
             <label className="noble-inspector-field">Semilla (opcional para reproducir y reutilizar)
               <input aria-label="Semilla de imagen" type="number" min={0} step={1}
                 value={imageSeed} onChange={e => setImageSeed(e.target.value)}
