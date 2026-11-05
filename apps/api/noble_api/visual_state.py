@@ -470,6 +470,8 @@ class VisualState:
         legacy = self.legacy_path(story_id)
         legacy.parent.mkdir(parents=True, exist_ok=True)
         temp = legacy.with_suffix(".webp.part")
+        if temp.is_symlink() or not temp.resolve().is_relative_to(legacy.parent.resolve()):
+            raise ValueError("Archivo temporal de ilustración no confiable")
         try:
             shutil.copyfile(source, temp)
             os.replace(temp, legacy)
@@ -498,6 +500,8 @@ class VisualState:
         asset.parent.mkdir(parents=True, exist_ok=True)
         # Version file first, then SQLite commit. No old artwork is deleted.
         tmp = asset.with_suffix(".webp.part")
+        if tmp.is_symlink() or not tmp.resolve().is_relative_to(asset.parent.resolve()):
+            raise ValueError("Archivo temporal de galería no confiable")
         try:
             tmp.write_bytes(transformed)
             os.replace(tmp, asset)
