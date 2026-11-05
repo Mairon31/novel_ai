@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import threading
 import json
+import sqlite3
 import sys
 import tempfile
 import time
@@ -303,6 +304,27 @@ class ModelHubApiTests(unittest.TestCase):
             worker.join(timeout=3) if worker.ident is not None else None
             manager.shutdown()
             catalog.close()
+
+    def test_atomic_model_registration_restores_partial_on_database_error(self):
+        from noble_api.store import Store
+        store = Store(Path(self.temp.name) / "verify-db-rollback")
+        part = store.models_dir / "hf" / REPO / REV / "tiny.Q4_K_M.gguf.part"
+        part.parent.mkdir(parents=True, exist_ok=True)
+        part.write_bytes(PAYLOAD)
+        target = part.with_suffix("")  # Remove only the .part suffix.
+        job, _ = store.enqueue(REPO, REV, "tiny.Q4_K_M.gguf", len(PAYLOAD), SHA)
+        self.assertTrue(store.transition_download(job["id"], ("queued",), "verifying"))
+        with store._conn() as conn:
+            conn.executescript("""
+                CREATE TRIGGER refuse_model_insert BEFORE INSERT ON installed
+                BEGIN SELECT RAISE(ABORT, 'simulated database failure'); END;
+            """)
+        with self.assertRaises(sqlite3.IntegrityError):
+            store.complete_download(job, part, target, SHA, "sha256_verified")
+        self.assertEqual(part.read_bytes(), PAYLOAD)
+        self.assertFalse(target.exists())
+        self.assertEqual(store.installed(), [])
+        self.assertEqual(store.download(job["id"])["status"], "verifying")
 
     def test_resume_from_partial_file(self):
         # HTTP 206 is handled, without duplicating bytes.
