@@ -111,7 +111,8 @@ class VisualState:
                     id TEXT PRIMARY KEY, story_id TEXT NOT NULL, scene_id TEXT NOT NULL,
                     file_name TEXT NOT NULL, content_sha256 TEXT NOT NULL,
                     origin TEXT NOT NULL, prompt TEXT NOT NULL,
-                    checkpoint TEXT, seed INTEGER, created_at REAL NOT NULL
+                    checkpoint TEXT, seed INTEGER, created_at REAL NOT NULL,
+                    render_signature TEXT
                 );
                 CREATE INDEX IF NOT EXISTS idx_visual_assets_story
                     ON visual_assets(story_id, created_at, id);
@@ -126,6 +127,11 @@ class VisualState:
                     UNIQUE(story_id, name)
                 );
             """)
+            columns = [row[1] for row in conn.execute("PRAGMA table_info(visual_assets)")]
+            if "render_signature" not in columns:
+                conn.execute("ALTER TABLE visual_assets ADD COLUMN render_signature TEXT")
+            conn.execute("""CREATE INDEX IF NOT EXISTS idx_visual_assets_signature
+                ON visual_assets(story_id, render_signature)""")
 
     def _exists(self, story_id: str) -> bool:
         with self.store._conn() as conn:
@@ -299,11 +305,14 @@ class VisualState:
                     shutil.copy2(old_file, new_file)
                     copied_paths.append(new_file)
                     asset_map[art["id"]] = new_asset
-                    conn.execute("INSERT INTO visual_assets VALUES(?,?,?,?,?,?,?,?,?,?)", (
+                    conn.execute("""INSERT INTO visual_assets
+                        (id,story_id,scene_id,file_name,content_sha256,origin,prompt,
+                         checkpoint,seed,created_at,render_signature)
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (
                         new_asset, branch_id, scene_map[art["scene_id"]],
                         new_file.name, art["content_sha256"], art["origin"],
                         art["prompt"], art["checkpoint"], art["seed"],
-                        now + index * 0.00001))
+                        now + index * 0.00001, art.get("render_signature")))
                 if selected_id in asset_map:
                     new_selected = asset_map[selected_id]
                 else:
@@ -331,9 +340,18 @@ class VisualState:
         finally:
             temp.unlink(missing_ok=True)
 
+    def cached(self, story_id: str, signature: str) -> dict | None:
+        with self.store._conn() as conn:
+            hit = conn.execute("""SELECT * FROM visual_assets WHERE
+                story_id=? AND render_signature=? ORDER BY created_at DESC LIMIT 1""",
+                (story_id, signature)).fetchone()
+        if hit and self._asset_path(story_id, hit["id"]).is_file():
+            return dict(hit)
+        return None
+
     def publish(self, story_id: str, raw: bytes, origin: str,
                 prompt: str = "", checkpoint: str | None = None,
-                seed: int | None = None) -> dict:
+                seed: int | None = None, render_signature: str | None = None) -> dict:
         if origin not in {"manual", "comfyui"}:
             raise ValueError("Origen de imagen no admitido")
         scene = self.scene(story_id)
@@ -349,9 +367,11 @@ class VisualState:
             os.replace(tmp, asset)
             with self.store._conn() as conn:
                 conn.execute("""INSERT INTO visual_assets
-                    VALUES(?,?,?,?,?,?,?,?,?,?)""",
+                    (id,story_id,scene_id,file_name,content_sha256,origin,prompt,
+                     checkpoint,seed,created_at,render_signature)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                     (ident, story_id, scene["id"], asset.name, digest, origin,
-                     prompt, checkpoint, seed, now))
+                     prompt, checkpoint, seed, now, render_signature))
                 conn.execute("""INSERT INTO visual_current(story_id,asset_id)
                     VALUES (?,?) ON CONFLICT(story_id)
                     DO UPDATE SET asset_id=excluded.asset_id""", (story_id, ident))
