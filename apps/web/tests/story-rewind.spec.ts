@@ -41,7 +41,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   const opened = await page.request.post(base + '/creator/opening', {
     data: { index: 0 },
   });
-  expect(opened.status()).toBe(200);
+  expect(opened.status()).toBe(201);
   const turnId = (await opened.json() as { id: string }).id;
 
   // Secrets and author edits made AFTER this turn must stay in the original.
