@@ -77,6 +77,10 @@ class LlmSettings(BaseModel):
     worker_id: str = ""
 
 
+class CanonChange(BaseModel):
+    canon: str = Field(default='', max_length=5000)
+
+
 class CreateStory(BaseModel):
     title: str = Field(min_length=2, max_length=100)
     premise: str = Field(min_length=10, max_length=4000)
@@ -124,6 +128,8 @@ class NarrativeService:
             fields = [row[1] for row in db.execute("PRAGMA table_info(stories)")]
             if "protagonist_name" not in fields:
                 db.execute("ALTER TABLE stories ADD COLUMN protagonist_name TEXT NOT NULL DEFAULT 'Protagonista'")
+            if "canon" not in fields:
+                db.execute("ALTER TABLE stories ADD COLUMN canon TEXT NOT NULL DEFAULT ''")
             db.execute("INSERT OR IGNORE INTO llm_preferences VALUES (1,?)",
                        (json.dumps(DEFAULT_LLM),))
 
@@ -231,6 +237,14 @@ class NarrativeService:
                        (name.strip(), time.time(), story_id))
         return self.get_story(story_id)
 
+    def set_canon(self, story_id: str, canon: str) -> dict:
+        if len(canon) > 5000:
+            raise ValueError("El canon no puede superar 5000 caracteres")
+        with self.store._conn() as db:
+            db.execute("UPDATE stories SET canon=?,updated_at=? WHERE id=?",
+                       (canon.strip(), time.time(), story_id))
+        return self.get_story(story_id)
+
     def turns(self, story_id: str, limit: int = 100) -> list[dict]:
         with self.store._conn() as db:
             return [dict(r) for r in db.execute(
@@ -272,8 +286,11 @@ class NarrativeService:
                             ("detecta automáticamente" if source == "auto" else source) +
                             ". Conserva el significado del contenido entrante y "
                             "escribe la respuesta únicamente en el idioma de salida.")
+        canon = story.get("canon", "").strip()
+        world_rules = "\nCanon persistente confirmado de la historia: " + canon if canon else ""
         messages = [{"role": "system", "content": PROMPT + "\n" + instruction +
-                     "\nPremisa: " + story["premise"] + "\nProtagonista: " + story.get("protagonist_name", "Protagonista")}]
+                     "\nPremisa: " + story["premise"] + "\nProtagonista: " +
+                     story.get("protagonist_name", "Protagonista") + world_rules}]
         for t in self.turns(story["id"], limit=16):
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
@@ -431,6 +448,12 @@ def mount_narrative_routes(app, narrative: NarrativeService):
         if not story:
             raise HTTPException(404, "Historia inexistente")
         return story
+
+    @app.patch("/api/v1/stories/{story_id}/canon")
+    def set_canon(story_id: uuid.UUID, body: CanonChange):
+        if not narrative.get_story(str(story_id)):
+            raise HTTPException(404, "Historia inexistente")
+        return narrative.set_canon(str(story_id), body.canon)
 
     @app.get("/api/v1/stories/{story_id}/turns")
     def get_turns(story_id: uuid.UUID):
