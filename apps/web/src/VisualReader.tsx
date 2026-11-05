@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, BookOpen, Camera, Check, ChevronRight, Cpu, Eye, Feather,
-  Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2,
+  Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2, Volume2, Square,
   Sparkles, UploadCloud, UserRound, X,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -29,6 +29,8 @@ interface Props {
   draft: string;
   streamText: string;
   generating: boolean;
+  generationMessage: string;
+  onCancel: () => void;
   notice: string;
   error: string;
   setDraft: (next: string) => void;
@@ -40,19 +42,54 @@ interface Props {
 }
 
 export function VisualReader({
-  active, turns, mode, draft, streamText, generating,
+  active, turns, mode, draft, streamText, generating, generationMessage, onCancel,
   notice, error, setDraft, setMode, onSubmit, onCreate, onSettings, onUpdateStory,
 }: Props) {
   const [tab, setTab] = useState<Tab>('summary');
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
+  const [elapsed, setElapsed] = useState(0);
+  const [imagePrompt, setImagePrompt] = useState(active?.premise || '');
+  const [illustrating, setIllustrating] = useState(false);
+  const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('manual');
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voices, setVoices] = useState<SpeechVoices | null>(null);
+  const [voiceId, setVoiceId] = useState('');
+  const [playingTurn, setPlayingTurn] = useState<string | null>(null);
+  const [synthesizing, setSynthesizing] = useState(false);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const audioUrl = useRef<string | null>(null);
   const [name, setName] = useState(active?.protagonist_name || 'Protagonista');
   const [shortcuts, setShortcuts] = useState(true);
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const tail = useRef<HTMLDivElement | null>(null);
   useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
+  useEffect(() => { setImagePrompt(active?.premise || ''); }, [active?.id]);
+  useEffect(() => {
+    if (!generating) { setElapsed(0); return; }
+    const start = Date.now();
+    const handle = window.setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => window.clearInterval(handle);
+  }, [generating]);
+  useEffect(() => {
+    let live = true;
+    Promise.all([api.settings(), api.speechVoices()]).then(([settings, voiceList]) => {
+      if (!live) return;
+      setImageMode(settings.image_mode); setVoiceEnabled(settings.tts_enabled);
+      setVoices(voiceList);
+      setVoiceId(previous => previous || voiceList.voices[0]?.id || '');
+    }).catch(() => { /* reader remains usable offline */ });
+    return () => { live = false; };
+  }, []);
+  useEffect(() => {
+    return () => {
+      audio.current?.pause();
+      if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
+      audio.current = null; audioUrl.current = null;
+    };
+  }, [active?.id]);
   useEffect(() => {
     let live = true;
     api.workspacePreferences().then(p => {
@@ -80,6 +117,43 @@ export function VisualReader({
     catch (e) { setReaderError((e as Error).message); }
     finally { setUpdating(false); }
   }
+  async function illustrateScene() {
+    if (!active || !imagePrompt.trim() || illustrating) return;
+    setIllustrating(true); setReaderError('');
+    try {
+      const result = await api.illustrate(active.id, imagePrompt.trim());
+      // Force refreshing a previous scene despite using a stable asset path.
+      const story = result.story;
+      onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
+        story.scene_image_url + '?v=' + Date.now() : null });
+      setTab('gallery');
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setIllustrating(false); }
+  }
+
+  async function listen(turn: StoryTurn) {
+    if (playingTurn === turn.id && audio.current) {
+      audio.current.pause();
+      audio.current = null; setPlayingTurn(null);
+      return;
+    }
+    if (!active || !voiceId || synthesizing) return;
+    audio.current?.pause();
+    if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
+    setPlayingTurn(null); setSynthesizing(true); setReaderError('');
+    try {
+      const file = await api.requestSpeech(active.id, turn.id, voiceId);
+      const url = URL.createObjectURL(file);
+      audioUrl.current = url;
+      const next = new Audio(url);
+      audio.current = next;
+      next.onended = () => { if (audio.current === next) setPlayingTurn(null); };
+      await next.play();
+      setPlayingTurn(turn.id);
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setSynthesizing(false); }
+  }
+
   async function changeReaderLayout(mode: 'immersive' | 'classic') {
     if (!prefs) return;
     setUpdating(true); setReaderError('');
@@ -149,10 +223,16 @@ export function VisualReader({
             <p>{turn.input_text || 'La historia continúa...'}</p>
           </div>
           <p className="noble-narration"><NarrativeText text={turn.assistant_text}/></p>
-          <div className="noble-turn-caption">{turn.model}</div>
+          <div className="noble-turn-caption">{turn.model}
+            {voiceEnabled && <button className="noble-turn-listen"
+              disabled={synthesizing || !voices?.available || !voiceId}
+              onClick={() => void listen(turn)}><Volume2 size={14}/>
+              {playingTurn === turn.id ? 'Detener' : synthesizing ? 'Sintetizando...' : 'Escuchar'}</button>}
+          </div>
         </section>)}
         {generating && <div className="noble-reader-stream">
-          <span><LoaderCircle className="rotating" size={15}/> El narrador está escribiendo...</span>
+          <span><LoaderCircle className="rotating" size={15}/> {generationMessage} · {elapsed}s</span>
+          <button className="noble-cancel-stream" onClick={onCancel}><Square size={13}/> Detener generación</button>
           <p><NarrativeText text={streamText || 'Conectando con el motor...'}/></p></div>}
         {!generating && turns.length === 0 && <div className="noble-reader-empty-turn">
           <Feather size={26}/><strong>La primera página está en blanco.</strong>
@@ -237,7 +317,17 @@ export function VisualReader({
             <p>Aún no hay una ilustración en esta historia.</p>}
           <button className="secondary-button" disabled={updating}
             onClick={() => fileRef.current?.click()}><UploadCloud size={16}/> Importar ilustración</button>
-          <p className="noble-inspector-hint">Puedes usar PNG, JPEG o WebP propios. Se almacena una copia WebP local; la generación automática con ComfyUI llegará después.</p>
+          {imageMode !== 'off' && <>
+            <label className="noble-inspector-field">Describe la escena que quieres ilustrar
+              <textarea rows={4} minLength={8} maxLength={2400}
+                value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
+                placeholder="Personajes, lugar, luz, expresión y estilo visual..."/></label>
+            <button className="primary-button" disabled={illustrating || imagePrompt.trim().length < 8}
+              onClick={() => void illustrateScene()}>
+              {illustrating ? <LoaderCircle className="rotating" size={16}/> : <Image size={16}/>}
+              {illustrating ? 'ComfyUI está generando...' : 'Ilustrar escena con ComfyUI'}</button>
+          </>}
+          <p className="noble-inspector-hint">Las ilustraciones se generan solo cuando las solicitas. Requiere ComfyUI conectado y un checkpoint configurado en Ajustes → Imágenes y voz. La historia puede continuar sin imágenes.</p>
         </>}
         {tab === 'reader' && <>
           <h4>Presentación de lectura</h4>
@@ -250,6 +340,15 @@ export function VisualReader({
               disabled={updating} onClick={() => void changeReaderLayout('classic')}>
               <BookOpen size={17}/> Clásica</button>
           </div>}
+          {voiceEnabled && <label className="noble-inspector-field">Voz de narrador
+            <select value={voiceId} disabled={synthesizing} onChange={e => setVoiceId(e.target.value)}>
+              {voices?.voices.map(voice => <option key={voice.id} value={voice.id}>{voice.name}</option>)}
+            </select>
+          </label>}
+          <p className="noble-inspector-hint">{voiceEnabled ?
+            (voices?.available && voices.voices.length ? 'Piper sintetiza únicamente cuando pulses Escuchar.' :
+              'Instala Piper y añade una voz ONNX en Ajustes → Imágenes y voz.') :
+            'Las voces están desactivadas. Actívalas en Ajustes → Imágenes y voz.'}</p>
           <button className="secondary-button" onClick={onSettings}><Cpu size={16}/> Más ajustes</button>
         </>}
       </div>
