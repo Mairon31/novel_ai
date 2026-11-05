@@ -56,6 +56,27 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   expect(referenceId).toBeTruthy();
   await reference.selectOption(referenceId!);
   await expect(page.getByRole('slider', { name: 'Intensidad de transformación' })).toBeVisible();
+  // A named character can own a canonical image reference for planned scenes.
+  await page.getByRole('button', { name: 'Resumen', exact: true }).click();
+  await page.getByRole('button', { name: /Aira.*Revisión 1/ }).click();
+  await page.getByLabel('Referencia del personaje').selectOption(referenceId!);
+  await page.getByRole('button', { name: 'Guardar referencia visual' }).click();
+  await expect(page.getByRole('button', { name: /Aira.*Revisión 2/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Galería', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Personaje visible Aira' }).check();
+  await page.getByRole('combobox', { name: 'Plano de escena' }).selectOption('closeup');
+  await page.getByRole('combobox', { name: 'Luz de escena' }).selectOption('sunset');
+  await page.getByLabel('Atmósfera visual').fill('misterio y esperanza');
+  await page.getByLabel('Dirección de escena').fill('Aira levanta el medallón.');
+  const focus = page.getByRole('combobox', { name: 'Foco visual' });
+  const airaValue = await focus.locator('option').nth(1).getAttribute('value');
+  expect(airaValue).toBeTruthy();
+  await focus.selectOption(airaValue!);
+  await page.getByRole('button', { name: 'Guardar plan de escena' }).click();
+  await expect(page.getByText(/Plan de escena guardado/)).toBeVisible();
+  await page.getByRole('button', { name: 'Ver prompt completo y fichas' }).click();
+  await expect(page.getByText(/Plano: primer plano/)).toBeVisible();
+  await expect(page.getByText(/luz cálida del atardecer/)).toBeVisible();
   await page.getByLabel('Semilla de imagen').fill('1739');
   let observedReference = false;
   await page.route('**/api/v1/stories/*/illustrate', async route => {
