@@ -63,4 +63,4 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Fichero ya instalado: no renombrarlo durante la conciliación ni sustituirlo durante un reintento de job incoherente.
 - [x] Symlink externo y checksum SHA corrupto: archivo externo intacto, recuperación rechazada; bytes locales con SHA erróneo nunca se registran como verificados.
 - [x] Pruebas reales en disco SQLite/Python: `tests/test_download_recovery.py`, **127 Python PASS** en [CI #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624); verificar conclusión final del navegador por separado.
-- [ ] No se han validado: cortes físicos de energía; corrupción del sistema de archivos, TOCTOU con un atacante que sustituye symlinks entre comprobación y apertura; dos instancias simultáneas y tamaño remoto desconocido.
+- [ ] No se han validado: cortes físicos de energía; corrupción del sistema de archivos, TOCTOU con un atacante que sustituye symlinks entre comprobación y apertura; dos instancias simultáneas y tamaño remoto desconocido sin metadatos HTTP suficientes. El caso EOF con 416 válido y 206 con longitud completa sí se probó.
