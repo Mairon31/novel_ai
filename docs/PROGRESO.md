@@ -349,3 +349,19 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Siguiente evolución: portadas editoriales dedicadas (sin usar la primera escena como portada), poses/expresiones multi-sprite y disparadores semánticos con control manual.
 
 **Alcance:** integración de datos y experiencia de lectura; no se añadió inferencia de imágenes, se duplicó la persistencia de historias ni se publicaron assets de terceros.
+
+
+## 2026-11-05 — Portadas editoriales persistentes (implementación directa en `master`)
+
+- [x] Migración incremental de SQLite: `stories.cover_asset_id` independiente de `scene.webp`.
+- [x] Recurso `kind=cover` importable desde Creator Studio: PNG/JPEG/WebP se valida, normaliza y guarda como WebP; no se usa como fondo narrativo.
+- [x] Endpoint `PUT /api/v1/stories/{story_id}/creator/cover` para seleccionar o quitar portada con verificación de pertenencia, tipo de archivo y formato UUID.
+- [x] `cover_image_url` en la lista y detalle de historias. Biblioteca y ficha editorial priorizan portada persistente; sin portada mantienen la imagen narrativa anterior como fallback.
+- [x] Eliminar una portada seleccionada actualiza el registro; crear una rama clona el recurso y remapea `cover_asset_id` a un asset independiente de la historia original.
+- [x] Creator Studio presenta vista previa de la portada, importación con selección automática, selección manual de portada alternativa y opción de quitar portada.
+- [x] Pruebas de API en `tests/test_creator_media.py`: formato, validación, identidad, eliminación, fork y separación de imágenes narrativas.
+- [x] Prueba Playwright `apps/web/tests/story-cover.spec.ts` en perfiles desktop/móvil: importación, portada en biblioteca y detalle, quitarla sin borrar la historia.
+- [ ] Verificar cierre de CI del commit final y conservar enlace a ejecución antes de declarar todos los tests aprobados.
+- [ ] Evolución posterior: editor de composición de portada (título, recorte, tipografía, variantes), preferencias por historia y administración de recursos de modelos de difusión/TTS.
+
+**Flujo Git:** implementación directa sobre `master`, sin abrir ramas adicionales. Los assets, las escenas y el estado del narrador se mantienen separados.
