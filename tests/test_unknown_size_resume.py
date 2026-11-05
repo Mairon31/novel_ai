@@ -124,6 +124,53 @@ class UnknownSizeResumeTests(unittest.TestCase):
         self.assertEqual(self.target.read_bytes(), PAYLOAD)
         self.assertEqual(self.requests[0].headers["range"], "bytes=30-")
 
+    def test_success_200_without_metadata_is_local_hash_only(self):
+        # A server response can complete without LFS size or checksum.
+        # That status must be distinct from provenance verification.
+        with self.store._conn() as conn:
+            conn.execute("UPDATE downloads SET expected_sha256=NULL WHERE id=?",
+                         (self.job["id"],))
+        state = self.run_with(lambda req: httpx.Response(200, content=PAYLOAD))
+        self.assertEqual(state["status"], "completed", state)
+        self.assertEqual(self.target.read_bytes(), PAYLOAD)
+        self.assertEqual(self.store.installed()[0]["integrity_status"], "local_hash_only")
+
+    def test_http_204_is_not_accepted_as_model_content(self):
+        state = self.run_with(lambda req: httpx.Response(204))
+        self.assertEqual(state["status"], "failed", state)
+        self.assertEqual(self.store.installed(), [])
+        self.assertFalse(self.target.exists())
+
+    def test_html_from_server_cannot_be_registered_as_gguf_without_hash(self):
+        with self.store._conn() as conn:
+            conn.execute("UPDATE downloads SET expected_sha256=NULL WHERE id=?",
+                         (self.job["id"],))
+        html = b"<html><body>retry later</body></html>"
+        state = self.run_with(lambda req: httpx.Response(200, content=html))
+        self.assertEqual(state["status"], "failed", state)
+        self.assertIn("GGUF", state["error"])
+        self.assertEqual(self.store.installed(), [])
+        self.assertEqual(self.part.read_bytes(), html)
+
+    def test_server_declared_content_length_must_match_actual_body(self):
+        short = PAYLOAD[:-10]
+        state = self.run_with(lambda req: httpx.Response(
+            200, content=short,
+            headers={"Content-Length": str(len(PAYLOAD))}))
+        self.assertEqual(state["status"], "failed", state)
+        self.assertIn("incompleto", state["error"])
+        self.assertEqual(self.part.read_bytes(), short)
+        self.assertEqual(self.store.installed(), [])
+
+    def test_compressed_model_response_is_rejected_without_modifying_partial(self):
+        self.part.write_bytes(PAYLOAD[:30])
+        state = self.run_with(lambda req: httpx.Response(
+            200, content=b"compressed-placeholder",
+            headers={"Content-Encoding": "gzip"}))
+        self.assert_failed_without_install(state, PAYLOAD[:30])
+        self.assertIn("comprimió", state["error"])
+        self.assertEqual(self.requests[0].headers["accept-encoding"], "identity")
+
     def test_416_on_initial_request_without_partial_is_not_accepted(self):
         state = self.run_with(lambda req: httpx.Response(
             416, headers={"Content-Range": f"bytes */{len(PAYLOAD)}"}))
