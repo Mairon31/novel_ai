@@ -58,6 +58,35 @@ class CreatorMediaTests(unittest.TestCase):
         return self.client.post(f"/api/v1/stories/{self.story}/creator/assets",
             data=form, files={"file": ("art.png", raw if raw is not None else image_bytes(), "image/png")})
 
+    def test_owned_asset_paths_reject_traversal_and_symlinked_directories(self):
+        service = self.app.state.creator_media
+        with self.assertRaisesRegex(ValueError, "Identificador"):
+            service._path("../escape", str(uuid.uuid4()), "background")
+        with self.assertRaisesRegex(ValueError, "Identificador"):
+            service._path(self.story, "../escape", "background")
+        with self.assertRaisesRegex(ValueError, "Tipo"):
+            service._path(self.story, str(uuid.uuid4()), "../outside")
+
+        # A manipulated story-assets directory must never redirect writes
+        # to another directory, even if all REST IDs are valid UUIDs.
+        outside = Path(self.tmp.name).parent / ("noble-art-escape-" + str(uuid.uuid4()))
+        outside.mkdir()
+        base = Path(self.tmp.name) / "story-assets"
+        base.mkdir(exist_ok=True)
+        link = base / self.story
+        try:
+            link.symlink_to(outside, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            outside.rmdir()
+            self.skipTest("Filesystem disallows directory symlinks")
+        try:
+            response = self.upload("background", "No guardar", "Prueba de carpeta ajena")
+            self.assertEqual(response.status_code, 422, response.text)
+            self.assertEqual(list(outside.iterdir()), [])
+        finally:
+            link.unlink()
+            outside.rmdir()
+
     def test_upload_preserves_foreground_alpha_and_background_is_webp(self):
         foreground = self.upload("foreground", "Aira sonríe", "Aira sonríe en el castillo",
                                  self.char)
