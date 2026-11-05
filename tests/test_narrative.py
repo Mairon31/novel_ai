@@ -243,6 +243,82 @@ class NarrativeTests(unittest.TestCase):
 
         asyncio.run(scenario())
 
+    def test_cancel_endpoint_only_signals_active_request_in_own_story(self):
+        story_id = self.story()
+        request_id = str(uuid.uuid4())
+        other_request_id = str(uuid.uuid4())
+        narrative = self.app.state.narrative
+
+        absent = self.client.post(
+            f"/api/v1/stories/{story_id}/generate/{request_id}/cancel")
+        self.assertEqual(absent.status_code, 200, absent.text)
+        self.assertFalse(absent.json()["cancel_requested"])
+
+        active = narrative.register_generation(story_id, request_id)
+        try:
+            second_active = self.client.post(
+                f"/api/v1/stories/{story_id}/generate/{other_request_id}/cancel")
+            self.assertFalse(second_active.json()["cancel_requested"])
+            result = self.client.post(
+                f"/api/v1/stories/{story_id}/generate/{request_id}/cancel")
+            self.assertEqual(result.status_code, 200, result.text)
+            self.assertTrue(result.json()["cancel_requested"])
+            self.assertTrue(active.is_set())
+            # Registration must not silently replace an active request.
+            with self.assertRaisesRegex(Exception, "ya está en curso"):
+                narrative.register_generation(story_id, request_id)
+        finally:
+            narrative.release_generation(story_id, request_id, active)
+        self.assertFalse(narrative.cancel_generation(story_id, request_id)["cancel_requested"])
+
+    def test_explicit_cancel_interrupts_stalled_stream_and_releases_gpu(self):
+        self.assertEqual(self.settings().status_code, 200)
+        story_id = self.story()
+        request_id = str(uuid.uuid4())
+        narrative = self.app.state.narrative
+
+        async def scenario():
+            waiting_for_next = asyncio.Event()
+            never_finishes = asyncio.Event()
+            closed = asyncio.Event()
+
+            async def fake_generate(_config, _messages):
+                try:
+                    yield "Un fragmento de prueba."
+                    waiting_for_next.set()
+                    await never_finishes.wait()
+                finally:
+                    closed.set()
+
+            original = narrative.generate
+            narrative.generate = fake_generate
+            stop_event = narrative.register_generation(story_id, request_id)
+            received = []
+            try:
+                async def reader():
+                    async for event in narrative.stream_turn(
+                            story_id, request_id, "do", "Avanzo",
+                            stop_event=stop_event):
+                        received.append(event)
+
+                task = asyncio.create_task(reader())
+                await asyncio.wait_for(waiting_for_next.wait(), timeout=1.5)
+                result = narrative.cancel_generation(story_id, request_id)
+                self.assertTrue(result["cancel_requested"])
+                await asyncio.wait_for(task, timeout=2.0)
+                self.assertTrue(closed.is_set())
+            finally:
+                narrative.release_generation(story_id, request_id, stop_event)
+                narrative.generate = original
+
+            self.assertTrue(any("event: delta" in event for event in received))
+            self.assertFalse(any("event: done" in event for event in received))
+            self.assertEqual(narrative.turns(story_id), [])
+            self.assertIsNone(self.app.state.resources.active_workload()["active"])
+            self.assertFalse(narrative.cancel_generation(story_id, request_id)["cancel_requested"])
+
+        asyncio.run(scenario())
+
     def test_story_survives_restart(self):
         self.settings()
         s = self.story()
