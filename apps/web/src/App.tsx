@@ -62,6 +62,7 @@ export default function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detail, setDetail] = useState<ModelDetail | null>(null);
   const [pickedVariant, setPickedVariant] = useState('');
+  const [variantFilter, setVariantFilter] = useState<'all' | 'full_gpu' | 'partial_offload' | 'cpu'>('all');
   const [hardware, setHardware] = useState<Hardware | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -174,7 +175,7 @@ export default function App() {
   }
 
   async function viewModel(model: CatalogEntry) {
-    setDetail(null); setPickedVariant(''); setDetailLoading(true);
+    setDetail(null); setPickedVariant(''); setVariantFilter('all'); setDetailLoading(true);
     try {
       const info = await api.details(model.repo_id, modelContext);
       setDetail(info);
@@ -255,6 +256,14 @@ export default function App() {
     finally { setBusy(false); }
   }
 
+  const selectedFit = detail?.hardware_fit?.variants.find(item => item.filename === pickedVariant);
+  const memoryRequired = selectedFit?.estimated_required_bytes ?? 0;
+  const gpuBudget = detail?.hardware_fit?.vram_usable_bytes ?? 0;
+  const memoryBudget = selectedFit?.fit === 'full_gpu' ? gpuBudget :
+    selectedFit?.fit === 'partial_offload' ? gpuBudget + (detail?.hardware_fit?.ram_usable_bytes ?? 0) :
+    (detail?.hardware_fit?.ram_usable_bytes ?? 0);
+  const selectedMemoryPercent = memoryBudget > 0 && memoryRequired > 0 ?
+    Math.min(100, Math.round(memoryRequired / memoryBudget * 100)) : 0;
   const activeJobs = jobs.filter(j => !terminal.includes(j.status)).length;
   const selectedRole = roles.find(item => item.id === role)!;
   const isInstalled = detail && installed.some(m => m.repo_id === detail.repo_id &&
@@ -543,8 +552,47 @@ export default function App() {
                   </div></div> :
                 <div className="hub-fit-caution"><CircleAlert size={18}/>
                   No se pudo recomendar una cuantización con la información disponible.</div>}
-              <h3>Comparar archivos GGUF</h3>
-              <div className="variant-list">{detail.variants.map(v => {
+              {selectedFit && <div className="hub-selected-fit">
+                <div className="hub-selected-fit-head">
+                  <strong>Variante seleccionada: {selectedFit.quantization || 'GGUF'}</strong>
+                  <span>{selectedFit.estimated_required_bytes
+                    ? 'Demanda aproximada ' + size(selectedFit.estimated_required_bytes)
+                    : 'Consumo desconocido'}</span>
+                </div>
+                <div role="meter" aria-label="Relación de demanda y memoria utilizable"
+                  aria-valuemin={0} aria-valuemax={100}
+                  aria-valuenow={selectedMemoryPercent} className="hub-memory-meter">
+                  <span style={{width: selectedMemoryPercent+'%'}}/>
+                </div>
+                <div className="hub-selected-fit-foot">
+                  <span>{selectedFit.fit === 'full_gpu' ? 'Límite GPU utilizable estimado' :
+                    selectedFit.fit === 'partial_offload' ? 'Límite combinado GPU y RAM' :
+                    'Límite RAM utilizable estimado'}: {memoryBudget ? size(memoryBudget) : 'sin datos'}</span>
+                  <span>{selectedFit.fit === 'partial_offload' ?
+                    'Requiere offload compatible del motor' :
+                    selectedFit.fit === 'full_gpu' ? 'Cálculo con VRAM libre observada' :
+                    'No implica que se ejecute en GPU'}</span>
+                </div>
+              </div>}
+              <div className="hub-variants-toolbar">
+                <h3>Comparar archivos GGUF <small>{detail.variants.length}</small></h3>
+                <div role="group" aria-label="Filtrar compatibilidad de cuantizaciones">
+                  {[
+                    {id:'all',label:'Todas'},
+                    {id:'full_gpu',label:'GPU'},
+                    {id:'partial_offload',label:'GPU + RAM'},
+                    {id:'cpu',label:'CPU'},
+                  ].map(filter => <button key={filter.id}
+                    aria-pressed={variantFilter === filter.id}
+                    className={variantFilter === filter.id ? 'selected' : ''}
+                    onClick={() => setVariantFilter(filter.id as typeof variantFilter)}>
+                    {filter.label}</button>)}
+                </div>
+              </div>
+              <div className="variant-list">{detail.variants.filter(v =>
+                variantFilter === 'all' || detail.hardware_fit?.variants.some(
+                  item => item.filename === v.filename && item.fit === variantFilter,
+                )).map(v => {
                 const fit=detail.hardware_fit?.variants.find(item=>item.filename===v.filename);
                 const selected=pickedVariant===v.filename;
                 const labels:Record<string,string>={
@@ -570,10 +618,18 @@ export default function App() {
                     {fit?.estimated_required_bytes && <small>
                       ~{size(fit.estimated_required_bytes)} memoria
                     </small>}
+                    {detail.hardware_fit?.recommended_filename === v.filename &&
+                      <small className="hub-variant-recommended">Recomendada para tu equipo</small>}
                     {selected && <Check size={17}/>}
                   </span>
                 </button>;
-              })}</div>
+              })}
+                {detail.variants.filter(v => variantFilter === 'all' ||
+                  detail.hardware_fit?.variants.some(item =>
+                    item.filename === v.filename && item.fit === variantFilter)).length === 0 &&
+                  <p className="hub-variant-no-fit">No hay variantes en esta categoría.
+                    Prueba otro filtro o ajusta el contexto.</p>}
+              </div>
               <p className="detail-disclaimer">{detail.hardware_fit?.warning ||
                 'Se muestran estimaciones, no resultados de un benchmark real.'}</p>
             </section>
