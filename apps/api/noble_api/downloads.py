@@ -33,8 +33,10 @@ class DownloadManager:
     def shutdown(self):
         # Do not block shutdown forever on long downloads.
         for job in self.store.downloads():
-            if job["status"] in ("queued", "downloading", "verifying"):
-                self.store.update_download(job["id"], status="paused", error="Descarga pausada al cerrar")
+            self.store.transition_download(
+                job["id"], ("queued", "downloading", "verifying"), "paused",
+                error="Descarga pausada al cerrar",
+            )
         self.pool.shutdown(wait=False, cancel_futures=True)
 
     def install(self, repo_id: str, revision: str, filename: str):
@@ -131,64 +133,72 @@ class DownloadManager:
                     job_id, ("queued",), "downloading", error=None):
                 return
             offset = part.stat().st_size if part.exists() else 0
-            headers = {"Range": "bytes=" + str(offset) + "-"} if offset else {}
-            url = ("https://huggingface.co/" +
-                   quote(job["repo_id"], safe="/") + "/resolve/" +
-                   job["revision"] + "/" + quote(job["filename"], safe=""))
-            # Client stream automatically follows Hugging Face's signed CDN redirects.
-            with self.catalog.client.stream("GET", url, headers=headers,
-                                            timeout=httpx.Timeout(180, connect=15)) as response:
-                if response.status_code in (401, 403):
-                    raise RuntimeError("Acceso denegado; revisa los permisos del modelo")
-                response.raise_for_status()
-                continued = offset > 0 and response.status_code == 206
-                if response.status_code == 206 and not continued:
-                    raise RuntimeError("Respuesta HTTP 206 inesperada sin petición Range")
-                expected_chunk_bytes = None
-                if response.status_code == 206:
-                    # A bare prefix check ("bytes 20-") is insufficient: a
-                    # truncated or forged range can silently corrupt a file.
-                    content_range = response.headers.get("content-range", "").strip()
-                    match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", content_range)
-                    expected_offset = offset if continued else 0
-                    if not match:
-                        raise RuntimeError("Content-Range ausente o con formato inválido")
-                    start, end = int(match[1]), int(match[2])
-                    total = None if match[3] == "*" else int(match[3])
-                    if (start != expected_offset or end < start or
-                            (total is not None and (total <= end or total <= 0)) or
-                            (job["expected_size"] is not None and total is not None and
-                             total != job["expected_size"])):
-                        raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
-                    expected_chunk_bytes = end - start + 1
-                    length = response.headers.get("content-length")
-                    if length is not None and (not length.isdigit() or
-                                               int(length) != expected_chunk_bytes):
-                        raise RuntimeError("Content-Length no coincide con Content-Range")
-                else:
-                    # Server may ignore Range with HTTP 200; restart cleanly.
-                    offset = 0
-                mode = "ab" if continued else "wb"
-                received = offset
-                last_reported = 0.0
-                with part.open(mode) as output:
-                    for chunk in response.iter_bytes(chunk_size=1024 * 256):
-                        state = self.store.download(job_id)["status"]
-                        if state in ("paused", "cancelled"):
-                            return
-                        if chunk:
-                            received += len(chunk)
-                            if received > MAX_FILE_BYTES:
-                                raise RuntimeError("Archivo supera el límite de seguridad")
-                            output.write(chunk)
-                        if time.monotonic() - last_reported >= .35:
-                            self.store.update_download(job_id, received_bytes=received)
-                            last_reported = time.monotonic()
-                if (expected_chunk_bytes is not None and
-                        received - offset != expected_chunk_bytes):
-                    raise RuntimeError("El servidor entregó un fragmento Range incompleto")
-                self.store.update_download(job_id, received_bytes=received)
-
+            expected_size = job["expected_size"]
+            if expected_size is not None and offset > expected_size:
+                raise RuntimeError("Archivo parcial excede el tamaño publicado")
+            # A fully transferred .part paused while hashing must be verified
+            # directly. Asking HTTP for Range bytes=<EOF>- would return 416.
+            ready_for_verification = (expected_size is not None and
+                                      offset == expected_size and offset > 0)
+            if not ready_for_verification:
+                headers = {"Range": "bytes=" + str(offset) + "-"} if offset else {}
+                url = ("https://huggingface.co/" +
+                       quote(job["repo_id"], safe="/") + "/resolve/" +
+                       job["revision"] + "/" + quote(job["filename"], safe=""))
+                # Client stream automatically follows Hugging Face's signed CDN redirects.
+                with self.catalog.client.stream("GET", url, headers=headers,
+                                                timeout=httpx.Timeout(180, connect=15)) as response:
+                    if response.status_code in (401, 403):
+                        raise RuntimeError("Acceso denegado; revisa los permisos del modelo")
+                    response.raise_for_status()
+                    continued = offset > 0 and response.status_code == 206
+                    if response.status_code == 206 and not continued:
+                        raise RuntimeError("Respuesta HTTP 206 inesperada sin petición Range")
+                    expected_chunk_bytes = None
+                    if response.status_code == 206:
+                        # A bare prefix check ("bytes 20-") is insufficient: a
+                        # truncated or forged range can silently corrupt a file.
+                        content_range = response.headers.get("content-range", "").strip()
+                        match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", content_range)
+                        expected_offset = offset if continued else 0
+                        if not match:
+                            raise RuntimeError("Content-Range ausente o con formato inválido")
+                        start, end = int(match[1]), int(match[2])
+                        total = None if match[3] == "*" else int(match[3])
+                        if (start != expected_offset or end < start or
+                                (total is not None and (total <= end or total <= 0)) or
+                                (job["expected_size"] is not None and total is not None and
+                                 total != job["expected_size"])):
+                            raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
+                        expected_chunk_bytes = end - start + 1
+                        length = response.headers.get("content-length")
+                        if length is not None and (not length.isdigit() or
+                                                   int(length) != expected_chunk_bytes):
+                            raise RuntimeError("Content-Length no coincide con Content-Range")
+                    else:
+                        # Server may ignore Range with HTTP 200; restart cleanly.
+                        offset = 0
+                    mode = "ab" if continued else "wb"
+                    received = offset
+                    last_reported = 0.0
+                    with part.open(mode) as output:
+                        for chunk in response.iter_bytes(chunk_size=1024 * 256):
+                            state = self.store.download(job_id)["status"]
+                            if state in ("paused", "cancelled"):
+                                return
+                            if chunk:
+                                received += len(chunk)
+                                if received > MAX_FILE_BYTES:
+                                    raise RuntimeError("Archivo supera el límite de seguridad")
+                                output.write(chunk)
+                            if time.monotonic() - last_reported >= .35:
+                                self.store.update_download(job_id, received_bytes=received)
+                                last_reported = time.monotonic()
+                    if (expected_chunk_bytes is not None and
+                            received - offset != expected_chunk_bytes):
+                        raise RuntimeError("El servidor entregó un fragmento Range incompleto")
+                    self.store.update_download(job_id, received_bytes=received)
+    
             if not self.store.transition_download(
                     job_id, ("downloading",), "verifying"):
                 return
