@@ -10,6 +10,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -180,6 +181,60 @@ class VisualRegistryTests(unittest.TestCase):
             self.assertEqual(again.status_code,200,again.text)
             self.assertEqual(len(again.json()["assets"]),1)
             self.assertEqual(again.json()["selected_asset_id"],first["selected_asset_id"])
+
+    def test_visual_gallery_and_legacy_file_reject_external_symlinks(self):
+        self.assertEqual(self.upload().status_code, 200)
+        saved = self.state()["assets"][0]
+        visual = self.app.state.visual
+        outside = self.path / "private-outside.webp"
+        outside.write_bytes(b"private user file must not be served")
+        image_path = visual._asset_path(self.story, saved["id"])
+        image_path.unlink()
+        try:
+            image_path.symlink_to(outside)
+        except (OSError, NotImplementedError):
+            self.skipTest("Filesystem disallows file symlinks")
+        self.assertEqual(self.client.get(saved["url"]).status_code, 404)
+        self.assertEqual(self.client.post(
+            f"/api/v1/stories/{self.story}/gallery/{saved['id']}/select").status_code, 404)
+        with self.assertRaises(ValueError):
+            visual.reference_bytes(self.story, saved["id"])
+        legacy = visual.legacy_path(self.story)
+        legacy.unlink()
+        legacy.symlink_to(outside)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/scene-image").status_code, 404)
+        self.assertEqual(outside.read_bytes(), b"private user file must not be served")
+
+    def test_failed_legacy_copy_rolls_back_gallery_and_selection(self):
+        visual = self.app.state.visual
+        self.assertEqual(len(self.state()["assets"]), 0)
+        with patch.object(visual, "legacy_copy", side_effect=ValueError("copy failed")):
+            upload = self.upload()
+        self.assertEqual(upload.status_code, 422, upload.text)
+        state = self.state()
+        self.assertEqual(state["assets"], [])
+        self.assertIsNone(state["selected_asset_id"])
+        images = self.path / "story-assets" / self.story / "images"
+        self.assertEqual(list(images.glob("*.webp")), [])
+
+    def test_symlinked_legacy_temp_cannot_overwrite_private_file(self):
+        self.assertEqual(self.upload().status_code, 200)
+        first = self.state()["selected_asset_id"]
+        visual = self.app.state.visual
+        legacy = visual.legacy_path(self.story)
+        temp = legacy.with_suffix(".webp.part")
+        outside = self.path / "unrelated-outside.webp"
+        outside.write_bytes(b"do-not-overwrite")
+        try:
+            temp.symlink_to(outside)
+        except (OSError, NotImplementedError):
+            self.skipTest("Filesystem disallows file symlinks")
+        result = self.upload((100, 125, 150))
+        self.assertEqual(result.status_code, 422, result.text)
+        self.assertEqual(outside.read_bytes(), b"do-not-overwrite")
+        self.assertEqual(self.state()["selected_asset_id"], first)
+        self.assertEqual(len(self.state()["assets"]), 1)
 
     def test_invalid_images_dont_destroy_gallery(self):
         self.assertEqual(self.upload().status_code, 200)
