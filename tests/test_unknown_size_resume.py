@@ -5,6 +5,7 @@ real DownloadManager and SQLite paths with explicit HTTP MockTransport.
 """
 from __future__ import annotations
 
+import gzip
 import hashlib
 import sys
 import tempfile
@@ -165,7 +166,7 @@ class UnknownSizeResumeTests(unittest.TestCase):
     def test_compressed_model_response_is_rejected_without_modifying_partial(self):
         self.part.write_bytes(PAYLOAD[:30])
         state = self.run_with(lambda req: httpx.Response(
-            200, content=b"compressed-placeholder",
+            200, content=gzip.compress(PAYLOAD),
             headers={"Content-Encoding": "gzip"}))
         self.assert_failed_without_install(state, PAYLOAD[:30])
         self.assertIn("comprimió", state["error"])
