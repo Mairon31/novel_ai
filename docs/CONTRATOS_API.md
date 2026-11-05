@@ -208,3 +208,8 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 ## Inspector de contexto del narrador
 
 `POST /api/v1/stories/{story_id}/context/preview` con `{input_text: string (0–3000), mode: "do"|"say"|"story"|"continue"}` (entrada obligatoria salvo `continue`) → `{story_id,messages:[{role,content}],sections:[{name,characters,approx_tokens}],total_characters,estimated_prompt_tokens,reserved_output_tokens,context_window_tokens,estimated_total_tokens,estimated_overflow,token_counts_exact:false,token_estimate_method,runtime_kv_cache_measured:false}`. `404` historia inexistente; `422` solicitud inválida. Sin inferencia ni persistencia. Los mensajes contienen material privado del creador: interfaz solo para el autor.
+
+
+## EPUB3
+
+`GET /api/v1/stories/{story_id}/export.epub` → `200 application/epub+zip`, `Content-Disposition: attachment; filename="noble-story.epub"`, `Cache-Control:no-store`, `X-Content-Type-Options:nosniff`; `404` si la historia no existe. EPUB3 autónomo con archivos XML/OPF, índice `nav.xhtml`, portada y WebP de snapshots por turno, restringidos a la rama indicada.

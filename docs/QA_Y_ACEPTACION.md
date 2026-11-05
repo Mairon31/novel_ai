@@ -200,3 +200,11 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [ ] Desglose conserva total de caracteres, distingue canon y fuente histórica/episódica, e informa ventana de contexto y reserva de salida. Al excederla, emitir alerta etiquetada como **estimada**, no tokens reales.
 - [ ] Rechazar modo inválido, entrada vacía salvo `continue`, más de 3000 caracteres e historia inexistente. Visualización en configuración desktop/móvil.
 - [ ] Tratar los textos de Creator y Lorebook como configuración privada para autor; la exportación HTML no debe incluirlos. No atribuir garantía de conocimiento a NPC ni números de KV-cache medidos.
+
+
+## P1 — Gate EPUB3 + HTML (pendiente CI)
+
+- [ ] EPUB3 válido como ZIP: entrada `mimetype` primero, `ZIP_STORED`, `application/epub+zip`, `container.xml`, OPF con manifest/spine/metadatos, XHTML y navegación XML parseables.
+- [ ] Portada más dos cambios de ilustración WebP en historia completa; una rama desde el primer turno contiene solo ilustración/diálogo anteriores al corte. No se filtran instrucciones ocultas de Creator, se escapan etiquetas del usuario.
+- [ ] Endpoints para historia inexistente responden 404; HTML y EPUB se descargan con `Content-Disposition`, no-store y `nosniff`.
+- [ ] Playwright real API desktop/mobile con botones de ambos formatos; suite Python y build web completos. No certificar compatibilidad universal con todos los lectores sin validar dispositivos.

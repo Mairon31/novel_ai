@@ -121,3 +121,8 @@ Se indexa **solo la entrada del jugador**, no el texto del LLM ni material priva
 `context_inspector.py` consume `NarrativeService.messages` directamente para reproducir el arreglo exacto de mensajes que se prepara para Ollama/KoboldCpp/OpenRouter/worker. La operación es solo lectura y no instancia modelos ni guarda mensajes. Secciona el contenido sin reescribirlo para desglose de sistema/preferencias, premisa, canon, datos del creador, Lorebook, estado del mundo, episodios e historial. Las secciones tienen conteos exactos de caracteres; la estimación `ceil(caracteres/4)+overhead` es **heurística**, no tokenización por modelo, y el límite de contexto solo se usa para mostrar una advertencia informativa de posible exceso. No se publican contadores inventados de KV-cache.
 
 El inspector forma parte de `NarrativeSettings` y es una herramienta local **para el autor** porque muestra instrucciones confidenciales de la novela. No se incorpora al lector público ni a la exportación HTML.
+
+
+## EPUB3 local sin dependencias externas
+
+La exportación EPUB utiliza `zipfile` y `xml.etree.ElementTree` de la biblioteca estándar. `mimetype` es la primera entrada ZIP sin compresión; `META-INF/container.xml` apunta al package OPF, que define metadata, manifest con todos los WebP, XHTML de capítulos, navegación e índice. `chapter.xhtml` contiene títulos, escenas y intervenciones ordenados; la portada y las imágenes de cada capítulo se leen desde rutas administradas por UUID y snapshots. Los archivos no incluyen peticiones a redes externas ni contexto privado de Creator. La variante EPUB se descarga desde el lector junto al HTML portátil.

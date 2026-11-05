@@ -1,9 +1,10 @@
 """Portable illustrated export: escaped HTML, historical art and branch isolation."""
 from __future__ import annotations
 
-import base64
 import io
 import sys
+import zipfile
+import xml.etree.ElementTree as ET
 import tempfile
 import unittest
 import uuid
@@ -108,6 +109,72 @@ class StoryExportTests(unittest.TestCase):
         self.assertEqual(page.count("data:image/webp;base64,"), 2)
         self.assertNotIn("Entro a un bosque", page)
         self.assertIn("Rama independiente", page)
+
+    def test_epub3_is_valid_portable_archive_with_cover_and_two_scenes(self):
+        cover = self.client.post(f"/api/v1/stories/{self.story}/creator/assets", data={
+            "kind": "cover", "label": "Libro", "caption": "Libro sobre altar",
+        }, files={"file": ("cover.png", png((220, 40, 50)), "image/png")})
+        self.assertEqual(cover.status_code, 201, cover.text)
+        self.client.put(f"/api/v1/stories/{self.story}/creator/cover",
+                        json={"asset_id": cover.json()["id"]})
+        self.scene_image((20, 60, 210))
+        self.turn("Miro el libro <peligroso>", "El gran palacio se ilumina.")
+        self.scene_image((40, 200, 120))
+        self.turn("Cruzo al bosque", "La guardiana se aleja.")
+
+        reply = self.client.get(f"/api/v1/stories/{self.story}/export.epub")
+        self.assertEqual(reply.status_code, 200, reply.text[:100] if reply.status_code != 200 else "")
+        self.assertEqual(reply.headers["content-type"], "application/epub+zip")
+        self.assertIn("attachment", reply.headers["content-disposition"])
+        with zipfile.ZipFile(io.BytesIO(reply.content)) as archive:
+            self.assertEqual(archive.namelist()[0], "mimetype")
+            self.assertEqual(archive.getinfo("mimetype").compress_type,
+                             zipfile.ZIP_STORED)
+            self.assertEqual(archive.read("mimetype"), b"application/epub+zip")
+            images = [name for name in archive.namelist()
+                      if name.startswith("OEBPS/images/")]
+            self.assertEqual(len(images), 3)
+            for name in images:
+                data = archive.read(name)
+                self.assertEqual(data[:4], b"RIFF")
+                self.assertEqual(data[8:12], b"WEBP")
+            self.assertEqual(len(archive.read("OEBPS/nav.xhtml")) > 100, True)
+            opf = ET.fromstring(archive.read("OEBPS/content.opf"))
+            xhtml = ET.fromstring(archive.read("OEBPS/chapter.xhtml"))
+            self.assertTrue(opf.tag.endswith("package"))
+            self.assertTrue(xhtml.tag.endswith("html"))
+            self.assertIn("El <mundo> & la torre",
+                          "".join(xhtml.itertext()))
+            text = archive.read("OEBPS/chapter.xhtml").decode("utf-8")
+            self.assertIn("Miro el libro &lt;peligroso&gt;", text)
+            self.assertNotIn("<script>", text)
+            self.assertIn("La guardiana se aleja.", text)
+            nav = archive.read("OEBPS/nav.xhtml")
+            self.assertIn(b"chapter-1", nav)
+            self.assertIn(b"chapter-2", nav)
+
+    def test_epub_uses_independent_branch_and_omits_future_scene(self):
+        self.scene_image((140, 20, 160))
+        first = self.turn("Encuentro un mapa de jade")
+        self.scene_image((10, 230, 30))
+        self.turn("Se revela el reino futuro")
+        branch = self.client.post(f"/api/v1/stories/{self.story}/fork",
+                                  json={"until_turn_id": first["id"]})
+        self.assertEqual(branch.status_code, 201, branch.text)
+        exported = self.client.get(
+            f"/api/v1/stories/{branch.json()['id']}/export.epub")
+        self.assertEqual(exported.status_code, 200)
+        with zipfile.ZipFile(io.BytesIO(exported.content)) as archive:
+            chapter = archive.read("OEBPS/chapter.xhtml").decode("utf-8")
+            self.assertIn("Encuentro un mapa de jade", chapter)
+            self.assertNotIn("reino futuro", chapter)
+            self.assertIn("Rama independiente", chapter)
+            self.assertEqual(len([f for f in archive.namelist()
+                                  if f.startswith("OEBPS/images/")]), 1)
+
+    def test_epub_unknown_story_is_404(self):
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{uuid.uuid4()}/export.epub").status_code, 404)
 
     def test_unknown_story_and_invalid_bytes_not_embedded(self):
         self.assertEqual(self.client.get(

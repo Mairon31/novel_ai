@@ -36,4 +36,17 @@ test('reader exports its current story as a standalone HTML attachment', async (
   await link.click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('noble-story.html');
+
+  const epubLink = page.getByRole('link', { name: 'Exportar historia EPUB' });
+  await expect(epubLink).toBeVisible();
+  const epubHref = await epubLink.getAttribute('href');
+  expect(epubHref).toMatch(/^\/api\/v1\/stories\/[a-f\d-]+\/export\.epub$/);
+  const epubResponse = await page.request.get(epubHref!);
+  expect(epubResponse.status()).toBe(200);
+  expect(epubResponse.headers()['content-type']).toContain('application/epub+zip');
+  const epubBytes = await epubResponse.body();
+  expect(epubBytes.slice(0, 2).toString()).toBe('PK');
+  const epubDownload = page.waitForEvent('download');
+  await epubLink.click();
+  expect((await epubDownload).suggestedFilename()).toBe('noble-story.epub');
 });

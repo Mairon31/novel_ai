@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import base64
 import html
+import io
 import uuid
+import zipfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
@@ -137,6 +140,150 @@ def render_story_html(narrative, story_id: str) -> bytes:
     return page.encode("utf-8")
 
 
+XHTML_NS = "http://www.w3.org/1999/xhtml"
+EPUB_NS = "http://www.idpf.org/2007/ops"
+ET.register_namespace("", XHTML_NS)
+ET.register_namespace("epub", EPUB_NS)
+
+
+def render_story_epub(narrative, story_id: str) -> bytes:
+    """Create a valid EPUB3 one-volume archive of just the requested timeline.
+
+    No external URLs and no automatic LLM/author-only context. Resource files
+    are embedded after passing the same path and byte limits as the HTML export.
+    """
+    story = narrative.get_story(story_id)
+    if story is None:
+        raise ValueError("Historia inexistente")
+    budget = {"count": 0, "bytes": 0}
+    image_files: list[tuple[str, bytes]] = []
+    root = ET.Element("{" + XHTML_NS + "}html", {
+        "{" + "http://www.w3.org/XML/1998/namespace" + "}lang": "es"
+    })
+    head = ET.SubElement(root, "{" + XHTML_NS + "}head")
+    ET.SubElement(head, "{" + XHTML_NS + "}title").text = story["title"]
+    ET.SubElement(head, "{" + XHTML_NS + "}link",
+                  {"rel": "stylesheet", "type": "text/css", "href": "style.css"})
+    body = ET.SubElement(root, "{" + XHTML_NS + "}body")
+    main = ET.SubElement(body, "{" + XHTML_NS + "}main")
+    header = ET.SubElement(main, "{" + XHTML_NS + "}header")
+    ET.SubElement(header, "{" + XHTML_NS + "}h1").text = story["title"]
+    ET.SubElement(header, "{" + XHTML_NS + "}p").text = story["premise"]
+    ET.SubElement(header, "{" + XHTML_NS + "}small").text = (
+        "Protagonista: " + (story.get("protagonist_name") or "Protagonista"))
+    if story.get("origin_story_id"):
+        ET.SubElement(header, "{" + XHTML_NS + "}p").text = "Rama independiente"
+
+    def image(path, label: str, cover: bool = False):
+        uri = _embed_asset(path, budget)
+        if uri is None:
+            return None
+        name = "images/asset-" + str(len(image_files) + 1) + ".webp"
+        image_files.append((name, base64.b64decode(uri.split(",", 1)[1])))
+        figure = ET.SubElement(main, "{" + XHTML_NS + "}figure",
+                               {"class": "cover"} if cover else {})
+        ET.SubElement(figure, "{" + XHTML_NS + "}img",
+                      {"src": name, "alt": label})
+        return name
+
+    cover_filename = None
+    with narrative.store._conn() as db:
+        turns = [dict(row) for row in db.execute(
+            "SELECT * FROM story_turns WHERE story_id=? ORDER BY created_at,id",
+            (story_id,))]
+        gallery = {row["id"] for row in db.execute(
+            "SELECT id FROM visual_assets WHERE story_id=?", (story_id,))}
+        snapshots = {row["turn_id"]: row["selected_asset_id"] for row in db.execute(
+            "SELECT turn_id,selected_asset_id FROM visual_turn_snapshots "
+            "WHERE story_id=?", (story_id,))}
+        cover_id = story.get("cover_asset_id")
+        if cover_id:
+            row = db.execute(
+                "SELECT id,kind FROM creator_media_assets "
+                "WHERE story_id=? AND id=? AND kind='cover'",
+                (story_id, cover_id)).fetchone()
+            if row is not None:
+                cover_filename = image(narrative.creator_media._path(
+                    story_id, row["id"], row["kind"]),
+                    "Portada de la historia", cover=True)
+        previous_art = None
+        for i, turn in enumerate(turns, 1):
+            section = ET.SubElement(main, "{" + XHTML_NS + "}section",
+                                    {"id": "chapter-" + str(i)})
+            ET.SubElement(section, "{" + XHTML_NS + "}h2").text = "Escena " + str(i)
+            selected_id = snapshots.get(turn["id"])
+            if selected_id and selected_id in gallery and selected_id != previous_art:
+                uri = _embed_asset(narrative.visual._asset_path(story_id, selected_id), budget)
+                if uri is not None:
+                    name = "images/asset-" + str(len(image_files) + 1) + ".webp"
+                    image_files.append((name, base64.b64decode(uri.split(",", 1)[1])))
+                    fig = ET.SubElement(section, "{" + XHTML_NS + "}figure")
+                    ET.SubElement(fig, "{" + XHTML_NS + "}img",
+                                  {"src": name, "alt": "Ilustración de la escena " + str(i)})
+            previous_art = selected_id
+            mode = {"say": "Diálogo", "do": "Acción", "story": "Dirección",
+                    "continue": "Continuación"}.get(turn["mode"], "Intervención")
+            ET.SubElement(section, "{" + XHTML_NS + "}small").text = mode
+            if turn["input_text"]:
+                ET.SubElement(section, "{" + XHTML_NS + "}p",
+                              {"class": "action"}).text = turn["input_text"]
+            ET.SubElement(section, "{" + XHTML_NS + "}p",
+                          {"class": "prose"}).text = turn["assistant_text"]
+
+    xhtml = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    title = _safe_text(story["title"])
+    identifier = _safe_text("urn:uuid:" + story_id)
+    updated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    image_manifest = "".join(
+        '<item id="image-' + str(i) + '" href="' + _safe_text(name) +
+        '" media-type="image/webp"' +
+        (' properties="cover-image"' if name == cover_filename else '') + '/>'
+        for i, (name, _) in enumerate(image_files, 1))
+    opf = ('<?xml version="1.0" encoding="utf-8"?>'
+           '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" '
+           'unique-identifier="book-id"><metadata '
+           'xmlns:dc="http://purl.org/dc/elements/1.1/">'
+           '<dc:identifier id="book-id">' + identifier + '</dc:identifier>'
+           '<dc:title>' + title + '</dc:title><dc:language>es</dc:language>'
+           '<meta property="dcterms:modified">' + updated + '</meta>'
+           '</metadata><manifest>'
+           '<item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/>'
+           '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'
+           '<item id="css" href="style.css" media-type="text/css"/>'
+           + image_manifest + '</manifest><spine><itemref idref="chapter"/></spine></package>')
+    container = ('<?xml version="1.0" encoding="utf-8"?>'
+                 '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">'
+                 '<rootfiles><rootfile full-path="OEBPS/content.opf" '
+                 'media-type="application/oebps-package+xml"/></rootfiles></container>')
+    nav = ET.Element("{" + XHTML_NS + "}html", {
+        "{" + "http://www.w3.org/XML/1998/namespace" + "}lang": "es"
+    })
+    nav_body = ET.SubElement(nav, "{" + XHTML_NS + "}body")
+    toc = ET.SubElement(nav_body, "{" + XHTML_NS + "}nav",
+                        {"{" + EPUB_NS + "}type": "toc"})
+    ET.SubElement(toc, "{" + XHTML_NS + "}h1").text = "Índice"
+    toc_ol = ET.SubElement(toc, "{" + XHTML_NS + "}ol")
+    for i in range(1, len(turns) + 1):
+        li = ET.SubElement(toc_ol, "{" + XHTML_NS + "}li")
+        ET.SubElement(li, "{" + XHTML_NS + "}a",
+                      {"href": "chapter.xhtml#chapter-" + str(i)}).text = "Escena " + str(i)
+
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        # EPUB specification: mimetype must be the first ZIP entry, stored raw.
+        archive.writestr("mimetype", b"application/epub+zip",
+                         compress_type=zipfile.ZIP_STORED)
+        archive.writestr("META-INF/container.xml", container.encode("utf-8"))
+        archive.writestr("OEBPS/content.opf", opf.encode("utf-8"))
+        archive.writestr("OEBPS/nav.xhtml", ET.tostring(
+            nav, encoding="utf-8", xml_declaration=True))
+        archive.writestr("OEBPS/chapter.xhtml", xhtml)
+        archive.writestr("OEBPS/style.css", STYLES.encode("utf-8"))
+        for name, content in image_files:
+            archive.writestr("OEBPS/" + name, content)
+    return out.getvalue()
+
+
 def mount_story_export_routes(app, narrative) -> None:
     @app.get("/api/v1/stories/{story_id}/export.html")
     def export_story(story_id: uuid.UUID):
@@ -147,6 +294,19 @@ def mount_story_export_routes(app, narrative) -> None:
         return Response(content=content, media_type="text/html; charset=utf-8",
                         headers={
                             "Content-Disposition": 'attachment; filename="noble-story.html"',
+                            "Cache-Control": "no-store",
+                            "X-Content-Type-Options": "nosniff",
+                        })
+
+    @app.get("/api/v1/stories/{story_id}/export.epub")
+    def export_epub(story_id: uuid.UUID):
+        try:
+            content = render_story_epub(narrative, str(story_id))
+        except ValueError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        return Response(content=content, media_type="application/epub+zip",
+                        headers={
+                            "Content-Disposition": 'attachment; filename="noble-story.epub"',
                             "Cache-Control": "no-store",
                             "X-Content-Type-Options": "nosniff",
                         })

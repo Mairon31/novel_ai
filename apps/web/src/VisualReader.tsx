@@ -438,6 +438,9 @@ export function VisualReader({
           <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.html'}
             download="noble-story.html" title="Exportar historia a HTML ilustrado"
             aria-label="Exportar historia HTML"><Download size={17}/></a>
+          <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.epub'}
+            download="noble-story.epub" title="Exportar historia EPUB compatible con lectores"
+            aria-label="Exportar historia EPUB"><BookOpen size={17}/></a>
           <button title="Mostrar panel de historia" aria-label="Abrir información de historia"
             onClick={() => setInspectorOpen(open => !open)}><Eye size={17}/></button>
           <button title="Configurar narrador" aria-label="Configurar narrador" onClick={onSettings}>

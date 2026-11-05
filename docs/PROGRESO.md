@@ -627,3 +627,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] `NarrativeSettings.tsx` incorpora un panel para seleccionar historia, intervención y modo, consultar y desplegar secciones/prompt exacto. Los textos privados del creador solo se presentan en la configuración local de autor y no se exportan con el HTML público.
 - [ ] `tests/test_context_inspector.py` valida igualdad exacta de mensajes, desglose sin pérdida de caracteres, advertencia de overflow estimado, contrato de modos y ausencia de mutaciones. E2E `apps/web/tests/context-inspector.spec.ts` comprueba navegador desktop/mobile sin cargar GPU.
 - [ ] **CI pendiente**, incluidos los fixes de pruebas de exportación y memoria en la misma rama `master`.
+
+
+## 2026-11-05 — P1: EPUB3 válido y offline (CI pendiente)
+
+- [ ] `GET /api/v1/stories/{id}/export.epub` genera ZIP EPUB3 con `mimetype` al principio sin compresión, `META-INF/container.xml`, `OEBPS/content.opf` (manifest, spine, metadata y portada), `nav.xhtml` e `chapter.xhtml` en XML estricto, CSS y archivos WebP internos. Permite abrir la novela fuera de Noble sin llamar servicios remotos.
+- [ ] Cada EPUB exporta solo la historia/rama indicada y usa `visual_turn_snapshots` para ilustraciones por escena; jamás reemplaza una selección antigua por una imagen futura. La portada del proyecto es opcional, los textos se codifican mediante ElementTree, y se aplican los mismos límites de bytes, cantidad y rutas seguras que en HTML.
+- [ ] El lector muestra enlaces separados «Exportar historia HTML» y «Exportar historia EPUB». Se extendieron `tests/test_story_export.py` para verificar estructura ZIP, validez OPF/XHTML, portada, historial de rama, texto escapado y 404. `apps/web/tests/story-export.spec.ts` descarga ambos formatos en desktop y móvil.
+- [ ] **CI pendiente**; `.noble.zip` con restauración completa y grafo de ramas, DRM y validación con lectores físicos quedan pendientes.
