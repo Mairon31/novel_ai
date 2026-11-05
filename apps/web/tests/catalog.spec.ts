@@ -20,8 +20,36 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
     body: JSON.stringify({ repo_id: 'demo/Qwen3-8B-GGUF', revision: 'a'.repeat(40),
       license: 'apache-2.0', gated: false, supports_install: true,
       url: 'https://huggingface.co/demo/Qwen3-8B-GGUF',
-      variants: [{ filename: 'Qwen3-8B-Q4_K_M.gguf', size_bytes: 5368709120,
-        sha256: 'f'.repeat(64), supported: true }] }),
+      summary:'Narrador local de prueba',
+      variants: [
+        { filename: 'Qwen3-8B-Q4_K_M.gguf', size_bytes: 5368709120,
+          sha256: 'f'.repeat(64), supported: true },
+        { filename: 'Qwen3-8B-Q8_0.gguf', size_bytes: 9663676416,
+          sha256: 'a'.repeat(64), supported: true },
+        { filename: 'Qwen3-8B-Q2_K.gguf', size_bytes: 3221225472,
+          sha256: 'b'.repeat(64), supported: true },
+      ],
+      hardware_fit: {
+        context_tokens:4096,
+        gpu:{index:0,name:'NVIDIA GPU (fixture)',backend:'cuda',
+          vram_total_mb:16384,vram_free_mb:12000,driver:'demo'},
+        vram_usable_bytes:11534336000,ram_usable_bytes:17179869184,
+        metadata_source:'gguf_header',architecture:'qwen3',parameter_count:8000000000,
+        confidence:'measured_capacity_estimated_demand',
+        warning:'Estimación del hardware, no benchmark.',
+        recommended_filename:'Qwen3-8B-Q8_0.gguf',
+        variants:[
+          {filename:'Qwen3-8B-Q4_K_M.gguf',quantization:'Q4_K_M',fit:'full_gpu',
+            estimated_required_bytes:6657199308,estimated_kv_bytes:536870912,
+            gpu_share:1,disk_ok:true,note:'Cabe según la estimación.'},
+          {filename:'Qwen3-8B-Q8_0.gguf',quantization:'Q8_0',fit:'full_gpu',
+            estimated_required_bytes:10952166604,estimated_kv_bytes:536870912,
+            gpu_share:1,disk_ok:true,note:'Cabe según la estimación.'},
+          {filename:'Qwen3-8B-Q2_K.gguf',quantization:'Q2_K',fit:'cpu',
+            estimated_required_bytes:3758096384,estimated_kv_bytes:536870912,
+            gpu_share:0,disk_ok:true,note:'Solo CPU en el ejemplo.'},
+        ],
+      } }),
   }));
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
@@ -35,5 +63,13 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await page.getByRole('button', { name: /Qwen3-8B-GGUF/ }).click();
   await expect(page.getByRole('dialog', { name: 'Detalles del modelo' })).toBeVisible();
   await expect(page.getByText('Qwen3-8B-Q4_K_M.gguf')).toBeVisible();
+  await expect(page.getByText(/Cuantización sugerida: Qwen3-8B-Q8_0.gguf/)).toBeVisible();
+  await expect(page.getByRole('meter', { name: 'Relación de demanda y memoria utilizable' })).toBeVisible();
+  await page.getByRole('button', { name: 'CPU', exact: true }).click();
+  await expect(page.getByText('Qwen3-8B-Q2_K.gguf')).toBeVisible();
+  await expect(page.getByText('Qwen3-8B-Q4_K_M.gguf')).toBeHidden();
+  await page.getByRole('button', { name: 'Todas', exact: true }).click();
+  await page.getByRole('button', { name: /Qwen3-8B-Q8_0.gguf/ }).click();
+  await expect(page.getByText('Variante seleccionada: Q8_0')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-catalog-detail.png', fullPage: true });
 });
