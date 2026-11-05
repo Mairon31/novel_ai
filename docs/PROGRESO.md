@@ -511,3 +511,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] **Pruebas nuevas:** `tests/test_lorebook_timeline.py` comprueba creación/edición/eliminación temporal, idempotencia, rollback y protección de historias antiguas; `tests/test_creator_timeline.py` comprueba secretos futuros en blueprint/diálogos NPC y snapshots estables; `apps/web/tests/story-rewind.spec.ts` recorre UI real en desktop y móvil, verifica que cancelar no crea rama y que confirmar preserva la historia original. Commits `a81df310759d`, `8c6972c39eaf`, `08861385c0da`, `d1532a8658c9`, `5dc77b6c5ec7`.
 - [x] [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834): **179 Python y 34 Playwright PASS**, build web aprobado. Las primeras CI de la nueva prueba Playwright fallaron por sintaxis de fixture y expectativa HTTP 200 frente a 201 del endpoint de apertura; ambos errores fueron corregidos antes de declarar éxito.
 - [ ] Faltan snapshots históricos completos de medios del creador, referencias de galería/fichas visuales y planes de composición, rebobinado destructivo con archivo/undo, Lorebooks con conocimiento por testigo y recuperación episódica semántica. Estos elementos no se marcan terminados.
+
+
+## 2026-11-05 — Corrección de resolución npm/Playwright en CI
+
+- [x] Se detectó una regresión externa de instalaciones de CI: con `"@playwright/test": "^1.58.0"`, algunas ejecuciones resolvían una versión no disponible de `playwright-core@1.65.0` y fallaban con `npm ERR! ETARGET` **antes de compilar o ejecutar pruebas**. No era una regresión de las funciones narrativas. Los logs de GitHub Actions identificaron el paquete y la etapa exacta.
+- [x] `apps/web/package.json` fija `"@playwright/test": "1.64.1"`, versión estable publicada. Commit `686f7151a174`.
+- [x] [CI #42085965085](https://github.com/Mairon31/novel_ai/actions/runs/42085965085) para ese commit: **179 pruebas Python + 34 Playwright PASS**, `npm install`, compilación web y navegador escritorio/móvil correctos.
+- [ ] Se recomienda incorporar `apps/web/package-lock.json` generado con npm en un entorno con registro accesible y migrar CI a `npm ci` para fijar **todas** las dependencias transitivas; por ahora se ha fijado únicamente Playwright y siguen existiendo otros rangos semver sin archivo de bloqueo.
