@@ -134,7 +134,7 @@ class DownloadManager:
                     # A bare prefix check ("bytes 20-") is insufficient: a
                     # truncated or forged range can silently corrupt a file.
                     content_range = response.headers.get("content-range", "").strip()
-                    match = re.fullmatch(r"bytes (\\d+)-(\\d+)/(\\d+|\\*)", content_range)
+                    match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", content_range)
                     expected_offset = offset if continued else 0
                     if not match:
                         raise RuntimeError("Content-Range ausente o con formato inválido")
