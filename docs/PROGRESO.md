@@ -365,3 +365,34 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Evolución posterior: editor de composición de portada (título, recorte, tipografía, variantes), preferencias por historia y administración de recursos de modelos de difusión/TTS.
 
 **Flujo Git:** implementación directa sobre `master`, sin abrir ramas adicionales. Los assets, las escenas y el estado del narrador se mantienen separados.
+
+## 2026-11-05 — Incorporación integral de la auditoría Gemini Argon y primeros fixes P0
+
+**Fuente:** [Auditoría Argon, 22 secciones](ARGON_AUDITORIA.md). **Backlog operativo:** [`TODO.md`](../TODO.md). Se adoptó la tabla maestra §18 como nomenclatura de tareas porque §05 reutiliza las etiquetas AUD-005/006/007 para asuntos distintos.
+
+### Incorporado a documentación (directamente en `master`)
+
+- [x] Se creó `TODO.md` con prioridades P0–P3, seis fases, requisitos por subsistema, casillas cerrables con pruebas, criterios de aceptación, licencias y diferenciadores. Commit `c8a212597c6f`.
+- [x] Se vinculó el seguimiento desde `README.md`, `AGENTS.md`, `ROADMAP.md` y `QA_Y_ACEPTACION.md`; `AGENTS.md` dejó de describir erróneamente el repo como vacío.
+- [x] Se incorporaron requisitos concretos, límites de evidencia y contratos futuros en `ESTADO_Y_MEMORIA.md`, `MODEL_HUB.md`, `IMAGENES.md`, `SEGURIDAD_Y_LICENCIAS.md` y `CONTRATOS_API.md`.
+- [x] Se corrigió la interpretación del informe estático: **ya existían** SQLite WAL, SSE, streaming en cliente con AbortSignal, descargas HTTP Range/`.part`/hash cuando HF lo aporta, inventario de modelos protegido y serialización GPU local. Nada de eso implica que estén concluidas las garantías P0 de extremo a extremo.
+
+### Primer trabajo de código P0 — Integridad de archivos y SQLite
+
+- [x] `store.py`: se añadieron `PRAGMA synchronous=NORMAL` y `PRAGMA foreign_keys=ON` en cada conexión, manteniendo WAL y `busy_timeout` (commit `46f164605fd9`).
+- [x] `creator_media.py`: validar UUID canónicos, clase de recurso y ruta resuelta bajo el directorio de medios antes de leer/escribir/eliminar; rechazar symlinks que salgan del espacio propio (commit `e2ec06bf9e1f`).
+- [x] `downloads.py`: volver a validar ruta y metadatos de trabajo persistidos y bloquear destino/parcial con enlaces simbólicos externos **antes de crear carpetas** (commit `3125ef3ba83c`).
+- [x] Se agregaron tests de traversal/UUID, directorio enlazado fuera de la historia, `.part` enlazado fuera del almacén y PRAGMAs SQLite (commits `50f12950121c` y `1bfca72d02ce`).
+
+### Evidencia CI
+
+- [x] [GitHub Actions #41994792794](https://github.com/Mairon31/novel_ai/actions/runs/41994792794) para `1bfca72d02ce`: **101 pruebas Python OK**; **24 pruebas Playwright PASS** con API real y navegadores para escritorio/móvil; frontend build PASS. Las pruebas nuevas `test_owned_asset_paths_reject_traversal_and_symlinked_directories`, `test_download_rejects_symlink_escape_without_writing` y `test_sqlite_connection_enforces_integrity_pragmas` se ejecutaron y aprobaron.
+- La CI usa proveedores mock en pruebas Python; **no hay validación GPU física** en este registro.
+- Las ejecuciones CI de los commits adicionales de documentación deben comprobarse por separado; una CI de un SHA anterior **no certifica** otro SHA.
+
+### Próximos bloqueantes (no concluidos)
+
+- [ ] Transacciones del turno narrativo + cambios de estado/escena con rollback único, migraciones y estrés concurrente; WAL aislado no resuelve todos esos casos.
+- [ ] Cancelación de inferencia y liberación efectiva de GPU upstream, incluido worker remoto, comprobada con desconexión de cliente y carga real.
+- [ ] Descarga interrumpida a mitad de archivo, verificación de Content-Range y checksum adversarial, protección frente a carreras entre procesos locales.
+- [ ] Arbitraje VRAM con descarga voluntaria de pesos propios y medición real de 20–25 ciclos texto/imagen; testigos/Lorebook/contexto y sprite-caché en fases siguientes.
