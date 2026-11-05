@@ -223,7 +223,7 @@ class VisualState:
         for row in characters:
             # Do not inject absent people into the image prompt; they often
             # appear in the output even if the scene requested an empty room.
-            if not re.search(r"(?<!\\w)" + re.escape(row["name"]) + r"(?!\\w)",
+            if not re.search(r"(?<!\w)" + re.escape(row["name"]) + r"(?!\w)",
                              prompt, flags=re.IGNORECASE):
                 continue
             appearance.append(
