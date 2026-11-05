@@ -146,3 +146,16 @@ Referencias: [TODO](../TODO.md), [QA](QA_Y_ACEPTACION.md), [PROGRESO](PROGRESO.m
 - El sondeo de desconexión y cancelación se realiza durante una espera del proveedor sin tokens, con intervalo de ~200 ms para detectar el corte en el servidor. El cierre cancela el siguiente `anext()` y cierra la respuesta HTTP upstream. No se persiste un turno incompleto ni se emite `done` por una solicitud cancelada.
 - Frontend: `AbortController` + señal explícita a este endpoint al presionar Detener, cambiar de historia o regresar a Biblioteca. La señal es de mejor esfuerzo si no existe conexión con el servidor.
 - Pruebas Python de cancelación por solicitud, upstream bloqueado y limpieza del lease aprobadas en [CI #42050811867](https://github.com/Mairon31/novel_ai/actions/runs/42050811867). **La parada inmediata del cómputo en Ollama/KoboldCpp/worker real no está certificada**.
+
+
+## Contrato Lorebook de Creator Studio (2026-11-05)
+
+Todas las rutas se limitan al UUID de una historia existente. El contenido es privado de la autoría y se inyecta en el mensaje **system**, nunca como turno visible del jugador.
+
+- `GET /api/v1/stories/{story_id}/lorebook` → `{entries: LorebookEntry[]}`.
+- `POST /api/v1/stories/{story_id}/lorebook` → 201 + entrada con ID UUID.
+- `PUT /api/v1/stories/{story_id}/lorebook/{entry_id}` → entrada actualizada, 422 si no pertenece a la historia.
+- `DELETE /api/v1/stories/{story_id}/lorebook/{entry_id}` → 204, 404 si no existe en esa historia.
+- `POST /api/v1/stories/{story_id}/lorebook/preview` recibe `{"query":"Entro al bosque","budget_chars":6000}` y devuelve `{entries:[{id,title,priority,content}],context,used_chars,budget_chars,skipped_budget}`. Este preview activa únicamente por la cadena `query` proporcionada; la generación real incluye además cuatro turnos recientes.
+
+Campos de entrada: `title` (2–100), `content` (10–3500), `keys` (hasta 12), `secondary_keys` (hasta 8), `secondary_mode: any|all`, `match_whole_words`, `priority` 0–100, `enabled`, `always_active`. Es obligatorio definir claves primarias salvo con `always_active`; nunca se evalúan regex proporcionadas por el usuario. Los hechos activados respetan prioridad y se omiten completos si superan el límite de 512–6000 caracteres. El fork crea copias con IDs nuevos.
