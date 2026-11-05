@@ -7,6 +7,7 @@ when upstream LFS SHA256 is available.
 from __future__ import annotations
 
 import hashlib
+import logging
 import re
 import threading
 import time
@@ -20,6 +21,7 @@ from .catalog import CatalogError, HfCatalog, validate_repo, validate_variant
 from .store import Store
 
 MAX_FILE_BYTES = 2 * 1024**4
+LOG = logging.getLogger(__name__)
 
 
 class DownloadManager:
@@ -29,6 +31,45 @@ class DownloadManager:
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="noble-model-download")
         self._future: dict[str, object] = {}
         self._lock = threading.Lock()
+        # No network calls or model loading at startup. Reconcile only jobs
+        # referenced by SQLite, and leave recovered bytes untrusted until
+        # the user resumes and the normal SHA validation succeeds.
+        self.recovery_report = self.reconcile_interrupted()
+
+    def reconcile_interrupted(self) -> dict[str, int]:
+        report = {"recovered": 0, "conflicts": 0, "skipped": 0}
+        for job in self.store.recovery_candidates():
+            try:
+                validate_repo(job["repo_id"])
+                validate_variant(job["revision"], job["filename"])
+                root = self.store.models_dir.resolve()
+                if not root.is_relative_to(self.store.root.resolve()):
+                    raise ValueError("Directorio de modelos fuera del espacio administrado")
+                target = root / "hf" / job["repo_id"] / job["revision"] / job["filename"]
+                part = Path(str(target) + ".part")
+                # Never mutate a symlink, a path outside root, or an unrelated
+                # installed file. The known DB job is the only discovery input.
+                if any(p.is_symlink() or not p.resolve().is_relative_to(root)
+                       for p in (target, part)):
+                    raise ValueError("Ruta de recuperación no confiable")
+                if not target.exists():
+                    report["skipped"] += 1
+                    continue
+                if not target.is_file() or part.exists() or self.store.installed_for_job(job):
+                    raise ValueError("Conflicto entre GGUF final, parcial o modelo ya instalado")
+                if self.store.restore_orphaned_download(job["id"], target, part):
+                    report["recovered"] += 1
+                    LOG.info("Recuperada descarga interrumpida %s para verificar", job["id"])
+                else:
+                    report["skipped"] += 1
+            except (ValueError, OSError) as exc:
+                report["conflicts"] += 1
+                self.store.transition_download(
+                    job["id"], ("paused", "failed"), "failed",
+                    error=("Recuperación segura pendiente: " + str(exc))[:600],
+                )
+                LOG.warning("No se recuperó descarga %s: %s", job["id"], exc)
+        return report
 
     def shutdown(self):
         # Do not block shutdown forever on long downloads.
