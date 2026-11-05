@@ -20,6 +20,8 @@ class ComfyFixture:
         self.offline = False
         self.invalid_image = False
         self.bad_model = False
+        self.bad_upload = False
+        self.last_workflow = None
 
     def __call__(self, request: httpx.Request):
         self.requests.append(request)
@@ -29,6 +31,9 @@ class ComfyFixture:
         if path == "/models/checkpoints":
             return httpx.Response(200, json=[
                 "my-story-checkpoint.safetensors" if not self.bad_model else "different.safetensors"])
+        if path == "/upload/image":
+            self.uploaded_bytes = request.content
+            return httpx.Response(200, json={"name": "../escape.png" if self.bad_upload else "reference.png", "type": "input"})
         if path == "/prompt":
             data = __import__("json").loads(request.content)
             nodes = data["prompt"]
@@ -36,6 +41,7 @@ class ComfyFixture:
             assert nodes["1"]["inputs"]["ckpt_name"] == "my-story-checkpoint.safetensors"
             assert "Un castillo al anochecer" in nodes["2"]["inputs"]["text"]
             assert nodes["7"]["class_type"] == "SaveImage"
+            self.last_workflow = nodes
             return httpx.Response(200, json={"prompt_id": "123e4567"})
         if path == "/history/123e4567":
             return httpx.Response(200, json={"123e4567": {
@@ -153,6 +159,65 @@ class ComfySceneTests(unittest.TestCase):
         self.assertEqual(generated.status_code,200,generated.text)
         self.assertFalse(generated.json()["cached"])
         self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/prompt"]),3)
+
+    def test_img2img_uses_owned_reference_and_vae_encode_nodes(self):
+        self.setup_comfy()
+        from PIL import Image
+        sample=io.BytesIO()
+        Image.new("RGB",(280,200),(37,115,177)).save(sample,format="PNG")
+        image=self.client.post(f"/api/v1/stories/{self.story}/scene-image",
+            files={"file":("reference.png",sample.getvalue(),"image/png")})
+        self.assertEqual(image.status_code,200,image.text)
+        state=self.client.get(f"/api/v1/stories/{self.story}/visual-state").json()
+        ref=state["assets"][0]["id"]
+        args={"prompt":"Una nueva escena dentro de Un castillo al anochecer",
+              "reference_asset_id":ref,"denoise":0.48,"seed":777}
+        first=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json=args)
+        self.assertEqual(first.status_code,200,first.text)
+        self.assertFalse(first.json()["cached"])
+        self.assertEqual(self.fixture.last_workflow["8"]["class_type"],"LoadImage")
+        self.assertEqual(self.fixture.last_workflow["9"]["class_type"],"VAEEncode")
+        self.assertEqual(self.fixture.last_workflow["9"]["inputs"]["vae"],["1",2])
+        self.assertEqual(self.fixture.last_workflow["5"]["inputs"]["latent_image"],["9",0])
+        self.assertAlmostEqual(self.fixture.last_workflow["5"]["inputs"]["denoise"],0.48)
+        self.assertNotIn("4",self.fixture.last_workflow)
+        self.assertIn(b"NobleAI-Reference.png",self.fixture.uploaded_bytes)
+        upload_count=len([r for r in self.fixture.requests if r.url.path=="/upload/image"])
+        self.assertEqual(upload_count,1)
+
+        self.fixture.offline=True
+        reused=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json=args)
+        self.assertEqual(reused.status_code,200,reused.text)
+        self.assertTrue(reused.json()["cached"])
+        self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/upload/image"]),
+                         upload_count)
+        self.fixture.offline=False
+        changed=self.client.post(f"/api/v1/stories/{self.story}/illustrate",
+            json={**args,"denoise":0.69})
+        self.assertEqual(changed.status_code,200,changed.text)
+        self.assertFalse(changed.json()["cached"])
+        self.assertEqual(len([r for r in self.fixture.requests if r.url.path=="/upload/image"]),2)
+
+    def test_img2img_blocks_other_story_and_invalid_upload_name(self):
+        self.setup_comfy()
+        image=io.BytesIO()
+        Image.new("RGB",(30,30),(9,40,50)).save(image,format="PNG")
+        self.client.post(f"/api/v1/stories/{self.story}/scene-image",
+            files={"file":("reference.png",image.getvalue(),"image/png")})
+        asset=self.client.get(f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        other=self.client.post("/api/v1/stories",json={
+            "title":"Otro mundo","premise":"Una exploradora se dirige a una ciudad lejana."}).json()["id"]
+        prompt="Un castillo al anochecer con otra iluminación"
+        cross=self.client.post(f"/api/v1/stories/{other}/illustrate",json={
+            "prompt":prompt,"reference_asset_id":asset})
+        self.assertEqual(cross.status_code,422)
+        self.assertNotIn("/upload/image",[r.url.path for r in self.fixture.requests])
+        self.fixture.bad_upload=True
+        failure=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json={
+            "prompt":prompt,"reference_asset_id":asset})
+        self.assertEqual(failure.status_code,502)
+        self.assertEqual(len(self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"]),1)
 
     def test_security_and_model_validation(self):
         invalid = self.client.put("/api/v1/images/config", json={
