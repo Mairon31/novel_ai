@@ -171,3 +171,14 @@ Campos de entrada: `title` (2–100), `content` (10–3500), `keys` (hasta 12), 
 - El guardado del turno inserta instantáneamente una fila inmutable de estado y canon bajo la misma transacción SQLite que el texto y escena. Las bifurcaciones en un turno histórico remapean personajes y restauran el canon de ese turno; los snapshots de turnos anteriores a la migración no se reconstruyen con estado futuro.
 
 Estos contratos describen hechos **confirmados por el autor**, no cambios que el narrador pueda ejecutar sin aprobación. El contexto enviado a la IA omite los hechos privados cuyos testigos están ausentes, aunque todavía no garantiza que una IA jamás atribuya mal otro conocimiento.
+
+
+## Contratos temporales de Lorebook y Creator (2026-11-05)
+
+- `GET /api/v1/stories/{story_id}/lorebook/turns/{turn_id}` → `{story_id,turn_id,created_at,entries:[LorebookEntry,...]}`. Cada entrada incluye el ID original **de esa historia**, claves, contenido y prioridad tal como existían cuando se confirmó el turno. 404 si no hay snapshot o ese turno pertenece a otra historia.
+- `POST /api/v1/stories/{story_id}/fork` con `{"until_turn_id":"<UUID>"}` mantiene el contrato 201 + `Story`; **ahora** selecciona versiones de Lorebook y Creator privadas de ese turno, además del canon y el estado del mundo histórico. Los identificadores de las entradas y NPC cambian por rama; dentro de los snapshots copiados se mantiene estable el nuevo identificador correspondiente. `{"until_turn_id":null}` continúa creando una rama de la historia **actual** completa.
+- `creator_turn_snapshots` registra el blueprint y las fichas NPC al confirmar cada turno; por ahora es una tabla interna transaccional, sin endpoint público para exponer instrucciones privadas del narrador al lector.
+- Los turnos antiguos sin `lorebook_turn_snapshots` o `creator_turn_snapshots` se tratan con **fallback vacío** al bifurcar desde ese punto: copiar valores presentes hoy produciría spoilers imposibles de verificar.
+- El botón «Rebobinar aquí» del lector no llama una acción destructiva: usa `fork` tras confirmación. La historia origen y sus turnos posteriores siguen intactos; la pantalla solo muestra el resumen de instantáneas del Lorebook y del estado del mundo. Sigue pendiente el contrato de una operación destructiva/archivable con undo.
+
+Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834) con 179 Python y 34 Playwright aprobadas. Esta recuperación temporal no cubre cambios antiguos en imágenes editoriales, referencias visuales y planes de escena.
