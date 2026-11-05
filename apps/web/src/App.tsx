@@ -14,7 +14,7 @@ import { readModelDetails, readModelSearch, searchCacheKey,
   writeModelDetails, writeModelSearch } from './modelCatalogCache';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
-  ModelRole, ModelCardResponse, ModelFitVariant, Page, Settings,
+  ModelRole, ModelCardResponse, ModelFitVariant, ModelStorage, Page, Settings,
 } from './types';
 
 const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
@@ -98,6 +98,8 @@ export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [installed, setInstalled] = useState<InstalledModel[]>([]);
+  const [modelStorage, setModelStorage] = useState<ModelStorage | null>(null);
+  const [storageError, setStorageError] = useState('');
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [providers, setProviders] = useState<Array<{ id: string; kind: string; status: string }>>([]);
@@ -222,6 +224,18 @@ export default function App() {
     }, 2000);
     return () => window.clearInterval(handle);
   }, [refreshDownloads]);
+
+  useEffect(() => {
+    if (page !== 'modelos' || tab !== 'installed') return;
+    let active = true;
+    setModelStorage(null); setStorageError('');
+    const inspect = () => api.modelStorage()
+      .then(info => { if (active) { setModelStorage(info); setStorageError(''); } })
+      .catch((error: Error) => { if (active) setStorageError(error.message); });
+    void inspect();
+    const timer = window.setInterval(() => void inspect(), 4000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [page, tab]);
 
   function closeModelDetail() {
     cardRequest.current += 1;
@@ -532,6 +546,44 @@ export default function App() {
             </div>
           </> : <>
             <div className="section-caption"><div><h2>Modelos en tu equipo</h2><p>Solo instalaciones completas y registradas por Noble AI.</p></div></div>
+            {modelStorage && <section className="hub-storage-summary" aria-label="Almacenamiento de modelos">
+              <div className="hub-storage-heading">
+                <div><strong>Espacio de modelos</strong>
+                  <small title={modelStorage.models_dir}>{modelStorage.models_dir}</small>
+                </div>
+                <span><HardDrive size={15}/> Disco local</span>
+              </div>
+              <div className="hub-storage-metrics">
+                <div><span>Modelos registrados</span><strong>{size(modelStorage.installed.bytes)}</strong>
+                  <small>{modelStorage.installed.count} en el registro</small></div>
+                <div><span>Descargas parciales</span><strong>{size(modelStorage.partial.bytes)}</strong>
+                  <small>{modelStorage.partial.count} con archivos .part</small></div>
+                <div><span>Espacio disponible</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
+                  <small>Capacidad: {size(modelStorage.disk.total_bytes)}</small></div>
+              </div>
+              <div className="hub-storage-meter" role="meter" aria-label="Espacio ocupado por archivos de Noble"
+                aria-valuemin={0} aria-valuemax={100}
+                aria-valuenow={modelStorage.disk.total_bytes > 0 ?
+                  Math.round((modelStorage.installed.bytes + modelStorage.partial.bytes) /
+                    modelStorage.disk.total_bytes * 100) : 0}>
+                <div style={{width: modelStorage.disk.total_bytes > 0 ?
+                    (modelStorage.installed.bytes / modelStorage.disk.total_bytes * 100) + '%' : '0%'}}/>
+                <div className="hub-storage-partial" style={{width: modelStorage.disk.total_bytes > 0 ?
+                    (modelStorage.partial.bytes / modelStorage.disk.total_bytes * 100) + '%' : '0%'}}/>
+              </div>
+              <p>El inventario mide archivos registrados y descargas incompletas.
+                La capacidad del disco incluye también otros archivos del equipo.</p>
+              {!!modelStorage.items.length && <details className="hub-storage-files">
+                <summary>Ver archivos contabilizados ({modelStorage.items.length})</summary>
+                <div>{modelStorage.items.map(item => <div key={item.id}>
+                  <span title={item.repo_id}>{item.name}
+                    {!item.file_present ? ' · No encontrado' : item.kind === 'partial' ? ' · Parcial' : ''}</span>
+                  <strong>{size(item.size_bytes)}</strong>
+                </div>)}</div>
+              </details>}
+            </section>}
+            {storageError && <p className="narrative-error" role="alert">{storageError}</p>}
+
             <div className="installed-list">
               {installed.map(model => <article className="installed-row" key={model.id}>
                 <div className="installed-symbol"><HardDrive size={23}/></div>
@@ -539,10 +591,13 @@ export default function App() {
                   <span>{model.repo_id} · {size(model.size_bytes)}</span>
                   <small>{model.integrity_status === 'sha256_verified' ? 'SHA-256 verificado con el origen' :
                     'Hash local; el origen no anunció SHA-256'}</small>
+                  {modelStorage?.items.find(item => item.id === model.id)?.file_present === false &&
+                    <small className="hub-file-missing">Archivo no encontrado: revisa la instalación.</small>}
                 </div>
                 <div className="installed-actions">
                   {assignments.narrator === model.id && <span className="assigned"><Check size={16}/> Narrador elegido</span>}
-                  <button className="secondary-button" disabled={busy || assignments.narrator === model.id}
+                  <button className="secondary-button" disabled={busy || assignments.narrator === model.id ||
+                      modelStorage?.items.find(item => item.id === model.id)?.file_present === false}
                     onClick={() => void assignModel(model.id)}>
                     {assignments.narrator === model.id ? 'Asignado' : 'Elegir narrador'}</button>
                 </div>
