@@ -23,6 +23,8 @@ from .runtime import KoboldManager, RuntimeFailure
 from .control import ControlPlane, mount_control_routes
 from .secrets import Secrets
 from .media import mount_media_routes
+from .images import SceneImageService, mount_image_routes
+from .speech import SpeechService, mount_speech_routes
 from .workers import WorkerRegistry, mount_worker_routes
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -65,6 +67,7 @@ def create_app(
     control_transport: httpx.BaseTransport | None = None,
     worker_transport: httpx.AsyncBaseTransport | None = None,
     worker_vault=None,
+    image_transport: httpx.AsyncBaseTransport | None = None,
 ) -> FastAPI:
     """Injectable data directory and HF transport make contract tests offline."""
     directory = Path(data_dir or os.getenv("NOBLE_DATA_DIR") or ROOT / "data")
@@ -77,6 +80,8 @@ def create_app(
     narrative = NarrativeService(store, transport=llm_transport, secrets=secrets,
                                  preferences=control.preferences, workers=workers)
     kobold = KoboldManager(store)
+    images = SceneImageService(narrative, transport=image_transport)
+    speech = SpeechService(narrative)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -101,6 +106,8 @@ def create_app(
     service.state.workers = workers
     service.state.narrative = narrative
     service.state.kobold = kobold
+    service.state.images = images
+    service.state.speech = speech
 
     @service.exception_handler(CatalogError)
     async def catalog_exception(_request, exc: CatalogError):
@@ -111,7 +118,7 @@ def create_app(
     def health():
         return {"status": "ok", "version": "0.1.0",
                 "model_hub": "available", "llm_runtime": "external_provider_adapter",
-                "image_runtime": "not_implemented", "tts_runtime": "not_implemented"}
+                "image_runtime": "comfyui_on_demand", "tts_runtime": "piper_on_demand"}
 
     @service.get("/api/v1/hardware")
     def hardware():
@@ -139,8 +146,8 @@ def create_app(
                 {"id": "koboldcpp", "kind": "llm", "status": "connectable_external"},
                 {"id": "ollama", "kind": "llm", "status": "connectable_external"},
                 {"id": "openrouter", "kind": "llm", "status": "configured" if secrets.read() else "needs_key"},
-                {"id": "comfyui", "kind": "image", "status": "pending_integration"},
-                {"id": "chatterbox", "kind": "tts", "status": "pending_integration"},
+                {"id": "comfyui", "kind": "image", "status": "connectable_external"},
+                {"id": "piper", "kind": "tts", "status": "available" if speech.voices()["available"] else "needs_install"},
             ]
         }
 
@@ -200,6 +207,8 @@ def create_app(
 
     mount_narrative_routes(service, narrative)
     mount_media_routes(service, narrative)
+    mount_image_routes(service, images)
+    mount_speech_routes(service, speech)
     mount_worker_routes(service, workers, narrative)
     mount_control_routes(service, control)
 
