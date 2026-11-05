@@ -89,6 +89,30 @@ class CrashRecoveryTests(unittest.TestCase):
         self.assertEqual(self.part.read_bytes(), PAYLOAD[:30])
         self.assertEqual(manager.store.installed(), [])
 
+    def test_resume_after_collision_must_not_replace_existing_final(self):
+        self.target.write_bytes(PAYLOAD)
+        different_partial = PAYLOAD[:30]
+        self.part.write_bytes(different_partial)
+        manager = self.restart()
+        self.assertEqual(manager.recovery_report["conflicts"], 1)
+        manager.control(self.job["id"], "resume")
+        failed = self.await_terminal()
+        self.assertEqual(failed["status"], "failed", failed)
+        self.assertIn("GGUF final", failed["error"])
+        self.assertEqual(self.target.read_bytes(), PAYLOAD)
+        self.assertEqual(self.part.read_bytes(), different_partial)
+        self.assertEqual(manager.store.installed(), [])
+
+    def test_restart_never_moves_an_already_registered_model(self):
+        self.target.write_bytes(PAYLOAD)
+        self.store.register_model(self.job, self.target, SHA, "sha256_verified")
+        manager = self.restart()
+        self.assertEqual(manager.recovery_report["conflicts"], 1)
+        self.assertEqual(manager.store.download(self.job["id"])["status"], "failed")
+        self.assertEqual(self.target.read_bytes(), PAYLOAD)
+        self.assertFalse(self.part.exists())
+        self.assertEqual(manager.store.installed()[0]["sha256"], SHA)
+
     def test_symlink_to_external_file_is_not_recovered_or_read(self):
         outside = Path(self.tmp.name) / "unrelated-weights.gguf"
         outside.write_bytes(b"confidential-non-model")
