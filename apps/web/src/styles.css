@@ -383,3 +383,29 @@
 }
 .noble-inspector-branch:hover:not(:disabled){background:#554875}
 .noble-inspector-branch:disabled{opacity:.5;cursor:not-allowed}
+
+
+/* P1.5: visual scene journal, character bible and immutable gallery */
+.noble-character-entry{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  gap:8px;background:#292c47;color:#e6e5f8;border:1px solid #454c6b;
+  border-radius:8px;margin:6px 0;padding:10px;text-align:left
+}
+.noble-character-entry small{color:#b7b5db;font-size:10px}
+.noble-version-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.noble-art-version{
+  padding:6px;display:flex;flex-direction:column;gap:6px;min-width:0;
+  background:#1b2034;border:1px solid #3d4663;border-radius:10px
+}
+.noble-art-version.is-selected{border-color:var(--noble-accent)}
+.noble-art-version img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;background:#0f1526}
+.noble-art-version small{color:#b6bed2;overflow-wrap:anywhere;font-size:10px}
+.noble-art-version button{
+  padding:6px;background:#3a3d5c;border-radius:6px;color:#f0eafd;
+  font-size:10px;min-height:30px
+}
+.noble-art-version button:disabled{background:#282c40;color:#b3abc8}
+.noble-prompt-preview{padding:10px;border-radius:9px;background:#171a2d;border:1px solid #464561;margin:12px 0}
+.noble-prompt-preview strong{font-size:11px;color:#e1dafa}
+.noble-prompt-preview p{font-size:10px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;color:#c7cadb}
+@media(max-width:360px){.noble-version-gallery{grid-template-columns:1fr}}
