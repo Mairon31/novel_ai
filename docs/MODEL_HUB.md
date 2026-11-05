@@ -112,3 +112,12 @@ Para reutilizar UI y lógica de Urakatsu bajo MIT, documentar los archivos copia
 - Al completar SHA, archivo y registro de modelo se publican bajo un bloqueo `BEGIN IMMEDIATE` de SQLite. Si un error de SQL ocurre después del renombrado, se intenta revertir el fichero a su extensión `.part`. Un cierre eléctrico inesperado no se resuelve solo con esa compensación; el arranque ya incluye reconciliación específica del intervalo entre rename y commit, documentada abajo, pero no equivale a recuperación universal ante corrupción física.
 - La etiqueta `sha256_verified` requiere hash publicado por el proveedor. `local_hash_only` no equivale a autenticidad verificada.
 - Pruebas de cancelación en medio de `hashlib.update`, reanudación sin segundo GET y fallo de registro simulado en `tests/test_api_model_hub.py`; [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678), **121 Python PASS**. Ver [TODO](../TODO.md) para lo que falta.
+
+
+## Recuperación sin pérdida tras interrupción entre fichero y registro (2026-11-05)
+
+Al iniciar, `DownloadManager` consulta todos los jobs `paused/failed` que conoce SQLite y no hace descargas automáticas. Si encuentra un GGUF final no registrado y no hay `.part`, lo devuelve a parcial bajo una transacción de escritura, conserva su tamaño y solicita reanudación. Al reanudar, se verifica SHA-256; el archivo recuperado **nunca se considera instalado solo por existir**.
+
+Si encuentra el GGUF final junto a `.part`, una ruta enlazada fuera del almacén o un modelo registrado en `installed`, **no toca ninguno de esos archivos** y marca un conflicto. El reintento no puede sobrescribir el final. `recovery_report` contiene contadores `recovered/conflicts/skipped`; el detalle por job permanece en `downloads.error`.
+
+Pruebas: `tests/test_download_recovery.py` sobre SQLite y archivos reales con transporte sin red, [GitHub Actions #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624), 127 Python PASS. Quedan pendientes recuperación sin `expected_size`, cortes eléctricos físicos y reemplazo malicioso concurrente de rutas.
