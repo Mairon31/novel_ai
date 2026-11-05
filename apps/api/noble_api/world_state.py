@@ -57,7 +57,8 @@ class WorldStateService:
                     turn_id TEXT PRIMARY KEY REFERENCES story_turns(id) ON DELETE CASCADE,
                     story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
                     state_json TEXT NOT NULL,
-                    created_at REAL NOT NULL
+                    created_at REAL NOT NULL,
+                    canon_text TEXT NOT NULL DEFAULT ''
                 );
                 CREATE INDEX IF NOT EXISTS idx_world_snapshots_by_story
                     ON world_turn_snapshots(story_id,created_at);
@@ -70,6 +71,15 @@ class WorldStateService:
                     UNIQUE(story_id, revision)
                 );
             """)
+            # Backward-compatible for local files created before canon history.
+            columns = {row[1] for row in db.execute(
+                "PRAGMA table_info(world_turn_snapshots)"
+            )}
+            if "canon_text" not in columns:
+                db.execute(
+                    "ALTER TABLE world_turn_snapshots ADD COLUMN canon_text "
+                    "TEXT NOT NULL DEFAULT ''"
+                )
 
     @staticmethod
     def default() -> dict:
@@ -174,25 +184,28 @@ class WorldStateService:
         row = db.execute(
             "SELECT state_json FROM world_states WHERE story_id=?", (story_id,)
         ).fetchone()
+        canon = db.execute("SELECT canon FROM stories WHERE id=?", (story_id,)).fetchone()
         db.execute(
-            "INSERT INTO world_turn_snapshots(turn_id,story_id,state_json,created_at) "
-            "VALUES (?,?,?,?)",
+            "INSERT INTO world_turn_snapshots("
+            "turn_id,story_id,state_json,created_at,canon_text) VALUES (?,?,?,?,?)",
             (turn_id, story_id,
-             row["state_json"] if row else json.dumps(self.default()), at)
+             row["state_json"] if row else json.dumps(self.default()), at,
+             (canon["canon"] if canon else ""))
         )
 
     def snapshot(self, story_id: str, turn_id: str) -> dict:
         self._exists(story_id)
         with self.store._conn() as db:
             row = db.execute(
-                "SELECT state_json,created_at FROM world_turn_snapshots "
+                "SELECT state_json,created_at,canon_text FROM world_turn_snapshots "
                 "WHERE turn_id=? AND story_id=?",
                 (turn_id, story_id)
             ).fetchone()
         if row is None:
             raise ValueError("No hay snapshot para ese turno de esta historia")
         return {"story_id": story_id, "turn_id": turn_id,
-                "created_at": row["created_at"], "state": json.loads(row["state_json"])}
+                "created_at": row["created_at"], "canon": row["canon_text"],
+                "state": json.loads(row["state_json"])}
 
     @staticmethod
     def _remap(state: dict, npc_map: dict[str, str],
@@ -226,7 +239,7 @@ class WorldStateService:
             original = {
                 row["turn_id"]: row
                 for row in db.execute(
-                    "SELECT turn_id,state_json,created_at FROM world_turn_snapshots "
+                    "SELECT turn_id,state_json,created_at,canon_text FROM world_turn_snapshots "
                     "WHERE story_id=?", (source_id,)
                 )
             }
@@ -236,14 +249,21 @@ class WorldStateService:
                     continue  # Pre-feature turns never had invented state.
                 mapped = self._remap(json.loads(row["state_json"]), character_map, fact_map)
                 db.execute(
-                    "INSERT INTO world_turn_snapshots VALUES (?,?,?,?)",
+                    "INSERT INTO world_turn_snapshots("
+                    "turn_id,story_id,state_json,created_at,canon_text) VALUES (?,?,?,?,?)",
                     (new_turn_id, target_id,
-                     json.dumps(mapped, ensure_ascii=False), row["created_at"])
+                     json.dumps(mapped, ensure_ascii=False), row["created_at"],
+                     row["canon_text"])
                 )
             if until_turn_id:
                 cutoff = original.get(until_turn_id)
                 selected = (json.loads(cutoff["state_json"]) if cutoff
                             else self.default())
+                # Never copy current story canon into a fork at an older turn.
+                # Pre-migration turns lack history: default to empty, not future.
+                historical_canon = cutoff["canon_text"] if cutoff else ""
+                db.execute("UPDATE stories SET canon=? WHERE id=?",
+                           (historical_canon, target_id))
             else:
                 current = db.execute(
                     "SELECT state_json FROM world_states WHERE story_id=?",
