@@ -31,3 +31,12 @@ Estado: protocolos simulados con pruebas; sin sesión real de GPU. Detalles en [
 - Persistencia: transacciones coherentes para mutaciones relacionadas y esquema versionado; no confundir WAL con atomicidad de operaciones **entre servicios**.
 
 Orden de migración: cimientos P0 → coordinación GPU y modelos → narrador estructurado/memoria → composición visual → navegación VN/Creator/infraestructura → empaquetado y benchmarks. API externa estable y cobertura E2E durante la transición. El informe estático contiene hallazgos ya parcial o totalmente implementados; comprobar `master` antes de abrir tareas duplicadas.
+
+
+## Unit of Work para bifurcaciones (2026-11-05)
+
+`NarrativeService.fork_story` centraliza el commit de un nuevo branch: usa una sola conexión a `noble.sqlite` con `BEGIN IMMEDIATE`, y llama a los clonadores de VisualState, ScenePlanner, CreatorService, CreatorMediaService, LorebookService y WorldStateService con `conn` opcional. Los servicios reutilizan esa conexión mediante `nullcontext` sin confirmaciones parciales; solo el método orquestador realiza COMMIT o ROLLBACK. Se preservan los remapeos UUID del historial/scene/NPC/fact, y el punto de bifurcación determina el estado/canon histórico.
+
+Al no poder transaccionar archivos físicos con SQLite, el orquestador compensa errores borrando únicamente la carpeta de destino UUID recién creada. Para interrupciones de proceso, un marcador de staging `fork-staging/<UUID>.pending` se crea bajo el bloqueo SQLite antes de copiar; la rutina de arranque recorre solo estos marcadores, conserva ramas con fila SQLite confirmada y elimina carpetas de operaciones no confirmadas, verificando paths y symlinks. La recuperación reutiliza `BEGIN IMMEDIATE` para no competir con una clonación en curso.
+
+La estrategia conserva límites de durabilidad ante corte eléctrico abrupto y TOCTOU. Los tests `tests/test_fork_atomicity.py` incluyen fallos tardíos por módulo, error de filesystem, recuperación por marcador y bifurcaciones concurrentes. Véanse [QA](QA_Y_ACEPTACION.md), [TODO](../TODO.md) y [PROGRESO](PROGRESO.md).
