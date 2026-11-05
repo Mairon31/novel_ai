@@ -145,6 +145,51 @@ class HfCatalog:
                 return {}
         return self._cached(("header",repo_id,revision,filename),fetch)
 
+    def model_card(self, repo_id: str, revision: str) -> dict:
+        """Read an upstream model card only on request.
+
+        Inspired by Urakatsu ModelsPage's model-card inspector (MIT). Text is
+        rendered as text, never as HTML; limit network reads to 128 KiB.
+        """
+        validate_repo(repo_id)
+        if not REVISION.fullmatch(revision):
+            raise CatalogError(400, "La ficha requiere una revisión SHA válida")
+        max_bytes = 128 * 1024
+        url = ("/" + quote(repo_id, safe="/") + "/resolve/" +
+               revision + "/README.md")
+
+        def fetch():
+            try:
+                with self.client.stream("GET",
+                        "https://huggingface.co" + url,
+                        headers={"Accept-Encoding": "identity"}) as response:
+                    if response.status_code == 404:
+                        return {"readme": "", "truncated": False, "available": False}
+                    if response.status_code in (401, 403):
+                        raise CatalogError(403, "Ficha de modelo de acceso restringido")
+                    if response.status_code == 429:
+                        raise CatalogError(429, "Hugging Face limitó la consulta de fichas")
+                    response.raise_for_status()
+                    raw = bytearray()
+                    truncated = False
+                    for chunk in response.iter_bytes():
+                        remaining = max_bytes + 1 - len(raw)
+                        raw.extend(chunk[:remaining])
+                        if len(raw) > max_bytes:
+                            truncated = True
+                            break
+                    return {
+                        "readme": bytes(raw[:max_bytes]).decode("utf-8", errors="replace"),
+                        "truncated": truncated,
+                        "available": True,
+                    }
+            except CatalogError:
+                raise
+            except (httpx.HTTPError, ValueError) as exc:
+                raise CatalogError(502, "No se pudo obtener la ficha del modelo") from exc
+
+        return self._cached(("model_card", repo_id, revision), fetch)
+
     def details(self, repo_id: str) -> dict:
         validate_repo(repo_id)
         data = self._cached(("detail", repo_id), lambda: self._get(

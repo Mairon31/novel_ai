@@ -222,6 +222,10 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
+    @service.get("/api/v1/model-cards/{namespace}/{model}")
+    def model_card(namespace: str, model: str, revision: str):
+        return catalog.model_card(namespace + "/" + model, revision)
+
     # Keep the catch-all model detail route last to avoid masking /installed.
     @service.get("/api/v1/models/{repo_id:path}")
     def model_details(repo_id: str, context_tokens: int = Query(4096, ge=512, le=32768)):
