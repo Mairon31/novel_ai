@@ -62,6 +62,15 @@ class CreatorService:
                 );
                 CREATE INDEX IF NOT EXISTS creator_characters_story
                     ON creator_characters(story_id,updated_at);
+                CREATE TABLE IF NOT EXISTS creator_turn_snapshots(
+                    turn_id TEXT PRIMARY KEY REFERENCES story_turns(id) ON DELETE CASCADE,
+                    story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+                    blueprint_json TEXT,
+                    characters_json TEXT NOT NULL,
+                    created_at REAL NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_creator_turn_snapshots
+                    ON creator_turn_snapshots(story_id,created_at,turn_id);
             """)
 
     def exists(self, story_id: str) -> bool:
@@ -174,29 +183,101 @@ class CreatorService:
         return self.narrative.append(story_id,str(uuid.uuid4()),"story","",
                                      content,"inicio-del-creador")
 
-    def clone(self, source_id: str, target_id: str, character_ids: dict | None = None,
-              conn=None) -> dict[str, str]:
-        # The caller may supply the fork's shared SQLite transaction.
-        # nullcontext never commits an inner transaction early.
+    @staticmethod
+    def _state_in_transaction(db, story_id: str) -> tuple[str | None, list[dict]]:
+        blueprint = db.execute(
+            "SELECT config_json FROM creator_blueprints WHERE story_id=?",
+            (story_id,)
+        ).fetchone()
+        chars = [dict(row) for row in db.execute(
+            "SELECT id,config_json,created_at,updated_at "
+            "FROM creator_characters WHERE story_id=? ORDER BY created_at,id",
+            (story_id,)
+        )]
+        return blueprint["config_json"] if blueprint else None, chars
+
+    def snapshot_turn_in_transaction(self, db, story_id: str,
+                                     turn_id: str, created_at: float) -> None:
+        """Checkpoint author instructions and character identities with the turn."""
+        blueprint, characters = self._state_in_transaction(db, story_id)
+        db.execute(
+            "INSERT INTO creator_turn_snapshots"
+            "(turn_id,story_id,blueprint_json,characters_json,created_at)"
+            " VALUES (?,?,?,?,?)",
+            (turn_id, story_id, blueprint,
+             json.dumps(characters, ensure_ascii=False), created_at)
+        )
+
+    def clone(
+        self, source_id: str, target_id: str,
+        character_ids: dict | None = None,
+        turn_map: dict[str, str] | None = None,
+        until_turn_id: str | None = None,
+        conn=None,
+    ) -> dict[str, str]:
+        """Fork author instructions and NPCs from exactly the selected moment.
+
+        In old stories without snapshots, the safe fallback for partial forks
+        is an empty author blueprint and no NPCs, rather than future spoilers.
+        """
         with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
-            blueprint=db.execute("""SELECT config_json FROM creator_blueprints
-                WHERE story_id=?""",(source_id,)).fetchone()
-            characters=[dict(x) for x in db.execute("""SELECT id,config_json
-                FROM creator_characters WHERE story_id=?""",(source_id,))]
-            npc_map: dict[str,str] = {}
-            now=time.time()
+            snapshots = {
+                row["turn_id"]: row
+                for row in db.execute(
+                    "SELECT * FROM creator_turn_snapshots WHERE story_id=?", (source_id,)
+                )
+            }
+            npc_map: dict[str, str] = {}
+            now = time.time()
+
+            def remap_characters(items: list[dict]) -> list[dict]:
+                result = []
+                for item in items:
+                    config = json.loads(item["config_json"])
+                    original_visual_id = config.get("visual_character_id")
+                    config["visual_character_id"] = (character_ids or {}).get(
+                        original_visual_id
+                    )
+                    converted = dict(item)
+                    converted["id"] = npc_map.setdefault(item["id"], str(uuid.uuid4()))
+                    converted["config_json"] = json.dumps(config, ensure_ascii=False)
+                    result.append(converted)
+                return result
+
+            for old_turn_id, new_turn_id in (turn_map or {}).items():
+                snap = snapshots.get(old_turn_id)
+                if snap is None:
+                    continue  # No guesswork for legacy turns without checkpoints.
+                source_cast = json.loads(snap["characters_json"])
+                db.execute(
+                    "INSERT INTO creator_turn_snapshots"
+                    "(turn_id,story_id,blueprint_json,characters_json,created_at)"
+                    " VALUES (?,?,?,?,?)",
+                    (new_turn_id, target_id, snap["blueprint_json"],
+                     json.dumps(remap_characters(source_cast), ensure_ascii=False),
+                     snap["created_at"])
+                )
+
+            if until_turn_id is None:
+                blueprint, chosen_cast = self._state_in_transaction(db, source_id)
+            else:
+                cutoff = snapshots.get(until_turn_id)
+                blueprint = cutoff["blueprint_json"] if cutoff else None
+                chosen_cast = json.loads(cutoff["characters_json"]) if cutoff else []
+
             if blueprint:
-                db.execute("INSERT INTO creator_blueprints VALUES(?,?,?)",
-                           (target_id,blueprint["config_json"],now))
-            for item in characters:
-                config=json.loads(item["config_json"])
-                previous=config.get("visual_character_id")
-                config["visual_character_id"]=(character_ids or {}).get(previous)
-                cloned_id = str(uuid.uuid4())
-                npc_map[item["id"]] = cloned_id
-                db.execute("INSERT INTO creator_characters VALUES(?,?,?,?,?)",
-                           (cloned_id,target_id,json.dumps(config),now,now))
+                db.execute(
+                    "INSERT INTO creator_blueprints VALUES(?,?,?)",
+                    (target_id, blueprint, now)
+                )
+            for index, row in enumerate(remap_characters(chosen_cast)):
+                db.execute(
+                    "INSERT INTO creator_characters VALUES(?,?,?,?,?)",
+                    (row["id"], target_id, row["config_json"],
+                     now + index * 0.000001, now)
+                )
         return npc_map
+
 
 
 def mount_creator_routes(app, creator: CreatorService):
