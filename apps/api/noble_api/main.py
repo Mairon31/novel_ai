@@ -88,6 +88,9 @@ def create_app(
     workers = WorkerRegistry(store, transport=worker_transport, vault=worker_vault)
     narrative = NarrativeService(store, transport=llm_transport, secrets=secrets,
                                  preferences=control.preferences, workers=workers)
+    # Reconcile only UUID-scoped, Noble-marked fork directories from a
+    # previously interrupted process. Never touch unrelated user media.
+    narrative.fork_recovery_report = narrative.recover_incomplete_forks()
     kobold = KoboldManager(store)
     visual = VisualState(store)
     planner = ScenePlanner(visual)
