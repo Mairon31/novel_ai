@@ -201,6 +201,7 @@ class NarrativeTests(unittest.TestCase):
 
         async def scenario():
             stalled = asyncio.Event()
+            disconnect_flag = asyncio.Event()
             upstream_closed = asyncio.Event()
 
             async def fake_generate(_config, _messages):
@@ -211,7 +212,7 @@ class NarrativeTests(unittest.TestCase):
                     upstream_closed.set()
 
             async def disconnected():
-                return stalled.is_set()
+                return disconnect_flag.is_set()
 
             packets = []
             original_generate = narrative.generate
@@ -223,7 +224,10 @@ class NarrativeTests(unittest.TestCase):
                             disconnected=disconnected):
                         packets.append(packet)
                         if "event: delta" in packet:
-                            stalled.set()
+                            async def drop_connection_when_upstream_stalls():
+                                await stalled.wait()
+                                disconnect_flag.set()
+                            asyncio.create_task(drop_connection_when_upstream_stalls())
                 await asyncio.wait_for(consume(), timeout=2.5)
                 self.assertTrue(upstream_closed.is_set(),
                                 "La lectura del motor debe cerrarse al cortar el SSE")
