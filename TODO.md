@@ -34,7 +34,8 @@
 - [x] Conciliación de descargas **al reiniciar**: buscar únicamente trabajos persistidos en SQLite (sin escaneo destructivo ni red), detectar GGUF final huérfano por corte entre rename y commit, devolverlo a `.part` y exigir nueva comprobación SHA antes de registrarlo. Conflictos y symlinks se rechazan sin modificar los archivos (`Store.restore_orphaned_download`, `DownloadManager.reconcile_interrupted`; commits `eafaab6d4f83`, `b3aed9db02f8`).
 - [x] Reanudar tras conflicto no puede sobrescribir un GGUF final ni uno registrado previamente; protección tanto en `_run` como en `complete_download`, con pruebas de integridad sobre ambos archivos (commits `4186b4f011a5`, `1532e4555f53`, `0f78ec26e1f8`).
 - [x] Suite `tests/test_download_recovery.py`: simula interrupción tras rename, recuperación idempotente y verificación offline sin segundo GET, archivo corrupto con SHA incompatible, `.part` conflictivo, symlink externo y modelo ya instalado. **127 Python PASS** en [CI #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624) (frontend pendiente de confirmación al documentar).
-- [ ] Ensayos adicionales de pausa/reanudación de transferencia exactamente al 50%, tamaño remoto desconocido, corte real de proceso/energía, reconciliación multiservidor y carreras TOCTOU de ruta; no declarar autenticidad «verificada» si el origen no aporta checksum.
+- [x] Reanudación GGUF **sin tamaño publicado**: HTTP 416 con Content-Range `bytes */N` válido en EOF → verificar SHA sin perder `.part`; Range 206 exige tramo final completo, HTTP 200 comprueba Content-Length, se rechazan HTTP 204, compresión inesperada y contenido sin cabecera GGUF. [CI #42068338409](https://github.com/Mairon31/novel_ai/actions/runs/42068338409): **142 Python + 28 Playwright PASS**; `tests/test_unknown_size_resume.py`.
+- [ ] Ensayos adicionales: pausa/reanudación exactamente al 50% en CDN real, tamaño remoto desconocido **sin** Content-Range suficiente, corte real de proceso/energía, reconciliación multiservidor y carreras TOCTOU de ruta; nunca declarar autenticidad «verificada» si el origen no aporta checksum.
 - [x] Impedir asignación de un GGUF registrado fuera del directorio de modelos, incluido symlink externo; `Store.assign` y prueba de API aprobada ([CI #41997814690](https://github.com/Mairon31/novel_ai/actions/runs/41997814690): 113 Python + 24 Playwright PASS).
 - [ ] Gestión de conflictos entre descargas, cuotas de disco, hashes y reintento sin pérdidas.
 
@@ -85,7 +86,9 @@
 - [ ] Test de rollback y restauración del canon en múltiples ramas sin fuga cruzada.
 
 ### AUD-006 — Lorebooks y memoria híbrida
-- [ ] CRUD de Lorebooks por historia/personaje, claves primarias/secundarias, regex con límites, prioridades, recursión acotada y presupuestos.
+- [x] **Lorebooks por historia** persistentes: CRUD SQLite/API, activadores primarios/secundarios (any/all), coincidencia Unicode de palabra completa o subcadena, siempre activo/deshabilitado, prioridades deterministas y presupuesto de 6000 caracteres sin cortar entradas. Sin ejecutar regex arbitrarias. `lorebook.py` y `test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
+- [x] Copia independiente del Lorebook al bifurcar, activación desde intervención y últimos cuatro turnos **sin usar secretos del autor como disparador**, persistencia al reiniciar y reactivación explícita de un hecho remoto tras 110 turnos. QA Python en `tests/test_lorebook.py`.
+- [ ] Lorebooks **por personaje**, aislamiento cognitivo por testigo/presencia, regex con timeout y límites, recursión controlada y presupuestos por tokens reales (la implementación actual usa un límite por caracteres).
 - [ ] Contexto en cuatro niveles: canon fijo, World Info activado, episodios recuperados, ventana reciente.
 - [ ] SQLite FTS5 y, de ser compatible, `sqlite-vec` opcional + embeddings CPU; fallback léxico sin obligar a instalar un servicio vectorial.
 - [ ] Compresión y resúmenes de capítulos/arcos con procedencia, testigos e importancia; evitar conocimiento de testigos ausentes.
@@ -93,7 +96,8 @@
 
 ### AUD-014 — Inspector de contexto
 - [ ] Medidor por sistema/canon/personajes/lorebook/episodios/historial/reserva de salida en `NarrativeSettings.tsx`.
-- [ ] Previsualización del prompt final, activadores de Lorebook y advertencias de contexto; métricas KV-cache solo si el runtime las ofrece.
+- [x] Creator Studio: pestaña separada de Lorebook con alta/edición/eliminación, prioridad, activadores y previsualización del contexto realmente seleccionado; QA Playwright escritorio y móvil [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220), **30/30 PASS**.
+- [ ] Inspector de **prompt final completo**, presupuestos en tokens por bloque, advertencias de truncamiento y métricas KV-cache únicamente cuando las entregue el runtime.
 
 ## Fase 4 — P1/P2: dirección escénica y multimedia
 
