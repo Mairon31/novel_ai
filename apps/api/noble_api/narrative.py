@@ -16,7 +16,7 @@ import uuid
 from urllib.parse import urlsplit
 
 import httpx
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -507,9 +507,18 @@ class NarrativeService:
         }
 
     async def stream_turn(self, story_id: str, request_id: str,
-                          mode: str, instruction: str):
+                          mode: str, instruction: str,
+                          disconnected=None):
+        """Stop before committing a turn when the SSE client has gone away.
+
+        StreamingResponse also cancels this generator on disconnect; explicit
+        checks cover a disconnect observed between model chunks and commit.
+        The upstream httpx stream closes in generate()'s async context.
+        """
         lock = self.locks.setdefault(story_id, asyncio.Lock())
         async with lock:
+            if disconnected is not None and await disconnected():
+                return
             prior = self.previous(story_id, request_id)
             if prior:
                 yield encode_event("done", {"turn": prior, "replayed": True})
@@ -533,6 +542,8 @@ class NarrativeService:
                         and config["device"] != "cpu"):
                     lease = await self.resources.claim_local_gpu("narración local")
                 async for piece in self.generate(config, messages):
+                    if disconnected is not None and await disconnected():
+                        return
                     if first_piece:
                         yield encode_event("status", {
                             "phase": "streaming", "message": "Narración en curso..."})
@@ -545,6 +556,8 @@ class NarrativeService:
                 text = "".join(collected).strip()
                 if not text:
                     raise ValueError("El modelo no produjo narración")
+                if disconnected is not None and await disconnected():
+                    return
                 turn = self.append(story_id, request_id, mode, instruction, text, config["model"])
                 yield encode_event("done", {"turn": turn, "replayed": False})
             except HTTPException as exc:
@@ -616,7 +629,7 @@ def mount_narrative_routes(app, narrative: NarrativeService):
         return {"turns": narrative.turns(str(story_id))}
 
     @app.post("/api/v1/stories/{story_id}/generate")
-    async def stream_story(story_id: uuid.UUID, body: TurnRequest):
+    async def stream_story(story_id: uuid.UUID, body: TurnRequest, request: Request):
         if not narrative.get_story(str(story_id)):
             raise HTTPException(404, "Historia inexistente")
         if body.mode not in {"say", "do", "story", "continue"}:
@@ -625,7 +638,8 @@ def mount_narrative_routes(app, narrative: NarrativeService):
             raise HTTPException(422, "Debes escribir una acción, diálogo o indicación")
         return StreamingResponse(
             narrative.stream_turn(str(story_id), str(body.request_id),
-                                  body.mode, body.input_text.strip()),
+                                  body.mode, body.input_text.strip(),
+                                  disconnected=request.is_disconnected),
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
