@@ -135,13 +135,14 @@ export function VisualReader({
     if (!active || !imagePrompt.trim() || illustrating) return;
     setIllustrating(true); setReaderError('');
     const requestedStoryId = active.id;
+    const revision = mediaRevision.current;
     try {
       const result = await api.illustrate(requestedStoryId, imagePrompt.trim());
       // Force refreshing a previous scene despite using a stable asset path.
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
         story.scene_image_url + '?v=' + Date.now() : null });
-      if (active.id === requestedStoryId) setTab('gallery');
+      if (revision === mediaRevision.current) setTab('gallery');
     } catch (e) { setReaderError((e as Error).message); }
     finally { setIllustrating(false); }
   }
