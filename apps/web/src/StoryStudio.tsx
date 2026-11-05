@@ -35,6 +35,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
   const controller = useRef<AbortController | null>(null);
+  const inFlight = useRef<{ storyId: string; requestId: string } | null>(null);
   const activeStoryId = useRef<string | null>(null);
   activeStoryId.current = active?.id || null;
 
@@ -46,7 +47,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
       // Opening the library never automatically enters the most recent story.
     }).catch((exc: Error) => { if (alive) setError(exc.message); })
       .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; controller.current?.abort(); };
+    return () => { alive = false; abortCurrentNarration(); };
   }, []);
   useEffect(() => {
     onReadingChange?.(Boolean(active && reading));
@@ -97,14 +98,16 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   async function submit(continueOnly = false) {
     if (!active || generating || (!continueOnly && !draft.trim())) return;
     const controllerLocal = new AbortController();
+    const requestId = crypto.randomUUID();
     controller.current = controllerLocal;
+    inFlight.current = { storyId: active.id, requestId };
     setGenerating(true); setGenerationMessage('Preparando narrador...'); setStreamText(''); setNotice(''); setError('');
     let complete = false;
     try {
       await api.streamTurn(active.id, {
         mode: continueOnly ? 'continue' : mode,
         input_text: continueOnly ? '' : draft.trim(),
-        request_id: crypto.randomUUID(),
+        request_id: requestId,
       }, controllerLocal.signal, (evt: GenerationEvent) => {
         if (evt.event === 'status') setGenerationMessage(evt.data.message);
         if (evt.event === 'delta') setStreamText(text => text + evt.data.text);
@@ -123,8 +126,12 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     } catch (exc) {
       if (!controllerLocal.signal.aborted) setError((exc as Error).message);
     } finally {
-      controller.current = null;
-      setGenerating(false);
+      // An older aborted request must not reset a newer ongoing generation.
+      if (controller.current === controllerLocal) {
+        controller.current = null;
+        inFlight.current = null;
+        setGenerating(false);
+      }
     }
   }
 
@@ -163,16 +170,29 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
     finally { setLoading(false); }
   }
 
-  function cancelGeneration() {
+  function abortCurrentNarration() {
+    const request = inFlight.current;
+    inFlight.current = null;
     controller.current?.abort();
     controller.current = null;
+    if (request) {
+      // The server-side signal handles providers stalled without sending
+      // more tokens. AbortController still stops local browser rendering.
+      void api.cancelNarration(request.storyId, request.requestId).catch(() => {
+        // Best-effort fallback: the original HTTP abort remains in effect.
+      });
+    }
+  }
+
+  function cancelGeneration() {
+    abortCurrentNarration();
     setGenerating(false);
     setStreamText('');
-    setNotice('Generación detenida. Puedes continuar cuando quieras.');
+    setNotice('Cancelación solicitada. Puedes continuar cuando se libere el narrador.');
   }
 
   function selectStory(story: Story) {
-    controller.current?.abort();
+    abortCurrentNarration();
     setGenerating(false); setStreamText('');
     setDraft(''); setActive(story); setReading(false); setCreating(false);
   }
@@ -181,7 +201,7 @@ export function StoryStudio({ onOpenSettings, onReadingChange, onEditStory }: St
   return <section className={'story-studio ' + (active && reading ? 'is-reading' : 'is-library')}>
     {active && reading ? <div className="noble-reading-navigation">
       <button className="noble-return-library" aria-label="Volver a biblioteca" onClick={() => {
-        controller.current?.abort();
+        abortCurrentNarration();
         setGenerating(false); setStreamText(''); setDraft(''); setActive(null); setReading(false);
       }}><ArrowLeft size={19}/> Biblioteca</button>
       <div className="noble-reading-navigation-title">
