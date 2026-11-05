@@ -47,7 +47,10 @@ def mount_media_routes(app, narrative: NarrativeService):
     def get_scene(story_id: uuid.UUID):
         if not narrative.get_story(str(story_id)):
             raise HTTPException(404, "Historia no encontrada")
-        target = narrative.store.root / "story-assets" / str(story_id) / "scene.webp"
+        try:
+            target = narrative.visual.legacy_path(str(story_id))
+        except ValueError as exc:
+            raise HTTPException(404, "La ruta de ilustración no es válida") from exc
         if not target.is_file():
             raise HTTPException(404, "La historia todavía no tiene ilustración")
         return FileResponse(target, media_type="image/webp",
