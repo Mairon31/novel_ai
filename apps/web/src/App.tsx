@@ -14,7 +14,7 @@ import { readModelDetails, readModelSearch, searchCacheKey,
   writeModelDetails, writeModelSearch } from './modelCatalogCache';
 import type {
   CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail,
-  ModelRole, ModelCardResponse, Page, Settings,
+  ModelRole, ModelCardResponse, ModelFitVariant, Page, Settings,
 } from './types';
 
 const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
@@ -44,6 +44,28 @@ function ErrorNote({ message, close }: { message: string; close: () => void }) {
 }
 function Loading() {
   return <div className="loading"><LoaderCircle className="rotating" size={18}/> Consultando...</div>;
+}
+
+// FitCell adapted from Urakatsu (MIT), web/src/components/ModelsPage.tsx.
+// Copyright (c) 2026 Urakatsu contributors. See docs/THIRD_PARTY_NOTICES.md.
+function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
+  const labels: Record<string, string> = {
+    full_gpu: 'GPU completa', partial_offload: 'GPU + RAM',
+    cpu: 'Solo CPU', too_large: 'Memoria insuficiente',
+    unsupported: 'No compatible', unknown: 'Sin datos',
+  };
+  const share = fit.fit === 'partial_offload' && fit.gpu_share > 0
+    ? ' · ~' + Math.round(fit.gpu_share * 100) + '% GPU' : '';
+  const breakdown = [
+    fit.estimated_required_bytes ? 'Memoria estimada: ' + size(fit.estimated_required_bytes) : '',
+    fit.estimated_kv_bytes ? 'Caché de contexto: ' + size(fit.estimated_kv_bytes) : '',
+    fit.note, fit.disk_ok === false ? 'Espacio insuficiente en disco.' : '',
+  ].filter(Boolean).join(' · ');
+  return <span className={'hub-fit-state state-' + fit.fit}
+    role="status" tabIndex={0} title={breakdown}
+    aria-label={labels[fit.fit] + share + '. ' + breakdown}>
+    {labels[fit.fit]}{share}
+  </span>;
 }
 
 export default function App() {
@@ -694,11 +716,7 @@ export default function App() {
                 )).map(v => {
                 const fit=detail.hardware_fit?.variants.find(item=>item.filename===v.filename);
                 const selected=pickedVariant===v.filename;
-                const labels:Record<string,string>={
-                  full_gpu:'GPU completa',partial_offload:'GPU + RAM',
-                  cpu:'Solo CPU',too_large:'Memoria insuficiente',
-                  unsupported:'No compatible',unknown:'Sin datos',
-                };
+
                 return <button key={v.filename} disabled={!v.supported}
                   aria-pressed={selected} className={'variant hub-fit-variant ' +
                     (selected?'variant-active ':'')+(fit?'fit-'+fit.fit:'')}
@@ -711,9 +729,7 @@ export default function App() {
                     {fit?.disk_ok===false && <small>Espacio insuficiente para descargar este archivo.</small>}
                   </span>
                   <span className="hub-variant-aside">
-                    {fit && <span className={'hub-fit-state state-'+fit.fit}>
-                      {labels[fit.fit]}
-                    </span>}
+                    {fit && <ModelFitBadge fit={fit}/>}
                     {fit?.estimated_required_bytes && <small>
                       ~{size(fit.estimated_required_bytes)} memoria
                     </small>}
