@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from .catalog import CatalogError, HfCatalog, ROLES
+from .model_fit import assess_variants
 from .downloads import DownloadManager
 from .hardware import snapshot
 from .store import Store
@@ -214,8 +215,20 @@ def create_app(
 
     # Keep the catch-all model detail route last to avoid masking /installed.
     @service.get("/api/v1/models/{repo_id:path}")
-    def model_details(repo_id: str):
-        return catalog.details(repo_id)
+    def model_details(repo_id: str, context_tokens: int = Query(4096, ge=512, le=32768)):
+        detail = catalog.details(repo_id)
+        hw = snapshot(str(store.models_dir))
+        header = {}
+        revision = detail.get("revision") or ""
+        supported = [v for v in detail.get("variants",[]) if
+                     v.get("supported") and v.get("size_bytes")]
+        if len(revision) == 40 and supported:
+            # Get the header from one variant only: GGUF architecture and
+            # context fields are shared by quantizations of the same base.
+            candidate = min(supported,key=lambda v:v["size_bytes"])
+            header = catalog.header(repo_id,revision,candidate["filename"])
+        detail["hardware_fit"] = assess_variants(detail,hw,context_tokens,header)
+        return detail
 
     mount_narrative_routes(service, narrative)
     mount_media_routes(service, narrative)

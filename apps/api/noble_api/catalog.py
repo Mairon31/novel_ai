@@ -11,6 +11,8 @@ import threading
 import time
 from urllib.parse import quote
 
+from .model_fit import gguf_metadata
+
 import httpx
 
 ROLES = {"narrator", "image", "tts"}
@@ -116,6 +118,29 @@ class HfCatalog:
                 "results": items, "installation_supported": role == "narrator",
                 "cached_seconds": 300}
 
+    def header(self, repo_id: str, revision: str, filename: str) -> dict:
+        """Bounded HF range request. Never download a full GGUF for metadata."""
+        validate_repo(repo_id)
+        validate_variant(revision, filename)
+        def fetch():
+            url = ("https://huggingface.co/" + repo_id + "/resolve/" +
+                   revision + "/" + quote(filename))
+            try:
+                with self.client.stream("GET", url, headers={
+                        "Range": "bytes=0-524287",
+                        "Accept-Encoding": "identity"}) as response:
+                    if response.status_code != 206:
+                        return {}
+                    buffer = bytearray()
+                    for part in response.iter_bytes():
+                        buffer.extend(part[:max(0,524288-len(buffer))])
+                        if len(buffer) >= 524288:
+                            break
+                return gguf_metadata(bytes(buffer))
+            except (httpx.HTTPError, ValueError):
+                return {}
+        return self._cached(("header",repo_id,revision,filename),fetch)
+
     def details(self, repo_id: str) -> dict:
         validate_repo(repo_id)
         data = self._cached(("detail", repo_id), lambda: self._get(
@@ -140,10 +165,21 @@ class HfCatalog:
                 "sha256": oid.lower() if HEX_SHA256.fullmatch(oid) else None,
                 "supported": not bool(re.search(r"-\d{5}-of-\d{5}\.gguf$", filename, re.I)),
             })
+        card = data.get("cardData") if isinstance(data.get("cardData"),dict) else {}
+        raw_summary = card.get("description") or data.get("description") or ""
+        summary = raw_summary[:700] if isinstance(raw_summary,str) else ""
         return {"repo_id": repo_id, "revision": revision,
-                "license": (data.get("cardData") or {}).get("license") or "sin verificar",
+                "license": card.get("license") or "sin verificar",
                 "gated": bool(data.get("gated")),
                 "pipeline_tag": data.get("pipeline_tag"),
+                "author": data.get("author") or repo_id.split("/")[0],
+                "downloads": int(data.get("downloads") or 0),
+                "likes": int(data.get("likes") or 0),
+                "last_modified": data.get("lastModified"),
+                "library": data.get("library_name"),
+                "tags": [x for x in data.get("tags",[]) if isinstance(x,str)][:24],
+                "summary": summary,
+                "base_model": card.get("base_model"),
                 "variants": variants, "variant_kind": "gguf",
                 "supports_install": bool(variants) and bool(REVISION.fullmatch(revision)),
                 "url": "https://huggingface.co/" + repo_id}
