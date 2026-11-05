@@ -238,6 +238,86 @@ class VisualState:
                 "assets": rows, "characters": self.characters(story_id),
                 "selected_asset_id": current}
 
+    def clone_branch(self, source_id: str, branch_id: str,
+                     turn_ids: dict[str, str], partial: bool = False,
+                     cutoff_created_at: float | None = None) -> None:
+        """Fork visual history with independent scene/character/art identifiers.
+
+        A partial fork only receives scenes that existed at its selected turn.
+        A gallery from a later scene is not exposed on an earlier branch.
+        """
+        self.scene(source_id)
+        self.scene(branch_id)  # ensures a scene even for older histories
+        with self.store._conn() as conn:
+            scenes = [dict(row) for row in conn.execute(
+                "SELECT * FROM visual_scenes WHERE story_id=? ORDER BY created_at,id",
+                (source_id,))]
+            gallery = [dict(row) for row in conn.execute(
+                "SELECT * FROM visual_assets WHERE story_id=? ORDER BY created_at,id",
+                (source_id,))]
+            chars = [dict(row) for row in conn.execute(
+                "SELECT * FROM visual_characters WHERE story_id=?", (source_id,))]
+            selected = conn.execute(
+                "SELECT asset_id FROM visual_current WHERE story_id=?", (source_id,)).fetchone()
+        selected_id = selected["asset_id"] if selected else None
+        allowed = []
+        for scene in scenes:
+            if not partial or (scene["source_turn_id"] in turn_ids or
+                    (scene["source_turn_id"] is None and
+                     (scene["detection"] == "initial" or
+                      (cutoff_created_at is not None and scene["created_at"] <= cutoff_created_at)))):
+                allowed.append(scene)
+        if not allowed:
+            allowed = scenes[:1]
+        scene_map = {scene["id"]: str(uuid.uuid4()) for scene in allowed}
+        now = time.time()
+        copied_paths = []
+        asset_map: dict[str, str] = {}
+        try:
+            with self.store._conn() as conn:
+                # Discard initial branch scene; replace with cloned history.
+                conn.execute("DELETE FROM visual_scenes WHERE story_id=?", (branch_id,))
+                for index, item in enumerate(allowed):
+                    conn.execute("INSERT INTO visual_scenes VALUES(?,?,?,?,?,?)", (
+                        scene_map[item["id"]], branch_id, item["location"],
+                        turn_ids.get(item["source_turn_id"]) if item["source_turn_id"] else None,
+                        item["detection"], now + index * 0.00001))
+                for index, person in enumerate(chars):
+                    conn.execute("INSERT INTO visual_characters VALUES(?,?,?,?,?,?,?,?)", (
+                        str(uuid.uuid4()), branch_id, person["name"], person["appearance"],
+                        person["outfit"], person["distinguishing_features"],
+                        person["revision"], now + index * 0.00001))
+                for index, art in enumerate(gallery):
+                    if art["scene_id"] not in scene_map:
+                        continue
+                    old_file = self._asset_path(source_id, art["id"])
+                    if not old_file.is_file():
+                        continue
+                    new_asset = str(uuid.uuid4())
+                    new_file = self._asset_path(branch_id, new_asset)
+                    new_file.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(old_file, new_file)
+                    copied_paths.append(new_file)
+                    asset_map[art["id"]] = new_asset
+                    conn.execute("INSERT INTO visual_assets VALUES(?,?,?,?,?,?,?,?,?,?)", (
+                        new_asset, branch_id, scene_map[art["scene_id"]],
+                        new_file.name, art["content_sha256"], art["origin"],
+                        art["prompt"], art["checkpoint"], art["seed"],
+                        now + index * 0.00001))
+                if selected_id in asset_map:
+                    new_selected = asset_map[selected_id]
+                else:
+                    new_selected = next(reversed(asset_map.values()), None)
+                if new_selected:
+                    conn.execute("INSERT INTO visual_current VALUES (?,?)",
+                                 (branch_id, new_selected))
+            if new_selected:
+                self.legacy_copy(branch_id, self._asset_path(branch_id, new_selected))
+        except Exception:
+            for copied in copied_paths:
+                copied.unlink(missing_ok=True)
+            raise
+
     def _asset_path(self, story_id: str, asset_id: str) -> Path:
         return self.store.root / "story-assets" / story_id / "images" / (asset_id + ".webp")
 
