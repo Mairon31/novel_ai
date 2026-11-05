@@ -1,112 +1,201 @@
-# Noble AI
+<div align="center">
 
-**Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
+<img src="docs/assets/noble-banner.svg" alt="Noble AI — Historias interactivas potenciadas por IA" width="100%" />
 
-> **Estado: P1.4 experimental — desarrollo activo.** Model Hub, narración real (ensayo GGUF Colab T4 documentado), historias persistentes, canon editable, ramas alternativas por intervención, preparación opcional del modelo y estados visibles de generación; ComfyUI **bajo demanda** para checkpoints compatibles, escenas detectadas con reglas conservadoras, galería de versiones y fichas visuales por personaje; Piper CPU **bajo demanda** para voces locales ONNX. También hay trabajadores remotos LLM autenticados y configuración de proveedores. **ComfyUI y Piper tienen código y pruebas de contrato, pero aún no benchmarks reales en GPU/CPU con estos proveedores.** El detector automático de cambios de escena, workflows avanzados, TTS GPU/API, árbol visual de ramas avanzado, reconciliación automática del canon y empaquetado Windows siguen pendientes.
+<br />
 
-## Ejecutar prototipo en Windows (sin Colab)
+[![CI](https://github.com/Mairon31/novel_ai/actions/workflows/p0-docs.yml/badge.svg?branch=master)](https://github.com/Mairon31/novel_ai/actions/workflows/p0-docs.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-TypeScript-149ECA?logo=react&logoColor=white)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Local_API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![GitHub Stars](https://img.shields.io/github/stars/Mairon31/novel_ai?style=flat&label=Stars&color=9575cd)](https://github.com/Mairon31/novel_ai/stargazers)
 
-Requiere Python 3.11+, Node.js 22+ y Git. Abre PowerShell:
+**Crea historias que responden a tus decisiones.**  
+Un lector de novelas visuales con modelos de lenguaje, ilustraciones y voces conectables, donde tú controlas al protagonista y el mundo evoluciona con tus elecciones.
+
+[**Explorar la interfaz**](#-la-aplicación) · [**Instalar**](#-primeros-pasos) · [**Arquitectura**](#-arquitectura) · [**Contribuir**](#-contribuir)
+
+</div>
+
+---
+
+## ✨ La aplicación
+
+Una experiencia **app-first**: Noble AI se utiliza desde su interfaz web local, con biblioteca de historias, lector interactivo, modelos configurables y herramientas creativas. **Google Colab es opcional** para trabajadores remotos o pruebas de desarrollo; no es necesario para abrir la aplicación.
+
+<div align="center">
+  <img src="docs/assets/screenshots/reader-desktop.webp" alt="Noble AI: interfaz real del lector de historias en escritorio" width="94%" />
+  <sub>Biblioteca y lector narrativo · captura de la interfaz web durante pruebas de desarrollo</sub>
+</div>
+
+<br />
+
+<table>
+  <tr>
+    <td align="center" width="60%">
+      <img src="docs/assets/screenshots/model-hub.webp" alt="Model Hub de Noble AI con catálogo de modelos" width="100%" />
+      <br /><b>Model Hub</b><br /><sub>Descubre y administra modelos de lenguaje.</sub>
+    </td>
+    <td align="center" width="40%">
+      <img src="docs/assets/screenshots/reader-mobile.webp" alt="Lector de Noble AI adaptado a teléfonos" width="100%" />
+      <br /><b>Experiencia móvil</b><br /><sub>Lectura y controles adaptables.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/assets/screenshots/gallery.webp" alt="Interfaz de galería y ficha visual de personajes" width="100%" />
+      <br /><b>Escenas y personajes</b><br /><sub>Galería de versiones y continuidad visual.</sub>
+    </td>
+    <td align="center">
+      <img src="docs/assets/screenshots/workers.webp" alt="Panel de trabajadores remotos de Noble AI" width="100%" />
+      <br /><b>Workers remotos</b><br /><sub>Conexión a motores en otros equipos.</sub>
+    </td>
+  </tr>
+</table>
+
+<sub>Las imágenes anteriores provienen de capturas automatizadas de la aplicación real. Los escenarios y respuestas de los recorridos visuales son datos de demostración, no ejemplos de calidad de un modelo.</sub>
+
+## 🌌 Qué ofrece Noble AI
+
+| | Funcionalidad | |
+|:---:|---|---|
+| 📖 | **Narración interactiva** | Escribe lo que dices, haces o decides. El narrador responde progresivamente, sin controlar las decisiones de tu protagonista. |
+| 🗺️ | **Mundos persistentes** | Guarda historias, premisas, personajes, canon, historial y rutas alternativas que pueden continuar de forma independiente. |
+| 🎨 | **Ilustraciones por escena** | Conecta ComfyUI, crea imágenes bajo demanda, consulta una galería de versiones y reutiliza resultados por semilla. |
+| 🧑‍🎨 | **Identidad visual** | Define vestuario, apariencia y rasgos de personajes, que se incorporan a los prompts cuando aparecen en la escena. |
+| 🎙️ | **Voz opcional** | Escucha turnos guardados con Piper y voces ONNX locales; sin reproducción o síntesis automática al abrir una historia. |
+| 🧠 | **Modelos a tu elección** | Utiliza Ollama, KoboldCpp, OpenRouter o un worker compatible. Busca y descarga GGUF desde el Model Hub. |
+| 🌐 | **Desde más dispositivos** | Interfaz adaptable a escritorio y móvil; workers de inferencia autenticados mediante conexiones remotas. |
+| ⚙️ | **Preferencias propias** | Ajusta idioma de salida, estilo narrativo, generación de imágenes, parámetros de modelo y apariencia. |
+
+## 🧩 Arquitectura
+
+Noble AI separa la interfaz del motor narrativo, los servicios multimedia y la persistencia. Cada proveedor se conecta de forma independiente y se ejecuta cuando se solicita su función.
+
+```mermaid
+flowchart TB
+    UI["Noble AI<br/>React · TypeScript · Vite"]
+    API["Orquestador local<br/>FastAPI · REST · SSE"]
+    DB[("SQLite<br/>Historias · Canon · Escenas · Galería")]
+    HF["Model Hub<br/>Hugging Face · GGUF"]
+    LLM["Narración<br/>Ollama · KoboldCpp · OpenRouter · Workers"]
+    IMG["Ilustración<br/>ComfyUI · escenas y referencias"]
+    TTS["Voces<br/>Piper · ONNX"]
+    UI <-->|"REST + streaming"| API
+    API <--> DB
+    API --> HF
+    API --> LLM
+    API -->|"Bajo demanda"| IMG
+    API -->|"Escuchar"| TTS
+    classDef ui fill:#302452,stroke:#a993ff,color:#fff
+    classDef api fill:#182a43,stroke:#6fbbdd,color:#fff
+    classDef data fill:#182f2e,stroke:#73c0ad,color:#fff
+    class UI ui
+    class API api
+    class DB,HF,LLM,IMG,TTS data
+```
+
+### Cómo fluye una historia
+
+```mermaid
+flowchart LR
+    A["Crear mundo y protagonista"] --> B["Escribir una acción"]
+    B --> C["Narración generada"]
+    C --> D["Guardar turno y canon"]
+    D --> E{"¿Seguir o explorar otra ruta?"}
+    E -->|"Continuar"| B
+    E -->|"Crear rama"| F["Nueva línea narrativa"]
+    F --> B
+    C -.->|"Ilustrar bajo demanda"| G["ComfyUI · Galería"]
+    C -.->|"Escuchar"| H["Piper · Voz"]
+```
+
+## 🚀 Primeros pasos
+
+Noble AI se ejecuta como **aplicación web local**. Para desarrollarla o probarla necesitas **Python 3.11+**, **Node.js 22+** y **Git**.
+
+<details open>
+<summary><b>Windows · PowerShell</b></summary>
 
 ```powershell
 git clone https://github.com/Mairon31/novel_ai.git
 cd novel_ai
+
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r apps\api\requirements.txt
+
 npm --prefix apps\web install
 npm --prefix apps\web run build
+
 .\.venv\Scripts\python.exe -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 ```
 
-Abre **http://127.0.0.1:8000**. Busca y descarga un GGUF desde Model Hub; en **Configuración** puedes iniciar KoboldCpp con ese archivo o conectar Ollama, y en **Biblioteca** crear y continuar una historia. Todavía hay que suministrar el ejecutable de KoboldCpp o un servidor Ollama existente. [Guía detallada P1](docs/QUICKSTART.md).
+</details>
 
-## Experiencia final propuesta
+<details>
+<summary><b>Linux · macOS (entorno de desarrollo)</b></summary>
 
-1. **Instalar y abrir Noble AI**: app web local con futuro paquete Windows `.exe`, sin que el usuario final tenga que editar `.env` ni descargar modelos a mano.
-2. **Asistente de configuración inicial**: idioma, detección CPU/GPU y VRAM, carpeta de modelos/proyectos, modelos/proveedores opcionales.
-3. **Model Hub integrado**: descubrir modelos en Hugging Face, comparar cuantizaciones, ver licencias y compatibilidad estimada, descargar con progreso/reanudar, importar archivos locales, elegir modelo para narración, imágenes y TTS.
-4. **Personalizar cada proveedor**: KoboldCpp/Ollama/API compatible; ComfyUI y checkpoints/LoRAs/workflows; Chatterbox y otras voces, CPU/GPU/Auto **si el backend lo permite**; perfiles por defecto y por historia.
-5. **Crear y jugar**: biblioteca, editor de mundo/personajes, pantalla VN con sprites, fondo, historia, Hacer/Decir/Narrar, Continuar, Reintentar, historial y ramas.
-6. **Medios progresivos**: las ilustraciones se crean cuando cambia una escena/identidad o se solicitan y se reutilizan; **TTS OFF por defecto** y sin carga hasta que el usuario pulse Escuchar/active conscientemente la autolectura.
-7. **Usar sin Internet** una vez obtenidos modelos y dependencias compatibles; Colab queda para benchmarks y experimentos opcionales, **no como entorno principal del producto**.
+```bash
+git clone https://github.com/Mairon31/novel_ai.git
+cd novel_ai
 
-## Arquitectura
+python3 -m venv .venv
+.venv/bin/python -m pip install -r apps/api/requirements.txt
 
-```text
-Noble AI UI (React/Vite/TS)
-  ├─ Biblioteca / Studio / Novela visual
-  ├─ Asistente inicial / Model Hub / Descargas / Ajustes
-  └─ Diagnóstico CPU/GPU y proveedores
-           │ REST + SSE / localhost
-           ▼
-FastAPI Orchestrator + SQLite + Model Registry + Download Queue
-  ├─ Story Engine, turnos SQLite + canon persistente + fork de ramas (estado automático pendiente)
-  ├─ Model Hub (Hugging Face/archivos locales/licencias/compatibilidad)
-  ├─ Runtime supervisor (dispositivos, arranque/parada, cambio seguro)
-  ├─ Narrador: KoboldCpp / Ollama / server compatible (texto interactivo)
-  ├─ Imágenes: ComfyUI local (ilustrar explícitamente, WebP validado)
-  └─ TTS: Piper CPU (solo botón Escuchar, caché WAV); GPU/TTS cloud pendientes
-           │
-  Tauri 2 (candidato futuro de .exe; shell/sidecar, NO implementado)
+npm --prefix apps/web install
+npm --prefix apps/web run build
+
+.venv/bin/python -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 ```
 
-Diseño dirigido a GPUs NVIDIA de **12 GB VRAM como perfil objetivo** y **16 GB recomendado**; compatibility real depende del modelo/configuración/offload, y se validará con benchmarks registrados, sin inventar rendimiento.
+</details>
 
-## Documentación
+Abre **[http://127.0.0.1:8000](http://127.0.0.1:8000)**. Configura un motor narrativo, crea una historia desde **Biblioteca** y empieza a interactuar con ella. Para ejecutar modelos locales necesitas Ollama o un ejecutable compatible de KoboldCpp; ComfyUI y Piper se instalan por separado si quieres ilustraciones o voces.
 
-| Archivo | Contenido |
+Consulta la [guía de instalación y conexión de modelos](docs/QUICKSTART.md) para ver el proceso completo.
+
+### Proveedores
+
+| Función | Integración | Funcionamiento |
+|---|---|---|
+| Narración | **Ollama**, **KoboldCpp** | Motor local, con modelos instalados por separado |
+| Narración por API | **OpenRouter** | Cuenta y API key del proveedor |
+| Inferencia remota | **Noble AI Workers** | Equipo externo o GPU remota con autenticación |
+| Ilustraciones | **ComfyUI** | Checkpoint local; generación explícita y galería |
+| Voz | **Piper** | Voces locales ONNX; reproducción bajo demanda |
+
+La aplicación no descarga automáticamente todos estos motores. Sus configuraciones, modelos compatibles y requisitos dependen del proveedor.
+
+## 📚 Documentación
+
+| Guía | Descripción |
 |---|---|
-| [GDD técnico](docs/GDD_TECNICO.md) | Qué es el juego, gameplay/UX y criterios |
-| [Arquitectura](docs/ARQUITECTURA.md) | Servicios, estado, colas y contratos |
-| [Model Hub](docs/MODEL_HUB.md) | Catálogo, variantes, descargas, registros, proveedores, parámetros y API |
-| [Primer inicio e interfaz](docs/ONBOARDING_Y_UI.md) | Wizard, Model Hub y diseño VN |
-| [Urakatsu y Koharu](docs/REFERENCIAS_URAKATSU_KOHARU.md) | Análisis de código/licencias/reuso |
-| [Empaquetado escritorio/web](docs/DESKTOP_Y_DESPLIEGUE.md) | React, FastAPI, Tauri sidecar y estrategia |
-| [Repositorio OSS](docs/REPOSITORIOS_OPEN_SOURCE.md) | Catálogo completo de componentes existentes |
-| [API](docs/CONTRATOS_API.md) | Endpoints y eventos |
-| [Estado y memoria](docs/ESTADO_Y_MEMORIA.md) | Historias, continuidad, ramas |
-| [Imágenes](docs/IMAGENES.md) · [TTS](docs/TTS.md) | Adaptadores disponibles y planes |
-| [Integración multimedia](docs/MULTIMEDIA_LOCAL.md) | Preparar ComfyUI/Piper, configurar modelos, límites y fallos |
-| [Perfiles GPU](docs/PERFILES_GPU.md) | 12/16GB, VRAM y límites |
-| [Colab diagnóstico](docs/COLAB_A_LOCAL.md) | Pruebas opcionales, no UI |
-| [Colab worker GPU](notebooks/noble_worker_colab_gpu.ipynb) | GPU CUDA + llama.cpp + túnel autenticado + benchmark |
-| [Benchmark de workers](tools/worker_benchmark.py) | TTFT, fallos y VRAM sin registrar texto o claves |
-| [Workers GPU remotos](docs/WORKERS.md) | Proxy autenticado, Cloudflare, conexión desde otras PC/Colab y limitaciones |
-| [QA](docs/QA_Y_ACEPTACION.md) · [Seguridad](docs/SEGURIDAD_Y_LICENCIAS.md) | Criterios y límites |
-| [Roadmap](docs/ROADMAP.md) · [Progreso](docs/PROGRESO.md) | Hitos, evidencia y problemas |
-| [ADR-001](docs/adr/0001-stack-modular.md) · [ADR-002](docs/adr/0002-app-first-model-hub.md) | Decisiones |
-| [AGENTS.md](AGENTS.md) | Instrucciones de implementación por agentes |
+| [Primer inicio](docs/QUICKSTART.md) | Instalación, Model Hub y narrador |
+| [Arquitectura](docs/ARQUITECTURA.md) | Organización de servicios y responsabilidades |
+| [Escenas e imágenes](docs/IMAGENES.md) | ComfyUI, galería, continuidad y caché |
+| [Integración multimedia](docs/MULTIMEDIA_LOCAL.md) | Conectar ComfyUI y Piper |
+| [Workers](docs/WORKERS.md) | Inferencia en otros equipos y Colab |
+| [API](docs/CONTRATOS_API.md) | Rutas REST y streaming SSE |
+| [Seguridad](docs/SEGURIDAD_Y_LICENCIAS.md) | Datos, permisos y uso de componentes |
 
-**Backlog GitHub:** [Issues #1–#12](https://github.com/Mairon31/novel_ai/issues). Prioridades nuevas: [Model Hub #9](https://github.com/Mairon31/novel_ai/issues/9), [Onboarding #10](https://github.com/Mairon31/novel_ai/issues/10), [Runtimes #11](https://github.com/Mairon31/novel_ai/issues/11), [Desktop #12](https://github.com/Mairon31/novel_ai/issues/12).
+Para conocer tareas de implementación e incidencias, visita [GitHub Issues](https://github.com/Mairon31/novel_ai/issues). Los detalles de ingeniería se mantienen en la documentación técnica, no en esta página de presentación.
 
-## Próximo resultado comprobable
+## 🤝 Contribuir
 
-**Siguiente hito:** validar los adaptadores ComfyUI y Piper con procesos reales, implementar identificación de escenas, administrar la VRAM compartida entre narrador/difusión/voz y avanzar en árbol visual de ramas, consistencia de personajes y empaquetado. El primer LLM GGUF real se validó en Colab T4; sigue pendiente probarlo en la RTX 5060 Ti y medir multimedia real.
+Noble AI busca reunir una buena experiencia de novela visual con modelos abiertos, generación de imágenes, voz y herramientas que funcionen en distintos equipos. Las contribuciones de desarrollo web, Python, IA, accesibilidad, diseño, documentación y pruebas son bienvenidas.
 
-## Laboratorio opcional de Colab
+Puedes comenzar revisando [issues abiertas](https://github.com/Mairon31/novel_ai/issues), proponiendo una mejora o enviando un pull request. Lee la [guía de contribución](CONTRIBUTING.md) antes de publicar cambios importantes.
 
-[Notebook de diagnóstico P0](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_smoke.ipynb). **No es el producto**: solo diagnóstico, tests de documentación y posibilidad de una inferencia real pequeña por separado.
+<div align="center">
 
-No se incluyen checkpoints pesados, credenciales ni datos privados en Git. Respeta copyright/licencias de fuentes, modelos y recursos.
+### ⭐ ¿Te interesa Noble AI?
 
-### Colab QA — versión vigente
+**Si el proyecto te resulta útil o quieres apoyar su desarrollo, deja una estrella en GitHub.**  
+Y si quieres ayudar a construirlo, abre una propuesta, reporta un problema o colabora con código, diseño o documentación.
 
-El notebook oficial es **[Noble AI QA Integral v1.5](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_5.ipynb)**, ubicado en `notebooks/noble_ai_colab_qa_integral_v1_5.ipynb`.
+[![Star this repository](https://img.shields.io/badge/⭐_Dejar_una_estrella-en_GitHub-8b65d8?style=for-the-badge)](https://github.com/Mairon31/novel_ai)
+[![Contribute](https://img.shields.io/badge/Contribuir-Enviar_propuesta-2b7591?style=for-the-badge)](https://github.com/Mairon31/novel_ai/issues)
 
-Despliega React y FastAPI en Colab, prueba Python y Playwright, descarga un GGUF Qwen3 4B con revisión y SHA256 fijados, ejecuta inferencia en NVIDIA cuando está disponible y exporta `Noble_AI_Colab_QA_v1_5.zip` con logs y métricas. **Separa la primera generación en frío de las posteriores**, comprueba turnos guardados en SQLite y puede incluir muestras del texto ficticio generado para evaluar coherencia (solo historia de prueba del notebook; se puede desactivar con `CAPTURE_SYNTHETIC_TEXT = False`).
+<sub>Hecho para dar vida a historias que todavía no existen.</sub>
 
-**Primera evidencia GPU real:** [Informe QA v1.4](docs/COLAB_QA_V14_RESULTADOS.md) — Tesla T4, 20 etapas PASS, 3/3 respuestas narrativas reales, 3.161 MiB de VRAM máxima observada. La primera respuesta tardó 53,53 s y las dos siguientes 2,43 s; todavía no se conoce la causa precisa del tiempo en frío. No demuestra automáticamente rendimiento en una RTX 5060 Ti de 16 GB, generación de imágenes, TTS ni uso del túnel de workers.
-
-Historial de fallos conservado: [v1.2](docs/COLAB_QA_2026-11-05.md) (dependencias y compilación CUDA), [v1.3](docs/COLAB_QA_V13_RESULTADOS.md) (archivo GGUF 404). Los notebooks antiguos fueron retirados; los tests de regresión sobre logs y CUDA ahora comprueban la versión vigente para que GitHub Actions no dependa de archivos archivados.
-
-
-### P1.5 — Escenas, ilustraciones conservadas y fichas visuales
-
-- **Escenas:** cambios de localización detectados solo mediante expresiones explícitas de desplazamiento ya narrado. El lector indica que son heurísticos y permite confirmar/corregir el lugar manualmente. La detección por IA con estructura de estado todavía está pendiente.
-- **Galería versionada:** cada imagen importada o generada obtiene un UUID, SHA256 y archivo WebP propios. Puedes elegir cualquiera como ilustración activa sin borrar las anteriores. Las imágenes antiguas `scene.webp` se migran al consultar la galería.
-- **Fichas visuales:** apariencia, vestuario y rasgos, guardados por historia y revisionados. Las fichas se incorporan al prompt solo cuando el personaje está **nombrado**; esto no garantiza identidad visual perfecta.
-- **Reuso por semilla:** cuando el checkpoint, prompt completo, configuración, escena y semilla explícita coinciden, se reutiliza el asset existente sin volver a pedirlo a ComfyUI; el uso de semilla aleatoria produce una versión nueva.
-- **Ramas:** las nuevas historias clonan sus recursos visuales con IDs independientes. Las ramas desde un turno previo excluyen escenas posteriores.
-- **Sin generación automática:** detectar una escena no significa cargar un modelo de imagen ni encolar difusión. El botón «Ilustrar» sigue siendo explícito en P1.5.
-
-[Detalles de imágenes y API](docs/IMAGENES.md) · [Bitácora](docs/PROGRESO.md).
+</div>

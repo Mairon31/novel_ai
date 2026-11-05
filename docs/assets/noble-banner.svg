@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title desc">
+<title id="title">Noble AI — Your story, your world</title>
+<desc id="desc">Noble AI banner with dark plum gradients, luminous violet emblem and decorative constellation lines.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b0a1d"/><stop offset=".56" stop-color="#171333"/><stop offset="1" stop-color="#10162b"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#8a5afa" stop-opacity=".57"/><stop offset="1" stop-color="#8a5afa" stop-opacity="0"/></radialGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e9c1ff"/><stop offset=".52" stop-color="#af8dff"/><stop offset="1" stop-color="#70c8ef"/></linearGradient>
+  <filter id="blur"><feGaussianBlur stdDeviation="22"/></filter>
+</defs>
+<rect width="1200" height="300" rx="26" fill="url(#bg)"/>
+<ellipse cx="963" cy="133" rx="319" ry="204" fill="url(#glow)" filter="url(#blur)"/>
+<g fill="none" stroke="#a094ff" opacity=".17">
+  <path d="M782 0L1072 300M870 0L1160 300M1017 0L1200 186M769 300L1079 0" stroke-width="1"/>
+  <circle cx="1008" cy="139" r="95"/><circle cx="1008" cy="139" r="139"/><circle cx="1008" cy="139" r="182"/>
+</g>
+<g opacity=".65" fill="#c5b5ff"><circle cx="853" cy="54" r="2"/><circle cx="1151" cy="44" r="3"/><circle cx="1124" cy="239" r="2"/><circle cx="791" cy="205" r="1.8"/><circle cx="939" cy="15" r="2"/></g>
+<g transform="translate(898 49)">
+  <rect width="206" height="206" rx="57" fill="#493575" opacity=".24"/>
+  <path d="M43 145L103 30L164 145L103 174Z" fill="none" stroke="url(#accent)" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M63 142L103 71L143 142" fill="none" stroke="#d7b8ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M51 145H155" stroke="#8ae9f3" stroke-width="6" stroke-linecap="round"/>
+  <path d="M103 10V24M103 184V198M15 105H30M175 105H190" stroke="#b9a2ff" stroke-width="3" opacity=".7"/>
+  <path d="M162 41L168 31L174 41L184 47L174 53L168 63L162 53L152 47Z" fill="#f4d7ff"/>
+</g>
+<g font-family="Inter,Segoe UI,Arial,sans-serif">
+  <text x="78" y="122" fill="#f6f2ff" font-size="83" font-weight="760" letter-spacing="-3">Noble <tspan fill="url(#accent)">AI</tspan></text>
+  <rect x="79" y="145" width="64" height="4" rx="2" fill="#a98bff"/>
+  <text x="78" y="189" fill="#e4dbf8" font-size="25" font-weight="550" letter-spacing=".5">Historias interactivas potenciadas por IA</text>
+  <text x="78" y="231" fill="#a9afce" font-size="17" letter-spacing="1.5">TU HISTORIA  ·  TUS PERSONAJES  ·  TU MUNDO</text>
+</g>
+</svg>
