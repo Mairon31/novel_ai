@@ -462,3 +462,21 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Nueva suite `tests/test_download_recovery.py`: recuperación y re-verificación SHA sin red; conciliación idempotente; archivo corrupto rechazado; conservación de ambos archivos conflictivos; bloqueo de symlink externo; preservación de instalación previa y prueba de intento de reanudación tras conflicto. Commits `31187c27241d`, `0f78ec26e1f8`.
 - [x] Python **127/127 PASS** en [CI #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624). La fase de navegador se comprueba por separado antes de atribuir un resultado completo a esta ejecución.
 - [ ] Límites: no hay garantía de seguridad ante sustitución concurrente de symlinks entre validación y operación (TOCTOU), no se simularon cortes de alimentación reales, no hay reconciliación de múltiples instancias escribiendo el mismo almacén ni recuperación específica de archivos completos sin tamaño publicado.
+
+
+## 2026-11-05 — Integridad de GGUF sin tamaño publicado (P0 AUD-003)
+
+- [x] HTTP `416` con `Content-Range: bytes */N` se interpreta como final válido solamente si `N` coincide con los bytes `.part`; se vuelve a verificar SHA antes de publicar el GGUF. Si el encabezado es ausente, inválido o indica otro tamaño, se conserva `.part` y se marca error. Commit `2e73b86bf843`.
+- [x] Una respuesta `206` se acepta únicamente si entrega el tramo final completo y su longitud real corresponde a `Content-Range`; no se registra una respuesta intermedia como archivo completo. Se rechazan respuestas `204`, compresión binaria inesperada, longitud `Content-Length` inconsistente en `200` y archivos sin cabecera `GGUF`. Commits `e1d9efb0a245`, `431d97d030fb`.
+- [x] `tests/test_unknown_size_resume.py` valida EOF 416, 416 falso, 206 completo e incompleto, `200` que ignora Range, ausencia de metadata/estado `local_hash_only`, SHA diferente, encabezado GGUF incorrecto y codificación. Se corrigió un fixture HTTP de compresión válido. Commits `686d4d76b23e`, `c625c2045002`, `377290500295`.
+- [x] [CI #42068338409](https://github.com/Mairon31/novel_ai/actions/runs/42068338409): **142 Python + 28 Playwright PASS**, build frontend aprobado.
+- [ ] No cubierto: servidor que no proporciona longitud total fiable por ningún método, corrupción física, carrera de archivos/symlinks, cortes de red CDN real y publicación multiinstancia.
+
+## 2026-11-05 — Lorebook por historia y editor de contexto (P1 AUD-006/AUD-014)
+
+- [x] `lorebook.py`: tabla SQLite por historia, CRUD por UUID bajo propiedad de historia, palabras claves primarias y secundarias (any/all), coincidencia Unicode completa/subcadena con escape de regex, `always_active`, `enabled`, prioridades de 0 a 100 y selección determinista bajo tope de 6000 caracteres. No se ejecutan expresiones arbitrarias, scripts ni embeddings. Commit `3ae50e7a9491`.
+- [x] `NarrativeService.messages` activa entradas únicamente desde la intervención actual y cuatro turnos recientes; no utiliza el contexto secreto del creador como disparador, mantiene el contenido privado dentro del mensaje de sistema y conserva la ventana de 16 turnos. Las ramas reciben copias con IDs nuevos e independencia de escritura. Commits `99d32712b5de`, `2b68d37cd33c`.
+- [x] `CreatorStudio.tsx`: pestaña Lorebook independiente, creación/edición/borrado, claves y prioridad, flags de activación, previsualización de selección con el texto realmente inyectado y uso de presupuesto; vista responsive. Commits `46a3c65dcaf4`, `6566b830ab3a`, `10e9f0f9c5de`, `7a7d29dbc733`, `1911486a011f`.
+- [x] Suite `tests/test_lorebook.py`: valida activación/aislamiento, palabra completa con Unicode, prioridades, budget, CRUD, ramas aisladas, persistencia al reiniciar, secretos del autor no activadores, y recuperación explícita de un hecho después de 110 turnos. Playwright `apps/web/tests/lorebook.spec.ts` valida creación y previsualización desde escritorio y móvil. Commits `bcd29b0b16ef`, `905c3698af67`, `7c12d087a576`.
+- [x] [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 pruebas Python + 30 Playwright PASS**, build web.
+- [ ] Faltan lorebooks por personaje/testigos, regex con timeout, recursión acotada, tokenización real, memoria episódica con procedencia y KV-cache inspeccionable. Ninguna de estas tareas se marca como implementada.
