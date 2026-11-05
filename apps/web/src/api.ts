@@ -144,10 +144,13 @@ export const api = {
     '/runtime/kobold/activate', { method: 'POST' }),
   creatorAssets: (storyId: string) => request<{ assets: CreatorMediaAsset[] }>(
     '/stories/' + encodeURIComponent(storyId) + '/creator/assets'),
+  setStoryCover: (storyId: string, assetId: string | null) => request<Story>(
+    '/stories/' + encodeURIComponent(storyId) + '/creator/cover',
+    { method: 'PUT', body: JSON.stringify({ asset_id: assetId }) }),
   scenePresentation: (storyId: string) => request<ScenePresentation>(
     '/stories/' + encodeURIComponent(storyId) + '/creator/assets/scene'),
   async uploadCreatorAsset(storyId: string, data: {
-    kind: 'background' | 'foreground'; label: string; caption: string;
+    kind: 'cover' | 'background' | 'foreground'; label: string; caption: string;
     character_id?: string; file: File;
   }): Promise<CreatorMediaAsset> {
     const body = new FormData();
