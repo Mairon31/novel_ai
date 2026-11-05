@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, BookOpen, Camera, Check, ChevronRight, Cpu, Eye, Feather,
   Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2, Volume2, Square,
-  Sparkles, UploadCloud, UserRound, X,
+  Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -47,10 +47,36 @@ export function VisualReader({
   notice, error, setDraft, setMode, onSubmit, onCreate, onSettings, onUpdateStory,
 }: Props) {
   const [tab, setTab] = useState<Tab>('summary');
+  const [rewindTurn, setRewindTurn] = useState<StoryTurn | null>(null);
+  const [rewindPreview, setRewindPreview] = useState<{
+    lore: LorebookTurnSnapshot | null;
+    world: WorldTurnSnapshot | null;
+  } | null>(null);
+  const [rewindLoading, setRewindLoading] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [readerError, setReaderError] = useState('');
   const [playerPlot, setPlayerPlot] = useState('');
+  useEffect(() => {
+    if (!active || !rewindTurn) {
+      setRewindPreview(null);
+      return;
+    }
+    let alive = true;
+    setRewindLoading(true);
+    setRewindPreview(null);
+    void Promise.allSettled([
+      api.lorebookTurnSnapshot(active.id, rewindTurn.id),
+      api.worldTurnSnapshot(active.id, rewindTurn.id),
+    ]).then(([lore, world]) => {
+      if (!alive) return;
+      setRewindPreview({
+        lore: lore.status === 'fulfilled' ? lore.value : null,
+        world: world.status === 'fulfilled' ? world.value : null,
+      });
+    }).finally(() => { if (alive) setRewindLoading(false); });
+    return () => { alive = false; };
+  }, [active?.id, rewindTurn?.id]);
   const [sceneMedia, setSceneMedia] = useState<ScenePresentation | null>(null);
   const [visual, setVisual] = useState<VisualState | null>(null);
   const [sceneLocation, setSceneLocation] = useState('');
@@ -559,8 +585,8 @@ export function VisualReader({
                 <strong>{turn.input_text || 'Continuación automática'}</strong><ChevronRight size={15}/>
               </button>
               <button className="noble-inspector-branch" disabled={generating || updating}
-                title="Crear una historia alternativa desde esta intervención"
-                onClick={() => onFork(turn.id)}>Crear rama</button>
+                title="Rebobinar de forma segura sin modificar la historia original"
+                onClick={() => setRewindTurn(turn)}><RotateCcw size={14}/> Rebobinar aquí</button>
             </div>) : <p>Todavía no se han generado escenas.</p>}
         </>}
         {tab === 'gallery' && <>
@@ -736,6 +762,53 @@ export function VisualReader({
     </aside>
     {inspectorOpen && <button className="noble-inspector-backdrop"
       aria-label="Cerrar panel de información" onClick={() => setInspectorOpen(false)}/>}
+    {rewindTurn && <div className="noble-rewind-scrim" role="presentation">
+      <section className="noble-rewind-dialog" role="dialog"
+        aria-modal="true" aria-label="Confirmar rebobinado">
+        <div className="noble-rewind-header">
+          <div><span className="overline"><RotateCcw size={15}/> LÍNEA TEMPORAL</span>
+            <h2>Volver a este punto</h2></div>
+          <button className="icon-button" aria-label="Cancelar rebobinado"
+            onClick={() => setRewindTurn(null)}><X size={19}/></button>
+        </div>
+        <p>Se creará una <strong>ruta independiente</strong> desde la intervención
+          seleccionada. La historia original y todos sus turnos posteriores seguirán intactos.</p>
+        <div className="noble-rewind-selected">
+          <strong>Turno {turns.findIndex(t => t.id === rewindTurn.id) + 1}</strong>
+          <p>{rewindTurn.input_text || rewindTurn.assistant_text.slice(0, 180)}</p>
+          <small>{Math.max(0, turns.length - turns.findIndex(t => t.id === rewindTurn.id) - 1)}
+            {' '}turno(s) posteriores permanecerán únicamente en la ruta original.</small>
+        </div>
+        <div className="noble-rewind-checkpoint" role="status">
+          {rewindLoading || !rewindPreview ?
+            <span><LoaderCircle className="rotating" size={15}/> Consultando instantáneas guardadas...</span> :
+            <>
+              <div><BookOpen size={15}/>
+                {rewindPreview.lore ?
+                  `Lorebook histórico: ${rewindPreview.lore.entries.length} entrada(s)` :
+                  'Lorebook histórico no disponible: no se heredarán secretos actuales'}
+              </div>
+              <div><GitBranch size={15}/>
+                {rewindPreview.world ?
+                  `Estado del mundo: ${rewindPreview.world.state.location || 'sin ubicación confirmada'}` :
+                  'Estado histórico no disponible: se usará el estado vacío'}
+              </div>
+            </>}
+        </div>
+        <div className="noble-rewind-actions">
+          <button className="secondary-button" onClick={() => setRewindTurn(null)}>
+            Mantenerme aquí
+          </button>
+          <button className="primary-button" disabled={rewindLoading || generating || updating}
+            onClick={() => {
+              const selected = rewindTurn.id;
+              setRewindTurn(null);
+              setInspectorOpen(false);
+              onFork(selected);
+            }}><GitBranch size={16}/> Crear ruta desde este turno</button>
+        </div>
+      </section>
+    </div>}
     <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/webp"
       aria-label="Subir ilustración de escena" onChange={e => {
         const file = e.target.files?.[0];
