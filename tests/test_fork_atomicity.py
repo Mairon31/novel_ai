@@ -167,9 +167,11 @@ class ForkAtomicityTests(unittest.TestCase):
         from noble_api import creator_media
         original = creator_media.shutil.copyfile
 
-        def copy_then_fail(source, target):
-            original(source, target)
-            raise OSError("simulated disk copy failure")
+        def copy_then_fail(source, target, **kwargs):
+            result = original(source, target, **kwargs)
+            if "/creator/" in str(source).replace("\\", "/"):
+                raise OSError("simulated disk copy failure")
+            return result
 
         with patch.object(creator_media.shutil, "copyfile", side_effect=copy_then_fail):
             with self.assertRaisesRegex(OSError, "simulated disk copy failure"):
