@@ -44,6 +44,7 @@ function Loading() {
 
 export default function App() {
   const [page, setPage] = useState<Page>('modelos');
+  const [reading, setReading] = useState(false);
   const [narrativeRevision, setNarrativeRevision] = useState(0);
   const [keyboardActive, setKeyboardActive] = useState(true);
   const [releaseNotice, setReleaseNotice] = useState<{ name: string; url: string; label: string } | null>(null);
@@ -239,7 +240,7 @@ export default function App() {
   const isInstalled = detail && installed.some(m => m.repo_id === detail.repo_id &&
     m.revision === detail.revision && m.filename === pickedVariant);
 
-  return <div className="app-shell">
+  return <div className={'app-shell ' + (page === 'inicio' && reading ? 'reader-active' : '')}>
     <aside className={'sidebar ' + (navOpen ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark"><Sparkles size={22}/></div>
         <div className="brand-text"><strong>Noble AI</strong><small>LOCAL STORY STUDIO</small></div>
@@ -387,7 +388,8 @@ export default function App() {
           </div>
         </section>}
 
-        {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}/>}
+        {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}
+              onReadingChange={setReading}/>}
 
         {page === 'ajustes' && <WorkspaceSettings
           modelsDir={settings?.models_dir || ''}

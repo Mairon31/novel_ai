@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X } from 'lucide-react';
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import type { GenerationEvent, Story, StoryTurn } from './types';
 
 interface StoryStudioProps {
   onOpenSettings: () => void;
+  onReadingChange?: (reading: boolean) => void;
 }
 
-export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
+export function StoryStudio({ onOpenSettings, onReadingChange }: StoryStudioProps) {
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [turns, setTurns] = useState<StoryTurn[]>([]);
@@ -32,11 +33,14 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     api.stories().then(response => {
       if (!alive) return;
       setStories(response.stories);
-      if (response.stories.length) setActive(response.stories[0]);
+      // Opening the library never automatically enters the most recent story.
     }).catch((exc: Error) => { if (alive) setError(exc.message); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; controller.current?.abort(); };
   }, []);
+  useEffect(() => {
+    onReadingChange?.(Boolean(active));
+  }, [active?.id, onReadingChange]);
   useEffect(() => {
     let alive = true;
     setTurns([]); setStreamText(''); setError('');
@@ -122,26 +126,56 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
   }
 
 
-  return <section className="story-studio">
-    <div className="page-heading"><div className="eyebrow"><Feather size={14}/> NOBLE STORY ENGINE</div>
-      <h1>Biblioteca<span className="title-dot">.</span></h1>
-      <p>Historias interactivas guardadas localmente. El narrador responde desde tu motor Ollama o KoboldCpp.</p>
-    </div>
-    <div className="noble-library-strip">
-      <div className="noble-library-strip-heading"><BookOpen size={18}/><strong>Mis historias</strong>
-        <span>{stories.length}</span></div>
-      <div className="noble-library-story-options">
-        {loading && <div className="loading"><LoaderCircle className="rotating" size={16}/> Cargando...</div>}
-        {stories.map(s => <button key={s.id}
-          className={'noble-library-story ' + (active?.id === s.id ? 'selected' : '')}
-          onClick={() => selectStory(s)} disabled={generating}>
-          <span>{s.title}</span><small>{s.protagonist_name || 'Protagonista'}</small>
-          <ChevronRight size={14}/></button>)}
-        <button className="noble-library-new" onClick={() => { setCreating(true); setCreateStep('story'); }}>
-          <Plus size={16}/> Nueva historia</button>
+  return <section className={'story-studio ' + (active ? 'is-reading' : 'is-library')}>
+    {active ? <div className="noble-reading-navigation">
+      <button className="noble-return-library" aria-label="Volver a biblioteca" onClick={() => {
+        controller.current?.abort();
+        setGenerating(false); setStreamText(''); setDraft(''); setActive(null);
+      }}><ArrowLeft size={19}/> Biblioteca</button>
+      <div className="noble-reading-navigation-title">
+        <strong>{active.title}</strong><span>Jugando como {active.protagonist_name || 'Protagonista'}</span>
       </div>
-    </div>
-    <VisualReader active={active} turns={turns}
+      <button className="noble-reader-settings-link" onClick={onOpenSettings}>Ajustes</button>
+    </div> : <div className="noble-library-home">
+      <div className="noble-library-hero">
+        <div><span className="eyebrow"><Feather size={15}/> TU UNIVERSO DE HISTORIAS</span>
+          <h1>Historias para vivir, no solo leer.</h1>
+          <p>Elige un mundo, continúa una aventura o crea una historia desde cero.
+            Tu biblioteca y el lector son espacios independientes.</p>
+          <button className="primary-button" onClick={() => {
+            setCreating(true); setCreateStep('story');
+          }}><Plus size={17}/> Nueva historia</button>
+        </div>
+        <div className="noble-library-hero-art" aria-hidden="true">
+          <BookOpen size={72}/>
+        </div>
+      </div>
+      <div className="noble-library-section-heading">
+        <div><span className="overline">TU COLECCIÓN</span><h2>Mis historias <small>{stories.length}</small></h2></div>
+        {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> Cargando...</div>}
+      </div>
+      <div className="noble-library-cover-grid">
+        {stories.map(s => <button key={s.id} className="noble-library-cover"
+          onClick={() => selectStory(s)} disabled={generating}>
+          <div className="noble-library-cover-art"
+            style={s.scene_image_url ? {backgroundImage:'url("'+s.scene_image_url+'")'}:undefined}>
+            {!s.scene_image_url && <BookOpen size={38}/>}
+            <span>{s.origin_story_id ? 'Ruta alternativa' : 'Historia'}</span>
+          </div>
+          <div className="noble-library-cover-copy"><strong>{s.title}</strong>
+            <small>Protagonista · {s.protagonist_name || 'Sin nombre'}</small>
+            <p>{s.premise}</p>
+            <div><span>Continuar leyendo</span><ChevronRight size={17}/></div>
+          </div>
+        </button>)}
+        {!loading && stories.length===0 && <div className="noble-library-empty">
+          <BookOpen size={38}/><h3>Tu próxima aventura comienza aquí</h3>
+          <p>Crea el mundo y el protagonista para empezar a escribir tu primera historia.</p>
+          <button className="secondary-button" onClick={() => setCreating(true)}>Crear historia</button>
+        </div>}
+      </div>
+    </div>}
+    {active &&     <VisualReader active={active} turns={turns}
       mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
       streamText={streamText} generating={generating} generationMessage={generationMessage}
       onCancel={cancelGeneration} onFork={createBranch} notice={notice} error={error}
@@ -152,7 +186,7 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
         // A slow image upload or generation must not jump back to an old story.
         setActive(current => current?.id === next.id ? next : current);
         setStories(old => old.map(item => item.id === next.id ? next : item));
-      }}/>
+      }}/>}
     {creating && <div className="welcome-scrim"><section className="welcome-panel" role="dialog"
       aria-modal="true" aria-label="Crear una nueva historia">
       <div className="story-create-heading"><div className="welcome-icon"><Feather size={29}/></div>
