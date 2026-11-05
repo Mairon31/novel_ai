@@ -106,7 +106,7 @@ class WorldStateService:
                 raise ValueError("El inventario contiene un elemento inválido")
             if len(set(v.casefold() for v in result[name])) != len(result[name]):
                 raise ValueError("Elementos repetidos en el inventario")
-        references = result["present_character_ids"]
+        references = list(result["present_character_ids"])
         if len(set(references)) != len(references):
             raise ValueError("Personajes presentes duplicados")
         if len(result["relationships"]) > 30 or len(result["flags"]) > 60:
@@ -195,7 +195,8 @@ class WorldStateService:
                 "created_at": row["created_at"], "state": json.loads(row["state_json"])}
 
     @staticmethod
-    def _remap(state: dict, npc_map: dict[str, str]) -> dict:
+    def _remap(state: dict, npc_map: dict[str, str],
+               fact_map: dict[str, str]) -> dict:
         result = json.loads(json.dumps(state))
         result["present_character_ids"] = [
             npc_map[id] for id in result["present_character_ids"] if id in npc_map
@@ -207,7 +208,7 @@ class WorldStateService:
         facts = []
         for fact in result["facts"]:
             clone = dict(fact)
-            clone["id"] = str(uuid.uuid4())
+            clone["id"] = fact_map.setdefault(fact["id"], str(uuid.uuid4()))
             clone["witness_character_ids"] = [
                 npc_map[id] for id in fact["witness_character_ids"] if id in npc_map
             ]
@@ -221,6 +222,7 @@ class WorldStateService:
         """Copy snapshots and select the *cutoff* state, never the source future."""
         with self.store._conn() as db:
             db.execute("BEGIN IMMEDIATE")
+            fact_map: dict[str, str] = {}
             original = {
                 row["turn_id"]: row
                 for row in db.execute(
@@ -232,7 +234,7 @@ class WorldStateService:
                 row = original.get(old_turn_id)
                 if row is None:
                     continue  # Pre-feature turns never had invented state.
-                mapped = self._remap(json.loads(row["state_json"]), character_map)
+                mapped = self._remap(json.loads(row["state_json"]), character_map, fact_map)
                 db.execute(
                     "INSERT INTO world_turn_snapshots VALUES (?,?,?,?)",
                     (new_turn_id, target_id,
@@ -248,7 +250,7 @@ class WorldStateService:
                     (source_id,)
                 ).fetchone()
                 selected = json.loads(current["state_json"]) if current else self.default()
-            mapped = self._remap(selected, character_map)
+            mapped = self._remap(selected, character_map, fact_map)
             data = json.dumps(mapped, ensure_ascii=False, sort_keys=True)
             now = time.time()
             db.execute(
