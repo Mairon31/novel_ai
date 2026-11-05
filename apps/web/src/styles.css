@@ -366,3 +366,20 @@
   .noble-scene-bottom .noble-scene-upload{margin:5px 5px 0 0}
   .noble-scene-bottom .noble-scene-upload + .noble-scene-upload{margin-left:0}
 }
+
+/* Branching from an existing narrative turn */
+.noble-inspector-turn{display:flex;align-items:center;gap:5px;padding:4px}
+.noble-inspector-turn-jump{
+  display:flex;align-items:center;gap:8px;flex:1;min-width:0;text-align:left;
+  padding:6px;background:transparent;color:inherit
+}
+.noble-inspector-turn-jump>span{color:#afa3ed;font-size:10px}
+.noble-inspector-turn-jump strong{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px
+}
+.noble-inspector-branch{
+  border:1px solid #59517b;border-radius:6px;background:#393455;
+  color:#e3d5ff;font-size:10px;padding:7px 9px;white-space:nowrap
+}
+.noble-inspector-branch:hover:not(:disabled){background:#554875}
+.noble-inspector-branch:disabled{opacity:.5;cursor:not-allowed}
