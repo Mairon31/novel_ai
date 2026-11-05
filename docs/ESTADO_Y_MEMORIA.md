@@ -95,3 +95,16 @@ SQLite con migraciones Alembic en cada cambio de esquema. Copia transaccional/SQ
 ## P1.5 — estado visual separado del canon narrativo
 
 El texto canónico sigue siendo editable; los registros `visual_scenes` representan la línea temporal espacial. Una transición detectada no modifica el canon ni altera retroactivamente escenas antiguas. Las fichas `visual_characters` guardan rasgos coherentes como texto versionado. La galería `visual_assets` vincula escenas con resultados WebP permanentes, y `visual_current` apunta a la versión mostrada. Bifurcar una historia copia sus escenas, personajes y arte aplicable con IDs nuevos; no enlaza mutablemente los archivos con los del origen. El análisis semántico completo y el árbol de ramas siguen pendientes.
+
+## Prioridades de memoria según auditoría Argon (2026-11-05)
+
+Estado: la base actual persiste historias, canon, turnos y clones; **no constituye aún** memoria híbrida con aislamiento cognitivo ni snapshots completos del mundo. Seguir los checkboxes [AUD-005, AUD-006 y AUD-014](../TODO.md), con semántica de la tabla maestra §18.
+
+1. **Fuente de verdad determinista:** el estado estructurado por `story_id`, `branch_id` y `turn_id` define ubicación, momento, personajes presentes, inventario, relaciones, flags, testigos y vínculos de arte. El LLM redacta la narración; no puede redefinir unilateralmente ese estado.
+2. **Atomicidad y recuperación:** guardar turno, snapshot y cambios canónicos dentro de una unidad transaccional; no mezclar el delta visual asíncrono con el commit narrativo sin un protocolo de idempotencia. El retroceso debe restaurar el estado exacto del nodo, no copiar el estado actual de otra rama.
+3. **Cuatro niveles de contexto:** prefijo fijo (instrucciones/canon/personajes), Lorebooks por claves/regex con límites, memorias episódicas relevantes con testigos y ventana FIFO reciente. El prefijo estable favorece la reutilización de KV-cache; cualquier métrica de acierto debe venir del proveedor.
+4. **Recuperación:** FTS5 primero como fallback ligero; `sqlite-vec` opcional para embeddings CPU cuando sea instalable. Los episodios deben registrar `witness_character_ids`, `importance`, rango de turnos y procedencia; nunca inyectar a un personaje un secreto que no presenció.
+5. **Presupuesto:** el servidor decide la asignación efectiva de tokens por bloque, conserva reserva de salida, informa el truncamiento y presenta un desglose al inspector en `NarrativeSettings.tsx`. El ejemplo 8192 tokens de la auditoría es un perfil inicial, no una regla universal.
+6. **Validación:** historias simuladas de 100–120 turnos, hecho remoto recuperado, aislamiento de testigos, ramas sin contaminación, límite de contexto respetado y persistencia tras reinicio. Sin esta evidencia las tareas quedan abiertas.
+
+Referencias: [auditoría §§09–10, 14, 19, 21](ARGON_AUDITORIA.md), [arquitectura](ARQUITECTURA.md), [roadmap](ROADMAP.md).
