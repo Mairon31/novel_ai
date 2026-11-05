@@ -1091,3 +1091,10 @@
 .creator-lorebook-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;
   max-height:280px;overflow:auto;margin:12px 0 0;padding:15px;border-radius:10px;
   background:#151c2d;color:#d1dcef;font:12px/1.65 ui-monospace,SFMono-Regular,monospace}
+
+/* Keep Lorebook boolean options compact, accessible and mobile-friendly. */
+.creator-fields label.creator-lore-toggle{flex-direction:row;align-items:center;
+  justify-content:flex-start;gap:10px;font-size:12px;font-weight:600;cursor:pointer}
+.creator-fields label.creator-lore-toggle input[type="checkbox"]{
+  width:17px;height:17px;min-width:17px;margin:0;padding:0;accent-color:#a08af0;
+  cursor:pointer;flex:none}
