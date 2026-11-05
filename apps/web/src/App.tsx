@@ -101,6 +101,9 @@ export default function App() {
   const [modelStorage, setModelStorage] = useState<ModelStorage | null>(null);
   const [storageError, setStorageError] = useState('');
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
+  const [recovery, setRecovery] = useState<{
+    recovered: number; conflicts: number; skipped: number;
+  } | null>(null);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [providers, setProviders] = useState<Array<{ id: string; kind: string; status: string }>>([]);
   const [busy, setBusy] = useState(false);
@@ -165,6 +168,14 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [keyboardActive]);
+
+  useEffect(() => {
+    let alive = true;
+    void api.downloadRecovery().then(result => {
+      if (alive) setRecovery(result);
+    }).catch(() => { /* The normal API error banner handles offline status. */ });
+    return () => { alive = false; };
+  }, []);
 
   const refreshDownloads = useCallback(async () => {
     const [jobList, models, roleMap] = await Promise.all([
@@ -612,6 +623,19 @@ export default function App() {
         {page === 'descargas' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><ArrowDownToLine size={14}/> ACTIVIDAD</div><h1>Descargas<span className="title-dot">.</span></h1>
             <p>Consulta el estado de instalaciones y administra las transferencias.</p></div>
+          {recovery && (recovery.recovered > 0 || recovery.conflicts > 0) &&
+            <div className="workspace-note" role="status">
+              {recovery.conflicts ? <CircleAlert size={18}/> : <ShieldCheck size={18}/>}
+              <span>
+                {recovery.recovered > 0 &&
+                  <strong>{recovery.recovered} descarga(s) recuperada(s) tras un reinicio. </strong>}
+                {recovery.conflicts > 0 &&
+                  <strong>{recovery.conflicts} conflicto(s) detectado(s). </strong>}
+                Los archivos recuperados requieren reanudar y verificar el modelo antes de usarlo.
+                {recovery.conflicts > 0 &&
+                  ' Los conflictos se mantienen sin sobrescribir archivos; revisa el motivo en cada descarga.'}
+              </span>
+            </div>}
           <div className="downloads-list">{jobs.map(job => {
             const pct = job.expected_size ? Math.min(100, Math.round(job.received_bytes / job.expected_size * 100)) : 0;
             return <article key={job.id} className="download-card">
