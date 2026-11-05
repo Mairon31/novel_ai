@@ -14,8 +14,9 @@
 ## Fase 1 — P0: datos, rutas, transferencias y streaming
 
 ### AUD-001 — Persistencia y transacciones
-- [x] Base SQLite con `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON` y `busy_timeout` en cada conexión; PRAGMAs comprobados por `test_sqlite_connection_enforces_integrity_pragmas` (CI #41994792794).
-- [ ] Aplicar y probar claves foráneas, transacciones atómicas entre turno, canon, escena y medios; rollback coherente frente a fallos (no basta `with conn` aislado).
+- [x] Base SQLite con `journal_mode=WAL` inicializado una vez y `synchronous=NORMAL`, `foreign_keys=ON` y `busy_timeout` por conexión; PRAGMAs comprobados por `test_sqlite_connection_enforces_integrity_pragmas` (CI #41994792794).
+- [x] Turno narrativo e inferencia de transición visual en **una misma transacción SQLite**, con rollback completo ante fallo e idempotencia de `request_id` (`narrative.py`, `visual_state.py`, `test_sqlite_concurrency.py`; CI #41996621807).
+- [ ] Completar snapshots canónicos, medios y cambios de personajes/ramas dentro de unidades transaccionales coherentes; las mutaciones fuera del turno aún requieren coordinación y pruebas de fallos.
 - [ ] Migraciones versionadas, índices adecuados y plan seguro de upgrade/backups; no reemplazar ni borrar bases existentes.
 - [x] Primera prueba de **50 escrituras narrativas concurrentes**, rollback por excepción y rechazo de FK inválida: `tests/test_sqlite_concurrency.py` (104 Python OK en run #41995580802; GPU/multimedia no cubiertos por esta prueba).
 - [ ] Prueba conjunta de 50 escrituras con trabajos multimedia reales, recuperación tras interrupción y coherencia entre turno/escena; no cubierta por la suite concurrente básica.
@@ -25,8 +26,11 @@
 - [x] Cálculo de SHA-256 y comparación cuando catálogo aporta checksum; estado diferenciado `local_hash_only` cuando no existe checksum publicado.
 - [x] El inventario del Model Hub excluye enlaces simbólicos y rutas externas de los bytes computados.
 - [x] Primer endurecimiento P0: medios de creador exigen UUID/tipo y rechazan symlink externo; descargas revalidan identificadores/rutas `.part`/destino; tres pruebas nuevas PASS (CI #41994792794).
-- [ ] Ampliar contención y protección frente a carreras a **todos** los módulos que leen, clonan, importan, escriben y borran recursos/modelos; pruebas con registros manipulados y symlink de padres.
-- [ ] Pruebas de reanudación exacta al 50%, respuesta Range incorrecta, interrupción durante verificación y renombrado atómico; no declarar «verificado» si no hay checksum de origen.
+- [x] Endurecimiento de galería: rutas UUID, lectura de versiones y legacy, bloqueo de symlink en archivos temporales, rollback del registro/selección si falla la copia; pruebas en `tests/test_visual_state.py` (CI #41997120265).
+- [ ] Ampliar protección de archivos a **todos** los módulos y evitar carreras TOCTOU bajo cambio concurrente de symlinks; probar importación, clonación y borrados manipulados.
+- [x] Contrato HTTP 206 reforzado: validar offset, fin, tamaño total y longitud entregada; rechazar un `206` no solicitado y evitar registrar descargas incompletas. Pruebas offline en `tests/test_api_model_hub.py` (CI de los cambios más recientes por confirmar).
+- [ ] Ensayos de pausa/reanudación al 50%, interrupción durante verificación, carrera concurrente y renombrado atómico; no declarar «verificado» si el origen no aporta checksum.
+- [x] Impedir asignación de un GGUF registrado fuera del directorio de modelos, incluido symlink externo; `Store.assign` y prueba de API agregada (CI por confirmar).
 - [ ] Gestión de conflictos entre descargas, cuotas de disco, hashes y reintento sin pérdidas.
 
 ### AUD-004 — Streaming, cancelación y contratos
