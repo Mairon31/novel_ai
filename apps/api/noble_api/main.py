@@ -28,6 +28,7 @@ from .images import SceneImageService, mount_image_routes
 from .speech import SpeechService, mount_speech_routes
 from .visual_state import VisualState, mount_visual_routes
 from .scene_planner import ScenePlanner, mount_scene_plan_routes
+from .creator import CreatorService, mount_creator_routes
 from .resource_policy import ResourceController, mount_resource_routes
 from .workers import WorkerRegistry, mount_worker_routes
 
@@ -90,6 +91,8 @@ def create_app(
     narrative.visual = visual
     resources = ResourceController(store)
     narrative.resources = resources
+    creator = CreatorService(narrative)
+    narrative.creator = creator
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
     speech = SpeechService(narrative)
 
@@ -121,6 +124,7 @@ def create_app(
     service.state.speech = speech
     service.state.visual = visual
     service.state.scene_planner = planner
+    service.state.creator = creator
 
     @service.exception_handler(CatalogError)
     async def catalog_exception(_request, exc: CatalogError):
@@ -235,6 +239,7 @@ def create_app(
     mount_media_routes(service, narrative)
     mount_visual_routes(service, visual)
     mount_scene_plan_routes(service, planner)
+    mount_creator_routes(service, creator)
     mount_image_routes(service, images)
     mount_resource_routes(service, resources)
     mount_speech_routes(service, speech)

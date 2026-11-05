@@ -113,6 +113,7 @@ class NarrativeService:
         self.workers = workers
         self.visual = None  # injected after VisualState initializes its SQLite tables
         self.resources = None  # injected per app for local GPU operation arbitration
+        self.creator = None  # optional creator-owned story bible and NPC guidance
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
@@ -292,6 +293,8 @@ class NarrativeService:
                 copy_art = self.store.root / "story-assets" / new_id / "scene.webp"
                 copy_art.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(prior_art, copy_art)
+        if self.creator is not None:
+            self.creator.clone(story_id, new_id)
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
@@ -354,9 +357,11 @@ class NarrativeService:
                             "escribe la respuesta únicamente en el idioma de salida.")
         canon = story.get("canon", "").strip()
         world_rules = "\nCanon persistente confirmado de la historia: " + canon if canon else ""
+        creator_context = self.creator.context(story) if self.creator is not None else ""
         messages = [{"role": "system", "content": PROMPT + "\n" + output_preferences +
                      "\nPremisa: " + story["premise"] + "\nProtagonista: " +
-                     story.get("protagonist_name", "Protagonista") + world_rules}]
+                     story.get("protagonist_name", "Protagonista") + world_rules +
+                     ("\n\n" + creator_context if creator_context else "")}]
         for t in self.turns(story["id"], limit=16):
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
