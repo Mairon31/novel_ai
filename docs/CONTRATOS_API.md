@@ -193,3 +193,8 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 
 
 **Verificación de la extensión:** [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216) — 193 Python + 36 Playwright PASS. La semántica de `visibility=world` y las rutas existentes no cambiaron.
+
+
+## Exportación HTML ilustrada (P1)
+
+`GET /api/v1/stories/{story_id}/export.html` → `200 text/html; charset=utf-8`, `Content-Disposition: attachment; filename="noble-story.html"`, `Cache-Control: no-store` y `X-Content-Type-Options: nosniff`; `404` si no existe la historia. HTML autocontenido con portada cuando existe, intervenciones/diálogos y escenas ilustradas según snapshots visuales guardados. Escapa contenido textual antes de emitir HTML. Solo incluye datos de la rama solicitada, sin el árbol completo ni contextos privados de Creator.

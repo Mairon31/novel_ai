@@ -100,3 +100,10 @@ El protocolo de staging ya fuerza las copias y metadatos antes del COMMIT. El **
 
 
 **Gate de recuperación de borrados validado:** [CI #42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649) — **203 Python y 36 Playwright PASS**, commit `c2dbbca`. Las pruebas confirman el orden de sincronización de metadatos de directorio durante la limpieza y el reintento después de un error de flush; se ejecutaron en Linux, no en hardware con corte eléctrico.
+
+
+## Exportación portátil de historias — HTML (P1)
+
+`story_export.py` implementa el contrato de lectura/exportación sin modificar SQLite. Selecciona turnos desde la historia/ramificación elegida, incluye en un archivo HTML autocontenido una portada administrada por Creator y los WebP del `selected_asset_id` de snapshots visuales históricos, solo si sus IDs pertenecen a la galería de la misma rama. No reconstruye imágenes históricas usando selecciones futuras. `html.escape` impide interpretar texto narrativo o del usuario como etiquetas HTML, y los datos de Illustrator no contienen rutas remotas. Hay límites de recursos para impedir lecturas masivas.
+
+El archivo HTML es una exportación de **una sola línea narrativa**, con marca «Rama independiente» cuando corresponde. No incluye secretos/instrucciones de Creator, Lorebooks completos ni estados administrativos; tampoco exporta EPUB ni un ZIP de todas las bifurcaciones. Exportación es una lectura y se mantiene separada del sistema de backups y restauración.

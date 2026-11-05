@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, BookOpen, Camera, Check, ChevronRight, Cpu, Eye, Feather,
   Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2, Volume2, Square,
-  Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw,
+  Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download,
 } from 'lucide-react';
 import { api } from './api';
 import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot } from './types';
@@ -418,6 +418,9 @@ export function VisualReader({
       <header className="noble-reader-toolbar">
         <span className="noble-reader-chapter">CAPÍTULO 01 <span>·</span> {active.title}</span>
         <div className="noble-reader-toolbar-actions">
+          <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.html'}
+            download="noble-story.html" title="Exportar historia a HTML ilustrado"
+            aria-label="Exportar historia HTML"><Download size={17}/></a>
           <button title="Mostrar panel de historia" aria-label="Abrir información de historia"
             onClick={() => setInspectorOpen(open => !open)}><Eye size={17}/></button>
           <button title="Configurar narrador" aria-label="Configurar narrador" onClick={onSettings}>

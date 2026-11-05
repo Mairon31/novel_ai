@@ -156,7 +156,7 @@
 - [ ] Empaquetado Tauri v2/sidecar o instalador portable validado en Windows 11 limpio, sin terminal para el usuario.
 - [ ] Benchmark reproducible TTFT, TPS, VRAM pico, carga KV, generación de fondos y latencia de sprites local/Colab.
 - [ ] Reportes JSON/Markdown con versión de modelo, cuantización, GPU, commit y entorno; no extrapolar resultados de un equipo a todos.
-- [ ] Exportación de rama a EPUB/HTML ilustrado, diferenciar claramente historias/branches.
+- [ ] Exportación EPUB/HTML de ramas: **HTML portátil ilustrado implementado** con adjuntos WebP embebidos, textos escapados, portada y escenas históricas por turno, botón de descarga desde el lector y aislamiento del fork; **pendiente CI**. La variante EPUB y exportación de árbol completo quedan pendientes.
 - [ ] QA Playwright visual responsive, regresión E2E/API y perfil real de rendimiento por fase.
 
 ## Referencias y reutilización a investigar

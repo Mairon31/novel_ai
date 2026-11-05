@@ -33,6 +33,7 @@ from .creator import CreatorService, mount_creator_routes
 from .lorebook import LorebookService, mount_lorebook_routes
 from .world_state import WorldStateService, mount_world_state_routes
 from .creator_media import CreatorMediaService, mount_creator_media_routes
+from .story_export import mount_story_export_routes
 from .resource_policy import ResourceController, mount_resource_routes
 from .workers import WorkerRegistry, mount_worker_routes
 
@@ -265,6 +266,7 @@ def create_app(
         return detail
 
     mount_narrative_routes(service, narrative)
+    mount_story_export_routes(service, narrative)
     mount_media_routes(service, narrative)
     mount_visual_routes(service, visual)
     mount_scene_plan_routes(service, planner)

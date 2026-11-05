@@ -191,8 +191,8 @@
 .noble-reader-chapter{font-size:11px;line-height:1.45;color:#d5cdef;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .noble-reader-chapter span{color:#8472b0;margin:0 4px}
 .noble-reader-toolbar-actions{display:flex;gap:3px}
-.noble-reader-toolbar-actions button,.noble-inspector-header button{display:grid;place-items:center;padding:8px;border-radius:8px;color:#c1c6da;background:transparent}
-.noble-reader-toolbar-actions button:hover,.noble-inspector-header button:hover{background:#2b3046}
+.noble-reader-toolbar-actions button,.noble-reader-toolbar-actions a,.noble-inspector-header button{display:grid;place-items:center;padding:8px;border-radius:8px;color:#c1c6da;background:transparent}
+.noble-reader-toolbar-actions button:hover,.noble-reader-toolbar-actions a:hover,.noble-inspector-header button:hover{background:#2b3046}
 .noble-reader-prose{padding:25px 24px;flex:1;max-height:660px;min-height:380px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#595475 transparent;scrollbar-width:thin}
 .noble-reader-intro{display:flex;align-items:flex-start;gap:12px;border-left:2px solid var(--noble-accent);padding:16px 13px;background:#1e2034;border-radius:0 10px 10px 0}
 .noble-reader-intro>svg{color:var(--noble-accent);flex:none;margin-top:2px}

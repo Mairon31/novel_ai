@@ -174,3 +174,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Ante fallo inyectado de `fsync` en `story-assets`, dejar `.pending`, registrar conflicto, no eliminar origen; un segundo arranque sin fallo debe limpiar el marcador restante sin inventar rama.
 - [x] [CI #42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649) completada con 203/203 Python, 36/36 Playwright y build. Las excepciones `fsync` inyectadas no generan pérdida de la historia.
 - [ ] Pendiente: durabilidad NTFS y resistencia demostrada a apagones eléctricos físicos.
+
+
+## P1 — Gate de HTML ilustrado autocontenido (pendiente CI)
+
+- [ ] HTML con DOCTYPE, encabezado UTF-8, todos los turnos confirmados ordenados y distinción explícita de ramas; contenido no confiable escapado y sin scripts inyectados.
+- [ ] Exportar portada y 2 ilustraciones distintas de escenas usando WebP base64; al exportar una rama creada en turno 1 no incluir el texto ni la imagen de turno 2 del origen.
+- [ ] Una imagen WebP manipulada/corrupta no se embebe, tampoco se recorren symlinks o archivos fuera de UUID. Error 404 en historia inexistente.
+- [ ] Playwright desktop y mobile: descarga de HTML desde el lector, archivo attachment y enlace consistente. Build web y suite API completa PASS.
+- [ ] EPUB, imágenes gigantes y exportación del grafo de todas las ramas quedan como tareas distintas.

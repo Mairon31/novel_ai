@@ -599,3 +599,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Límites: aunque el test verifica `fsync` real en runner Linux, no simula pérdida de energía, corrupción real de filesystem ni flush portable de directorio Windows.
 
 - [x] GitHub Actions [#42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649): **203/203 Python y 36/36 Playwright aprobadas**, compilación web correcta.
+
+
+## 2026-11-05 — P1: exportación HTML ilustrada y portable (CI pendiente)
+
+- [ ] Nueva ruta `GET /api/v1/stories/{story_id}/export.html` genera un HTML UTF-8 totalmente autónomo con estilos integrados, portada del proyecto, intervenciones y narración, y una ilustración WebP por cambio de escena cuando existe `visual_turn_snapshots`. No incluye instrucciones privadas de Creator ni URL remotas. No sustituye la galería del turno por el arte actual cuando falta una instantánea histórica.
+- [ ] Los textos se escapan con `html.escape`. Imágenes se resuelven por UUID usando rutas seguras de `VisualState` y `CreatorMediaService`, con chequeo de firma WebP y límites por archivo (6 MiB), número (48) y volumen (28 MiB), evitando exportaciones descontroladas.
+- [ ] El botón de descarga está dentro de la barra del lector, tanto en escritorio como móvil. La respuesta envía `Content-Disposition: attachment`, `Cache-Control: no-store`, `nosniff`. Una rama se exporta separadamente y el HTML se puede abrir sin Noble AI.
+- [ ] `tests/test_story_export.py`: validar escapes, ausencia de instrucciones internas, imágenes WebP base64, reversión temporal de imagen en rama anterior, datos corruptos y 404. `apps/web/tests/story-export.spec.ts`: verificar enlace y descarga real.
+- [ ] **CI pendiente**. EPUB, exportación integral de árbol de ramas y límites de impresión/artes de mayor tamaño siguen abiertos.
