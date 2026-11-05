@@ -161,6 +161,18 @@ Ejecutar `notebooks/noble_ai_colab_smoke.ipynb` en Colab y guardar JSON de diagn
 
 **Importante:** herramientas y tests automatizados no equivalen a un benchmark físico; registrar el CI del commit final y la futura sesión real por separado.
 
+## 2026-11-04 · QA v1.3 — 13 PASS, 1 FAIL, 1 SKIP
+
+- [x] Reporte real Colab T4 v1.3: 37 tests Python, 8 Playwright y build FastAPI/React correctos.
+- [x] Instalar llama.cpp CUDA precompilado, verificar SHA256 de binarios y resolver bibliotecas: PASS.
+- [x] Diagnóstico de 404 Hugging Face: prefijo GGUF solicitado incorrecto (`Qwen3-` en vez de `Qwen_Qwen3-`).
+- [x] v1.4: consulta del catálogo Hugging Face antes de descargar, revisión pinneada y SHA256 de archivo.
+- [x] Pruebas de contrato sin red para archivo exacto, prefijo corregido, cuantización ausente y ambiguo.
+- [ ] Repetir Colab v1.4 con GPU real para obtener la primera generación de texto.
+- [ ] Verificar VRAM/TTFT, SSE y guardar reporte JSON real.
+
+Ver [Resultados QA v1.3](COLAB_QA_V13_RESULTADOS.md). **No se generó contenido en v1.3; benchmarks vacío.**
+
 ## Plantilla para futuras entradas
 
 ```md

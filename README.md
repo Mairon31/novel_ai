@@ -95,3 +95,7 @@ Abre el [notebook integral v1.2 con logs y progreso en vivo](https://colab.resea
 ### Colab QA sin compilación CUDA de 30 minutos
 
 [Notebook integral v1.3](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_3.ipynb) · [Diagnóstico y correcciones del primer ensayo](docs/COLAB_QA_2026-11-05.md). Descarga llama.cpp CUDA precompilado con SHA256 y usa `npm install` para el frontend sin lockfile. Requiere ejecutar Colab para certificar resultados de GPU; no hay benchmark físico aún.
+
+### Colab QA v1.4 — archivo GGUF validado antes de descargar
+
+[Ejecutar notebook v1.4](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_qa_integral_v1_4.ipynb) · [Segundo ensayo y correcciones](docs/COLAB_QA_V13_RESULTADOS.md). Resuelve nombres de archivos del catálogo real de Hugging Face, ancla la revisión y calcula SHA256. El ensayo v1.3 aprobó API, React y Playwright; no alcanzó el benchmark por HTTP 404 del GGUF.
