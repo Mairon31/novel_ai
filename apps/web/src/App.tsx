@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
-  HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu,
+  HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu, Feather,
   Pause, Play, RefreshCw, Search, Settings2,
   ShieldCheck, SlidersHorizontal, Sparkles, Volume2, X,
 } from 'lucide-react';
