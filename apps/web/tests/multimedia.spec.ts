@@ -18,16 +18,21 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
     requests.push('illustrate');
     const payload = route.request().postDataJSON() as { prompt: string };
     expect(payload.prompt).toContain('biblioteca');
-    const story = await page.request.get('/api/v1/stories');
-    const all = await story.json() as { stories: Array<{ id: string; title: string }> };
-    const active = all.stories.find(item => item.title === 'Laboratorio multimedia');
-    expect(active).toBeTruthy();
+    // Persist the screenshot fixture through the real backend. A mocked
+    // response alone would claim success without actually creating gallery art.
+    const storyId = route.request().url().split('/').at(-2);
+    expect(storyId).toBeTruthy();
+    const uploaded = await page.request.post('/api/v1/stories/' + storyId + '/scene-image', {
+      multipart: {
+        file: { name: 'fixture.png', mimeType: 'image/png',
+          buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aUO8AAAAASUVORK5CYII=', 'base64') },
+      },
+    });
+    expect(uploaded.ok()).toBeTruthy();
+    const story = await uploaded.json();
     await route.fulfill({ status: 200, json: {
-      story: { ...active, premise: 'Una biblioteca escondida bajo la montaña.',
-        protagonist_name: 'Luna', canon: 'El dragón conoce la biblioteca.',
-        scene_image_url: '/api/v1/stories/' + active?.id + '/scene-image',
-        created_at: 1793800000, updated_at: 1793800001 },
-      seed: 12345, checkpoint: 'story-model.safetensors', duration_ms: 600,
+      story, seed: 12345, cached: false,
+      checkpoint: 'story-model.safetensors', duration_ms: 600,
     } });
   });
   await page.route('**/api/v1/stories/*/scene-image*', async route =>
