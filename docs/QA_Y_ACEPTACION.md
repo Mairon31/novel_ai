@@ -53,3 +53,14 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Rechazo transaccional de INSERT en `installed` tras mover el archivo: rollback SQLite y restauración del `.part` con los bytes originales.
 - [x] [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678): las tres pruebas nuevas aprobaron; **121 Python + 26 Playwright PASS**, ambos jobs completos y exitosos.
 - [ ] Cortes físicos de proceso/energía, recuperaciones de metadatos de tamaño desconocido, cambios maliciosos de symlink durante la apertura y rollback de múltiples trabajadores simultáneos sobre el mismo fichero.
+
+
+## Gate adicional: recuperación de crash post-rename (2026-11-05)
+
+- [x] Simular caída **después de** `part.replace(target)` y **antes de** la confirmación SQLite: al abrir `Store` de nuevo la descarga se pausa; `DownloadManager` devuelve el fichero a `.part`, exige SHA y lo instala sin segunda descarga HTTP.
+- [x] Confirmar conciliación idempotente: dos pasadas seguidas no duplican transferencias ni reinstalan modelos.
+- [x] Conflicto entre GGUF final y `.part`: no modificar ninguno; reportar `failed`, y si el usuario presiona Resume, tampoco reemplazar el final.
+- [x] Fichero ya instalado: no renombrarlo durante la conciliación ni sustituirlo durante un reintento de job incoherente.
+- [x] Symlink externo y checksum SHA corrupto: archivo externo intacto, recuperación rechazada; bytes locales con SHA erróneo nunca se registran como verificados.
+- [x] Pruebas reales en disco SQLite/Python: `tests/test_download_recovery.py`, **127 Python PASS** en [CI #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624); verificar conclusión final del navegador por separado.
+- [ ] No se han validado: cortes físicos de energía; corrupción del sistema de archivos, TOCTOU con un atacante que sustituye symlinks entre comprobación y apertura; dos instancias simultáneas y tamaño remoto desconocido.
