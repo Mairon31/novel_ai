@@ -7,6 +7,7 @@ no cloned SQLite rows and no branch-owned files, while source data survives.
 from __future__ import annotations
 
 import io
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
 import unittest
@@ -179,6 +180,30 @@ class ForkAtomicityTests(unittest.TestCase):
             with self.assertRaisesRegex(OSError, "simulated disk copy failure"):
                 self.narrative.fork_story(self.story)
         self.assert_unchanged()
+
+    def test_two_simultaneous_forks_commit_complete_independent_copies(self):
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(
+                lambda _: self.narrative.fork_story(self.story), range(2)))
+        first, second = results
+        self.assertNotEqual(first["id"], second["id"])
+        for branch in results:
+            self.assertTrue(branch["scene_image_url"])
+            self.assertTrue(branch["cover_image_url"])
+            self.assertIn(branch["id"], self.branch_dirs())
+            with self.app.state.store._conn() as db:
+                for table in ("story_turns", "visual_assets",
+                              "creator_media_assets", "lorebook_entries",
+                              "world_turn_snapshots"):
+                    self.assertGreater(
+                        db.execute(f"SELECT COUNT(*) FROM {table} WHERE story_id=?",
+                                   (branch["id"],)).fetchone()[0], 0)
+            self.assertTrue((self.assets_root / branch["id"] / "scene.webp").is_file())
+        self.assertEqual(
+            list((self.root / "fork-staging").glob("*.pending")), [])
+        self.assertEqual(
+            self.client.get(f"/api/v1/stories/{self.story}/turns").json()["turns"]
+            [0]["input_text"], "Exploro la playa")
 
     def test_startup_recovers_only_marked_orphan_branch_from_crash(self):
         abandoned = str(uuid.uuid4())
