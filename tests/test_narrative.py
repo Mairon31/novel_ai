@@ -259,6 +259,11 @@ class NarrativeTests(unittest.TestCase):
             second_active = self.client.post(
                 f"/api/v1/stories/{story_id}/generate/{other_request_id}/cancel")
             self.assertFalse(second_active.json()["cancel_requested"])
+            other_story_id = self.story()
+            wrong_story = self.client.post(
+                f"/api/v1/stories/{other_story_id}/generate/{request_id}/cancel")
+            self.assertFalse(wrong_story.json()["cancel_requested"])
+            self.assertFalse(active.is_set())
             result = self.client.post(
                 f"/api/v1/stories/{story_id}/generate/{request_id}/cancel")
             self.assertEqual(result.status_code, 200, result.text)
