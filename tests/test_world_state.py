@@ -188,6 +188,82 @@ class WorldStateTests(unittest.TestCase):
             self.base + "/turns/" + later["id"]).json()["state"]["location"],
             "castillo futuro")
 
+    def test_branch_restores_historical_canon_instead_of_future_spoiler(self):
+        old = "La protagonista todavía desconoce quién gobierna el castillo."
+        future = "La protagonista descubre que su hermana gobierna el castillo."
+        first_canon = self.client.patch(
+            f"/api/v1/stories/{self.story_id}/canon", json={"canon": old})
+        self.assertEqual(first_canon.status_code, 200)
+        self.assertEqual(self.save(self.state(location="puerto")).status_code, 200)
+        first = self.turn("Llego a la entrada")
+        first_snapshot = self.client.get(self.base + "/turns/" + first["id"])
+        self.assertEqual(first_snapshot.json()["canon"], old)
+        self.client.patch(f"/api/v1/stories/{self.story_id}/canon",
+                          json={"canon": future})
+        self.assertEqual(self.save(self.state(location="castillo"), revision=1).status_code, 200)
+        later = self.turn("Abro la puerta del castillo")
+        self.assertEqual(self.client.get(
+            self.base + "/turns/" + later["id"]).json()["canon"], future)
+        branch_response = self.client.post(
+            f"/api/v1/stories/{self.story_id}/fork",
+            json={"until_turn_id": first["id"]})
+        self.assertEqual(branch_response.status_code, 201, branch_response.text)
+        branched = branch_response.json()
+        self.assertEqual(branched["canon"], old)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{branched['id']}/world-state").json()["state"]
+                         ["location"], "puerto")
+        self.assertEqual(self.narrative.get_story(self.story_id)["canon"], future)
+        current_branch = self.client.post(
+            f"/api/v1/stories/{self.story_id}/fork", json={})
+        self.assertEqual(current_branch.status_code, 201)
+        self.assertEqual(current_branch.json()["canon"], future)
+
+    def test_cloned_fact_ids_remain_stable_across_branch_timeline(self):
+        initial = self.state()
+        fact_id = initial["facts"][0]["id"]
+        self.assertEqual(self.save(initial).status_code, 200)
+        one = self.turn("Primera escena")
+        two = self.turn("Segunda escena")
+        fork_response = self.client.post(
+            f"/api/v1/stories/{self.story_id}/fork", json={})
+        self.assertEqual(fork_response.status_code, 201, fork_response.text)
+        branch_id = fork_response.json()["id"]
+        target_base = f"/api/v1/stories/{branch_id}/world-state"
+        turns = self.client.get(f"/api/v1/stories/{branch_id}/turns").json()["turns"]
+        self.assertEqual(len(turns), 2)
+        snapshots = [self.client.get(
+            target_base + "/turns/" + turn["id"]).json()["state"]
+            for turn in turns]
+        branch_current = self.client.get(target_base).json()["state"]
+        branch_fact_id = branch_current["facts"][0]["id"]
+        self.assertNotEqual(branch_fact_id, fact_id)
+        self.assertEqual(
+            [snapshot["facts"][0]["id"] for snapshot in snapshots],
+            [branch_fact_id, branch_fact_id],
+        )
+        self.assertNotEqual(one["id"], turns[0]["id"])
+        self.assertNotEqual(two["id"], turns[1]["id"])
+
+    def test_existing_snapshot_table_migrates_to_versioned_canon(self):
+        with self.app.state.store._conn() as db:
+            db.execute("DROP TABLE world_turn_snapshots")
+            db.execute(
+                "CREATE TABLE world_turn_snapshots("
+                "turn_id TEXT PRIMARY KEY, story_id TEXT NOT NULL,"
+                "state_json TEXT NOT NULL, created_at REAL NOT NULL)"
+            )
+        from noble_api.world_state import WorldStateService
+        WorldStateService(self.narrative)
+        with self.app.state.store._conn() as db:
+            columns = {row[1] for row in db.execute(
+                "PRAGMA table_info(world_turn_snapshots)")}
+        self.assertIn("canon_text", columns)
+        turn = self.turn("Primer turno después de la migración")
+        result = self.client.get(self.base + "/turns/" + turn["id"])
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()["canon"], "")
+
     def test_failed_snapshot_rolls_back_turn_and_visual_transition(self):
         self.assertEqual(self.save(self.state()).status_code, 200)
         key = str(uuid.uuid4())
