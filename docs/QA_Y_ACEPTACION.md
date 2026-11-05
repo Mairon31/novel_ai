@@ -168,8 +168,9 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771) completada: **201 Python + 36 Playwright PASS**. Las tres pruebas nuevas funcionan con procesos OS reales; no implican pruebas de hardware de apagón físico ni cobertura de la totalidad de puntos internos del COMMIT.
 
 
-### P0 — Gate de persistencia de la limpieza al reiniciar (pendiente CI)
+### P0 — Gate de persistencia de la limpieza al reiniciar (CI verificada)
 
-- [ ] En recuperación mixta, sincronizar `story-assets` después de borrar carpeta huérfana y `fork-staging` después de quitar ambos marcadores, manteniendo la carpeta de la rama ya confirmada.
-- [ ] Ante fallo inyectado de `fsync` en `story-assets`, dejar `.pending`, registrar conflicto, no eliminar origen; un segundo arranque sin fallo debe limpiar el marcador restante sin inventar rama.
-- [ ] Registrar PASS solo tras CI Python completa y Playwright. No atribuir durabilidad NTFS o resistencia a apagones eléctricos.
+- [x] En recuperación mixta, sincronizar `story-assets` después de borrar carpeta huérfana y `fork-staging` después de quitar ambos marcadores, manteniendo la carpeta de la rama ya confirmada.
+- [x] Ante fallo inyectado de `fsync` en `story-assets`, dejar `.pending`, registrar conflicto, no eliminar origen; un segundo arranque sin fallo debe limpiar el marcador restante sin inventar rama.
+- [x] [CI #42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649) completada con 203/203 Python, 36/36 Playwright y build. Las excepciones `fsync` inyectadas no generan pérdida de la historia.
+- [ ] Pendiente: durabilidad NTFS y resistencia demostrada a apagones eléctricos físicos.

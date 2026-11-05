@@ -97,3 +97,6 @@ No se añadieron retardos ni modos de prueba a la API de producción. El mismo c
 ## Sincronización en la fase de recuperación
 
 El protocolo de staging ya fuerza las copias y metadatos antes del COMMIT. El **protocolo inverso** de recuperación completa ese ciclo: una vez determinada la ausencia de fila confirmada de la rama, se elimina su carpeta UUID y se sincroniza `story-assets`; tras eliminar un marcador `.pending` de rama abandonada o confirmada, se sincroniza `fork-staging`. Los contadores de recuperación exitosa se incrementan únicamente si terminan estos pasos. Un `fsync` fallido en la carpeta principal conserva el marcador para el siguiente inicio; las operaciones son seguras al repetirlas con carpeta ya ausente. El comportamiento sigue condicionado a plataformas con sincronización de directorios (POSIX), sin prometer atomicidad entre SQLite y el filesystem ni durabilidad ante cortes reales de energía.
+
+
+**Gate de recuperación de borrados validado:** [CI #42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649) — **203 Python y 36 Playwright PASS**, commit `c2dbbca`. Las pruebas confirman el orden de sincronización de metadatos de directorio durante la limpieza y el reintento después de un error de flush; se ejecutaron en Linux, no en hardware con corte eléctrico.

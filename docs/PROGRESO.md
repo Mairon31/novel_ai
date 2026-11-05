@@ -591,9 +591,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] No cubierto: corte eléctrico real, corrupción filesystem, Windows y terminación exactamente dentro del COMMIT WAL.
 
 
-## 2026-11-05 — P0: durabilidad de la limpieza de staging al recuperar (CI pendiente)
+## 2026-11-05 — P0: durabilidad de la limpieza de staging al recuperar (CI verificada)
 
-- [ ] `NarrativeService.recover_incomplete_forks` sincroniza con `fsync` el directorio padre de recursos al eliminar carpeta de rama abandonada, antes de eliminar el marcador UUID. Después de `marker.unlink`, sincroniza el directorio `fork-staging` (POSIX); solo entonces incrementa `removed_orphans` o `retained_stories`.
-- [ ] Si falla el flush del directorio tras eliminar archivos, el proceso deja el marcador para un intento posterior y cuenta `conflicts` en lugar de informar eliminación exitosa. La recuperación al reiniciar es idempotente cuando los archivos ya se eliminaron.
-- [ ] Regresiones añadidas a `tests/test_fork_atomicity.py`: recuperación mixta de rama confirmada+huérfana verificando sincronización de los dos directorios; fallo de `fsync` de la carpeta de recursos seguido de recuperación sin pérdida de la historia original. **CI pendiente.**
-- [ ] El test usa `fsync` real en runner Linux; no simula pérdida de energía, corrupción real de filesystem ni flush portable de directorio Windows.
+- [x] `NarrativeService.recover_incomplete_forks` sincroniza con `fsync` el directorio padre de recursos al eliminar carpeta de rama abandonada, antes de eliminar el marcador UUID. Después de `marker.unlink`, sincroniza el directorio `fork-staging` (POSIX); solo entonces incrementa `removed_orphans` o `retained_stories`.
+- [x] Si falla el flush del directorio tras eliminar archivos, el proceso deja el marcador para un intento posterior y cuenta `conflicts` en lugar de informar eliminación exitosa. La recuperación al reiniciar es idempotente cuando los archivos ya se eliminaron.
+- [x] Regresiones añadidas a `tests/test_fork_atomicity.py`: recuperación mixta de rama confirmada+huérfana verificando sincronización de los dos directorios; fallo de `fsync` de la carpeta de recursos seguido de recuperación sin pérdida de la historia original. **CI aprobada: [#42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649), 203 Python + 36 Playwright PASS.**
+- [ ] Límites: aunque el test verifica `fsync` real en runner Linux, no simula pérdida de energía, corrupción real de filesystem ni flush portable de directorio Windows.
+
+- [x] GitHub Actions [#42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649): **203/203 Python y 36/36 Playwright aprobadas**, compilación web correcta.
