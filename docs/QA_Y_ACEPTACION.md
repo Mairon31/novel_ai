@@ -75,3 +75,15 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Clonado independiente por rama y persistencia tras reinicio; recuperación por palabra clave de un hecho autoral tras 110 turnos narrativos.
 - [x] Playwright escritorio/móvil crea una entrada y prueba coincidencia/no coincidencia desde Creator Studio. [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
 - [ ] Testigos presentes/ausentes, scopes de personaje, memorias episódicas con FTS5/embeddings, regex con timeout, recursión y presupuestos **en tokens reales**. No atribuir estas capacidades al primer Lorebook.
+
+
+## QA de mundo estructurado y bifurcaciones históricas (2026-11-05)
+
+- [x] Estado manual con revisión inicial 0, compare-and-set, respuesta 409 a revisión obsoleta y rechazo 422 de NPC ajeno, testigo inexistente, duplicados o hecho privado sin testigos.
+- [x] Prompt de sistema con hechos públicos y privados de testigos presentes; los hechos de testigos ausentes no aparecen ni en la entrada visible del jugador. El LLM no escribe el estado confirmado directamente.
+- [x] Cada turno posee un snapshot inmutable de ubicación, inventario, relaciones, indicadores y canon. Editar después no modifica el pasado.
+- [x] Crear rama desde un turno antiguo recupera su canon **sin revelaciones futuras** y mapea NPC/hechos a IDs propios. Una rama desde el presente conserva la versión reciente. UUID de hecho estables a través de sus snapshots de la rama.
+- [x] Migración SQLite para añadir `canon_text` a `world_turn_snapshots` existentes y apertura tras reinicio.
+- [x] Inyección de fallo en inserción de snapshot confirma rollback simultáneo de texto narrativo, escena y snapshot; reintento de la misma clave idempotente funciona.
+- [x] `tests/test_world_state.py`: Python **160 PASS** en el código de la fase. Prueba nueva Playwright desktop/móvil `apps/web/tests/world-state.spec.ts`: edición del mundo, presencia, testigos, inventario, indicador, edición posterior y consulta de turno antiguo. El resultado final de CI se registra en PROGRESO.
+- [ ] Rebobinado completo sin bifurcar, mutaciones del mundo derivadas del LLM validadas deterministicamente, afirmaciones del LLM auditadas contra testigos, atomicidad de **todas** las etapas de clonación y pruebas con 100+ turnos con snapshots completos.
