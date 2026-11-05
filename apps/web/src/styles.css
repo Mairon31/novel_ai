@@ -733,3 +733,18 @@
   overflow-y:auto;scrollbar-width:thin}
 @media(max-width:760px){.workspace-settings-tabs{position:static;max-height:none}
   .settings-nav-group{padding:8px 0 12px}}
+
+
+/* Reader inspector belongs to a temporary drawer, never a third grid row.
+   In the former layout it could render below the story on wide desktops. */
+.story-studio.is-reading .noble-reader-inspector{
+  display:none;position:fixed;right:0;top:0;bottom:0;z-index:91;
+  width:min(430px,92vw);height:100dvh;min-height:0;max-height:none;
+  overflow:auto;box-shadow:-24px 0 72px #0009
+}
+.story-studio.is-reading .noble-reader-inspector.is-open{display:flex}
+.story-studio.is-reading .noble-inspector-backdrop{
+  display:block;position:fixed;inset:0;z-index:90;
+  background:rgba(4,6,16,.7);backdrop-filter:blur(3px);
+  pointer-events:auto;opacity:1
+}
