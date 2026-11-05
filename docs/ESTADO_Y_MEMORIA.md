@@ -119,3 +119,18 @@ La activación del narrador analiza la intervención presente y los últimos cua
 La interfaz Creator Studio incluye pestaña propia de Lorebook con editor, prioridades, activadores y previsualización del texto exacto añadido. API y pruebas `tests/test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
 
 **No implementado todavía:** scopes de personaje/testigos (control de omnisciencia), snapshots de canon por turno, recuperación semántica de memorias episódicas, regex con timeout, recursión de Lorebooks y reparto del contexto con tokenizador del runtime. Estas tareas siguen abiertas en [TODO](../TODO.md).
+
+
+## Implementación P1: estado estructurado por turno, rama y testigos (2026-11-05)
+
+Noble AI integra `world_state.py` y una pestaña **Estado del mundo** en Creator Studio. El autor confirma explícitamente `location`, `time_of_day`, `weather`, `present_character_ids`, `inventory`, `relationships`, `flags` y `facts`. Un hecho contiene texto, UUID persistente, `public` y `witness_character_ids`. El servidor valida que cada NPC de presencia, testimonio y relación pertenezca a la historia, que los hechos privados tengan al menos un testigo, que no haya duplicados y que los límites de longitud se respeten.
+
+Las ediciones usan `PUT /api/v1/stories/{uuid}/world-state` con `expected_revision`; un cambio concurrente con versión obsoleta devuelve **409** y no sobrescribe el trabajo ajeno. `world_state_edits` conserva revisiones confirmadas; los cambios no se deducen de frases narrativas ni se incorporan automáticamente por la IA.
+
+Al persistir cada turno, `NarrativeService.append` graba **en la misma transacción SQLite** el texto, la transición espacial y una fila en `world_turn_snapshots` con el estado y el **canon textual exacto** de ese momento. La consulta `GET .../world-state/turns/{turn_id}` permite visualizar el pasado. Una rama creada desde un turno copia únicamente sus snapshots históricos, restaura el estado y el canon del punto seleccionado y remapea los UUID de personajes y hechos en esa rama, sin mezclar con cambios futuros. Turnos preexistentes antes de las migraciones pueden carecer de snapshot: en ese caso no se inventa uno ni se copia el canon futuro.
+
+Para evitar omnisciencia directa, `WorldStateService.context` **no envía los hechos privados al modelo si ninguno de sus testigos está presente**. Si sí hay testigos, el contexto identifica quién conoce cada hecho y pide que el narrador no lo atribuya a otros. Es un filtro de entrada verificable, **no una prueba de que el LLM vaya a respetar todas las restricciones**. El Lorebook de historia global y los mensajes de episodios anteriores todavía necesitan controles cognitivos adicionales.
+
+La UI incluye posición, momento, clima, inventario, relaciones por NPC, indicadores booleanos, hechos públicos/privados con selección de testigos, guardado manual con control de revisiones y un inspector de snapshots por turno. `tests/test_world_state.py` comprueba transacciones, confirmación/rollback, canon histórico, migraciones, independencia de ramas y filtrado de testigos. La ejecución Python de la fase obtuvo **160 pruebas aprobadas**; la última CI de navegador se vincula en [PROGRESO](PROGRESO.md).
+
+**Pendiente:** rebobinado destructivo completo, actualización automática del estado mediante propuesta validada, aislamiento de conocimiento entre Lorebooks/diálogos y atomicidad entre todas las fases de una bifurcación. El estado de tiempo/clima y presencia es confirmado por el autor, no detectado automáticamente con fiabilidad por el LLM.
