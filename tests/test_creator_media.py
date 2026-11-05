@@ -143,5 +143,62 @@ class CreatorMediaTests(unittest.TestCase):
                               .json()["assets"]), 1)
 
 
+    def test_editorial_cover_is_selected_and_stays_separate_from_scene(self):
+        cover = self.upload("cover", "La ciudad del sol", "Portada del libro en una ciudad brillante")
+        self.assertEqual(cover.status_code, 201, cover.text)
+        selected = self.client.put(f"/api/v1/stories/{self.story}/creator/cover",
+            json={"asset_id": cover.json()["id"]})
+        self.assertEqual(selected.status_code, 200, selected.text)
+        self.assertEqual(selected.json()["cover_asset_id"], cover.json()["id"])
+        self.assertEqual(selected.json()["cover_image_url"], cover.json()["url"])
+        with Image.open(io.BytesIO(self.client.get(cover.json()["url"]).content)) as img:
+            self.assertEqual(img.format, "WEBP")
+        listing = self.client.get("/api/v1/stories").json()["stories"]
+        self.assertEqual(next(x for x in listing if x["id"] == self.story)["cover_image_url"],
+                         cover.json()["url"])
+
+        # Creating a new scene image must not replace the editorial artwork.
+        scene = self.client.post(f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("scene.png", image_bytes("RGB"), "image/png")})
+        self.assertEqual(scene.status_code, 200, scene.text)
+        self.assertTrue(scene.json()["scene_image_url"])
+        self.assertEqual(scene.json()["cover_image_url"], cover.json()["url"])
+        self.assertNotEqual(scene.json()["scene_image_url"], cover.json()["url"])
+
+        self.assertEqual(self.client.delete(
+            f"/api/v1/stories/{self.story}/creator/assets/{cover.json()['id']}").status_code, 204)
+        after = self.client.get(f"/api/v1/stories/{self.story}").json()
+        self.assertIsNone(after["cover_asset_id"])
+        self.assertIsNone(after["cover_image_url"])
+        self.assertIsNotNone(after["scene_image_url"])
+
+    def test_editorial_cover_selection_is_validated_and_cloned(self):
+        cover = self.upload("cover", "Cielo de Aira", "Portada con cielo violeta")
+        self.assertEqual(cover.status_code, 201, cover.text)
+        background = self.upload("background", "Salón", "Habitación con vistas al mar")
+        self.assertEqual(background.status_code, 201, background.text)
+        url = f"/api/v1/stories/{self.story}/creator/cover"
+        invalid = self.client.put(url, json={"asset_id": background.json()["id"]})
+        self.assertEqual(invalid.status_code, 422)
+        self.assertEqual(self.client.put(url, json={"asset_id": str(uuid.uuid4())}).status_code, 422)
+        self.assertEqual(self.client.put(url, json={"asset_id": "not-an-uuid"}).status_code, 422)
+        self.assertEqual(self.client.put(url, json={"asset_id": cover.json()["id"]}).status_code, 200)
+        fork = self.client.post(f"/api/v1/stories/{self.story}/fork", json={})
+        self.assertEqual(fork.status_code, 201, fork.text)
+        child = fork.json()
+        self.assertNotEqual(child["cover_asset_id"], cover.json()["id"])
+        self.assertTrue(child["cover_image_url"])
+        self.assertEqual(self.client.get(child["cover_image_url"]).status_code, 200)
+        self.assertEqual(self.client.get(
+            child["cover_image_url"].replace(child["id"], self.story)).status_code, 404)
+        self.assertEqual(self.client.put(f"/api/v1/stories/{child['id']}/creator/cover",
+            json={"asset_id": cover.json()["id"]}).status_code, 422)
+        self.assertEqual(self.client.put(f"/api/v1/stories/{child['id']}/creator/cover",
+            json={"asset_id": None}).status_code, 200)
+        self.assertIsNone(self.client.get(f"/api/v1/stories/{child['id']}").json()["cover_image_url"])
+        self.assertEqual(self.client.get(f"/api/v1/stories/{self.story}").json()["cover_image_url"],
+                         cover.json()["url"])
+
+
 if __name__ == "__main__":
     unittest.main()
