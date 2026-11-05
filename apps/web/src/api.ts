@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, WorldStateData, WorldStateDocument, WorldTurnSnapshot } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -180,6 +180,14 @@ export const api = {
   saveCreatorBlueprint: (id: string, input: CreatorBlueprintDraft) => request<CreatorBlueprint>(
     '/stories/' + encodeURIComponent(id) + '/creator',
     { method: 'PUT', body: JSON.stringify(input) }),
+  worldState: (storyId: string) => request<WorldStateDocument>(
+    '/stories/' + encodeURIComponent(storyId) + '/world-state'),
+  saveWorldState: (storyId: string, expected_revision: number, state: WorldStateData) =>
+    request<WorldStateDocument>('/stories/' + encodeURIComponent(storyId) + '/world-state',
+      { method: 'PUT', body: JSON.stringify({ expected_revision, state }) }),
+  worldTurnSnapshot: (storyId: string, turnId: string) => request<WorldTurnSnapshot>(
+    '/stories/' + encodeURIComponent(storyId) + '/world-state/turns/' +
+    encodeURIComponent(turnId)),
   lorebookEntries: (id: string) => request<{ entries: LorebookEntry[] }>(
     '/stories/' + encodeURIComponent(id) + '/lorebook'),
   saveLorebookEntry: (id: string, entry: LorebookEntryDraft, entryId?: string) =>
