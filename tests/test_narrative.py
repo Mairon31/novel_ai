@@ -1,4 +1,5 @@
 """Narrative provider integration tests: fake LOCAL engines, not real GPU inferencing."""
+import asyncio
 import json
 import sys
 import tempfile
@@ -150,6 +151,46 @@ class NarrativeTests(unittest.TestCase):
                                     json={"mode":"say", "input_text":"",
                                           "request_id": str(uuid.uuid4())})
         self.assertEqual(rejected.status_code, 422)
+
+    def test_disconnect_between_tokens_prevents_commit_and_releases_gpu(self):
+        self.assertEqual(self.settings().status_code, 200)
+        story_id = self.story()
+        request_id = str(uuid.uuid4())
+        checks = 0
+        async def disconnected():
+            nonlocal checks
+            checks += 1
+            return checks >= 3
+        async def consume():
+            return [event async for event in self.app.state.narrative.stream_turn(
+                story_id, request_id, "do", "Abro la puerta", disconnected=disconnected)]
+        events = asyncio.run(consume())
+        self.assertTrue(any("event: delta" in event for event in events), events)
+        self.assertFalse(any("event: done" in event for event in events))
+        self.assertEqual(self.app.state.narrative.turns(story_id), [])
+        self.assertIsNone(self.app.state.resources.active_workload()["active"])
+        # The exact idempotency key remains retryable after cancellation.
+        retry = self.client.post(f"/api/v1/stories/{story_id}/generate", json={
+            "mode": "do", "input_text": "Abro la puerta", "request_id": request_id})
+        self.assertIn("event: done", retry.text)
+        self.assertEqual(len(self.app.state.narrative.turns(story_id)), 1)
+
+    def test_closing_sse_generator_after_delta_rolls_back_unfinished_turn(self):
+        self.assertEqual(self.settings().status_code, 200)
+        story_id = self.story()
+        request_id = str(uuid.uuid4())
+        async def cancel_after_first_delta():
+            stream = self.app.state.narrative.stream_turn(
+                story_id, request_id, "do", "Abro la puerta")
+            try:
+                async for event in stream:
+                    if "event: delta" in event:
+                        return
+            finally:
+                await stream.aclose()
+        asyncio.run(cancel_after_first_delta())
+        self.assertEqual(self.app.state.narrative.turns(story_id), [])
+        self.assertIsNone(self.app.state.resources.active_workload()["active"])
 
     def test_story_survives_restart(self):
         self.settings()
