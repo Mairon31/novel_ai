@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -63,6 +63,20 @@ export const api = {
     '/provider-credentials/openrouter', { method: 'PUT', body: JSON.stringify({ api_key }) }),
   deleteOpenRouterCredential: () => request<ProviderCredentialStatus>(
     '/provider-credentials/openrouter', { method: 'DELETE' }),
+  scenePlan: (storyId: string) => request<ScenePlan>(
+    '/stories/' + encodeURIComponent(storyId) + '/scene-plan'),
+  saveScenePlan: (storyId: string, plan: ScenePlanInput) => request<ScenePlan>(
+    '/stories/' + encodeURIComponent(storyId) + '/scene-plan',
+    { method: 'PUT', body: JSON.stringify(plan) }),
+  previewScenePlan: (storyId: string, prompt: string) => request<{
+    prompt: string; scene_id: string; revision: number;
+    inference_used: boolean; reference_asset_id: string | null;
+  }>('/stories/' + encodeURIComponent(storyId) + '/scene-plan/preview',
+    { method: 'POST', body: JSON.stringify({ prompt }) }),
+  setCharacterReference: (storyId: string, characterId: string, assetId: string | null) =>
+    request<VisualCharacter>('/stories/' + encodeURIComponent(storyId) +
+      '/visual-characters/' + encodeURIComponent(characterId) + '/reference',
+      { method: 'PUT', body: JSON.stringify({ asset_id: assetId }) }),
   visualState: (storyId: string) => request<VisualState>(
     '/stories/' + encodeURIComponent(storyId) + '/visual-state'),
   setSceneLocation: (storyId: string, location: string) => request<VisualState>(

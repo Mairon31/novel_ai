@@ -5,7 +5,7 @@ import {
   Sparkles, UploadCloud, UserRound, X,
 } from 'lucide-react';
 import { api } from './api';
-import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft } from './types';
+import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
 const tabs: { id: Tab; label: string }[] = [
@@ -52,6 +52,8 @@ export function VisualReader({
   const [readerError, setReaderError] = useState('');
   const [visual, setVisual] = useState<VisualState | null>(null);
   const [sceneLocation, setSceneLocation] = useState('');
+  const [scenePlan, setScenePlan] = useState<ScenePlan | null>(null);
+  const [characterReferenceId, setCharacterReferenceId] = useState('');
   const [visualBusy, setVisualBusy] = useState(false);
   const [previewPrompt, setPreviewPrompt] = useState('');
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
@@ -91,12 +93,14 @@ export function VisualReader({
   useEffect(() => {
     if (!active) { setVisual(null); return; }
     let live = true;
-    setVisual(null); setPreviewPrompt('');
-    api.visualState(active.id).then(current => {
-      if (!live) return;
-      setVisual(current);
-      setSceneLocation(current.current_scene.location);
-    }).catch(() => { /* gallery remains optional and doesn't block reading */ });
+    setVisual(null); setScenePlan(null); setPreviewPrompt('');
+    Promise.all([api.visualState(active.id), api.scenePlan(active.id)])
+      .then(([current, plan]) => {
+        if (!live) return;
+        setVisual(current);
+        setSceneLocation(current.current_scene.location);
+        setScenePlan(plan);
+      }).catch(() => { /* gallery remains optional and doesn't block reading */ });
     return () => { live = false; };
   }, [active?.id, turns.length]);
   useEffect(() => {
@@ -163,6 +167,7 @@ export function VisualReader({
     const next = await api.visualState(storyId);
     setVisual(next);
     setSceneLocation(next.current_scene.location);
+    setScenePlan(await api.scenePlan(storyId));
   }
   async function saveSceneLocation() {
     if (!active || sceneLocation.trim().length < 2) return;
@@ -170,6 +175,7 @@ export function VisualReader({
     try {
       const next = await api.setSceneLocation(active.id, sceneLocation.trim());
       setVisual(next); setSceneLocation(next.current_scene.location);
+      setScenePlan(await api.scenePlan(active.id));
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
@@ -187,6 +193,7 @@ export function VisualReader({
   }
   function editVisualCharacter(person: VisualState['characters'][number]) {
     setEditingCharacterId(person.id);
+    setCharacterReferenceId(person.reference_asset_id || '');
     setCharacter({ name: person.name, appearance: person.appearance,
       outfit: person.outfit, distinguishing_features: person.distinguishing_features });
   }
@@ -197,15 +204,55 @@ export function VisualReader({
       await api.saveVisualCharacter(active.id, character, editingCharacterId || undefined);
       await refreshVisual(active.id);
       setEditingCharacterId(null);
+      setCharacterReferenceId('');
       setCharacter({ name: '', appearance: '', outfit: '', distinguishing_features: '' });
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
+  async function saveCharacterReference() {
+    if (!active || !editingCharacterId) return;
+    setVisualBusy(true); setReaderError('');
+    try {
+      await api.setCharacterReference(active.id, editingCharacterId,
+        characterReferenceId || null);
+      await refreshVisual(active.id);
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setVisualBusy(false); }
+  }
+
+  async function saveComposition() {
+    if (!active || !scenePlan) return;
+    setVisualBusy(true); setReaderError('');
+    try {
+      const plan: ScenePlanInput = {
+        shot: scenePlan.shot, lighting: scenePlan.lighting,
+        mood: scenePlan.mood, direction: scenePlan.direction,
+        visible_character_ids: scenePlan.visible_character_ids,
+        reference_character_id: scenePlan.reference_character_id,
+      };
+      const saved = await api.saveScenePlan(active.id, plan);
+      setScenePlan(saved);
+      setIllustrationNotice('Plan de escena guardado. Se utilizará para las próximas ilustraciones.');
+    } catch (e) { setReaderError((e as Error).message); }
+    finally { setVisualBusy(false); }
+  }
+
+  function toggleVisibleCharacter(id: string, present: boolean) {
+    setScenePlan(plan => plan ? {
+      ...plan,
+      visible_character_ids: present
+        ? [...plan.visible_character_ids, id]
+        : plan.visible_character_ids.filter(personId => personId !== id),
+      reference_character_id: !present && plan.reference_character_id === id
+        ? null : plan.reference_character_id,
+    } : plan);
+  }
+
   async function previewIllustrationPrompt() {
     if (!active || imagePrompt.trim().length < 8) return;
     setVisualBusy(true); setReaderError('');
     try {
-      const result = await api.imagePromptPreview(active.id, imagePrompt.trim());
+      const result = await api.previewScenePlan(active.id, imagePrompt.trim());
       setPreviewPrompt(result.prompt);
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
@@ -442,6 +489,22 @@ export function VisualReader({
             onClick={() => void saveCharacter()}>
             <Check size={15}/>{editingCharacterId ? 'Guardar ficha visual' : 'Añadir personaje visual'}
           </button>
+          {editingCharacterId && <div className="noble-prompt-preview">
+            <strong>Imagen de identidad para este personaje</strong>
+            <p>Asocia una ilustración importada o generada. El plan de escena puede usarla
+              como referencia de img2img cuando el personaje aparezca.</p>
+            <label className="noble-inspector-field">Referencia guardada
+              <select aria-label="Referencia del personaje" value={characterReferenceId}
+                onChange={e => setCharacterReferenceId(e.target.value)}>
+                <option value="">Sin imagen asignada</option>
+                {visual?.assets.map(asset => <option key={asset.id} value={asset.id}>
+                  {asset.origin === 'comfyui' ? 'Generada' : 'Importada'} · {asset.id.slice(0, 8)}
+                </option>)}
+              </select>
+            </label>
+            <button className="secondary-button" disabled={visualBusy}
+              onClick={() => void saveCharacterReference()}>Guardar referencia visual</button>
+          </div>}
           {editingCharacterId && <button className="secondary-button" onClick={() => {
             setEditingCharacterId(null);
             setCharacter({ name: '', appearance: '', outfit: '', distinguishing_features: '' });
@@ -477,6 +540,71 @@ export function VisualReader({
               onChange={e => setSceneLocation(e.target.value)}/></label>
           <button className="secondary-button" disabled={visualBusy || sceneLocation.trim().length < 2}
             onClick={() => void saveSceneLocation()}><Check size={15}/> Confirmar escenario</button>
+          <h4>Plan de la ilustración</h4>
+          <p className="noble-inspector-hint">Puedes planificar cada escena antes de solicitar
+            una imagen. El reparto seleccionado se conserva por escenario.</p>
+          {scenePlan && <>
+            <label className="noble-inspector-field">Tipo de plano
+              <select aria-label="Plano de escena" value={scenePlan.shot}
+                onChange={e => setScenePlan(plan => plan ? {
+                  ...plan, shot: e.target.value as ScenePlan['shot'],
+                } : plan)}>
+                <option value="wide">General</option>
+                <option value="medium">Medio</option>
+                <option value="closeup">Primer plano</option>
+              </select>
+            </label>
+            <label className="noble-inspector-field">Iluminación de escena
+              <select aria-label="Luz de escena" value={scenePlan.lighting}
+                onChange={e => setScenePlan(plan => plan ? {
+                  ...plan, lighting: e.target.value as ScenePlan['lighting'],
+                } : plan)}>
+                <option value="natural">Natural</option>
+                <option value="sunset">Atardecer</option>
+                <option value="night">Noche</option>
+                <option value="interior">Interior</option>
+                <option value="dramatic">Dramática</option>
+              </select>
+            </label>
+            <label className="noble-inspector-field">Atmósfera
+              <input aria-label="Atmósfera visual" maxLength={160} value={scenePlan.mood}
+                onChange={e => setScenePlan(plan => plan ? {
+                  ...plan, mood: e.target.value,
+                } : plan)}/></label>
+            <label className="noble-inspector-field">Composición y acción
+              <textarea aria-label="Dirección de escena" rows={3} maxLength={900}
+                value={scenePlan.direction}
+                onChange={e => setScenePlan(plan => plan ? {
+                  ...plan, direction: e.target.value,
+                } : plan)}/></label>
+            <p className="noble-inspector-hint">Personajes visibles (máximo 6)</p>
+            {visual?.characters.map(person => <label key={person.id}
+                className="noble-inspector-field noble-cast-choice">
+              <input type="checkbox" aria-label={'Personaje visible ' + person.name}
+                disabled={!scenePlan.visible_character_ids.includes(person.id) &&
+                  scenePlan.visible_character_ids.length >= 6}
+                checked={scenePlan.visible_character_ids.includes(person.id)}
+                onChange={e => toggleVisibleCharacter(person.id, e.target.checked)}/>
+              {person.name}
+            </label>)}
+            <label className="noble-inspector-field">Personaje de referencia
+              <select aria-label="Foco visual" value={scenePlan.reference_character_id || ''}
+                onChange={e => setScenePlan(plan => plan ? {
+                  ...plan, reference_character_id: e.target.value || null,
+                } : plan)}>
+                <option value="">Sin referencia automática</option>
+                {visual?.characters.filter(person =>
+                  scenePlan.visible_character_ids.includes(person.id)).map(person =>
+                  <option key={person.id} value={person.id}>
+                    {person.name}{person.reference_asset_id ? ' · imagen asignada' : ' · solo texto'}
+                  </option>)}
+              </select>
+            </label>
+            <button className="secondary-button" disabled={visualBusy}
+              onClick={() => void saveComposition()}>
+              <Check size={15}/> Guardar plan de escena
+            </button>
+          </>}
           <h4>Galería versionada ({visual?.assets.length || 0})</h4>
           {active.scene_image_url ? <img className="noble-gallery-image"
             src={active.scene_image_url} alt={'Ilustración de ' + active.title}/> :

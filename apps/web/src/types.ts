@@ -185,7 +185,7 @@ export type VisualAsset = {
 export type VisualCharacter = {
   id: string; story_id: string; name: string; appearance: string;
   outfit: string; distinguishing_features: string;
-  revision: number; updated_at: number;
+  revision: number; updated_at: number; reference_asset_id: string | null;
 };
 export type VisualCharacterDraft = Pick<VisualCharacter,
   'name' | 'appearance' | 'outfit' | 'distinguishing_features'>;
@@ -205,3 +205,13 @@ export type ResourceStatus = {
   selected_gpu: ResourceStatus['gpus'][number] | null;
   observed_at: number; message: string; monitor_only: boolean;
 };
+
+export type ScenePlan = {
+  scene_id: string; story_id: string;
+  shot: 'wide' | 'medium' | 'closeup';
+  lighting: 'natural' | 'sunset' | 'night' | 'interior' | 'dramatic';
+  mood: string; direction: string; visible_character_ids: string[];
+  reference_character_id: string | null; revision: number; updated_at: number | null;
+};
+export type ScenePlanInput = Pick<ScenePlan, 'shot' | 'lighting' | 'mood' | 'direction'
+  | 'visible_character_ids' | 'reference_character_id'>;
