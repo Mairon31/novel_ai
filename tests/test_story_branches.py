@@ -75,6 +75,64 @@ class BranchTests(unittest.TestCase):
                          "Aya todavía no conoce la identidad del guardián.")
         self.assertIsNone(original["origin_story_id"])
 
+    def test_branch_clones_gallery_visual_identity_and_no_future_scene_leak(self):
+        # Original scene and its art exist before the later forest chapter.
+        first=self.app.state.visual.all(self.parent["id"])
+        self.assertEqual(len(first["assets"]),1)
+        char={
+            "name":"Aira", "appearance":"Cabello rojo rizado y ojos verde esmeralda.",
+            "outfit":"Armadura de cuero", "distinguishing_features":"Pulsera azul",
+        }
+        added=self.client.post(
+            f"/api/v1/stories/{self.parent['id']}/visual-characters",json=char)
+        self.assertEqual(added.status_code,201,added.text)
+        prior_turn=self.turns[0]["id"]
+        next_turn=self.app.state.narrative.append(
+            self.parent["id"],str(uuid.uuid4()),"continue","",
+            "Llegaron al bosque oscuro. Aira observó las estrellas.","fixture")
+        self.assertIsNotNone(next_turn.get("scene_transition"))
+        data=io.BytesIO()
+        Image.new("RGB",(25,25),(210,40,10)).save(data,format="PNG")
+        late=self.client.post(
+            f"/api/v1/stories/{self.parent['id']}/scene-image",
+            files={"file":("new.png",data.getvalue(),"image/png")})
+        self.assertEqual(late.status_code,200,late.text)
+        source_gallery=self.app.state.visual.all(self.parent["id"])
+        self.assertEqual(len(source_gallery["scenes"]),2)
+        self.assertEqual(len(source_gallery["assets"]),2)
+
+        early=self.client.post(f"/api/v1/stories/{self.parent['id']}/fork",
+            json={"until_turn_id":prior_turn})
+        self.assertEqual(early.status_code,201,early.text)
+        branch=early.json()["id"]
+        fork_gallery=self.client.get(
+            f"/api/v1/stories/{branch}/visual-state").json()
+        self.assertEqual(len(fork_gallery["scenes"]),1)
+        self.assertEqual(len(fork_gallery["assets"]),1)
+        self.assertEqual(len(fork_gallery["characters"]),1)
+        self.assertEqual(fork_gallery["characters"][0]["name"],"Aira")
+        self.assertNotEqual(fork_gallery["assets"][0]["id"],
+                            source_gallery["assets"][1]["id"])
+        self.assertNotEqual(
+            self.client.get(f"/api/v1/stories/{branch}/scene-image").content,
+            self.client.get(f"/api/v1/stories/{self.parent['id']}/scene-image").content)
+        fork_person=fork_gallery["characters"][0]
+        edit=self.client.put(
+            f"/api/v1/stories/{branch}/visual-characters/{fork_person['id']}",
+            json={**char,"outfit":"Capa amarilla"})
+        self.assertEqual(edit.status_code,200,edit.text)
+        unchanged=self.app.state.visual.all(self.parent["id"])
+        self.assertEqual(unchanged["characters"][0]["outfit"],"Armadura de cuero")
+
+        full=self.client.post(f"/api/v1/stories/{self.parent['id']}/fork",json={})
+        self.assertEqual(full.status_code,201,full.text)
+        copied=self.client.get(
+            f"/api/v1/stories/{full.json()['id']}/visual-state").json()
+        self.assertEqual(len(copied["scenes"]),2)
+        self.assertEqual(len(copied["assets"]),2)
+        self.assertEqual(len(copied["characters"]),1)
+        self.assertEqual(copied["selected_asset_id"],copied["assets"][0]["id"])
+
     def test_full_fork_and_foreign_turn_validation(self):
         full=self.client.post(f"/api/v1/stories/{self.parent['id']}/fork",json={})
         self.assertEqual(full.status_code,201,full.text)
