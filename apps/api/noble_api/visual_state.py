@@ -7,6 +7,7 @@ content-addressed WebP versions, with a separately selectable active asset.
 from __future__ import annotations
 
 import hashlib
+from contextlib import nullcontext
 import io
 import json
 import os
@@ -141,7 +142,7 @@ class VisualState:
             character_columns = [row[1] for row in conn.execute(
                 "PRAGMA table_info(visual_characters)")]
             if "reference_asset_id" not in character_columns:
-                conn.execute("ALTER TABLE visual_characters ADD COLUMN reference_asset_id TEXT")
+                db.execute("ALTER TABLE visual_characters ADD COLUMN reference_asset_id TEXT")
             columns = [row[1] for row in conn.execute("PRAGMA table_info(visual_assets)")]
             if "render_signature" not in columns:
                 conn.execute("ALTER TABLE visual_assets ADD COLUMN render_signature TEXT")
@@ -342,24 +343,26 @@ class VisualState:
 
     def clone_branch(self, source_id: str, branch_id: str,
                      turn_ids: dict[str, str], partial: bool = False,
-                     cutoff_created_at: float | None = None) -> dict[str, str]:
+                     cutoff_created_at: float | None = None,
+                     conn=None) -> dict[str, str]:
         """Fork visual history with independent scene/character/art identifiers.
 
         A partial fork only receives scenes that existed at its selected turn.
         A gallery from a later scene is not exposed on an earlier branch.
         """
-        self.all(source_id)  # migrate any pre-gallery scene.webp before copying
-        self.scene(branch_id)  # ensures a scene even for older histories
-        with self.store._conn() as conn:
-            scenes = [dict(row) for row in conn.execute(
+        if conn is None:
+            self.all(source_id)  # legacy migration before independent fork
+            self.scene(branch_id)
+        with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
+            scenes = [dict(row) for row in db.execute(
                 "SELECT * FROM visual_scenes WHERE story_id=? ORDER BY created_at,id",
                 (source_id,))]
-            gallery = [dict(row) for row in conn.execute(
+            gallery = [dict(row) for row in db.execute(
                 "SELECT * FROM visual_assets WHERE story_id=? ORDER BY created_at,id",
                 (source_id,))]
-            chars = [dict(row) for row in conn.execute(
+            chars = [dict(row) for row in db.execute(
                 "SELECT * FROM visual_characters WHERE story_id=?", (source_id,))]
-            selected = conn.execute(
+            selected = db.execute(
                 "SELECT asset_id FROM visual_current WHERE story_id=?", (source_id,)).fetchone()
         selected_id = selected["asset_id"] if selected else None
         allowed = []
@@ -378,9 +381,9 @@ class VisualState:
         try:
             with self.store._conn() as conn:
                 # Discard initial branch scene; replace with cloned history.
-                conn.execute("DELETE FROM visual_scenes WHERE story_id=?", (branch_id,))
+                db.execute("DELETE FROM visual_scenes WHERE story_id=?", (branch_id,))
                 for index, item in enumerate(allowed):
-                    conn.execute("INSERT INTO visual_scenes VALUES(?,?,?,?,?,?)", (
+                    db.execute("INSERT INTO visual_scenes VALUES(?,?,?,?,?,?)", (
                         scene_map[item["id"]], branch_id, item["location"],
                         turn_ids.get(item["source_turn_id"]) if item["source_turn_id"] else None,
                         item["detection"], now + index * 0.00001))
@@ -389,15 +392,15 @@ class VisualState:
                     if art["scene_id"] not in scene_map:
                         continue
                     old_file = self._asset_path(source_id, art["id"])
-                    if not old_file.is_file():
-                        continue
+                    if not old_file.is_file() or old_file.is_symlink():
+                        raise ValueError("Falta una ilustración de la galería de la historia original")
                     new_asset = str(uuid.uuid4())
                     new_file = self._asset_path(branch_id, new_asset)
                     new_file.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(old_file, new_file)
                     copied_paths.append(new_file)
                     asset_map[art["id"]] = new_asset
-                    conn.execute("""INSERT INTO visual_assets
+                    db.execute("""INSERT INTO visual_assets
                         (id,story_id,scene_id,file_name,content_sha256,origin,prompt,
                          checkpoint,seed,created_at,render_signature)
                         VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (
@@ -408,7 +411,7 @@ class VisualState:
                 for index, person in enumerate(chars):
                     copied_id = str(uuid.uuid4())
                     character_map[person["id"]] = copied_id
-                    conn.execute("""INSERT INTO visual_characters
+                    db.execute("""INSERT INTO visual_characters
                         (id,story_id,name,appearance,outfit,distinguishing_features,
                          revision,updated_at,reference_asset_id)
                         VALUES(?,?,?,?,?,?,?,?,?)""", (
@@ -421,12 +424,13 @@ class VisualState:
                 else:
                     new_selected = next(reversed(asset_map.values()), None)
                 if new_selected:
-                    conn.execute("INSERT INTO visual_current VALUES (?,?)",
+                    db.execute("INSERT INTO visual_current VALUES (?,?)",
                                  (branch_id, new_selected))
             if new_selected:
                 self.legacy_copy(branch_id, self._asset_path(branch_id, new_selected))
             if self.planner is not None:
-                self.planner.clone(source_id, branch_id, scene_map, character_map)
+                self.planner.clone(source_id, branch_id, scene_map, character_map,
+                                   conn=conn)
         except Exception:
             for copied in copied_paths:
                 copied.unlink(missing_ok=True)
