@@ -32,7 +32,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByRole('button', { name: 'Añadir personaje visual' }).click();
   await expect(page.getByRole('button', { name: /Aira.*Revisión 1/ })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Galería' }).click();
+  await page.getByRole('button', { name: 'Galería', exact: true }).click();
   await page.getByLabel('Lugar actual').fill('Biblioteca antigua');
   await page.getByRole('button', { name: 'Confirmar escenario' }).click();
   await expect(page.getByText('Escenas registradas: 2.')).toBeVisible();
