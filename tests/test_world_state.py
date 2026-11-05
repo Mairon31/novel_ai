@@ -10,6 +10,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
@@ -105,6 +106,52 @@ class WorldStateTests(unittest.TestCase):
         duplicate = self.save(self.state(inventory=["mapa", "MAPA"]), revision=1)
         self.assertEqual(duplicate.status_code, 422)
         self.assertEqual(self.default()["revision"], 1)
+
+    def test_concurrent_author_edits_cannot_overwrite_same_revision(self):
+        from noble_api.world_state import WorldStateUpdate
+        service = self.app.state.world
+
+        def attempt(location):
+            body = WorldStateUpdate.model_validate({
+                "expected_revision": 0,
+                "state": self.state(location=location),
+            })
+            try:
+                return ("saved", service.save(self.story_id, body)["state"]["location"])
+            except ValueError as exc:
+                return ("conflict", str(exc))
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(attempt, ["Bosque oriental", "Torre occidental"]))
+        self.assertEqual(sorted(kind for kind, _ in results),
+                         ["conflict", "saved"], results)
+        self.assertEqual(self.default()["revision"], 1)
+        with self.app.state.store._conn() as db:
+            edits = db.execute(
+                "SELECT COUNT(*) FROM world_state_edits WHERE story_id=?",
+                (self.story_id,)
+            ).fetchone()[0]
+        self.assertEqual(edits, 1)
+
+    def test_private_fact_rejects_witness_from_other_story(self):
+        foreign_story = self.client.post("/api/v1/stories", json={
+            "title": "Mundo distante",
+            "premise": "Una torre separada de todos los demás reinos.",
+        }).json()["id"]
+        other_npc = self.client.post(
+            f"/api/v1/stories/{foreign_story}/creator/characters", json={
+                "name": "Testigo ajeno",
+                "description": "Una guardiana que pertenece solamente a otra historia.",
+            }
+        ).json()["id"]
+        facts = [{
+            "id": str(uuid.uuid4()),
+            "text": "Un secreto que solo presencia la guardiana del otro mundo.",
+            "public": False, "witness_character_ids": [other_npc],
+        }]
+        result = self.save(self.state(facts=facts))
+        self.assertEqual(result.status_code, 422)
+        self.assertEqual(self.default()["revision"], 0)
 
     def test_private_fact_is_not_injected_until_witness_is_present(self):
         value = self.state(present_character_ids=[self.beto], relationships={})
