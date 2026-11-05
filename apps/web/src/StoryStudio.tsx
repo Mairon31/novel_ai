@@ -21,6 +21,7 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
   const [draft, setDraft] = useState('');
   const [streamText, setStreamText] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [generationMessage, setGenerationMessage] = useState('Preparando narrador...');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
@@ -62,7 +63,7 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     if (!active || generating || (!continueOnly && !draft.trim())) return;
     const controllerLocal = new AbortController();
     controller.current = controllerLocal;
-    setGenerating(true); setStreamText(''); setNotice(''); setError('');
+    setGenerating(true); setGenerationMessage('Preparando narrador...'); setStreamText(''); setNotice(''); setError('');
     let complete = false;
     try {
       await api.streamTurn(active.id, {
@@ -70,6 +71,7 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
         input_text: continueOnly ? '' : draft.trim(),
         request_id: crypto.randomUUID(),
       }, controllerLocal.signal, (evt: GenerationEvent) => {
+        if (evt.event === 'status') setGenerationMessage(evt.data.message);
         if (evt.event === 'delta') setStreamText(text => text + evt.data.text);
         if (evt.event === 'error') throw new Error(evt.data.message);
         if (evt.event === 'done') {
@@ -89,6 +91,14 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
       controller.current = null;
       setGenerating(false);
     }
+  }
+
+  function cancelGeneration() {
+    controller.current?.abort();
+    controller.current = null;
+    setGenerating(false);
+    setStreamText('');
+    setNotice('Generación detenida. Puedes continuar cuando quieras.');
   }
 
   function selectStory(story: Story) {
@@ -119,7 +129,8 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     </div>
     <VisualReader active={active} turns={turns}
       mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
-      streamText={streamText} generating={generating} notice={notice} error={error}
+      streamText={streamText} generating={generating} generationMessage={generationMessage}
+      onCancel={cancelGeneration} notice={notice} error={error}
       onSubmit={continueOnly => void submit(continueOnly)}
       onCreate={() => { setCreateStep('story'); setCreating(true); }}
       onSettings={onOpenSettings}
