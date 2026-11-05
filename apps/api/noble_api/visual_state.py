@@ -379,7 +379,7 @@ class VisualState:
         copied_paths = []
         asset_map: dict[str, str] = {}
         try:
-            with self.store._conn() as conn:
+            with (nullcontext(conn) if conn is not None else self.store._conn()) as db:
                 # Discard initial branch scene; replace with cloned history.
                 db.execute("DELETE FROM visual_scenes WHERE story_id=?", (branch_id,))
                 for index, item in enumerate(allowed):
