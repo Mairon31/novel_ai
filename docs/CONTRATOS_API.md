@@ -182,3 +182,11 @@ Estos contratos describen hechos **confirmados por el autor**, no cambios que el
 - El botón «Rebobinar aquí» del lector no llama una acción destructiva: usa `fork` tras confirmación. La historia origen y sus turnos posteriores siguen intactos; la pantalla solo muestra el resumen de instantáneas del Lorebook y del estado del mundo. Sigue pendiente el contrato de una operación destructiva/archivable con undo.
 
 Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834) con 179 Python y 34 Playwright aprobadas. Esta recuperación temporal no cubre cambios antiguos en imágenes editoriales, referencias visuales y planes de escena.
+
+
+## Alcance por testigo de Lorebook — ampliación compatible
+
+- `POST/PUT /api/v1/stories/{story_id}/lorebook`: parámetros opcionales `visibility: "world"|"witnesses"` (predeterminado `world` para compatibilidad con entradas existentes) y `witness_character_ids: string[]` (máximo 16 UUID). En modo `witnesses` se exige al menos un NPC propio de la historia; no se admiten repetidos. Modo `world` exige lista de testigos vacía. Los errores de validación responden 422.
+- `POST /api/v1/stories/{story_id}/lorebook/preview`: incluye el campo adicional `skipped_visibility` para entradas privadas descartadas porque los testigos no están presentes. Los hechos privados solo entran en `entries/context` cuando intersectan `GET /world-state` → `state.present_character_ids`; las palabras clave o los nombres mencionados en el texto de consulta no establecen presencia.
+- `GET .../lorebook/turns/{turn_id}` conserva el alcance y testigos exactos del checkpoint; en una rama todos los IDs de testigos y de entradas se remapean a su destino, sin consultar NPC actuales de la historia original.
+- Este filtrado gobierna únicamente la selección de entradas Lorebook hacia el prompt y no restringe el acceso administrativo a su editor. No evita por sí solo que el LLM genere una revelación incorrecta desde otros contextos.

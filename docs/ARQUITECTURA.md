@@ -57,3 +57,12 @@ La eliminación borra el registro activo y deja de servir la URL, pero conserva 
 Ante un turno heredado sin checkpoint visual, el fork parcial no adivina perfiles, imágenes ni planes mirando el presente. Se mantiene la limitación de que los archivos externos a SQLite necesitan compensación y recuperación tras interrupciones. No se han añadido workers GPU, generación automática de escenas ni un mecanismo de expiración/GC para los bytes históricos.
 
 **Evidencia backend:** commit [`a49ca05`](https://github.com/Mairon31/novel_ai/commit/a49ca0591222837d28b344798646dd113ea567c4), [CI #42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974) con **189 Python PASS**; Playwright estaba pendiente al registrar esta nota.
+
+
+## Lorebooks con acceso por testigos — P1
+
+Además del alcance clásico `world` (conocimiento general), cada entrada puede declarar `visibility=witnesses` y hasta 16 UUID de personajes narrativos de Creator. Antes del presupuesto y selección por prioridad, `LorebookService.activate` cruza estos IDs con los personajes presentes de `WorldStateService.current`. Si no hay testigo presente, ni las palabras clave ni `always_active` permiten inyectar ese secreto. Los IDs se comprueban al guardar contra `creator_characters` de la misma historia, bajo bloqueo `BEGIN IMMEDIATE`.
+
+Se preserva la estructura existente de Lorebook y sus snapshots: el JSON nuevo se conserva por turno; al bifurcar, los testigos privados se remapean usando los mismos IDs destino de `CreatorService.clone`, incluidos los checkpoints copiados. Una entrada privada que no tenga ningún testigo destino se omite por seguridad, no se transforma en conocimiento general.
+
+El alcance es de **control de inclusión de datos en el prompt**, no un sistema completo de cognición individual: un modelo puede inferir o verbalizar secretos desde otras fuentes ya inyectadas, como descripciones NPC, el blueprint o diálogos. Para garantías más fuertes faltan recuperación episódica con procedencia y separación de mensajes/conocimiento por actor, más pruebas semánticas del texto generado.

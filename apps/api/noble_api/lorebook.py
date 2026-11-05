@@ -28,6 +28,10 @@ class LorebookEntryInput(BaseModel):
     priority: int = Field(default=50, ge=0, le=100)
     enabled: bool = True
     always_active: bool = False
+    # Legacy entries remain world-visible. Private entries require explicit
+    # witnesses to be physically present in the confirmed world state.
+    visibility: Literal["world", "witnesses"] = "world"
+    witness_character_ids: list[uuid.UUID] = Field(default_factory=list, max_length=16)
 
 
 class LorebookPreviewInput(BaseModel):
@@ -69,7 +73,7 @@ class LorebookService:
 
     @staticmethod
     def _clean(body: LorebookEntryInput) -> dict:
-        payload = body.model_dump()
+        payload = body.model_dump(mode="json")
         payload["title"] = body.title.strip()
         payload["content"] = body.content.strip()
         if len(payload["title"]) < 2 or len(payload["content"]) < 10:
@@ -83,6 +87,14 @@ class LorebookService:
             payload[field] = cleaned
         if not body.always_active and not payload["keys"]:
             raise ValueError("Define palabras activadoras o marca Siempre activo")
+        witnesses = payload["witness_character_ids"]
+        if len(witnesses) != len(set(witnesses)):
+            raise ValueError("Los testigos del Lorebook no pueden repetirse")
+        if payload["visibility"] == "witnesses":
+            if not witnesses:
+                raise ValueError("Una entrada privada requiere personajes que la conozcan")
+        elif witnesses:
+            raise ValueError("El conocimiento general no debe tener testigos privados")
         return payload
 
     def entries(self, story_id: str) -> list[dict]:
@@ -103,6 +115,13 @@ class LorebookService:
         payload = self._clean(body)
         now = time.time()
         with self.store._conn() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if payload["visibility"] == "witnesses":
+                owned = {row["id"] for row in db.execute(
+                    "SELECT id FROM creator_characters WHERE story_id=?", (story_id,)
+                )}
+                if not set(payload["witness_character_ids"]).issubset(owned):
+                    raise ValueError("Los testigos deben pertenecer a esta historia")
             if entry_id:
                 updated = db.execute(
                     "UPDATE lorebook_entries SET entry_json=?,updated_at=? "
@@ -149,6 +168,13 @@ class LorebookService:
         budget_chars = max(512, min(budget_chars, 6000))
         searchable = activation_text[-12000:].casefold()
         current = self.entries(story_id)
+        # A private Lorebook is NOT general narrator knowledge: merely
+        # mentioning a name/keyword never makes a witness present.
+        world = self.narrative.world
+        confirmed_presence = (
+            set(world.current(story_id)["state"]["present_character_ids"])
+            if world is not None else set()
+        )
         owner = self.narrative.get_story(story_id)
         protagonist_name = owner.get("protagonist_name") or "Protagonista"
         ordered = sorted(
@@ -157,10 +183,16 @@ class LorebookService:
         )
         chosen: list[dict] = []
         skipped = 0
+        skipped_visibility = 0
         used = 0
         for entry in ordered:
             if not entry["enabled"]:
                 continue
+            if entry.get("visibility", "world") == "witnesses":
+                witness_ids = set(entry.get("witness_character_ids") or ())
+                if not witness_ids or not witness_ids.intersection(confirmed_presence):
+                    skipped_visibility += 1
+                    continue
             if not entry["always_active"]:
                 primary = any(self._contains(searchable, key, entry["match_whole_words"])
                               for key in entry["keys"])
@@ -178,16 +210,28 @@ class LorebookService:
             # lower-priority but smaller entries can still use the remaining room.
             text = ("[Lorebook: " + entry["title"] + "]\n" +
                     entry["content"].replace("{{user}}", protagonist_name))
+            if entry.get("visibility", "world") == "witnesses":
+                visible_ids = set(entry["witness_character_ids"]) & confirmed_presence
+                # Identify whose knowledge is available, not who is absent.
+                with self.store._conn() as db:
+                    names = [json.loads(row["config_json"]).get("name", "NPC")
+                             for row in db.execute(
+                                 "SELECT id,config_json FROM creator_characters "
+                                 "WHERE story_id=?", (story_id,)
+                             ) if row["id"] in visible_ids]
+                text = ("[Conocimiento privado de personajes presentes: " +
+                        ", ".join(names) + "]\n" + text)
             cost = len(text) + 2
             if used + cost > budget_chars:
                 skipped += 1
                 continue
             used += cost
             chosen.append({"id": entry["id"], "title": entry["title"],
-                           "priority": entry["priority"], "content": text})
+                           "priority": entry["priority"], "content": text,
+                           "visibility": entry.get("visibility", "world")})
         return {
             "entries": chosen, "used_chars": used, "budget_chars": budget_chars,
-            "skipped_budget": skipped,
+            "skipped_budget": skipped, "skipped_visibility": skipped_visibility,
             "context": "\n\n".join(entry["content"] for entry in chosen),
         }
 
@@ -239,7 +283,8 @@ class LorebookService:
     def clone(
         self, source_id: str, target_id: str,
         turn_map: dict[str, str] | None = None,
-        until_turn_id: str | None = None, conn=None,
+        until_turn_id: str | None = None,
+        character_ids: dict[str, str] | None = None, conn=None,
     ) -> None:
         """Restore the selected turn's Lorebook, never the source future.
 
@@ -263,6 +308,16 @@ class LorebookService:
                 for entry in rows:
                     old_id = entry["id"]
                     clone = dict(entry)
+                    payload = json.loads(clone["entry_json"])
+                    if payload.get("visibility", "world") == "witnesses":
+                        # No future/foreign NPC IDs may survive into a branch.
+                        mapped = [character_ids[ident]
+                                  for ident in payload.get("witness_character_ids", [])
+                                  if character_ids and ident in character_ids]
+                        if not mapped:
+                            continue  # Fail closed: no owned witness was copied.
+                        payload["witness_character_ids"] = mapped
+                        clone["entry_json"] = json.dumps(payload, ensure_ascii=False)
                     clone["id"] = entry_map.setdefault(old_id, str(uuid.uuid4()))
                     result.append(clone)
                 return result

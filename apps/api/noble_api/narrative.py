@@ -420,7 +420,8 @@ class NarrativeService:
                 if self.lorebook is not None:
                     self.lorebook.clone(
                         story_id, new_id, turn_map=turn_map,
-                        until_turn_id=until_turn_id, conn=db)
+                        until_turn_id=until_turn_id,
+                        character_ids=character_ids, conn=db)
                 if self.world is not None:
                     self.world.clone(
                         story_id, new_id, turn_map, until_turn_id, character_ids,

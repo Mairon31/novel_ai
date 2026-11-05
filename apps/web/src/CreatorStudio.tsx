@@ -24,6 +24,7 @@ const blankCharacter: CreatorCharacterDraft = {
 const blankLorebook: LorebookEntryDraft = {
   title: '', content: '', keys: [], secondary_keys: [], secondary_mode: 'any',
   match_whole_words: true, priority: 50, enabled: true, always_active: false,
+  visibility: 'world', witness_character_ids: [],
 };
 
 interface Props {
@@ -170,6 +171,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
       secondary_keys: entry.secondary_keys, secondary_mode: entry.secondary_mode,
       match_whole_words: entry.match_whole_words, priority: entry.priority,
       enabled: entry.enabled, always_active: entry.always_active,
+      visibility: entry.visibility || 'world',
+      witness_character_ids: entry.witness_character_ids || [],
     });
     setLoreKeysInput(entry.keys.join(', '));
     setLoreSecondaryInput(entry.secondary_keys.join(', '));
@@ -477,7 +480,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                   </div>
                   <p>{entry.always_active ? 'Siempre activo' :
                     'Claves: ' + entry.keys.join(', ')}
-                    {entry.enabled ? '' : ' · Deshabilitado'}</p>
+                    {entry.enabled ? '' : ' · Deshabilitado'}
+                    {entry.visibility === 'witnesses'
+                      ? ' · Solo personajes testigos presentes'
+                      : ' · Conocimiento general'}</p>
                   <p>{entry.content.slice(0, 170)}{entry.content.length > 170 ? '…' : ''}</p>
                   <button className="secondary-button" disabled={working}
                     onClick={() => editLorebook(entry)}>Editar entrada</button>
@@ -531,6 +537,34 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                     </select>
                   </label>
                 </div>
+                <label>Quién puede conocer este hecho
+                  <select aria-label="Visibilidad de Lorebook"
+                    value={lorebookDraft.visibility}
+                    onChange={e => setLorebookDraft(v => ({
+                      ...v, visibility: e.target.value as 'world' | 'witnesses',
+                      witness_character_ids: [],
+                    }))}>
+                    <option value="world">Conocimiento general del mundo</option>
+                    <option value="witnesses">Solo personajes testigos presentes</option>
+                  </select>
+                </label>
+                {lorebookDraft.visibility === 'witnesses' && <fieldset>
+                  <legend>Personajes que conocen este hecho</legend>
+                  {!characters.length && <p>Primero crea personajes en la sección Personajes.</p>}
+                  {characters.map(person => <label key={person.id} className="creator-lore-toggle">
+                    <input type="checkbox" aria-label={'Testigo ' + person.name}
+                      checked={lorebookDraft.witness_character_ids.includes(person.id)}
+                      onChange={e => setLorebookDraft(v => ({
+                        ...v, witness_character_ids: e.target.checked
+                          ? [...v.witness_character_ids, person.id]
+                          : v.witness_character_ids.filter(id => id !== person.id),
+                      }))}/>
+                    {person.name}
+                  </label>)}
+                  <small>Solo se incluye al narrar si alguno de estos personajes está
+                    presente en el estado del mundo confirmado. Mencionar su nombre
+                    en el texto no cambia quién está presente.</small>
+                </fieldset>}
                 <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.enabled}
                   onChange={e => setLorebookDraft(v => ({...v, enabled: e.target.checked}))}/>
                   Entrada habilitada</label>
@@ -544,7 +578,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                 <div className="creator-actions">
                   <button className="primary-button" disabled={working ||
                     lorebookDraft.title.trim().length < 2 ||
-                    lorebookDraft.content.trim().length < 10}
+                    lorebookDraft.content.trim().length < 10 ||
+                    (lorebookDraft.visibility === 'witnesses' &&
+                      !lorebookDraft.witness_character_ids.length)}
                     onClick={() => void saveLorebook()}><Save size={16}/>
                     {editingLorebook ? 'Actualizar Lorebook' : 'Crear entrada de Lorebook'}
                   </button>
@@ -555,7 +591,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
               <div className="creator-media-form">
                 <h4>Comprobar activaciones antes de jugar</h4>
                 <p>Escribe una acción o frase. Se muestran las entradas que recibiría el
-                  narrador y el presupuesto realmente utilizado (máximo 6000 caracteres).</p>
+                  narrador y el presupuesto realmente utilizado (máximo 6000 caracteres).
+                  La prueba usa los personajes presentes guardados en Estado del mundo.</p>
                 <label>Simular una intervención
                   <textarea rows={3} aria-label="Simular activación Lorebook"
                     maxLength={3000} value={loreQuery}
@@ -569,7 +606,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId }: Props) {
                 {lorePreview && <div role="status" className="creator-hint">
                   <strong>{lorePreview.entries.length} entrada(s) activada(s)</strong>
                   <p>{lorePreview.used_chars} de {lorePreview.budget_chars} caracteres
-                    · {lorePreview.skipped_budget} excluidas por presupuesto</p>
+                    · {lorePreview.skipped_budget} excluidas por presupuesto
+                    · {lorePreview.skipped_visibility} sin testigos presentes</p>
                   {lorePreview.entries.map(entry => <p key={entry.id}>
                     {entry.title} · prioridad {entry.priority}</p>)}
                   {!!lorePreview.context && <details className="creator-lorebook-preview">

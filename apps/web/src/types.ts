@@ -281,12 +281,14 @@ export type LorebookEntry = {
   keys: string[]; secondary_keys: string[];
   secondary_mode: 'any' | 'all'; match_whole_words: boolean;
   priority: number; enabled: boolean; always_active: boolean;
+  visibility: 'world' | 'witnesses'; witness_character_ids: string[];
   created_at: number; updated_at: number;
 };
 export type LorebookEntryDraft = Omit<LorebookEntry, 'id'|'story_id'|'created_at'|'updated_at'>;
 export type LorebookPreview = {
   entries: Array<{ id: string; title: string; priority: number; content: string }>;
-  context: string; used_chars: number; budget_chars: number; skipped_budget: number;
+  context: string; used_chars: number; budget_chars: number;
+  skipped_budget: number; skipped_visibility: number;
 };
 
 export type CreatorMediaAsset = {

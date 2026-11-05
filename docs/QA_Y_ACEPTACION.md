@@ -128,3 +128,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Tests de compatibilidad `tests/test_story_branches.py` dejan de considerar correcto que una imagen importada posteriormente aparezca en un turno previo.
 - [x] Python CI: [#42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974), **189/189 PASS**. No incluye medición física de GPU.
 - [ ] Playwright del mismo commit debe confirmar recorrido de escritorio y móvil. **No contabilizar PASS hasta finalizar el job frontend.**
+
+
+## P1 — Gate de Lorebook con testigos (pendiente de CI)
+
+- [ ] Entrada privada con palabra clave y `always_active` no se activa si no hay testigo presente; mención del nombre no cambia `WorldState`. Testigo presente permite el contexto con atribución explícita; personaje distinto lo excluye.
+- [ ] Rechazar testigos inexistentes, ajenos, repetidos y entradas `world` con IDs privados o `witnesses` sin testigos. Debe conservarse CRUD y activación de entradas generales antiguas.
+- [ ] Historia con dos NPC: bifurcar en turno antiguo restaura la versión anterior del secreto y remapea testigos; bifurcar desde presente conserva cambios nuevos, sin contaminar el origen.
+- [ ] Prueba Playwright en escritorio/móvil: UI de selector/testigos, vista previa sin presencia y activación tras confirmar la presencia por API de estado del mundo.
+- [ ] Pruebas por CI: `tests/test_lorebook_witness.py`, suite Python completa y Playwright; no confundir estas pruebas simuladas con una inferencia real que obedezca la atribución del conocimiento.

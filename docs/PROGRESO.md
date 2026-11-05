@@ -541,3 +541,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] **Python CI verificada:** [#42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974), **189/189 PASS**, backend SQLite/Pillow real; inferencia de modelos simulada.
 - [ ] **Playwright CI:** al registrar esta entrada, el job frontend seguía instalando Chromium. No afirmar 34/34 hasta la conclusión oficial del workflow. Sin cambios visuales de UI en este bloque.
 - [ ] Pendiente de la auditoría: rebobinado destructivo con archivado/restauración, aislamiento cognitivo de Lorebooks por testigo, recolección segura de bytes históricos, fsync de directorios y pruebas de corte eléctrico y GPU reales.
+
+
+## 2026-11-05 — P1: Lorebooks restringidos a testigos y presencia (CI pendiente)
+
+- [x] Se comprobó que la línea visual histórica de los commits `a49ca05` / `598aff2` tiene [CI #42095465227](https://github.com/Mairon31/novel_ai/actions/runs/42095465227) **189 Python + 34 Playwright PASS**. Ya no está bloqueada por instalación de Chromium.
+- [ ] `LorebookEntryInput` introduce `visibility: world|witnesses` y `witness_character_ids` (UUID propios del proyecto, no duplicados). `world` mantiene el comportamiento existente. Las entradas `witnesses` solo pueden entrar al prompt si al menos un testigo se encuentra en `world_states.present_character_ids` confirmado por el autor. Ni mención de nombre ni `always_active` anulan la ausencia.
+- [ ] Validación estricta de propiedad al guardar bajo `BEGIN IMMEDIATE`; snapshots históricos guardan el campo y `LorebookService.clone` remapea testigos con el mapa de personajes de Creator, omitiendo entradas privadas sin testigos válidos en la rama. Creator Studio permite seleccionar testigos y ver cuántas entradas quedaron fuera por ausencia; la UI conserva entradas anteriores de tipo `world`.
+- [ ] `tests/test_lorebook_witness.py` cubre presencia/ausencia, testigo distinto, visibilidad general, UUID inválidos/extranjeros, rama histórica vs presente, remapeo de snapshots y persistencia al reiniciar. Se amplió `apps/web/tests/lorebook.spec.ts` para escritorio y móvil.
+- [ ] **No marcar CI aprobada hasta observar el workflow**, ni declarar aislamiento cognitivo completo: otras fuentes del prompt (blueprint, diálogo o memoria externa) pueden introducir secretos sin pasar por este filtro. Sigue faltando analizador de contradicciones y presupuesto por tokens.

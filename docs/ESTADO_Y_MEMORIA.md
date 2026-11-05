@@ -153,3 +153,10 @@ Una bifurcación con `until_turn_id` toma exactamente las versiones del turno se
 **Evidencia:** `tests/test_lorebook_timeline.py` verifica versiones antiguas, edición/eliminación posterior, recuperación de datos al reiniciar, ausencia de filtraciones entre historias, fallback seguro de migración y rollback de turno. `tests/test_creator_timeline.py` verifica NPC/instrucciones históricas, remapeo estable de IDs, versiones antiguas sin revelaciones futuras y rollback. `apps/web/tests/story-rewind.spec.ts` prueba confirmación/cancelación/ramificación contra API real en escritorio y móvil. [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834): **179 Python + 34 Playwright PASS**.
 
 **Límites:** las ilustraciones editoriales, estados de referencia visual y planes de composición todavía no garantizan una reconstrucción temporal exacta ante ediciones posteriores. Tampoco hay recuperación de conocimiento episódico con FTS5/embeddings ni rebobinado destructivo seguro. No confundir «fichas de NPC históricas» con aislamiento cognitivo absoluto del modelo.
+
+
+## P1 — alcance de memoria de Lorebooks por personaje
+
+La entrada de Lorebook admite alcance general o privado por testigos explícitos. El motor contrasta los testigos con el conjunto de NPC presentes del estado estructurado **confirmado** por el autor. Si nadie que conoce la entrada está presente, se omite del prompt aunque coincidan las palabras clave o sea siempre activa; el narrador no deduce presencia de texto libre. Los checkpoints y ramas conservan IDs privados remapeados, evitando que un personaje en otra historia herede el secreto.
+
+El mecanismo reduce filtraciones por recuperación de Lorebook pero **no equivale a una garantía semántica de conocimiento**: aún deben aislarse episodios, diálogos, blueprint y las inferencias del modelo antes de afirmar separación cognitiva total. El campo `visibility=world` se aplica por defecto a entradas anteriores.
