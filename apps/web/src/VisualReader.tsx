@@ -61,11 +61,13 @@ export function VisualReader({
   const audio = useRef<HTMLAudioElement | null>(null);
   const audioUrl = useRef<string | null>(null);
   const [name, setName] = useState(active?.protagonist_name || 'Protagonista');
+  const [canon, setCanon] = useState(active?.canon || '');
   const [shortcuts, setShortcuts] = useState(true);
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const tail = useRef<HTMLDivElement | null>(null);
   useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
+  useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
   useEffect(() => { setImagePrompt(active?.premise || ''); }, [active?.id]);
   useEffect(() => {
     if (!generating) { setElapsed(0); return; }
@@ -102,6 +104,14 @@ export function VisualReader({
     return () => { live = false; };
   }, []);
   useEffect(() => { tail.current?.scrollIntoView({ block: 'end' }); }, [turns.length, streamText]);
+
+  async function saveCanon() {
+    if (!active) return;
+    setUpdating(true); setReaderError('');
+    try { onUpdateStory(await api.updateStoryCanon(active.id, canon)); }
+    catch (e) { setReaderError((e as Error).message); }
+    finally { setUpdating(false); }
+  }
 
   async function saveName() {
     if (!active || !name.trim()) return;
@@ -299,6 +309,14 @@ export function VisualReader({
             <input value={name} maxLength={60} onChange={e => setName(e.target.value)}/></label>
           <button className="secondary-button" disabled={updating || !name.trim() || name.trim() === active.protagonist_name}
             onClick={() => void saveName()}><Check size={15}/> Guardar nombre</button>
+          <h4>Canon y memoria permanente</h4>
+          <p>Personajes, relaciones, lugares y hechos que el narrador debe recordar en capítulos futuros.</p>
+          <label className="noble-inspector-field">Reglas y acontecimientos confirmados
+            <textarea aria-label="Canon de la historia" rows={6} maxLength={5000}
+              value={canon} onChange={e => setCanon(e.target.value)}
+              placeholder="Ejemplo: Aira conoce el secreto del castillo. Nadie más lo sabe todavía."/></label>
+          <button className="secondary-button" disabled={updating || canon === (active.canon || '')}
+            onClick={() => void saveCanon()}><Check size={15}/> Guardar canon</button>
           <h4>Estado</h4>
           <p>{turns.length} escenas guardadas · último modelo: {turns.at(-1)?.model || 'Sin iniciar'}</p>
         </>}

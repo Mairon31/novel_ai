@@ -98,6 +98,9 @@ export const api = {
   stories: () => request<{ stories: Story[] }>('/stories'),
   createStory: (title: string, premise: string, protagonist_name = 'Protagonista') => request<Story>(
     '/stories', { method: 'POST', body: JSON.stringify({ title, premise, protagonist_name }) }),
+  updateStoryCanon: (storyId: string, canon: string) => request<Story>(
+    '/stories/' + encodeURIComponent(storyId) + '/canon',
+    { method: 'PATCH', body: JSON.stringify({ canon }) }),
   renameProtagonist: (storyId: string, name: string) => request<Story>(
     '/stories/' + encodeURIComponent(storyId) + '/protagonist',
     { method: 'PATCH', body: JSON.stringify({ name }) }),
