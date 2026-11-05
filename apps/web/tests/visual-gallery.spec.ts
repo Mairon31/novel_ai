@@ -37,7 +37,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByRole('button', { name: 'Confirmar escenario' }).click();
   await expect(page.getByText('Escenas registradas: 2.')).toBeVisible();
   await page.getByLabel('Describe la escena que quieres ilustrar')
-    .fill('La biblioteca iluminada por velas antiguas');
+    .fill('Aira en la biblioteca iluminada por velas antiguas');
   await page.getByRole('button', { name: 'Ver prompt completo y fichas' }).click();
   await expect(page.getByText(/Cabello plateado largo, ojos verdes intensos/)).toBeVisible();
 
