@@ -213,6 +213,22 @@ Ver [informe del primer ensayo GPU real](COLAB_QA_V14_RESULTADOS.md). Los númer
 - [ ] Árbol de ramas, variantes por personaje, diffs de canon, editor avanzado de estado.
 - [ ] Test ComfyUI/Piper con motores y checkpoints reales (pospuesto hasta fase de QA agrupada).
 
+## 2026-11-04 — P1.5 visual: escenas, galería e identidad textual
+
+- [x] Tablas `visual_scenes`, `visual_assets`, `visual_current` y `visual_characters`, migración SQLite idempotente.
+- [x] Heurística de localizaciones explícitas con corrección manual, sin consumo de modelos.
+- [x] Assets WebP versionados, restauración de versiones anteriores y compatibilidad `scene.webp`.
+- [x] Galería en lector y fichas visuales editables con número de revisión.
+- [x] Prompt ComfyUI enriquecido solo con personajes nombrados, nunca con todo el reparto.
+- [x] Firma de render y reuso de imagen con seed/config/checkpoint/estado visual idénticos.
+- [x] Bifurcación que clona líneas de tiempo y assets visuales sin compartir IDs ni revelar escenas posteriores.
+- [x] Pruebas offline de registros, regeneración controlada, recuperación, imágenes antiguas y ramas.
+- [ ] Detector semántico robusto, con localización, cast, cambios de vestuario y estado temporal.
+- [ ] Referencias visuales reales (IPAdapter, LoRA), proveedor imagen cloud, TTS GPU y scheduler VRAM.
+- [ ] Ensayos GPU reales de ComfyUI/Piper/OpenRouter solo después de completar varios módulos, según la decisión de QA.
+
+**Nota:** «detección automática» aquí significa detección **heurística**; no hay garantía de comprender todo cambio de escena. No se crea imagen automáticamente al guardar o reproducir un turno.
+
 ## Plantilla para futuras entradas
 
 ```md

@@ -80,3 +80,10 @@ La prueba no es una medición p95 ni una certificación de compatibilidad GPU. V
 | POST | `/api/v1/narrative/prepare` | Inferencia corta para preparar motor local/worker sin crear un turno |
 
 La operación fork retorna una historia con `origin_story_id` y `origin_turn_id`, además de otros campos. No edita ni borra el origen. No existe todavía API de fusionar ramas. La llamada de preparación no está habilitada para OpenRouter; debe solicitarse explícitamente desde la UI y no sustituye pruebas de calidad/rendimiento reales.
+
+
+## P1.5 — journal visual y galería inmutable
+
+`GET /stories/{uuid}/visual-state` responde `{current_scene, scenes, assets, characters, selected_asset_id}`, con URLs individuales de recursos, `origin`, `content_sha256`, `seed` y `selected`. `PUT /stories/{uuid}/scene` recibe `{location}`. `POST /stories/{uuid}/visual-characters` y `PUT /stories/{uuid}/visual-characters/{uuid}` reciben `{name, appearance, outfit, distinguishing_features}`. `POST /stories/{uuid}/illustration-prompt` devuelve `{prompt, inference_used:false}`; `GET /stories/{uuid}/gallery/{uuid}` obtiene el WebP, `POST /stories/{uuid}/gallery/{uuid}/select` selecciona el archivo anterior. Los IDs deben pertenecer a la historia solicitada.
+
+`POST /stories/{uuid}/illustrate` acepta `{prompt,seed?}` y ahora responde también `cached` y `asset_id`. Si el seed, parámetros, prompt enriquecido y escena no cambian, puede devolver el recurso de caché sin contactar ComfyUI. La detección de un cambio de lugar **nunca** equivale a iniciar difusión ni a cargar GPU.

@@ -1,4 +1,22 @@
 
+## P1.5 — estado visual persistente y galería sin sobrescrituras (IMPLEMENTADO EN CÓDIGO)
+
+- [x] Detector conservador de cambios de lugar en respuestas narrativas finalizadas; no consulta otro modelo.
+- [x] Registro persistente de escenas con origen y modo de detección, corregible manualmente.
+- [x] Cada importación y render crea versión WebP independiente, con SHA256 y selección por galería.
+- [x] Migración no destructiva de `scene.webp` de versiones antiguas.
+- [x] Fichas visuales y revisión de apariencia por personaje, integradas en prompts únicamente cuando se le nombra.
+- [x] Previsualización del prompt enriquecido sin usar inferencia.
+- [x] Caché exacta por seed/configuración/checkpoint/escena y rasgos pertinentes.
+- [x] Clonación de galería y fichas por rama sin mezclar versiones de etapas posteriores.
+- [ ] Extracción semántica estructurada de escenarios y presencia de personajes con validación humana.
+- [ ] Consistencia visual respaldada por imagen de referencia, IPAdapter/LoRA, no solo prompts.
+- [ ] Planner inteligente de imágenes con colas cancelables, límites de GPU y deduplicación multiworker.
+- [ ] Proveedores de imágenes comerciales por API y generadores TTS por GPU/cloud.
+- [ ] Administrador de VRAM real y prioridades entre LLM, difusión y TTS, incluyendo offload.
+- [ ] Validación visual/multimedia con motores reales. Los benchmarks se harán agrupados.
+
+
 ## P1.4 — multimedia local conectable y canon permanente (IMPLEMENTADO EN CÓDIGO)
 
 - [x] Editor de canon persistente por historia; se incluye en los mensajes de contexto del narrador. Memoria automática derivada, reconciliación de estado y ramas todavía pendientes.

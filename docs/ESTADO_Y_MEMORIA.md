@@ -90,3 +90,8 @@ SQLite con migraciones Alembic en cada cambio de esquema. Copia transaccional/SQ
 **Preparación del motor:** `POST /api/v1/narrative/prepare` ejecuta una generación mínima y explícita para precalentar Ollama/KoboldCpp/worker. No añade capítulos, no actualiza canon y no se activa al abrir la aplicación. OpenRouter no ofrece esta precarga y queda excluido. El botón muestra el tiempo de espera, pero no garantiza que la GPU conserve indefinidamente el modelo cargado.
 
 **Futuro:** memoria por escenas, inventario y relaciones, resúmenes semánticos auditables, identificación de cambios de escenario, decisiones visuales, árbol de ramas y control de conflictos.
+
+
+## P1.5 — estado visual separado del canon narrativo
+
+El texto canónico sigue siendo editable; los registros `visual_scenes` representan la línea temporal espacial. Una transición detectada no modifica el canon ni altera retroactivamente escenas antiguas. Las fichas `visual_characters` guardan rasgos coherentes como texto versionado. La galería `visual_assets` vincula escenas con resultados WebP permanentes, y `visual_current` apunta a la versión mostrada. Bifurcar una historia copia sus escenas, personajes y arte aplicable con IDs nuevos; no enlaza mutablemente los archivos con los del origen. El análisis semántico completo y el árbol de ramas siguen pendientes.

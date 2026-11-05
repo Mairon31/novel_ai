@@ -1,6 +1,6 @@
 # Diseño de generación progresiva de ilustraciones
 
-Estado: **P1.4 — adaptador ComfyUI local bajo demanda implementado**, workflow estándar integrado y almacenamiento WebP. Detección automática de escenas, planner inteligente, LoRAs/ControlNet, workers remotos de imagen y scheduler multi-GPU siguen pendientes.
+Estado: **P1.4 — adaptador ComfyUI local bajo demanda implementado**, workflow estándar integrado y almacenamiento WebP. Detección semántica avanzada de escenas, planner inteligente, LoRAs/ControlNet, workers remotos de imagen y scheduler multi-GPU siguen pendientes. **P1.5** agrega detección heurística de localizaciones, galería versionada y fichas visuales.
 
 ## Contrato de producto
 
@@ -76,3 +76,28 @@ Perfiles 12/16GB con un worker de difusión como máximo; mantener LLM atendible
 - La generación que falla no elimina ni sobrescribe una ilustración previa.
 - Workflow compatible principalmente con checkpoints que soportan los nodos estándar. Flux/SD3 y pipelines personalizados requieren plantillas específicas; no se afirma soporte universal.
 - Los tests con ComfyUI simulado validan flujo HTTP y una imagen real decodificada mediante Pillow; falta probar un motor ComfyUI con GPU física.
+
+
+## P1.5 — modelo de datos y cambios entregados
+
+**Registro de escenas:** SQLite `visual_scenes` almacena `id`, `story_id`, `location`, `source_turn_id`, `detection` (`initial`, `heuristic`, `confirmed`) y fecha. Cada turno guardado se inspecciona **después** de producir narración: solo viajes/entradas con verbos en pasado y nombres de lugares conocidos disparan una nueva escena. No se consulta otro LLM ni se encola una imagen. Diálogos citados y negaciones evidentes se excluyen. El usuario puede confirmar o corregir el lugar en la galería. Como clasificador basado en expresiones regulares, todavía puede perder o interpretar mal cambios sutiles.
+
+**Ilustraciones inmutables:** SQLite `visual_assets` incluye UUID, escena asociada, origen, prompt final, checkpoint, seed, SHA256 y firma determinista de configuración. Los archivos se conservan en `story-assets/<story_id>/images/<asset_uuid>.webp`; `scene.webp` funciona como puntero de compatibilidad al asset activo. `visual_current` determina qué imagen ve el lector. Cambiar la imagen activa no borra versiones anteriores. Las historias que solo tengan `scene.webp` migran al acceder a `visual-state`.
+
+**Firma exacta de caché:** SHA256 de `scene_id + prompt enriquecido + checkpoint + configuración de difusión + seed + workflow_version`. Solo se busca la caché cuando el usuario proporciona una semilla; con semilla aleatoria se genera una versión nueva. Si el motor no está disponible y hay un recurso válido idéntico, se reutiliza sin conexión. Cambiar escenario o atributos de personaje nombrado invalida la firma.
+
+**Identidad textual:** SQLite `visual_characters` almacena nombre, apariencia, vestuario, rasgos, revisión. Solo las fichas cuyos nombres aparecen en el prompt se incorporan a la escena. No hay embeddings visuales, IPAdapter, referencias de imagen, ControlNet ni garantías de rostro/ropa; las fotos consistentes deberán comprobarse con GPU real.
+
+**Ramas de historia:** al bifurcar se clonan los recursos aplicables, escenas anteriores y fichas en espacio independiente. Una rama iniciada en un turno antiguo no muestra imágenes de escenarios posteriores. El canon y los perfiles son editables por rama.
+
+### Rutas de la API P1.5
+
+- `GET /api/v1/stories/{id}/visual-state`: devuelve escenas, escena actual, galería y fichas.
+- `PUT /api/v1/stories/{id}/scene`: confirma una ubicación, sin generar imagen.
+- `POST /api/v1/stories/{id}/visual-characters` y `PUT /.../visual-characters/{character_id}`: crea/actualiza rasgos.
+- `POST /api/v1/stories/{id}/illustration-prompt`: muestra el prompt enriquecido, sin inferencia.
+- `GET /api/v1/stories/{id}/gallery/{asset_id}`: entrega una versión WebP perteneciente a esa historia.
+- `POST /api/v1/stories/{id}/gallery/{asset_id}/select`: selecciona una versión guardada.
+- `POST /api/v1/stories/{id}/illustrate`: devuelve además `asset_id` y `cached`; cada respuesta nueva conserva su propia versión.
+
+**Pruebas:** SQLite y Pillow reales para versión, sustitución, restauración, aislamiento entre historias, migración y bifurcación; transporte ComfyUI simulado para difusión/retorno y reutilización; Playwright desktop/móvil para la interfaz. **No son benchmarks de GPU.**

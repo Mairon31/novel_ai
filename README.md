@@ -2,7 +2,7 @@
 
 **Noble AI** es una futura aplicación de escritorio y web local para **historias interactivas tipo novela visual**, con narración mediante LLM, memoria de personajes y mundo, imágenes anime generadas por escena y voces **opcionales**. Combina herramientas open source existentes con una interfaz propia: **no es un notebook**, ni un chat ordinario.
 
-> **Estado: P1.4 experimental — desarrollo activo.** Model Hub, narración real (ensayo GGUF Colab T4 documentado), historias persistentes, canon editable, ramas alternativas por intervención, preparación opcional del modelo y estados visibles de generación; ComfyUI **bajo demanda** para checkpoints compatibles y Piper CPU **bajo demanda** para voces locales ONNX. También hay trabajadores remotos LLM autenticados y configuración de proveedores. **ComfyUI y Piper tienen código y pruebas de contrato, pero aún no benchmarks reales en GPU/CPU con estos proveedores.** El detector automático de cambios de escena, workflows avanzados, TTS GPU/API, árbol visual de ramas avanzado, reconciliación automática del canon y empaquetado Windows siguen pendientes.
+> **Estado: P1.4 experimental — desarrollo activo.** Model Hub, narración real (ensayo GGUF Colab T4 documentado), historias persistentes, canon editable, ramas alternativas por intervención, preparación opcional del modelo y estados visibles de generación; ComfyUI **bajo demanda** para checkpoints compatibles, escenas detectadas con reglas conservadoras, galería de versiones y fichas visuales por personaje; Piper CPU **bajo demanda** para voces locales ONNX. También hay trabajadores remotos LLM autenticados y configuración de proveedores. **ComfyUI y Piper tienen código y pruebas de contrato, pero aún no benchmarks reales en GPU/CPU con estos proveedores.** El detector automático de cambios de escena, workflows avanzados, TTS GPU/API, árbol visual de ramas avanzado, reconciliación automática del canon y empaquetado Windows siguen pendientes.
 
 ## Ejecutar prototipo en Windows (sin Colab)
 
@@ -98,3 +98,15 @@ Despliega React y FastAPI en Colab, prueba Python y Playwright, descarga un GGUF
 **Primera evidencia GPU real:** [Informe QA v1.4](docs/COLAB_QA_V14_RESULTADOS.md) — Tesla T4, 20 etapas PASS, 3/3 respuestas narrativas reales, 3.161 MiB de VRAM máxima observada. La primera respuesta tardó 53,53 s y las dos siguientes 2,43 s; todavía no se conoce la causa precisa del tiempo en frío. No demuestra automáticamente rendimiento en una RTX 5060 Ti de 16 GB, generación de imágenes, TTS ni uso del túnel de workers.
 
 Historial de fallos conservado: [v1.2](docs/COLAB_QA_2026-11-05.md) (dependencias y compilación CUDA), [v1.3](docs/COLAB_QA_V13_RESULTADOS.md) (archivo GGUF 404). Los notebooks antiguos fueron retirados; los tests de regresión sobre logs y CUDA ahora comprueban la versión vigente para que GitHub Actions no dependa de archivos archivados.
+
+
+### P1.5 — Escenas, ilustraciones conservadas y fichas visuales
+
+- **Escenas:** cambios de localización detectados solo mediante expresiones explícitas de desplazamiento ya narrado. El lector indica que son heurísticos y permite confirmar/corregir el lugar manualmente. La detección por IA con estructura de estado todavía está pendiente.
+- **Galería versionada:** cada imagen importada o generada obtiene un UUID, SHA256 y archivo WebP propios. Puedes elegir cualquiera como ilustración activa sin borrar las anteriores. Las imágenes antiguas `scene.webp` se migran al consultar la galería.
+- **Fichas visuales:** apariencia, vestuario y rasgos, guardados por historia y revisionados. Las fichas se incorporan al prompt solo cuando el personaje está **nombrado**; esto no garantiza identidad visual perfecta.
+- **Reuso por semilla:** cuando el checkpoint, prompt completo, configuración, escena y semilla explícita coinciden, se reutiliza el asset existente sin volver a pedirlo a ComfyUI; el uso de semilla aleatoria produce una versión nueva.
+- **Ramas:** las nuevas historias clonan sus recursos visuales con IDs independientes. Las ramas desde un turno previo excluyen escenas posteriores.
+- **Sin generación automática:** detectar una escena no significa cargar un modelo de imagen ni encolar difusión. El botón «Ilustrar» sigue siendo explícito en P1.5.
+
+[Detalles de imágenes y API](docs/IMAGENES.md) · [Bitácora](docs/PROGRESO.md).
