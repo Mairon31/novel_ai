@@ -1060,3 +1060,27 @@
   .noble-detail-opening{padding:18px}
   .noble-detail-media-strip{grid-auto-columns:150px}
 }
+
+/* Persistent creator-selected story artwork, independent from narrative scene media. */
+.creator-cover-preview{display:flex;align-items:stretch;gap:20px;min-width:0;
+  border:1px solid #4f466b;border-radius:16px;padding:16px;
+  background:linear-gradient(125deg,#2b2841,#1b2235)}
+.creator-cover-preview-art{width:136px;min-width:136px;min-height:185px;
+  border-radius:10px;background:linear-gradient(145deg,#474065,#22283c);
+  display:flex;align-items:center;justify-content:center;color:#c6b9e7;
+  overflow:hidden;box-shadow:0 10px 24px #0005}
+.creator-cover-preview-art img{width:100%;height:100%;max-height:245px;object-fit:cover}
+.creator-cover-preview-copy{display:flex;flex-direction:column;gap:11px;
+  align-items:flex-start;justify-content:center;min-width:0}
+.creator-cover-preview-copy strong{font:750 18px 'Outfit',sans-serif;color:#f0eaff}
+.creator-cover-preview-copy p{font-size:12px;line-height:1.7;color:#b7bfd7;
+  max-width:440px;margin:0}
+.creator-cover-preview-copy .secondary-button{min-height:40px}
+.creator-media-thumbnail.cover{aspect-ratio:3/4}
+.creator-media-thumbnail.cover img{object-fit:cover}
+@media(max-width:560px){
+  .creator-cover-preview{gap:13px;padding:12px}
+  .creator-cover-preview-art{width:96px;min-width:96px;min-height:135px}
+  .creator-cover-preview-copy strong{font-size:15px}
+  .creator-cover-preview-copy p{font-size:11px}
+}
