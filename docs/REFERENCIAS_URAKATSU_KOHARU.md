@@ -50,7 +50,7 @@ Koharu documenta que las credenciales remotas se almacenan en servicio seguro de
 
 ## Reuso real y atribución
 
-**Estado actual: REFERENCIA / INVESTIGACIÓN. Ningún archivo de Urakatsu ni Koharu se ha copiado al código de Noble AI.** Todo código que se importe después debe:
+**Estado actualizado:** se ha adaptado código de caché de sesión de Urakatsu MIT en `apps/web/src/modelCatalogCache.ts`. El resto de los componentes citados continúa bajo análisis. Koharu no se ha integrado como código fuente. Todo código que se importe después debe:
 1. Registrar repo + commit exacto + ruta de origen + archivos derivados + modificaciones.
 2. Conservar avisos de copyright y licencia del archivo/proyecto, incluyendo notices de Koharu cuando aplique.
 3. Especificar compatibilidad con licencia elegida para Noble antes de distribuir.
@@ -86,3 +86,18 @@ Koharu documenta que las credenciales remotas se almacenan en servicio seguro de
 - https://github.com/koharu-rs/koharu/blob/main/packages/docs/models/providers.mdx
 - https://github.com/koharu-rs/koharu/blob/main/crates/koharu-runtime/src/download.rs
 - https://github.com/koharu-rs/koharu/blob/main/crates/koharu/tauri.conf.json
+
+
+## Reutilización comprobada — interfaz Model Hub (2026-11-05)
+
+- Origen: `karrot0/Urakatsu`, `web/src/components/ModelsPage.tsx`,
+  commit `165bf592716019b8487249bf7ca3ff3b708a23e7`, licencia MIT.
+- Adaptación real: mapas de caché de descubrimiento/metadata por sesión, con
+  caducidad para las estimaciones sensibles a VRAM, tipado de roles y contexto.
+- Noble AI utiliza una lista interactiva + inspector lateral no bloqueante en
+  escritorio y un panel de detalle superpuesto en móvil. Conserva descarga y
+  selección de GGUF por separado.
+- Se incorpora el aviso íntegro MIT en `THIRD_PARTY_NOTICES.md`; los cambios
+  de archivos permanecen en el historial git.
+- Siguientes adaptaciones: inventario de almacenamiento por volumen, gestión
+  de instalaciones/modelos por runtime, estado de descargas, limpieza, providers.

@@ -42,3 +42,20 @@ Isekai Zero's publicly documented creation workflows and the user-supplied
 interface references informed **product design and information architecture**.
 No Isekai Zero code, images, brand elements, or story text are included in
 Noble AI. See [research notes](ISEKAI_ZERO_REFERENCIA.md).
+
+
+## Urakatsu frontend — direct session-cache adaptation
+
+The Noble AI module `apps/web/src/modelCatalogCache.ts` adapts the
+`recentSearches` and `recentDetails` in-memory Maps used in
+Urakatsu `web/src/components/ModelsPage.tsx`.
+
+- Upstream commit: `165bf592716019b8487249bf7ca3ff3b708a23e7`
+- Original copyright: Copyright (c) 2026 Urakatsu contributors.
+- License: MIT; its copyright and full permission notice are retained above.
+- Changes in Noble AI: bounded caches, TTL for hardware-sensitive fit reports,
+  typed keys across roles and context windows, and protection from stale requests.
+- Upstream: https://github.com/karrot0/Urakatsu/blob/165bf592716019b8487249bf7ca3ff3b708a23e7/web/src/components/ModelsPage.tsx
+
+The desktop master/detail UX follows this same authorized open-source model,
+adapted to Noble AI's story-narration model categories and independent runtimes.
