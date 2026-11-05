@@ -205,7 +205,7 @@ class CreatorMediaService:
             "generated": False,
         }
 
-    def clone(self, source_id: str, target_id: str) -> None:
+    def clone(self, source_id: str, target_id: str, character_ids: dict[str,str] | None = None) -> None:
         self._require_story(target_id)
         # Author-owned assets are deliberately cloned, not linked across stories.
         with self.store._conn() as db:
@@ -222,7 +222,8 @@ class CreatorMediaService:
             with self.store._conn() as db:
                 db.execute("INSERT INTO creator_media_assets VALUES(?,?,?,?,?,?,?,?,?)",
                            (new_id, target_id, row["kind"], row["label"],
-                            row["caption"], None, target.name,
+                            row["caption"], (character_ids or {}).get(row["character_id"]),
+                            target.name,
                             row["media_type"], time.time()))
 
 

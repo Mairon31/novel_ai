@@ -113,7 +113,8 @@ class NarrativeService:
         self.workers = workers
         self.visual = None  # injected after VisualState initializes its SQLite tables
         self.resources = None  # injected per app for local GPU operation arbitration
-        self.creator = None  # optional creator-owned story bible and NPC guidance
+        self.creator = None
+        self.creator_media = None  # optional creator-owned story bible and NPC guidance
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
@@ -293,8 +294,11 @@ class NarrativeService:
                 copy_art = self.store.root / "story-assets" / new_id / "scene.webp"
                 copy_art.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(prior_art, copy_art)
+        character_ids = {}
         if self.creator is not None:
-            self.creator.clone(story_id, new_id)
+            character_ids = self.creator.clone(story_id, new_id)
+        if self.creator_media is not None:
+            self.creator_media.clone(story_id, new_id, character_ids)
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:

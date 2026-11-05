@@ -173,12 +173,13 @@ class CreatorService:
         return self.narrative.append(story_id,str(uuid.uuid4()),"story","",
                                      content,"inicio-del-creador")
 
-    def clone(self, source_id: str, target_id: str, character_ids: dict | None = None) -> None:
+    def clone(self, source_id: str, target_id: str, character_ids: dict | None = None) -> dict[str, str]:
         with self.store._conn() as db:
             blueprint=db.execute("""SELECT config_json FROM creator_blueprints
                 WHERE story_id=?""",(source_id,)).fetchone()
-            characters=[dict(x) for x in db.execute("""SELECT config_json
+            characters=[dict(x) for x in db.execute("""SELECT id,config_json
                 FROM creator_characters WHERE story_id=?""",(source_id,))]
+            npc_map: dict[str,str] = {}
             now=time.time()
             if blueprint:
                 db.execute("INSERT INTO creator_blueprints VALUES(?,?,?)",
@@ -187,8 +188,11 @@ class CreatorService:
                 config=json.loads(item["config_json"])
                 previous=config.get("visual_character_id")
                 config["visual_character_id"]=(character_ids or {}).get(previous)
+                cloned_id = str(uuid.uuid4())
+                npc_map[item["id"]] = cloned_id
                 db.execute("INSERT INTO creator_characters VALUES(?,?,?,?,?)",
-                           (str(uuid.uuid4()),target_id,json.dumps(config),now,now))
+                           (cloned_id,target_id,json.dumps(config),now,now))
+        return npc_map
 
 
 def mount_creator_routes(app, creator: CreatorService):
