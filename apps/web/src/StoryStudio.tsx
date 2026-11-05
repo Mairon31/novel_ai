@@ -93,6 +93,19 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     }
   }
 
+  async function createBranch(turnId: string) {
+    if (!active || generating) return;
+    setError(''); setLoading(true);
+    try {
+      const copy = await api.forkStory(active.id, turnId);
+      setStories(existing => [copy, ...existing]);
+      setActive(copy);
+      setDraft('');
+      setNotice('Rama creada. Puedes continuar por una ruta diferente sin modificar la historia original.');
+    } catch (e) { setError((e as Error).message); }
+    finally { setLoading(false); }
+  }
+
   function cancelGeneration() {
     controller.current?.abort();
     controller.current = null;
@@ -130,7 +143,7 @@ export function StoryStudio({ onOpenSettings }: StoryStudioProps) {
     <VisualReader active={active} turns={turns}
       mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
       streamText={streamText} generating={generating} generationMessage={generationMessage}
-      onCancel={cancelGeneration} notice={notice} error={error}
+      onCancel={cancelGeneration} onFork={createBranch} notice={notice} error={error}
       onSubmit={continueOnly => void submit(continueOnly)}
       onCreate={() => { setCreateStep('story'); setCreating(true); }}
       onSettings={onOpenSettings}

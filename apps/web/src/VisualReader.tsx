@@ -31,6 +31,7 @@ interface Props {
   generating: boolean;
   generationMessage: string;
   onCancel: () => void;
+  onFork: (turnId: string) => void;
   notice: string;
   error: string;
   setDraft: (next: string) => void;
@@ -42,7 +43,7 @@ interface Props {
 }
 
 export function VisualReader({
-  active, turns, mode, draft, streamText, generating, generationMessage, onCancel,
+  active, turns, mode, draft, streamText, generating, generationMessage, onCancel, onFork,
   notice, error, setDraft, setMode, onSubmit, onCreate, onSettings, onUpdateStory,
 }: Props) {
   const [tab, setTab] = useState<Tab>('summary');
@@ -322,14 +323,22 @@ export function VisualReader({
             onClick={() => void saveCanon()}><Check size={15}/> Guardar canon</button>
           <h4>Estado</h4>
           <p>{turns.length} escenas guardadas · último modelo: {turns.at(-1)?.model || 'Sin iniciar'}</p>
+          {active.origin_story_id && <p className="noble-inspector-hint">
+            Esta historia es una rama independiente. Las decisiones futuras no modifican la original.
+          </p>}
         </>}
         {tab === 'history' && <>
           <h4>Historial de escenas</h4>
           {turns.length ? turns.map((turn, i) =>
-            <button key={turn.id} className="noble-inspector-turn" onClick={() => focusTurn(turn)}>
-              <span>{String(i + 1).padStart(2, '0')}</span>
-              <strong>{turn.input_text || 'Continuación automática'}</strong><ChevronRight size={15}/></button>) :
-            <p>Todavía no se han generado escenas.</p>}
+            <div key={turn.id} className="noble-inspector-turn">
+              <button className="noble-inspector-turn-jump" onClick={() => focusTurn(turn)}>
+                <span>{String(i + 1).padStart(2, '0')}</span>
+                <strong>{turn.input_text || 'Continuación automática'}</strong><ChevronRight size={15}/>
+              </button>
+              <button className="noble-inspector-branch" disabled={generating || updating}
+                title="Crear una historia alternativa desde esta intervención"
+                onClick={() => onFork(turn.id)}>Crear rama</button>
+            </div>) : <p>Todavía no se han generado escenas.</p>}
         </>}
         {tab === 'gallery' && <>
           <h4>Galería de esta historia</h4>
