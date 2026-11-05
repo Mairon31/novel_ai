@@ -337,6 +337,11 @@ class NarrativeService:
 
     def append(self, story_id: str, request_id: str, mode: str,
                instruction: str, response: str, model: str) -> dict:
+        """Commit a complete narrative turn and its inferred scene atomically.
+
+        A failed scene update must not leave a turn visible without its
+        associated location. Existing idempotency keys never reapply a scene.
+        """
         with self.store._conn() as db:
             old = db.execute(
                 "SELECT * FROM story_turns WHERE story_id=? AND request_id=?",
@@ -347,15 +352,13 @@ class NarrativeService:
             db.execute("INSERT INTO story_turns VALUES (?,?,?,?,?,?,?,?)",
                        (turn_id, story_id, request_id, mode, instruction, response, model, now))
             db.execute("UPDATE stories SET updated_at=? WHERE id=?", (now, story_id))
-        turn = self.previous(story_id, request_id)
-        if self.visual is not None and turn is not None:
-            try:
-                changed = self.visual.observe_turn(story_id, turn)
-                if changed is not None:
-                    turn["scene_transition"] = changed
-            except (sqlite3.Error, ValueError, OSError):
-                # A visual hint must never block or invalidate a saved story turn.
-                LOG.exception("No se pudo registrar un cambio de escena")
+            turn = dict(db.execute(
+                "SELECT * FROM story_turns WHERE id=?", (turn_id,)
+            ).fetchone())
+            if self.visual is not None:
+                transition = self.visual.observe_turn_in_transaction(db, story_id, turn)
+                if transition is not None:
+                    turn["scene_transition"] = transition
         return turn
 
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
