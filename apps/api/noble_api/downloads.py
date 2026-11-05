@@ -186,7 +186,9 @@ class DownloadManager:
             ready_for_verification = (expected_size is not None and
                                       offset == expected_size and offset > 0)
             if not ready_for_verification:
-                headers = {"Range": "bytes=" + str(offset) + "-"} if offset else {}
+                headers = {"Accept-Encoding": "identity"}
+                if offset:
+                    headers["Range"] = "bytes=" + str(offset) + "-"
                 url = ("https://huggingface.co/" +
                        quote(job["repo_id"], safe="/") + "/resolve/" +
                        job["revision"] + "/" + quote(job["filename"], safe=""))
@@ -210,6 +212,8 @@ class DownloadManager:
                         response.raise_for_status()
                         if response.status_code not in (200, 206):
                             raise RuntimeError("Respuesta HTTP no válida para un archivo GGUF")
+                        if response.headers.get("content-encoding", "identity").lower() != "identity":
+                            raise RuntimeError("El servidor comprimió una respuesta binaria GGUF")
                     if not complete_at_eof:
                         continued = offset > 0 and response.status_code == 206
                         if response.status_code == 206 and not continued:
@@ -243,6 +247,13 @@ class DownloadManager:
                         else:
                             # Server may ignore Range with HTTP 200; restart cleanly.
                             offset = 0
+                        declared_total = None
+                        if response.status_code == 200:
+                            declared = response.headers.get("content-length")
+                            if declared is not None:
+                                if not declared.isdigit() or int(declared) > MAX_FILE_BYTES:
+                                    raise RuntimeError("Content-Length GGUF inválido")
+                                declared_total = int(declared)
                         mode = "ab" if continued else "wb"
                         received = offset
                         last_reported = 0.0
@@ -262,6 +273,8 @@ class DownloadManager:
                         if (expected_chunk_bytes is not None and
                                 received - offset != expected_chunk_bytes):
                             raise RuntimeError("El servidor entregó un fragmento Range incompleto")
+                        if declared_total is not None and received != declared_total:
+                            raise RuntimeError("El servidor entregó un archivo GGUF incompleto")
                         self.store.update_download(job_id, received_bytes=received)
                     else:
                         # Do not modify the complete partial file: rehash it.
