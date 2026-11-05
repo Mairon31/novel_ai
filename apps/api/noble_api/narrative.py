@@ -119,6 +119,9 @@ class NarrativeService:
         self.preferences = preferences or (lambda: {"target_language": "es-419", "narration_style": "natural", "translation_mode": "off"})
         self.transport = transport
         self.locks: dict[str, asyncio.Lock] = {}
+        # Requests registered before StreamingResponse starts can be cancelled
+        # even when the model is still waiting for its first token.
+        self._active_generations: dict[tuple[str, str], asyncio.Event] = {}
         with store._conn() as db:
             db.executescript("""
             CREATE TABLE IF NOT EXISTS llm_preferences (
@@ -539,18 +542,43 @@ class NarrativeService:
                         pending.cancel()
                         await asyncio.gather(pending, return_exceptions=True)
 
+    def register_generation(self, story_id: str, request_id: str) -> asyncio.Event:
+        key = (story_id, request_id)
+        if key in self._active_generations:
+            raise HTTPException(409, "Esta solicitud narrativa ya está en curso")
+        stopped = asyncio.Event()
+        self._active_generations[key] = stopped
+        return stopped
+
+    def cancel_generation(self, story_id: str, request_id: str) -> dict:
+        stopped = self._active_generations.get((story_id, request_id))
+        if stopped is not None:
+            stopped.set()
+        return {"request_id": request_id, "cancel_requested": stopped is not None}
+
+    def release_generation(self, story_id: str, request_id: str, stopped: asyncio.Event) -> None:
+        key = (story_id, request_id)
+        if self._active_generations.get(key) is stopped:
+            del self._active_generations[key]
+
     async def stream_turn(self, story_id: str, request_id: str,
                           mode: str, instruction: str,
-                          disconnected=None):
+                          disconnected=None, stop_event: asyncio.Event | None = None):
         """Stop before committing a turn when the SSE client has gone away.
 
         StreamingResponse also cancels this generator on disconnect; explicit
         checks cover a disconnect observed between model chunks and commit.
         The upstream httpx stream closes in generate()'s async context.
         """
+        async def stopped() -> bool:
+            if stop_event is not None and stop_event.is_set():
+                return True
+            return disconnected is not None and await disconnected()
+
+        should_stop = stopped if (stop_event is not None or disconnected is not None) else None
         lock = self.locks.setdefault(story_id, asyncio.Lock())
         async with lock:
-            if disconnected is not None and await disconnected():
+            if should_stop is not None and await should_stop():
                 return
             prior = self.previous(story_id, request_id)
             if prior:
@@ -575,9 +603,9 @@ class NarrativeService:
                         and config["device"] != "cpu"):
                     lease = await self.resources.claim_local_gpu("narración local")
                 async with aclosing(self._generate_until_disconnect(
-                        config, messages, disconnected)) as generated:
+                        config, messages, should_stop)) as generated:
                     async for piece in generated:
-                        if disconnected is not None and await disconnected():
+                        if should_stop is not None and await should_stop():
                             return
                         if first_piece:
                             yield encode_event("status", {
@@ -591,7 +619,7 @@ class NarrativeService:
                 text = "".join(collected).strip()
                 if not text:
                     raise ValueError("El modelo no produjo narración")
-                if disconnected is not None and await disconnected():
+                if should_stop is not None and await should_stop():
                     return
                 turn = self.append(story_id, request_id, mode, instruction, text, config["model"])
                 yield encode_event("done", {"turn": turn, "replayed": False})
@@ -671,10 +699,27 @@ def mount_narrative_routes(app, narrative: NarrativeService):
             raise HTTPException(422, "Modo de interacción inválido")
         if body.mode != "continue" and not body.input_text.strip():
             raise HTTPException(422, "Debes escribir una acción, diálogo o indicación")
+        sid, rid = str(story_id), str(body.request_id)
+        stopped = narrative.register_generation(sid, rid)
+
+        async def events():
+            try:
+                async for packet in narrative.stream_turn(
+                    sid, rid, body.mode, body.input_text.strip(),
+                    disconnected=request.is_disconnected, stop_event=stopped
+                ):
+                    yield packet
+            finally:
+                narrative.release_generation(sid, rid, stopped)
+
         return StreamingResponse(
-            narrative.stream_turn(str(story_id), str(body.request_id),
-                                  body.mode, body.input_text.strip(),
-                                  disconnected=request.is_disconnected),
-            media_type="text/event-stream",
+            events(), media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+    @app.post("/api/v1/stories/{story_id}/generate/{request_id}/cancel")
+    async def cancel_story_generation(story_id: uuid.UUID, request_id: uuid.UUID):
+        if not narrative.get_story(str(story_id)):
+            raise HTTPException(404, "Historia inexistente")
+        # Signalling is best-effort; an already committed turn is not undone.
+        return narrative.cancel_generation(str(story_id), str(request_id))
