@@ -11,7 +11,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
     await page.getByRole('button', { name: 'Abrir menú' }).click();
   }
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /Biblioteca/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Historias para vivir/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Nueva historia' }).click();
   const creator = page.getByRole('dialog', { name: 'Crear una nueva historia' });
@@ -52,6 +52,16 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await expect(page.getByText('Abro el libro que hay sobre el mostrador.')).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-story-reader.png',
+    fullPage: true,
+  });
+  // Reader is its own experience, with no nested bookshelf above it.
+  await expect(page.locator('.noble-library-cover-grid')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
+  await expect(page.locator('.noble-reader-layout')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
+  await expect(page.locator('.noble-library-cover')).toHaveCount(1);
+  await page.screenshot({
+    path: 'test-results/' + test.info().project.name + '-bookshelf.png',
     fullPage: true,
   });
 });

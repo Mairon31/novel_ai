@@ -351,9 +351,9 @@ export default function App() {
             {role !== 'narrator' && <div className="info-note"><Info size={18}/>
               Puedes explorar estos modelos. Su instalación se activará cuando integremos los motores de imágenes y TTS.</div>}
             <div className="hub-discovery-layout">
-              <div className="model-grid" role="list" aria-label="Resultados de modelos">
+              <div className="model-grid" aria-label="Resultados de modelos">
                 {searchResults.map(m => <button key={m.repo_id} className="model-card"
-                  role="listitem" onClick={() => void viewModel(m)}>
+                  onClick={() => void viewModel(m)}>
                   <span className="model-icon">
                     {role === 'narrator' ? <BookOpen size={21}/> :
                       role === 'image' ? <Image size={21}/> : <Volume2 size={21}/>}
