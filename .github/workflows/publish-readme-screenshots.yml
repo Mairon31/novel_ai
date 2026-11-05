@@ -1,0 +1,81 @@
+name: Publish verified Noble AI screenshots
+
+on:
+  push:
+    paths:
+      - .github/workflows/publish-readme-screenshots.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          persist-credentials: true
+      - name: Retrieve successful Playwright screenshot artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error --retry 3 \
+            --header "Authorization: Bearer $GH_TOKEN" \
+            --header "Accept: application/vnd.github+json" \
+            --output /tmp/noble-ui-screens.zip \
+            "https://api.github.com/repos/Mairon31/novel_ai/actions/artifacts/13383774139/zip"
+          unzip -t /tmp/noble-ui-screens.zip >/dev/null
+      - name: Install lightweight screenshot processing dependencies
+        run: python -m pip install "Pillow>=10,<12"
+      - name: Generate web-optimized screenshots from real UI tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from PIL import Image, ImageOps
+          import io
+
+          sources = {
+              "desktop-story-reader.png": "reader-desktop.webp",
+              "desktop-model-hub.png": "model-hub.webp",
+              "desktop-visual-version-gallery.png": "gallery.webp",
+              "desktop-remote-workers.png": "workers.webp",
+              "mobile-story-reader.png": "reader-mobile.webp",
+          }
+          directory = Path("docs/assets/screenshots")
+          directory.mkdir(parents=True, exist_ok=True)
+          with ZipFile("/tmp/noble-ui-screens.zip") as archive:
+              names=set(archive.namelist())
+              missing=set(sources)-names
+              if missing:
+                  raise ValueError("Screenshots not present in verified artifact: " + repr(missing))
+              for name, output in sources.items():
+                  with Image.open(io.BytesIO(archive.read(name))) as original:
+                      image=ImageOps.exif_transpose(original).convert("RGB")
+                      if name.startswith("desktop-"):
+                          image=image.crop((0,0,image.width,min(image.height,1250)))
+                          if image.width>1150:
+                              image.thumbnail((1150,1000),Image.Resampling.LANCZOS)
+                      else:
+                          image.thumbnail((390,1053),Image.Resampling.LANCZOS)
+                      path=directory/output
+                      image.save(path,"WEBP",quality=82,method=6)
+                      print(path, image.size, path.stat().st_size,"bytes")
+          PY
+      - name: Commit screenshots only if changed
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/assets/screenshots/
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit"
+            exit 0
+          fi
+          git commit -m "docs(readme): add verified desktop and mobile Noble AI screenshots [skip ci]"
+          git push origin HEAD:master
