@@ -121,3 +121,10 @@ Al iniciar, `DownloadManager` consulta todos los jobs `paused/failed` que conoce
 Si encuentra el GGUF final junto a `.part`, una ruta enlazada fuera del almacén o un modelo registrado en `installed`, **no toca ninguno de esos archivos** y marca un conflicto. El reintento no puede sobrescribir el final. `recovery_report` contiene contadores `recovered/conflicts/skipped`; el detalle por job permanece en `downloads.error`.
 
 Pruebas: `tests/test_download_recovery.py` sobre SQLite y archivos reales con transporte sin red, [GitHub Actions #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624), 127 Python PASS. Quedan pendientes recuperación sin `expected_size`, cortes eléctricos físicos y reemplazo malicioso concurrente de rutas.
+
+
+## Reanudación robusta de GGUF de tamaño desconocido (2026-11-05)
+
+Si Hugging Face no publica `size_bytes` y el fichero `.part` está completo, una solicitud `Range: bytes=N-` puede devolver 416 con `Content-Range: bytes */N`. Noble AI comprueba que ambos N coinciden antes de reanudar directamente la fase SHA; si no coinciden, conserva el parcial y marca el job como fallido. Una respuesta 206 debe contener exactamente la parte restante y su longitud declarada. Las respuestas 200 se validan contra `Content-Length` cuando el servidor lo proporciona, y se rechazan 204, respuestas comprimidas y archivos sin cabecera GGUF. Sin checksum upstream el resultado conserva estado `local_hash_only`.
+
+Se añadieron pruebas offline con cabeceras HTTP válidas/malformadas, datos truncados, cabecera GGUF falsa, 416 engañoso y hash incorrecto en `tests/test_unknown_size_resume.py`. [CI #42068338409](https://github.com/Mairon31/novel_ai/actions/runs/42068338409): **142 Python + 28 Playwright PASS**. No equivale a descarga de pesos reales ni recuperación de un CDN incapaz de informar el tamaño total.
