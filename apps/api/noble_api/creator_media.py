@@ -6,6 +6,7 @@ It NEVER starts diffusion or uploads private story content to other providers.
 from __future__ import annotations
 
 import io
+import json
 import re
 import shutil
 import sqlite3
@@ -133,7 +134,11 @@ class CreatorMediaService:
         self._require_story(story_id)
         if kind not in ("background", "foreground"):
             raise ValueError("El recurso debe ser fondo o primer plano")
-        form = AssetCaption(label=label, caption=caption)
+        if not 1 <= len(label.strip()) <= 100:
+            raise ValueError("El nombre debe tener entre 1 y 100 caracteres")
+        if not 3 <= len(caption.strip()) <= 220:
+            raise ValueError("La descripción debe tener entre 3 y 220 caracteres")
+        form = AssetCaption(label=label.strip(), caption=caption.strip())
         if character_id:
             if kind != "foreground":
                 raise ValueError("Solo los primeros planos pueden asociarse a un personaje")
@@ -160,6 +165,8 @@ class CreatorMediaService:
         return next(row for row in self.list(story_id) if row["id"] == ident)
 
     def update_caption(self, story_id: str, asset_id: str, form: AssetCaption) -> dict:
+        if not form.label.strip() or len(form.caption.strip()) < 3:
+            raise ValueError("El nombre y la descripción no pueden estar vacíos")
         self.get(story_id, asset_id)
         with self.store._conn() as db:
             db.execute("UPDATE creator_media_assets SET label=?,caption=? "
@@ -192,9 +199,22 @@ class CreatorMediaService:
         scene = self.narrative.visual.scene(story_id)
         context = (scene["location"] + "\n" + latest)[:9000]
         selected: dict[str, dict | None] = {}
+        # A linked NPC portrait should never show up just because a place
+        # happened to contain the caption words. That character must actually
+        # be mentioned in the saved narration.
+        with self.store._conn() as db:
+            linked = {
+                row["id"]: json.loads(row["config_json"]).get("name", "")
+                for row in db.execute("SELECT id,config_json FROM creator_characters WHERE story_id=?",
+                                      (story_id,))
+            }
         for kind in ("background", "foreground"):
-            matches = [(asset, _score(asset["caption"], context))
-                       for asset in assets if asset["kind"] == kind]
+            eligible = [asset for asset in assets if asset["kind"] == kind and
+                        (not asset["character_id"] or
+                         bool(re.search(r"(?<!\w)" +
+                             re.escape(linked.get(asset["character_id"], "\x00")) +
+                             r"(?!\w)", latest, re.IGNORECASE)))]
+            matches = [(asset, _score(asset["caption"], context)) for asset in eligible]
             matches = [(asset, score) for asset, score in matches if score > 0]
             matches.sort(key=lambda pair: (pair[1], pair[0]["created_at"]), reverse=True)
             selected[kind] = matches[0][0] if matches else None
@@ -213,7 +233,7 @@ class CreatorMediaService:
                 "SELECT * FROM creator_media_assets WHERE story_id=?", (source_id,))]
         for row in rows:
             source = self._path(source_id, row["id"], row["kind"])
-            if not source.is_file():
+            if not source.is_file() or source.is_symlink():
                 continue
             new_id = str(uuid.uuid4())
             target = self._path(target_id, new_id, row["kind"])
@@ -270,7 +290,7 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
         try:
             return media.update_caption(str(story_id), str(asset_id), body)
         except ValueError as exc:
-            raise HTTPException(404, str(exc)) from exc
+            raise HTTPException(422, str(exc)) from exc
 
     @app.delete("/api/v1/stories/{story_id}/creator/assets/{asset_id}", status_code=204)
     def delete_asset(story_id: uuid.UUID, asset_id: uuid.UUID):
