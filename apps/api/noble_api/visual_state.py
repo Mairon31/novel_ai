@@ -515,7 +515,10 @@ class VisualState:
                 conn.execute("""INSERT INTO visual_current(story_id,asset_id)
                     VALUES (?,?) ON CONFLICT(story_id)
                     DO UPDATE SET asset_id=excluded.asset_id""", (story_id, ident))
-            self.legacy_copy(story_id, asset)
+                # A failed legacy-image update must roll back the new asset
+                # registration and current selection instead of committing an
+                # unusable gallery entry.
+                self.legacy_copy(story_id, asset)
         except Exception:
             # An inconsistent gallery must not leak partial files.
             with self.store._conn() as conn:
