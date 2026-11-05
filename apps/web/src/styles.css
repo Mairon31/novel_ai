@@ -785,3 +785,36 @@
   .creator-media-form{padding:15px}
   .noble-character-sprite{height:86%}
 }
+
+
+/* Model Hub — transparent hardware estimates and selectable compatibility tiers */
+.hub-selected-fit{margin:20px 0 18px;padding:16px;border:1px solid #474b70;
+  background:linear-gradient(135deg,rgba(62,55,103,.63),rgba(19,28,43,.8));
+  border-radius:13px;display:grid;gap:12px}
+.hub-selected-fit-head,.hub-selected-fit-foot{display:flex;align-items:center;
+  justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hub-selected-fit-head strong{font-size:13px;color:#e8e0ff}
+.hub-selected-fit-head span{font-size:11px;color:#b4c1dc}
+.hub-selected-fit-foot span{font-size:10px;color:#a7b7d1}
+.hub-memory-meter{height:12px;border-radius:20px;overflow:hidden;
+  background:linear-gradient(90deg,#262b46,#181e34);
+  border:1px solid #545c7c}
+.hub-memory-meter>span{display:block;height:100%;border-radius:19px;
+  background:linear-gradient(90deg,#8075df,#c8a3ff);
+  transition:width .2s ease}
+.hub-variants-toolbar{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;margin:14px 0;flex-wrap:wrap}
+.hub-variants-toolbar h3{margin:0}
+.hub-variants-toolbar h3 small{color:#9ba4c2;font-size:10px}
+.hub-variants-toolbar>div{display:flex;flex-wrap:wrap;gap:5px}
+.hub-variants-toolbar button{border:1px solid #505576;background:#252a43;
+  color:#c4c8dc;padding:7px 9px;font-size:10px;border-radius:8px}
+.hub-variants-toolbar button.selected{background:#493873;color:#f3ebff;border-color:#ab93ed}
+.hub-variant-recommended{font-size:10px;font-weight:800;color:#d3c1ff;
+  background:#423657;border:1px solid #7a62a4;border-radius:6px;padding:5px}
+.hub-variant-no-fit{font-size:12px;color:#abb5ca;padding:15px;text-align:center}
+@media(max-width:560px){
+  .hub-selected-fit{padding:12px}
+  .hub-variants-toolbar>div{width:100%}
+  .hub-variants-toolbar button{flex:1}
+}
