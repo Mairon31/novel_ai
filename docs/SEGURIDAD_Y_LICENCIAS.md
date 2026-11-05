@@ -68,3 +68,17 @@ Antes de una release: SBOM, verificación de dependencias, NOTICE/attribution, a
 - El proxy remoto solo admite listado de modelos y chat completions con streaming, no acciones sobre archivos o procesos.
 - Los prompts narrativos salen del equipo principal y se transmiten por Cloudflare, por lo que no son completamente locales.
 - Autenticación de usuarios para LAN, permisos de lectura de historias, CORS por origen y actualización segura de builds permanecen sin implementar. La interfaz no debe sugerir que el workspace completo se puede compartir todavía.
+
+## Seguimiento P0 de la auditoría Argon (2026-11-05)
+
+El inventario de `model_storage.py` ya ignora archivos ajenos/symlinks y `downloads.py` ya implementa Range/`.part`/hash condicional. Estas defensas **no sustituyen** el saneamiento antes de *toda operación real de archivo*. Ver [TODO](../TODO.md) y [QA](QA_Y_ACEPTACION.md).
+
+- **Rutas de propiedad:** validar IDs y rutas persistidas (no confiar en SQLite importado), resolver destino y sus padres bajo el directorio autorizado y rechazar enlaces simbólicos que salgan de él antes de escribir, leer, clonar o borrar; probar symlinks y `../` adversariales.
+- **Descargas confiables:** comprobar revisión fijada y `Content-Range` real, tamaños permitidos, hash upstream si se anuncia, y publicación atómica. Si no existe hash upstream, registrar **`local_hash_only`**, sin sugerir autenticidad criptográfica certificada.
+- **Persistencia:** habilitar y probar foreign keys y transacciones de varios registros; las actualizaciones de historia y estado derivado necesitan consistencia o reconstrucción idempotente tras fallos.
+- **GPU y procesos:** los recursos externos del usuario no se matan ni descargan sin autorización. Gestionar solo procesos y modelos controlados por Noble, con bloqueos, timeouts y cancelación efectiva.
+- **Workers:** loopback por defecto y Bearer obligatorio al habilitar la red; keyring, redacción de logs, validación de URLs y alcance mínimo; nunca publicar un worker accesible por cualquier cliente sin credenciales.
+- **Código de terceros:** la existencia de un repositorio público no equivale a permiso universal; copiar implementación e interfaz si la licencia lo permite, cumplir NOTICE, copyright y copyleft de archivos concretos. Registrar origen, versión, modificaciones y comprobación de licencia; especial revisión para AGPL-3.0 y MPL-2.0.
+- **Importaciones:** PNG V2/V3 y paquetes de historias deben tener límites de tamaño, chunks y campos, evitar descompresión descontrolada y no ejecutar expresiones externas.
+
+Cierre condicionado a pruebas de regresión y auditoría del runtime real, no solo análisis de archivos.
