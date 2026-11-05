@@ -98,3 +98,16 @@ La operación fork retorna una historia con `origin_story_id` y `origin_turn_id`
 - `GET /api/v1/resources/status`: GPU(s) observadas, MiB libres/usados, índice, porcentaje de utilización, `status=above_reserve|below_reserve|unknown`, política y tiempo de consulta.
 
 El modo guard consulta `nvidia-smi` **solo** antes de enviar una generación de ComfyUI explícita que no haya sido servida por caché. No bloquea a los proveedores sin telemetría NVIDIA y no garantiza que el modelo quepa. `allow_low_vram=true` permite una excepción por solicitud, pero no edita la configuración persistida.
+
+
+## Planificador de escenas e identidad visual
+
+- `GET /api/v1/stories/{uuid}/scene-plan`: plan del escenario actual. Incluye `scene_id`, `revision`, `shot`, `lighting`, `mood`, `direction`, `visible_character_ids` y `reference_character_id`.
+- `PUT /api/v1/stories/{uuid}/scene-plan`: guarda `{"shot":"medium","lighting":"natural","mood":"","direction":"","visible_character_ids":[],"reference_character_id":null}`. Son válidos `shot=wide|medium|closeup` y `lighting=natural|sunset|night|interior|dramatic`.
+- `POST /api/v1/stories/{uuid}/scene-plan/preview`: con `{"prompt":"..."}`, compone el prompt enriquecido y expone la referencia automática sin generar imágenes.
+- `PUT /api/v1/stories/{uuid}/visual-characters/{char_uuid}/reference`: asigna `{"asset_id":"uuid"}` o elimina una referencia con `null`. Solo admite imágenes verificadas pertenecientes a la historia.
+- `POST /api/v1/stories/{uuid}/illustrate`: puede elegir automáticamente la referencia del personaje focal del plan si no se envía una referencia explícita; informa `reference_asset_id` usado.
+- `GET /api/v1/resources/active`: operación multimedia local en curso, si existe.
+- `PUT /api/v1/resources/config`: además de la política de VRAM acepta `serialize_local_gpu:boolean` (predeterminado `true`). Una operación local ocupada devuelve HTTP 409. No hay cola de jobs oculta.
+
+Los cambios de escena no realizan ningún trabajo de GPU automáticamente. Las rutas anteriores mantienen sus parámetros originales compatibles.

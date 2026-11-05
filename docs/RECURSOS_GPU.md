@@ -22,3 +22,12 @@ Los procesos LLM, ComfyUI y Piper pueden ejecutarse fuera de Noble AI. Un schedu
 ## Pruebas
 
 `tests/test_resource_policy.py` simula salidas de `nvidia-smi`, ausencia de GPU y distintos estados de memoria. Verifica monitor, bloqueo configurado, excepción explícita y persistencia tras reiniciar la API. No representa una prueba de rendimiento en GPU física.
+
+
+## Coordinación de operaciones locales
+
+La API ahora dispone de una **exclusión mutua opcional**, `serialize_local_gpu`, activada por defecto. Solo afecta a las operaciones que Noble AI sabe que pueden competir por una GPU local: narración de Ollama/KoboldCpp en modo auto, precalentamiento local y generaciones ComfyUI nuevas (no se reserva GPU al devolver una imagen ya guardada en caché).
+
+`GET /api/v1/resources/active` muestra una operación local activa, su tipo y hora de inicio. Cuando la exclusión está habilitada, una segunda solicitud recibe HTTP 409; la narración vía SSE devuelve un evento de error legible. Los bloqueos se liberan en `finally`, también después de errores o cancelaciones del cliente. Se pueden deshabilitar en la interfaz de ajustes, por ejemplo si los proveedores utilizan GPUs distintas.
+
+**Límite:** esto es coordinación de **solicitudes controladas por Noble AI**, no un planificador real de memoria. No libera tensores, reinicia motores, transfiere checkpoints ni impide que otra aplicación use la misma GPU. Los workers remotos y Piper CPU permanecen fuera del bloqueo local.

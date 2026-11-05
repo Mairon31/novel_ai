@@ -193,3 +193,14 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [ ] IPAdapter/FaceID, consistencia visual a nivel identidad sin cambios indeseados.
 - [ ] Gestor de prioridades/orquestación para offload y transferencia LLM-ComfyUI-TTS.
 - [ ] Telemetría de memoria por proceso, GPUs múltiples y CUDA con checkpoints heterogéneos.
+
+
+## Motor visual y tareas locales (implementado en código)
+
+- [x] Planes específicos por escena: composición, plano, luz, atmósfera y reparto con referencias persistentes.
+- [x] Referencia visual asignable a cada personaje desde una imagen de la galería, validada y copiable a ramas.
+- [x] Previsualización del prompt planificado sin cargar modelos.
+- [x] Bloqueo opcional de generación simultánea local de LLM y difusión, liberado al finalizar o fallar.
+- [x] Protección frente a duplicación concurrente de escena inicial en SQLite.
+- [ ] Conditioning multi-referencia y control consistente de identidad (IPAdapter/LoRA/etc.).
+- [ ] Cola persistente y scheduler consciente de GPU disponible, prioridades/cancelación y descarga real de pesos.

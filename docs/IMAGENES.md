@@ -122,3 +122,18 @@ Con `nvidia-smi` disponible, Noble AI puede leer la VRAM global libre en MiB. **
 - La opción «Ignorar la reserva mínima de VRAM solo para esta solicitud» permite intentar una generación específica. La opción no altera los valores persistidos.
 - Si `nvidia-smi` no está disponible, el estado es `unknown` y no se bloquea a los proveedores CPU o no NVIDIA.
 - La supervisión NO descarga modelos, libera la VRAM, detiene procesos, predice consumo de un checkpoint ni coordina VRAM con otro programa. Un scheduler multiproceso con offload seguirá requiriendo una implementación independiente.
+
+
+## Plan visual persistente por escenario
+
+La galería incluye ahora un editor para **composición y acción**, plano (general, medio o primer plano), iluminación, atmósfera, un reparto visible de hasta seis personajes y un protagonista de referencia. El plan es explícito y editable; no es una detección semántica de IA ni se ejecuta otro LLM en segundo plano.
+
+- Cada plan está asociado al UUID de una escena en la tabla `scene_plans`; cambiar de ubicación abre un plan propio en blanco.
+- `GET /api/v1/stories/{id}/scene-plan` devuelve un plan existente o valores iniciales sin crear imágenes.
+- `PUT /api/v1/stories/{id}/scene-plan` actualiza el plan, valida que cada ID de personaje pertenezca a esa historia y que la referencia esté entre los personajes visibles. No se admiten duplicados.
+- `POST /api/v1/stories/{id}/scene-plan/preview` compone un prompt sin inferencia. Los nombres y atributos de los integrantes del reparto se incorporan al prompt únicamente cuando los selecciona el usuario.
+- Cada personaje puede asociar una versión visual canónica de la galería mediante `PUT /visual-characters/{id}/reference` con `{"asset_id":"uuid"}` o `{"asset_id":null}`. Se valida propiedad y SHA256 del archivo.
+- Cuando un plan referencia a un personaje con una imagen asignada, ComfyUI puede utilizar automáticamente esa referencia mediante img2img, salvo que la solicitud indique otra imagen explícita. La respuesta informa `reference_asset_id` que realmente se utilizó.
+- La clonación de una historia copia los planes de las escenas conservadas y remapea todos los IDs de personajes y arte. Los planes de escenas que quedaron fuera de una rama no se copian.
+
+La referencia sigue utilizando el img2img básico de ComfyUI: una fotografía de referencia es condicionamiento espacial, pero no un identificador de rostro ni un control multi-personaje como IPAdapter. La vinculación sirve para continuidad explícita, no para prometer identidad perfecta.

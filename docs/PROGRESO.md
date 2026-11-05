@@ -260,3 +260,18 @@ Siguiente tarea:
 ```
 
 No editar entradas anteriores para borrar un fallo; agregar una corrección fechada con referencia.
+
+
+## 2026-11-04 — Planes visuales y coordinación de trabajo local
+
+- [x] Tabla `scene_plans` por escena con plano, iluminación, dirección, atmósfera, reparto validado y personaje de referencia.
+- [x] UI de edición, selección de integrantes y previsualización del prompt del plan.
+- [x] Migración de referencias visuales por personaje; verificación de integridad SHA256 y propiedad por historia.
+- [x] Remapeo de planes, perfiles y referencias en forks sin exponer escenas eliminadas por el punto de bifurcación.
+- [x] ComfyUI integra el plan guardado y una imagen vinculada al personaje focal cuando existe.
+- [x] Coordinación opcional de GPU local entre narración, precalentamiento y ComfyUI, con estado activo y bloqueo 409.
+- [x] Corrección de condición de carrera SQLite al crear la escena inicial; nuevas lecturas concurrentes no crean escenas duplicadas.
+- [x] Tests de contratos, persistencia, concurrencia, aislamiento y Playwright móvil/escritorio.
+- [ ] Integrar IPAdapter/FaceID o LoRA real para identidad multiimagen y combinaciones de varias referencias.
+- [ ] Scheduler con cola/cancelación de jobs, gestión por dispositivo y offload de memoria entre motores.
+- [ ] Benchmarks físicos de estabilidad y rendimiento de modelos multimedia en GPU.
