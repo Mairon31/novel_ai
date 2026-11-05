@@ -271,56 +271,105 @@ class NarrativeService:
         return self.get_story(story_id)
 
     def fork_story(self, story_id: str, until_turn_id: str | None = None) -> dict:
+        """Create all branch DB state atomically, with file-copy compensation.
+
+        No branch becomes visible until the transaction commits. Every cloning
+        service receives the same connection; failures roll back turns, scenes,
+        plans, author assets, Lorebooks and world-state snapshots together.
+        File copies are not SQLite-transactional, so any failure also removes
+        the brand-new UUID-scoped branch directory. A power loss during a copy
+        still requires on-startup cleanup of orphaned directories.
+        """
         source = self.get_story(story_id)
         if source is None:
             raise ValueError("La historia original no existe")
-        with self.store._conn() as db:
-            existing = [dict(row) for row in db.execute(
-                "SELECT * FROM story_turns WHERE story_id=? ORDER BY created_at,id", (story_id,))]
-            if until_turn_id:
-                positions = [index for index, turn in enumerate(existing)
-                             if turn["id"] == until_turn_id]
-                if not positions:
-                    raise ValueError("La intervención seleccionada no pertenece a esta historia")
-                existing = existing[:positions[0] + 1]
-            new_id, now = str(uuid.uuid4()), time.time()
-            label = source["title"][:88].rstrip() + " (rama)"
-            db.execute("""INSERT INTO stories
-                (id,title,premise,created_at,updated_at,protagonist_name,
-                 canon,origin_story_id,origin_turn_id)
-                VALUES (?,?,?,?,?,?,?,?,?)""",
-                (new_id, label, source["premise"], now, now,
-                 source.get("protagonist_name") or "Protagonista",
-                 source.get("canon") or "", story_id, until_turn_id))
-            turn_map = {}
-            for idx, turn in enumerate(existing):
-                cloned_turn_id = str(uuid.uuid4())
-                turn_map[turn["id"]] = cloned_turn_id
-                db.execute("""INSERT INTO story_turns
-                    (id,story_id,request_id,mode,input_text,assistant_text,model,created_at)
-                    VALUES (?,?,?,?,?,?,?,?)""",
-                    (cloned_turn_id, new_id, str(uuid.uuid4()), turn["mode"],
-                     turn["input_text"], turn["assistant_text"], turn["model"],
-                     now + idx * 0.000001))
-        visual_character_map = {}
+        # Legacy art migration and creation of source's initial scene can
+        # perform DB writes. Finish those BEFORE opening BEGIN IMMEDIATE to
+        # avoid self-deadlock through VisualState's separate connections.
         if self.visual is not None:
-            visual_character_map = self.visual.clone_branch(story_id, new_id, turn_map, partial=bool(until_turn_id),
-                cutoff_created_at=existing[-1]["created_at"] if existing and until_turn_id else None)
-        else:
-            prior_art = self.store.root / "story-assets" / story_id / "scene.webp"
-            if prior_art.is_file():
-                copy_art = self.store.root / "story-assets" / new_id / "scene.webp"
-                copy_art.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(prior_art, copy_art)
-        character_ids = {}
-        if self.creator is not None:
-            character_ids = self.creator.clone(story_id, new_id, visual_character_map)
-        if self.creator_media is not None:
-            self.creator_media.clone(story_id, new_id, character_ids)
-        if self.lorebook is not None:
-            self.lorebook.clone(story_id, new_id)
-        if self.world is not None:
-            self.world.clone(story_id, new_id, turn_map, until_turn_id, character_ids)
+            self.visual.all(story_id)
+
+        new_id = str(uuid.uuid4())
+        copied_dir = self.store.root / "story-assets" / new_id
+        if copied_dir.exists() or copied_dir.is_symlink():
+            raise ValueError("El directorio de la nueva rama ya existe")
+        try:
+            with self.store._conn() as db:
+                db.execute("BEGIN IMMEDIATE")
+                # Re-read the source and turns under the same write lock.
+                actual = db.execute(
+                    "SELECT * FROM stories WHERE id=?", (story_id,)
+                ).fetchone()
+                if actual is None:
+                    raise ValueError("La historia original ya no existe")
+                existing = [dict(row) for row in db.execute(
+                    "SELECT * FROM story_turns WHERE story_id=? "
+                    "ORDER BY created_at,id", (story_id,)
+                )]
+                if until_turn_id:
+                    positions = [index for index, turn in enumerate(existing)
+                                 if turn["id"] == until_turn_id]
+                    if not positions:
+                        raise ValueError(
+                            "La intervención seleccionada no pertenece a esta historia")
+                    existing = existing[:positions[0] + 1]
+
+                now = time.time()
+                label = actual["title"][:88].rstrip() + " (rama)"
+                db.execute("""INSERT INTO stories
+                    (id,title,premise,created_at,updated_at,protagonist_name,
+                     canon,origin_story_id,origin_turn_id)
+                    VALUES (?,?,?,?,?,?,?,?,?)""",
+                    (new_id, label, actual["premise"], now, now,
+                     actual["protagonist_name"] or "Protagonista",
+                     actual["canon"] or "", story_id, until_turn_id))
+                turn_map = {}
+                for idx, turn in enumerate(existing):
+                    copied_turn_id = str(uuid.uuid4())
+                    turn_map[turn["id"]] = copied_turn_id
+                    db.execute("""INSERT INTO story_turns
+                        (id,story_id,request_id,mode,input_text,assistant_text,model,created_at)
+                        VALUES (?,?,?,?,?,?,?,?)""",
+                        (copied_turn_id, new_id, str(uuid.uuid4()), turn["mode"],
+                         turn["input_text"], turn["assistant_text"], turn["model"],
+                         now + idx * 0.000001))
+
+                visual_map = {}
+                if self.visual is not None:
+                    visual_map = self.visual.clone_branch(
+                        story_id, new_id, turn_map, partial=bool(until_turn_id),
+                        cutoff_created_at=existing[-1]["created_at"]
+                        if existing and until_turn_id else None,
+                        conn=db)
+                else:
+                    prior_art = self.store.root / "story-assets" / story_id / "scene.webp"
+                    if prior_art.is_file() and not prior_art.is_symlink():
+                        copied_dir.mkdir(parents=True)
+                        shutil.copy2(prior_art, copied_dir / "scene.webp")
+                character_ids = {}
+                if self.creator is not None:
+                    character_ids = self.creator.clone(
+                        story_id, new_id, visual_map, conn=db)
+                if self.creator_media is not None:
+                    self.creator_media.clone(
+                        story_id, new_id, character_ids, conn=db)
+                if self.lorebook is not None:
+                    self.lorebook.clone(story_id, new_id, conn=db)
+                if self.world is not None:
+                    self.world.clone(
+                        story_id, new_id, turn_map, until_turn_id, character_ids,
+                        conn=db)
+        except Exception:
+            # The destination UUID is generated by this operation and was
+            # checked absent above. Never remove the source story directory.
+            try:
+                if copied_dir.is_symlink():
+                    copied_dir.unlink()
+                elif copied_dir.is_dir():
+                    shutil.rmtree(copied_dir)
+            except OSError:
+                LOG.exception("No se pudo limpiar el directorio de rama fallida %s", new_id)
+            raise
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
