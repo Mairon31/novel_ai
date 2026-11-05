@@ -89,3 +89,14 @@ UI siempre diferencia `no configurado`, `descargando`, `instalado`, `cargando`, 
 - Logs de cargas: abrir Settings/TTS no carga modelo TTS por defecto.
 
 Referencia: [Model Hub](MODEL_HUB.md), [Arquitectura](ARQUITECTURA.md), [Roadmap](ROADMAP.md).
+
+## Arquitectura de experiencia posterior a la auditoría Argon
+
+La navegación debe evolucionar a **cuatro espacios visualmente independientes**, no a una única columna donde todos los subpaneles ocupen el mismo nivel:
+
+1. **Biblioteca/Exploración:** historias con portada editorial, sinopsis pública, elenco, aperturas alternativas, última actividad y acceso directo a continuar.
+2. **Lector inmersivo:** superficie VN a pantalla completa con fondo/sprites/diálogo, cambio VN/Libro/Chat, backlog, modo de acción, cancelación y ramas. Herramientas de modelos fuera del lienzo.
+3. **Creator Studio:** formulario básico y avanzado por personaje, historia, canon, Lorebook, sprites, voz y aperturas; previsualización sin inferencia forzada.
+4. **Infraestructura:** Model Hub, selector de cuantizaciones, downloads, workers, configuración de hardware, presupuestos y benchmarks.
+
+**No rehacer todo el frontend de golpe:** aislar estados y URLs con pruebas E2E por cambio; incorporar Radix/virtualización solo cuando ofrezcan accesibilidad/rendimiento verificables. Evitar acciones placebo y mantener acceso móvil. El roadmap y criterios de aceptación actualizados están en [TODO](../TODO.md), [auditoría §13](ARGON_AUDITORIA.md) y [QA](QA_Y_ACEPTACION.md).
