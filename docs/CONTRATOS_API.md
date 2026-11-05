@@ -190,3 +190,6 @@ Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/ac
 - `POST /api/v1/stories/{story_id}/lorebook/preview`: incluye el campo adicional `skipped_visibility` para entradas privadas descartadas porque los testigos no están presentes. Los hechos privados solo entran en `entries/context` cuando intersectan `GET /world-state` → `state.present_character_ids`; las palabras clave o los nombres mencionados en el texto de consulta no establecen presencia.
 - `GET .../lorebook/turns/{turn_id}` conserva el alcance y testigos exactos del checkpoint; en una rama todos los IDs de testigos y de entradas se remapean a su destino, sin consultar NPC actuales de la historia original.
 - Este filtrado gobierna únicamente la selección de entradas Lorebook hacia el prompt y no restringe el acceso administrativo a su editor. No evita por sí solo que el LLM genere una revelación incorrecta desde otros contextos.
+
+
+**Verificación de la extensión:** [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216) — 193 Python + 36 Playwright PASS. La semántica de `visibility=world` y las rutas existentes no cambiaron.

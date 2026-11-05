@@ -127,13 +127,17 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Sin instantánea visual en un turno anterior a la migración, la nueva rama no consulta perfiles o imágenes actuales para inventar historia. Un error inyectado al guardar snapshot revierte turno y recursos del commit.
 - [x] Tests de compatibilidad `tests/test_story_branches.py` dejan de considerar correcto que una imagen importada posteriormente aparezca en un turno previo.
 - [x] Python CI: [#42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974), **189/189 PASS**. No incluye medición física de GPU.
-- [ ] Playwright del mismo commit debe confirmar recorrido de escritorio y móvil. **No contabilizar PASS hasta finalizar el job frontend.**
+- [x] [CI #42095465227](https://github.com/Mairon31/novel_ai/actions/runs/42095465227) completada en verde: 189 Python y 34 Playwright PASS para el mismo árbol de código, incluidos escritorio y móvil.
 
 
-## P1 — Gate de Lorebook con testigos (pendiente de CI)
+## P1 — Gate de Lorebook con testigos (CI verificada)
 
-- [ ] Entrada privada con palabra clave y `always_active` no se activa si no hay testigo presente; mención del nombre no cambia `WorldState`. Testigo presente permite el contexto con atribución explícita; personaje distinto lo excluye.
-- [ ] Rechazar testigos inexistentes, ajenos, repetidos y entradas `world` con IDs privados o `witnesses` sin testigos. Debe conservarse CRUD y activación de entradas generales antiguas.
-- [ ] Historia con dos NPC: bifurcar en turno antiguo restaura la versión anterior del secreto y remapea testigos; bifurcar desde presente conserva cambios nuevos, sin contaminar el origen.
-- [ ] Prueba Playwright en escritorio/móvil: UI de selector/testigos, vista previa sin presencia y activación tras confirmar la presencia por API de estado del mundo.
-- [ ] Pruebas por CI: `tests/test_lorebook_witness.py`, suite Python completa y Playwright; no confundir estas pruebas simuladas con una inferencia real que obedezca la atribución del conocimiento.
+- [x] Entrada privada con palabra clave y `always_active` no se activa si no hay testigo presente; mención del nombre no cambia `WorldState`. Testigo presente permite el contexto con atribución explícita; personaje distinto lo excluye.
+- [x] Rechazar testigos inexistentes, ajenos, repetidos y entradas `world` con IDs privados o `witnesses` sin testigos. Debe conservarse CRUD y activación de entradas generales antiguas.
+- [x] Historia con dos NPC: bifurcar en turno antiguo restaura la versión anterior del secreto y remapea testigos; bifurcar desde presente conserva cambios nuevos, sin contaminar el origen.
+- [x] Prueba Playwright en escritorio/móvil: UI de selector/testigos, vista previa sin presencia y activación tras confirmar la presencia por API de estado del mundo.
+- [x] Pruebas por CI: `tests/test_lorebook_witness.py`, suite Python completa y Playwright; no confundir estas pruebas simuladas con una inferencia real que obedezca la atribución del conocimiento.
+
+- [x] Evidencia: [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216), `193/193` Python y `36/36` Playwright aprobadas; frontend compiló. Commits `cef3a99` (funcionalidad) y `cb687ec` (selector E2E corregido).
+- [x] La primera CI [#42097551698](https://github.com/Mairon31/novel_ai/actions/runs/42097551698) falló solo por un selector Playwright que coincidía con el título de la ficha y con la entrada previsualizada. La aserción se restringió a `.creator-hint[role="status"]`; ambos proyectos (desktop/mobile) pasaron después.
+- [ ] Pendiente: evaluación del contenido generado por un LLM real, aislamiento por testigos de resúmenes episódicos y diálogos, y detector de revelaciones/contradicciones. La prueba de ausencia verifica el prompt preparado, no la obediencia del modelo.

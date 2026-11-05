@@ -550,3 +550,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] Validación estricta de propiedad al guardar bajo `BEGIN IMMEDIATE`; snapshots históricos guardan el campo y `LorebookService.clone` remapea testigos con el mapa de personajes de Creator, omitiendo entradas privadas sin testigos válidos en la rama. Creator Studio permite seleccionar testigos y ver cuántas entradas quedaron fuera por ausencia; la UI conserva entradas anteriores de tipo `world`.
 - [ ] `tests/test_lorebook_witness.py` cubre presencia/ausencia, testigo distinto, visibilidad general, UUID inválidos/extranjeros, rama histórica vs presente, remapeo de snapshots y persistencia al reiniciar. Se amplió `apps/web/tests/lorebook.spec.ts` para escritorio y móvil.
 - [ ] **No marcar CI aprobada hasta observar el workflow**, ni declarar aislamiento cognitivo completo: otras fuentes del prompt (blueprint, diálogo o memoria externa) pueden introducir secretos sin pasar por este filtro. Sigue faltando analizador de contradicciones y presupuesto por tokens.
+
+
+### Gate final — Lorebook con testigos (2026-11-05)
+
+- [x] [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216) completada en **success** para `cb687ec`: `193/193` pruebas Python, `36/36` Playwright escritorio/móvil y compilación React/Vite correcta. Las cuatro pruebas nuevas de testigos pasaron en SQLite/FastAPI real y proveedor de narración simulado.
+- [x] La primera [CI #42097551698](https://github.com/Mairon31/novel_ai/actions/runs/42097551698) registró 193 Python PASS, pero solo 34/36 Playwright debido a una aserción ambigua: coincidía con el título de la entrada y con la vista previa. `cb687ec` limitó el selector al panel de activación; no ocultar la ejecución inicial fallida.
+- [x] Criterios verificados: entradas generales anteriores siguen activándose, las privadas requieren testigo del mismo proyecto presente en el estado del mundo, no se activan por mención/always_active cuando nadie las conoce, y remapean IDs de testigo en bifurcaciones parciales/completas. Las restricciones persisten al reiniciar.
+- [ ] Sin medir GPU ni evaluar generación semántica con modelo real; falta aislamiento de otras fuentes de contexto del narrador y presupuesto por tokens.

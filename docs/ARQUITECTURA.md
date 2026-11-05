@@ -66,3 +66,6 @@ Además del alcance clásico `world` (conocimiento general), cada entrada puede 
 Se preserva la estructura existente de Lorebook y sus snapshots: el JSON nuevo se conserva por turno; al bifurcar, los testigos privados se remapean usando los mismos IDs destino de `CreatorService.clone`, incluidos los checkpoints copiados. Una entrada privada que no tenga ningún testigo destino se omite por seguridad, no se transforma en conocimiento general.
 
 El alcance es de **control de inclusión de datos en el prompt**, no un sistema completo de cognición individual: un modelo puede inferir o verbalizar secretos desde otras fuentes ya inyectadas, como descripciones NPC, el blueprint o diálogos. Para garantías más fuertes faltan recuperación episódica con procedencia y separación de mensajes/conocimiento por actor, más pruebas semánticas del texto generado.
+
+
+**Evidencia de regresión para Lorebook por testigos:** commit `cef3a99`, fix E2E `cb687ec`, [GitHub Actions #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216): **193 Python y 36 Playwright PASS**. Es un filtro explícito y determinista de contexto, no una garantía de que la IA nunca produzca un secreto por inferencia.
