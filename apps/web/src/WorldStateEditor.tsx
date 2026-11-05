@@ -207,7 +207,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           placeholder="puerta_abierta"/>
         <button className="secondary-button"
           disabled={!/^[\p{L}\p{N}_\-.]{1,70}$/u.test(flagName) ||
-            Object.hasOwn(draft.flags, flagName)}
+            Object.prototype.hasOwnProperty.call(draft.flags, flagName)}
           onClick={() => {
             patch({ flags: { ...draft.flags, [flagName]: false } });
             setFlagName('');
