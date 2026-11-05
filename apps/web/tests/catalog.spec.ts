@@ -15,7 +15,10 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
     body: JSON.stringify({ source: 'visual-qa-fixture', query: 'Qwen', role: 'narrator',
       cached_seconds: 0, installation_supported: true, results: examples }),
   }));
-  await page.route('**/api/v1/models/demo/Qwen3-8B-GGUF', async route => route.fulfill({
+  let detailRequests = 0;
+  await page.route('**/api/v1/models/demo/Qwen3-8B-GGUF', async route => {
+    detailRequests += 1;
+    await route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ repo_id: 'demo/Qwen3-8B-GGUF', revision: 'a'.repeat(40),
       license: 'apache-2.0', gated: false, supports_install: true,
@@ -50,7 +53,8 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
             gpu_share:0,disk_ok:true,note:'Solo CPU en el ejemplo.'},
         ],
       } }),
-  }));
+    });
+  });
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
@@ -61,7 +65,14 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await expect(page.getByText('Gemma-4-GGUF')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-catalog-cards.png', fullPage: true });
   await page.getByRole('button', { name: /Qwen3-8B-GGUF/ }).click();
-  await expect(page.getByRole('dialog', { name: 'Detalles del modelo' })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Detalles del modelo' });
+  await expect(dialog).toBeVisible();
+  if (test.info().project.name === 'desktop') {
+    await expect(page.locator('.app-shell')).toHaveClass(/model-inspector-active/);
+    await expect(dialog).toHaveAttribute('aria-modal', 'false');
+  } else {
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+  }
   await expect(page.getByText('Qwen3-8B-Q4_K_M.gguf')).toBeVisible();
   await expect(page.getByText(/Cuantización sugerida: Qwen3-8B-Q8_0.gguf/)).toBeVisible();
   await expect(page.getByRole('meter', { name: 'Relación de demanda y memoria utilizable' })).toBeVisible();
@@ -72,4 +83,9 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await page.getByRole('button', { name: /Qwen3-8B-Q8_0.gguf/ }).click();
   await expect(page.getByText('Variante seleccionada: Q8_0')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-catalog-detail.png', fullPage: true });
+  await page.getByRole('button', { name: 'Cerrar detalles' }).click();
+  await page.getByRole('button', { name: /Qwen3-8B-GGUF/ }).click();
+  await expect(dialog).toBeVisible();
+  expect(detailRequests).toBe(1); // Session cache avoids a repeated metadata request.
+
 });
