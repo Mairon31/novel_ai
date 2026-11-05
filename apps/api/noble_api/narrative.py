@@ -7,6 +7,7 @@ World-state extraction/branching and managed KoboldCpp startup are later phases.
 from __future__ import annotations
 
 import asyncio
+from contextlib import aclosing
 import json
 import logging
 import shutil
@@ -506,6 +507,40 @@ class NarrativeService:
             "message": "Preparación completada; el motor puede descargar memoria si está inactivo.",
         }
 
+    async def _generate_until_disconnect(self, config: dict, messages: list[dict],
+                                         disconnected=None):
+        """Poll a stalled upstream without waiting for another model token.
+
+        Closing the downstream SSE stream cancels any pending upstream read,
+        closes the httpx response and releases the caller's GPU lease.
+        A new task is created only while awaiting the next upstream chunk.
+        """
+        async with aclosing(self.generate(config, messages)) as upstream:
+            if disconnected is None:
+                async for piece in upstream:
+                    yield piece
+                return
+            while True:
+                if await disconnected():
+                    return
+                pending = asyncio.create_task(anext(upstream))
+                try:
+                    while not pending.done():
+                        await asyncio.wait({pending}, timeout=0.2)
+                        if not pending.done() and await disconnected():
+                            return
+                    try:
+                        piece = pending.result()
+                    except StopAsyncIteration:
+                        return
+                    if await disconnected():
+                        return
+                    yield piece
+                finally:
+                    if not pending.done():
+                        pending.cancel()
+                        await asyncio.gather(pending, return_exceptions=True)
+
     async def stream_turn(self, story_id: str, request_id: str,
                           mode: str, instruction: str,
                           disconnected=None):
@@ -541,18 +576,20 @@ class NarrativeService:
                 if (self.resources is not None and config["provider"] in {"ollama", "koboldcpp"}
                         and config["device"] != "cpu"):
                     lease = await self.resources.claim_local_gpu("narración local")
-                async for piece in self.generate(config, messages):
-                    if disconnected is not None and await disconnected():
-                        return
-                    if first_piece:
-                        yield encode_event("status", {
-                            "phase": "streaming", "message": "Narración en curso..."})
-                        first_piece = False
-                    collected.append(piece)
-                    total_length += len(piece)
-                    if total_length > 40000:
-                        raise ValueError("La salida excedió el límite de longitud")
-                    yield encode_event("delta", {"text": piece})
+                async with aclosing(self._generate_until_disconnect(
+                        config, messages, disconnected)) as generated:
+                    async for piece in generated:
+                        if disconnected is not None and await disconnected():
+                            return
+                        if first_piece:
+                            yield encode_event("status", {
+                                "phase": "streaming", "message": "Narración en curso..."})
+                            first_piece = False
+                        collected.append(piece)
+                        total_length += len(piece)
+                        if total_length > 40000:
+                            raise ValueError("La salida excedió el límite de longitud")
+                        yield encode_event("delta", {"text": piece})
                 text = "".join(collected).strip()
                 if not text:
                     raise ValueError("El modelo no produjo narración")
