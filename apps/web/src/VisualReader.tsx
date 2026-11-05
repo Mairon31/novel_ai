@@ -207,6 +207,9 @@ export function VisualReader({
           <button className="noble-scene-upload" disabled={updating}
             onClick={() => fileRef.current?.click()}><Camera size={15}/>
             {active.scene_image_url ? 'Cambiar escena' : 'Añadir ilustración'}</button>
+          {imageMode !== 'off' && <button className="noble-scene-upload"
+            onClick={() => { setTab('gallery'); setInspectorOpen(true); }}>
+            <Image size={15}/> Ilustrar con IA</button>}
         </div>
       </div>
     </aside>
