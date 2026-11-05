@@ -53,11 +53,16 @@ def infer_location(text: str) -> str | None:
     if not text or len(text) > 60000:
         return None
     for line in re.split(r"[\n.!?]+", text):
-        line = line.strip()
+        # Narrator text may contain quoted speech; a spoken destination is not
+        # proof the player actually arrived there.
+        line = re.sub(r'[«“"][^»”"]*[»”"]', '', line).strip()
         if not line or line[0] in {"«", '"', "“", "-", "—"}:
             continue
         match = TRANSITION.search(line)
         if match:
+            prefix = line[:match.start()].lower()
+            if re.search(r"\b(?:no|nunca|jamás|never|not)\s*$", prefix):
+                continue
             location = " ".join(match.group("place").lower().split())
             return location[:120]
     return None
@@ -216,6 +221,11 @@ class VisualState:
         characters = self.characters(story_id)
         appearance = []
         for row in characters:
+            # Do not inject absent people into the image prompt; they often
+            # appear in the output even if the scene requested an empty room.
+            if not re.search(r"(?<!\\w)" + re.escape(row["name"]) + r"(?!\\w)",
+                             prompt, flags=re.IGNORECASE):
+                continue
             appearance.append(
                 f"{row['name']}: {row['appearance']}; ropa: {row['outfit']}; "
                 f"rasgos: {row['distinguishing_features']}")
