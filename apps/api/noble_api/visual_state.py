@@ -218,9 +218,11 @@ class VisualState:
                 else:
                     ident = str(uuid.uuid4())
                     conn.execute("""INSERT INTO visual_characters
-                        VALUES(?,?,?,?,?,?,?,?)""",
+                        (id,story_id,name,appearance,outfit,distinguishing_features,
+                         revision,updated_at,reference_asset_id)
+                        VALUES(?,?,?,?,?,?,?,?,?)""",
                         (ident, story_id, item.name.strip(), item.appearance.strip(),
-                         item.outfit.strip(), item.distinguishing_features.strip(), 1, now))
+                         item.outfit.strip(), item.distinguishing_features.strip(), 1, now, None))
                 return dict(conn.execute(
                     "SELECT * FROM visual_characters WHERE id=?", (ident,)).fetchone())
         except sqlite3.IntegrityError as exc:
@@ -375,8 +377,6 @@ class VisualState:
                         person["outfit"], person["distinguishing_features"],
                         person["revision"], now + index * 0.00001,
                         asset_map.get(person.get("reference_asset_id"))))
-                if self.planner is not None:
-                    self.planner.clone(source_id, branch_id, scene_map, character_map)
                 if selected_id in asset_map:
                     new_selected = asset_map[selected_id]
                 else:
@@ -386,6 +386,8 @@ class VisualState:
                                  (branch_id, new_selected))
             if new_selected:
                 self.legacy_copy(branch_id, self._asset_path(branch_id, new_selected))
+            if self.planner is not None:
+                self.planner.clone(source_id, branch_id, scene_map, character_map)
         except Exception:
             for copied in copied_paths:
                 copied.unlink(missing_ok=True)
