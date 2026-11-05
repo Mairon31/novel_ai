@@ -130,6 +130,9 @@ class DownloadManager:
                     raise RuntimeError("Acceso denegado; revisa los permisos del modelo")
                 response.raise_for_status()
                 continued = offset > 0 and response.status_code == 206
+                if response.status_code == 206 and not continued:
+                    raise RuntimeError("Respuesta HTTP 206 inesperada sin petición Range")
+                expected_chunk_bytes = None
                 if response.status_code == 206:
                     # A bare prefix check ("bytes 20-") is insufficient: a
                     # truncated or forged range can silently corrupt a file.
@@ -145,9 +148,10 @@ class DownloadManager:
                             (job["expected_size"] is not None and total is not None and
                              total != job["expected_size"])):
                         raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
+                    expected_chunk_bytes = end - start + 1
                     length = response.headers.get("content-length")
                     if length is not None and (not length.isdigit() or
-                                               int(length) != end - start + 1):
+                                               int(length) != expected_chunk_bytes):
                         raise RuntimeError("Content-Length no coincide con Content-Range")
                 else:
                     # Server may ignore Range with HTTP 200; restart cleanly.
@@ -168,6 +172,9 @@ class DownloadManager:
                         if time.monotonic() - last_reported >= .35:
                             self.store.update_download(job_id, received_bytes=received)
                             last_reported = time.monotonic()
+                if (expected_chunk_bytes is not None and
+                        received - offset != expected_chunk_bytes):
+                    raise RuntimeError("El servidor entregó un fragmento Range incompleto")
                 self.store.update_download(job_id, received_bytes=received)
 
             if self.store.download(job_id)["status"] in ("paused", "cancelled"):
