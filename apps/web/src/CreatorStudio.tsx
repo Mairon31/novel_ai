@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
-  Plus, Save, Sparkles, UserRound, Users, X,
+  Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X,
 } from 'lucide-react';
 import { api } from './api';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter,
-  CreatorCharacterDraft,
+  CreatorCharacterDraft, CreatorMediaAsset,
 } from './types';
 
-type Section = 'story' | 'cast' | 'openings';
+type Section = 'story' | 'cast' | 'openings' | 'media';
 
 const blankBlueprint: CreatorBlueprintDraft = {
   synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
@@ -33,6 +33,13 @@ export function CreatorStudio({ onOpenLibrary }: Props) {
   const [character, setCharacter] = useState<CreatorCharacterDraft>(blankCharacter);
   const [editingCharacter, setEditingCharacter] = useState<string | null>(null);
   const [openingDraft, setOpeningDraft] = useState('');
+  const [assets, setAssets] = useState<CreatorMediaAsset[]>([]);
+  const [mediaKind, setMediaKind] = useState<'background' | 'foreground'>('background');
+  const [mediaLabel, setMediaLabel] = useState('');
+  const [mediaCaption, setMediaCaption] = useState('');
+  const [mediaCharacter, setMediaCharacter] = useState('');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [editingAsset, setEditingAsset] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState('');
   const [createNew, setCreateNew] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -58,8 +65,10 @@ export function CreatorStudio({ onOpenLibrary }: Props) {
     setLoading(true);
     setError(''); setNotice(''); setCharacters([]);
     setEditingCharacter(null); setCharacter(blankCharacter);
-    Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id)])
-      .then(([data, cast]) => {
+    setAssets([]); setMediaFile(null);
+    Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
+                 api.creatorAssets(active.id)])
+      .then(([data, cast, media]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
           opening_scenarios, genre, tags, language } = data;
@@ -67,6 +76,7 @@ export function CreatorStudio({ onOpenLibrary }: Props) {
           opening_scenarios, genre, tags, language });
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
+        setAssets(media.assets);
       })
       .catch((exc: Error) => { if (live) setError(exc.message); })
       .finally(() => { if (live) setLoading(false); });
@@ -126,6 +136,47 @@ export function CreatorStudio({ onOpenLibrary }: Props) {
       setCharacters((await api.creatorCharacters(active.id)).characters);
       setEditingCharacter(null); setCharacter(blankCharacter);
       setNotice('Ficha narrativa del personaje guardada.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  function editAsset(asset: CreatorMediaAsset) {
+    setEditingAsset(asset.id); setMediaKind(asset.kind);
+    setMediaLabel(asset.label); setMediaCaption(asset.caption);
+    setMediaCharacter(asset.character_id || ''); setMediaFile(null);
+  }
+  function resetMediaEditor() {
+    setEditingAsset(null); setMediaLabel(''); setMediaCaption('');
+    setMediaCharacter(''); setMediaFile(null);
+  }
+  async function saveMediaAsset() {
+    if (!active || !mediaLabel.trim() || mediaCaption.trim().length < 3) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      if (editingAsset) {
+        await api.editCreatorAsset(active.id, editingAsset, mediaLabel.trim(), mediaCaption.trim());
+      } else {
+        if (!mediaFile) throw new Error('Selecciona un archivo de imagen.');
+        await api.uploadCreatorAsset(active.id, {
+          kind: mediaKind, label: mediaLabel.trim(), caption: mediaCaption.trim(),
+          character_id: mediaKind === 'foreground' ? (mediaCharacter || undefined) : undefined,
+          file: mediaFile,
+        });
+      }
+      setAssets((await api.creatorAssets(active.id)).assets);
+      resetMediaEditor();
+      setNotice('Recurso visual guardado para su selección durante la lectura.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+  async function deleteMediaAsset(asset: CreatorMediaAsset) {
+    if (!active || !window.confirm('¿Eliminar este recurso visual de la historia?')) return;
+    setWorking(true); setError('');
+    try {
+      await api.deleteCreatorAsset(active.id, asset.id);
+      setAssets((await api.creatorAssets(active.id)).assets);
+      if (editingAsset === asset.id) resetMediaEditor();
+      setNotice('Recurso visual eliminado.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -199,9 +250,86 @@ export function CreatorStudio({ onOpenLibrary }: Props) {
               onClick={() => setSection('cast')}><Users size={17}/> Personajes ({characters.length})</button>
             <button className={section === 'openings' ? 'selected' : ''}
               onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
+            <button className={section === 'media' ? 'selected' : ''}
+              onClick={() => setSection('media')}><ImageIcon size={17}/> Imágenes ({assets.length})</button>
           </nav>
 
           {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando contenido...</div> :
+            section === 'media' ? <div className="creator-fields creator-media-library">
+              <div className="creator-section-intro">
+                <h3>Fondos y personajes en primer plano</h3>
+                <p>Organiza fondos de lugares y retratos transparentes. Describe cuándo deben
+                  aparecer para que el lector pueda reutilizar imágenes ya guardadas.
+                  No se generan imágenes automáticamente.</p>
+              </div>
+              <div className="creator-media-grid">
+                {assets.map(asset => <article className="creator-media-card" key={asset.id}>
+                  <div className={'creator-media-thumbnail ' + asset.kind}>
+                    <img src={asset.url} loading="lazy" alt={'Imagen: ' + asset.label}/>
+                  </div>
+                  <div className="creator-media-copy">
+                    <small>{asset.kind === 'background' ? 'FONDO' : 'PRIMER PLANO'}</small>
+                    <strong>{asset.label}</strong><p>{asset.caption}</p>
+                    <div>
+                      <button className="secondary-button" disabled={working}
+                        onClick={() => editAsset(asset)}>Editar descripción</button>
+                      <button aria-label={'Eliminar imagen ' + asset.label}
+                        className="creator-media-delete" disabled={working}
+                        onClick={() => void deleteMediaAsset(asset)}><Trash2 size={15}/></button>
+                    </div>
+                  </div>
+                </article>)}
+                {assets.length === 0 && <div className="creator-media-empty">
+                  <ImageIcon size={30}/><strong>Todavía no hay recursos visuales.</strong>
+                  <p>Importa un fondo o un retrato para preparar tu novela visual.</p>
+                </div>}
+              </div>
+              <div className="creator-media-form">
+                <h4>{editingAsset ? 'Editar recurso' : 'Añadir recurso visual'}</h4>
+                {!editingAsset && <div className="creator-double">
+                  <label>Tipo de recurso
+                    <select aria-label="Tipo de recurso visual" value={mediaKind}
+                      onChange={e => setMediaKind(e.target.value as 'background' | 'foreground')}>
+                      <option value="background">Fondo de escenario</option>
+                      <option value="foreground">Personaje / primer plano</option>
+                    </select>
+                  </label>
+                  {mediaKind === 'foreground' && <label>Personaje vinculado (opcional)
+                    <select aria-label="Personaje de la imagen" value={mediaCharacter}
+                      onChange={e => setMediaCharacter(e.target.value)}>
+                      <option value="">Ninguno</option>
+                      {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
+                    </select>
+                  </label>}
+                </div>}
+                <label>Nombre
+                  <input aria-label="Nombre de imagen" maxLength={100} value={mediaLabel}
+                    placeholder="Salón del trono, Aira sonriendo..."
+                    onChange={e => setMediaLabel(e.target.value)}/></label>
+                <label>Descripción para reconocer la escena
+                  <textarea aria-label="Descripción de imagen" maxLength={220} rows={3}
+                    value={mediaCaption} onChange={e => setMediaCaption(e.target.value)}
+                    placeholder="Bosque oscuro de noche, Aira sonríe en la taberna..."/>
+                  <small>Usa lugares y emociones concretas. No se envía esta descripción a ningún modelo.</small>
+                </label>
+                {!editingAsset && <label>Archivo PNG, JPEG o WebP (hasta 12 MiB)
+                  <input type="file" aria-label="Archivo de recurso visual"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={e => setMediaFile(e.target.files?.[0] || null)}/>
+                  {mediaKind === 'foreground' && <small>
+                    La transparencia se conserva en PNG para superponer personajes sobre el fondo.
+                  </small>}
+                </label>}
+                <div className="creator-actions">
+                  <button className="primary-button" disabled={working || !mediaLabel.trim() ||
+                    mediaCaption.trim().length < 3 || (!editingAsset && !mediaFile)}
+                    onClick={() => void saveMediaAsset()}><UploadCloud size={16}/>
+                    {editingAsset ? 'Guardar descripción' : 'Importar imagen'}</button>
+                  {editingAsset && <button className="secondary-button"
+                    onClick={resetMediaEditor}>Cancelar edición</button>}
+                </div>
+              </div>
+            </div> :
             section === 'story' ? <div className="creator-fields">
               <div className="creator-section-intro">
                 <h3>Identidad y trama de tu historia</h3>
