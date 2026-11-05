@@ -26,6 +26,7 @@ from .media import mount_media_routes
 from .images import SceneImageService, mount_image_routes
 from .speech import SpeechService, mount_speech_routes
 from .visual_state import VisualState, mount_visual_routes
+from .scene_planner import ScenePlanner, mount_scene_plan_routes
 from .resource_policy import ResourceController, mount_resource_routes
 from .workers import WorkerRegistry, mount_worker_routes
 
@@ -83,6 +84,8 @@ def create_app(
                                  preferences=control.preferences, workers=workers)
     kobold = KoboldManager(store)
     visual = VisualState(store)
+    planner = ScenePlanner(visual)
+    visual.planner = planner
     narrative.visual = visual
     resources = ResourceController(store)
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
@@ -115,6 +118,7 @@ def create_app(
     service.state.resources = resources
     service.state.speech = speech
     service.state.visual = visual
+    service.state.scene_planner = planner
 
     @service.exception_handler(CatalogError)
     async def catalog_exception(_request, exc: CatalogError):
@@ -215,6 +219,7 @@ def create_app(
     mount_narrative_routes(service, narrative)
     mount_media_routes(service, narrative)
     mount_visual_routes(service, visual)
+    mount_scene_plan_routes(service, planner)
     mount_image_routes(service, images)
     mount_resource_routes(service, resources)
     mount_speech_routes(service, speech)

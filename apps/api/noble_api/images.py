@@ -169,13 +169,19 @@ class SceneImageService:
             if not config["checkpoint"]:
                 raise HTTPException(422, "Selecciona un checkpoint ComfyUI en Ajustes de imagen")
             seed = request.seed if request.seed is not None else secrets.randbelow(2**53)
-            visual_prompt = self.narrative.visual.enriched_prompt(story_id, request.prompt)
+            planner = self.narrative.visual.planner
+            visual_prompt = (planner.prompt(story_id, request.prompt)
+                             if planner is not None else
+                             self.narrative.visual.enriched_prompt(story_id, request.prompt))
+            reference_id = (str(request.reference_asset_id) if request.reference_asset_id
+                            else planner.automatic_reference(story_id)
+                            if planner is not None else None)
             reference = None
             reference_digest = None
-            if request.reference_asset_id is not None:
+            if reference_id:
                 try:
                     reference, reference_digest = self.narrative.visual.reference_bytes(
-                        story_id, str(request.reference_asset_id))
+                        story_id, reference_id)
                 except ValueError as exc:
                     raise HTTPException(422, str(exc)) from exc
             active_scene = self.narrative.visual.scene(story_id)
@@ -193,7 +199,8 @@ class SceneImageService:
                 if hit:
                     self.narrative.visual.choose(story_id, hit["id"])
                     return {"story": self.narrative.get_story(story_id),
-                            "asset_id": hit["id"], "seed": seed,
+                            "asset_id": hit["id"], "reference_asset_id": reference_id,
+                            "seed": seed,
                             "checkpoint": config["checkpoint"],
                             "duration_ms": round((time.monotonic()-started)*1000, 1),
                             "cached": True}
@@ -266,6 +273,7 @@ class SceneImageService:
                     render_signature=signature)
             return {"story": self.narrative.get_story(story_id),
                     "asset_id": gallery["selected_asset_id"],
+                    "reference_asset_id": reference_id,
                     "seed": seed, "checkpoint": config["checkpoint"],
                     "duration_ms": round((time.monotonic() - started) * 1000, 1),
                     "cached": False}
