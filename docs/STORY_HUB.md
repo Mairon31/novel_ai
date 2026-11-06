@@ -35,3 +35,10 @@ Cuando la Biblioteca está **vacía**, `tools/colab_launch.py` instala `ultima-l
 - [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781), commit `a35e13b5`: **358 Python / 68 Playwright / build Vite PASS**. Solo se probaron contratos HTTP y UI; no generación real de imágenes, narración prolongada ni GPU.
 
 **N-08 y N-09 siguen abiertos**: faltan arte de portada/fondos/sprites, manifiesto de paquetes externo versionado, actualización de fuentes sin perder ediciones, prueba real de 10–20 turnos, identidad/firmas/licencias de assets y compatibilidad de versiones. **N-10 (comunidad/Creators en línea)** continúa pendiente: requiere backend de publicación, permisos, moderación y distribución segura, no solo tres ejemplos locales.
+
+
+## Descubrir como espacio independiente
+
+Se añadió la página `#/descubrir` con un destino **Descubrir historias** propio del menú, accesible en desktop y móvil. La Biblioteca conserva una selección destacada, pero `#/descubrir` constituye una ruta compartible que no necesita abrir historias existentes ni Creator Studio. Instalar allí vuelve a `#/historia/{uuid}`, abre el detalle del nuevo proyecto y permite escoger apertura.
+
+`apps/web/tests/story-hub.spec.ts` incluye pruebas adicionales de deep link, recarga y posterior navegación desde el catálogo al detalle de historia; no altera los enlaces previos de Biblioteca, Lector ni Creator.

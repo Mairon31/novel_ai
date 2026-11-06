@@ -268,3 +268,5 @@ El benchmark CLI y los informes offline fueron comprobados en [CI #42161285281](
 ### Story Hub integrado — historias originales para comenzar
 
 En **Biblioteca → Descubre un mundo para jugar** puedes instalar tres mundos con 4 NPC, 3 aperturas, contexto narrativo y Lorebooks: «La estación de la última luna», «Las mareas de vidrio» y «El jardín de las horas rotas». Cada instalación crea una copia editable, permite elegir protagonista e inicio, y no requiere GPU hasta que continúes la narración. Es un **catálogo local de texto**, no el hub comunitario o multimedia definitivo. [Guía y contrato](docs/STORY_HUB.md).
+
+El mismo catálogo también está disponible como **espacio independiente «Descubrir historias»**, en el menú y en la ruta `#/descubrir`. La Biblioteca sigue mostrando una selección de mundos originales.

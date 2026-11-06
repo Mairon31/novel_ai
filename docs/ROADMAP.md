@@ -257,3 +257,5 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 ### N-08/N-09 — avance parcial en Story Hub local
 
 Existe un catálogo de tres historias originales de texto, instalables como copia independiente con NPC, aperturas y Lorebooks desde Biblioteca. La demo de Colab puede usar el paquete enriquecido sin sobrescribir una biblioteca anterior. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) supera 358 Python y 68 Playwright. **N-08 y N-09 continúan abiertas** hasta tener arte, paquetes externos y QA real de inmersión. N-10 (publicación/comunidad online) no se implementó. [Documentación](STORY_HUB.md).
+
+- [x] Navegación `#/descubrir` independiente agregada como base para descubrimiento remoto futuro; el contenido actual continúa siendo local y sin servidor comunitario.

@@ -359,3 +359,5 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 ## Gate local Story Hub
 
 `tests/test_story_hub.py` prueba tres packs, privacidad de secretos, nombres personalizados, personajes/Lorebooks completos, primer turno sin LLM, copias aisladas, validaciones y rollback SQLite con trigger. `apps/web/tests/story-hub.spec.ts` prueba en desktop/móvil la ruta de Biblioteca, instalación, detalle y comienzo real. `tests/test_colab_play.py` protege la semilla enriquecida en biblioteca vacía. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781): **358 Python + 68 Playwright y Vite build PASS**. No hay pruebas de modelos/GPU/QA visual ni hub comunitario remoto. La ausencia de portadas se declara.
+
+- `story-hub.spec.ts` añade verificación de `#/descubrir` por enlace directo/recarga, navegación independiente del catálogo y apertura del detalle de una copia recién instalada. La gate de esta navegación adicional debe comprobarse en la CI posterior al cambio (no confundirla con #42169215781, que comprobó Biblioteca).

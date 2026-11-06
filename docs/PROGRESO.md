@@ -821,3 +821,5 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] `StoryHub.tsx`: Biblioteca permite elegir historia, ver detalles/inicios, cambiar protagonista, instalar como copia independiente y abrir detalle para comenzar. Transacción única de SQLite para historia, blueprint, personajes y conocimiento; un fallo revierte todo.
 - [x] Colab `ensure_demo_story()` instala `ultima-luna` con contenido real si la biblioteca está vacía; conserva historias anteriores. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781): **358 Python, 68 Playwright escritorio/móvil y Vite PASS**.
 - [ ] N-08/N-09 todavía necesitan portadas/sprites y paquetes externos con versiones, mejoras de tramas/recursos y QA de 10–20 turnos. N-10 comunitario continúa pendiente. [Detalles](STORY_HUB.md).
+
+- [x] Espacio de navegación `#/descubrir` y entrada «Descubrir historias» separada de Biblioteca/Creator Studio, con deep links, recarga y redirección a detalle tras instalar. Nuevo E2E desktop/móvil añadido; cerrar cuando CI final de este bloque termine.
