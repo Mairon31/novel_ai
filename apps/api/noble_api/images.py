@@ -24,6 +24,7 @@ from .media import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from .narrative import NarrativeService, validate_endpoint
 from .resource_policy import ResourceController
 from .comfy_loras import selected_character_loras, validate_lora_inventory
+from .comfy_runtime import render as render_comfy
 
 
 class ImageSettings(BaseModel):
@@ -314,43 +315,11 @@ class SceneImageService:
                     if not isinstance(reference_name, str) or not re.fullmatch(
                             r"[a-zA-Z0-9_.-]{1,180}", reference_name):
                         raise HTTPException(502, "ComfyUI devolvió una referencia de imagen inválida")
-                response = await client.post(config["base_url"] + "/prompt",
-                    json={"prompt": workflow(config, visual_prompt, seed,
-                        reference_name, request.denoise, lora_stack),
-                          "client_id": str(uuid.uuid4())}, follow_redirects=False)
-                response.raise_for_status()
-                ident = response.json().get("prompt_id")
-                if not isinstance(ident, str):
-                    raise HTTPException(502, "ComfyUI no devolvió el ID de generación")
-                # Poll only this prompt: never read or expose another user's images.
-                image_ref = None
-                for _ in range(180):
-                    history = await client.get(
-                        config["base_url"] + "/history/" + ident,
-                        follow_redirects=False)
-                    history.raise_for_status()
-                    record = history.json().get(ident)
-                    if isinstance(record, dict):
-                        if (record.get("status") or {}).get("status_str") == "error":
-                            raise HTTPException(502, "ComfyUI falló al ejecutar el workflow")
-                        images = (record.get("outputs") or {}).get("7", {}).get("images") or []
-                        if images:
-                            image_ref = images[0]
-                            break
-                    await asyncio.sleep(1)
-                if image_ref is None:
-                    raise HTTPException(504, "ComfyUI no terminó antes del límite de 180 segundos")
-                # ComfyUI files are fetched from our validated loopback endpoint only.
-                # Do not read or trust any local paths returned by the provider.
-                name = image_ref.get("filename") if isinstance(image_ref, dict) else None
-                if not isinstance(name, str) or not name or len(name) > 255:
-                    raise HTTPException(502, "ComfyUI no devolvió un archivo válido")
-                view = await client.get(config["base_url"] + "/view", params={
-                    "filename": name, "subfolder": image_ref.get("subfolder", ""),
-                    "type": image_ref.get("type", "output")}, follow_redirects=False)
-                view.raise_for_status()
+                image_bytes = await render_comfy(client, config["base_url"],
+                    workflow(config, visual_prompt, seed, reference_name,
+                             request.denoise, lora_stack))
                 gallery = self.narrative.visual.publish(
-                    story_id, view.content, origin="comfyui",
+                    story_id, image_bytes, origin="comfyui",
                     prompt=visual_prompt, checkpoint=config["checkpoint"], seed=seed,
                     render_signature=signature,
                     render_details={"workflow_version": (
