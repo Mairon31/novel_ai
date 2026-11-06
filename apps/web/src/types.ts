@@ -356,6 +356,8 @@ export type CreatorMediaAsset = {
   generation_details: {
     workflow_version?: string; checkpoint?: string; seed?: number;
     prompt_sha256?: string; lora?: { lora_name: string; strength: number };
+    adapter?: { preset: string; weight: number;
+      reference_sha256: string; reference_kind: string };
     quality?: { method: string; coverage: number; author_approved: boolean };
   };
 };
@@ -367,12 +369,22 @@ export type SpriteDraft = {
   id: string; story_id: string; character_id: string; character_name: string;
   caption: string; pose: string; seed: number; checkpoint: string;
   style: string; use_lora: boolean; reference_asset_id: string | null;
+  reference_sprite_asset_id?: string | null;
+  reference_mode?: 'img2img' | 'ipadapter';
+  ipadapter_preset?: string; ipadapter_weight?: number;
   slots: Record<SpriteExpression, SpriteDraftSlot>;
   ready_count: number; created_at: number; updated_at: number;
 };
+export type IdentityAdapterStatus = {
+  available: boolean; presets: string[]; model_count: number;
+  clip_vision_count: number; error: string | null;
+};
 export type NewSpriteDraft = {
   caption: string; pose: string; style: string; seed?: number;
-  reference_asset_id?: string; use_lora: boolean;
+  reference_asset_id?: string; reference_sprite_asset_id?: string;
+  reference_mode: 'img2img' | 'ipadapter';
+  ipadapter_preset: string; ipadapter_weight: number;
+  use_lora: boolean;
 };
 export type SceneSprite = CreatorMediaAsset & {
   expression_target: SpriteExpression;

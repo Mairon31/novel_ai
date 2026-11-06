@@ -7,7 +7,8 @@ import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
-  CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, VisualAsset,
+  CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft,
+  VisualAsset, IdentityAdapterStatus,
   LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
@@ -65,6 +66,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [draftSeed, setDraftSeed] = useState('');
   const [draftUseLora, setDraftUseLora] = useState(false);
   const [draftReference, setDraftReference] = useState('');
+  const [draftSpriteReference, setDraftSpriteReference] = useState('');
+  const [draftReferenceMode, setDraftReferenceMode] = useState<'img2img' | 'ipadapter'>('img2img');
+  const [draftAdapterPreset, setDraftAdapterPreset] = useState('PLUS FACE (portraits)');
+  const [draftAdapterWeight, setDraftAdapterWeight] = useState(0.7);
+  const [adapterStatus, setAdapterStatus] = useState<IdentityAdapterStatus | null>(null);
+  const [checkingAdapter, setCheckingAdapter] = useState(false);
   const [draftProgress, setDraftProgress] = useState('');
   const [galleryAssets, setGalleryAssets] = useState<VisualAsset[]>([]);
   const storyGuard = useRef<string | null>(null);
@@ -114,6 +121,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     storyGuard.current = active.id;
     setAssets([]); setMediaFile(null); setSheetFile(null); setSheetCharacter('');
     setSpriteDrafts([]); setDraftCharacter(''); setDraftReference('');
+    setDraftSpriteReference(''); setDraftReferenceMode('img2img');
+    setAdapterStatus(null);
     setGalleryAssets([]); setDraftProgress('');
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
                  api.creatorAssets(active.id), api.lorebookEntries(active.id),
@@ -215,6 +224,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     finally { setWorking(false); }
   }
 
+  async function checkIdentityAdapter() {
+    setCheckingAdapter(true); setError('');
+    try { setAdapterStatus(await api.identityAdapterStatus()); }
+    catch (exc) { setError((exc as Error).message); }
+    finally { setCheckingAdapter(false); }
+  }
+
   async function startSpriteDraft() {
     if (!active || !draftCharacter || draftCaption.trim().length < 3) return;
     setWorking(true); setError(''); setNotice('');
@@ -225,7 +241,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       const created = await api.startSpriteDraft(active.id, draftCharacter, {
         caption: draftCaption.trim(), pose: draftPose.trim(),
         style: draftStyle.trim(), seed,
-        reference_asset_id: draftReference || undefined, use_lora: draftUseLora,
+        reference_asset_id: draftReference || undefined,
+        reference_sprite_asset_id: draftSpriteReference || undefined,
+        reference_mode: draftReferenceMode,
+        ipadapter_preset: draftAdapterPreset,
+        ipadapter_weight: draftAdapterWeight,
+        use_lora: draftUseLora,
       });
       if (storyGuard.current === active.id) {
         setSpriteDrafts(prev => [created, ...prev]);
@@ -680,7 +701,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <div className="creator-double">
                   <label>Personaje para IA
                     <select aria-label="NPC para generar expresiones" value={draftCharacter}
-                      onChange={event => setDraftCharacter(event.target.value)}>
+                      onChange={event => {
+                        setDraftCharacter(event.target.value);
+                        setDraftSpriteReference('');
+                      }}>
                       <option value="">Selecciona un NPC</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
                     </select>
@@ -708,14 +732,78 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </label>
                   <label>Referencia de Galería (opcional)
                     <select aria-label="Referencia de sprites IA"
-                      value={draftReference} onChange={event => setDraftReference(event.target.value)}>
-                      <option value="">Sin referencia, texto a imagen</option>
+                      value={draftReference} onChange={event => {
+                        setDraftReference(event.target.value);
+                        if (event.target.value) setDraftSpriteReference('');
+                      }}>
+                      <option value="">Sin referencia de Galería</option>
                       {galleryAssets.map(asset => <option value={asset.id} key={asset.id}>
                         {asset.origin === 'comfyui' ? 'ComfyUI' : 'Importada'} · {asset.id.slice(0, 8)}
                       </option>)}
                     </select>
                   </label>
                 </div>
+                <div className="creator-double">
+                  <label>Sprite aprobado del mismo NPC (opcional)
+                    <select aria-label="Sprite de referencia IA" value={draftSpriteReference}
+                      onChange={event => {
+                        setDraftSpriteReference(event.target.value);
+                        if (event.target.value) setDraftReference('');
+                      }}>
+                      <option value="">No usar sprite publicado</option>
+                      {assets.filter(item => item.kind === 'foreground' &&
+                        item.character_id === draftCharacter).map(item =>
+                        <option value={item.id} key={item.id}>
+                          {item.label} · {item.expression}
+                        </option>)}
+                    </select>
+                  </label>
+                  <label>Modo de referencia
+                    <select aria-label="Modo de referencia IA"
+                      value={draftReferenceMode}
+                      onChange={event => setDraftReferenceMode(
+                        event.target.value as 'img2img' | 'ipadapter')}>
+                      <option value="img2img">img2img · conservar composición</option>
+                      <option value="ipadapter">IPAdapter · guiar identidad</option>
+                    </select>
+                  </label>
+                </div>
+                {draftReferenceMode === 'ipadapter' && <>
+                  <div className="creator-double">
+                    <label>Preset IPAdapter Plus
+                      <select aria-label="Preset IPAdapter de sprites IA"
+                        value={draftAdapterPreset}
+                        onChange={event => setDraftAdapterPreset(event.target.value)}>
+                        <option value="PLUS FACE (portraits)">PLUS FACE · retratos</option>
+                        <option value="PLUS (high strength)">PLUS · alta influencia</option>
+                        <option value="STANDARD (medium strength)">STANDARD · media</option>
+                      </select>
+                    </label>
+                    <label>Fuerza IPAdapter: {draftAdapterWeight.toFixed(2)}
+                      <input aria-label="Fuerza IPAdapter de sprites IA"
+                        type="number" min={0.1} max={1.5} step={0.05}
+                        value={draftAdapterWeight}
+                        onChange={event => setDraftAdapterWeight(Number(event.target.value))}/>
+                    </label>
+                  </div>
+                  <button className="secondary-button" disabled={checkingAdapter || working}
+                    onClick={() => void checkIdentityAdapter()}>
+                    {checkingAdapter ? 'Consultando ComfyUI...' : 'Verificar IPAdapter instalado'}
+                  </button>
+                  {adapterStatus && <p className="creator-hint" role="status">
+                    {adapterStatus.available
+                      ? 'IPAdapter disponible · ' + adapterStatus.model_count + ' modelos y ' +
+                        adapterStatus.clip_vision_count + ' CLIP Vision · ' +
+                        adapterStatus.presets.join(', ')
+                      : 'IPAdapter no está listo: ' + (adapterStatus.error || 'faltan modelos o nodos')}
+                  </p>}
+                  <p className="creator-hint">
+                    Necesita IPAdapter Plus con nodos UnifiedLoader e IPAdapter,
+                    modelos IPAdapter y CLIP Vision instalados y compatibles con el
+                    checkpoint. Es necesario seleccionar una referencia de Galería
+                    o un sprite aprobado del mismo NPC. No se descargan modelos.
+                  </p>
+                </>}
                 <label>
                   <input type="checkbox" aria-label="Usar LoRA del NPC para sprites IA"
                     checked={draftUseLora} onChange={event => setDraftUseLora(event.target.checked)}/>
@@ -723,13 +811,19 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </label>
                 <p className="creator-hint">
                   Se usa el mismo checkpoint, seed y estilo en las cinco expresiones.
-                  Una referencia activa img2img; no garantiza conservar exactamente el rostro.
-                  Se admiten tres borradores por historia y caducan después de 48 horas.
+                  Con img2img se reutiliza la composición; IPAdapter usa una
+                  referencia de identidad sobre un lienzo nuevo. Ningún método garantiza
+                  el mismo rostro. Hasta tres borradores por historia y caducan a las 48 horas.
                   No se realizan cinco generaciones en paralelo.
                 </p>
                 <button className="secondary-button" disabled={working || !draftCharacter ||
                     draftCaption.trim().length < 3 ||
-                    !/^[a-z0-9_-]{1,32}$/.test(draftPose.trim().toLowerCase())}
+                    !/^[a-z0-9_-]{1,32}$/.test(draftPose.trim().toLowerCase()) ||
+                    (draftReferenceMode === 'ipadapter' &&
+                      !draftReference && !draftSpriteReference) ||
+                    (draftReferenceMode === 'ipadapter' &&
+                      (!Number.isFinite(draftAdapterWeight) ||
+                       draftAdapterWeight < 0.1 || draftAdapterWeight > 1.5))}
                   onClick={() => void startSpriteDraft()}>
                   <Sparkles size={16}/> Preparar borrador de cinco expresiones
                 </button>
@@ -740,7 +834,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     className="creator-sprite-draft" aria-label={'Borrador de sprites ' + draft.character_name}>
                   <h4>{draft.character_name} · {draft.ready_count}/5 expresiones</h4>
                   <p className="creator-hint">{draft.checkpoint} · Semilla {draft.seed} ·
-                    {' '}{draft.use_lora ? 'LoRA activado' : 'Sin LoRA'} · {draft.pose}</p>
+                    {' '}{draft.use_lora ? 'LoRA activado' : 'Sin LoRA'} · {draft.pose}
+                    {draft.reference_mode === 'ipadapter'
+                      ? ' · IPAdapter ' + draft.ipadapter_preset +
+                        ' (' + draft.ipadapter_weight + ')' : ''}</p>
                   <div className="creator-media-grid">
                     {spriteExpressions.map(entry => {
                       const slot = draft.slots[entry.id];
