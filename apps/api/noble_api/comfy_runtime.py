@@ -13,7 +13,17 @@ import httpx
 from fastapi import HTTPException
 
 
-async def render(client: httpx.AsyncClient, base_url: str, nodes: dict) -> bytes:
+async def render_outputs(client: httpx.AsyncClient, base_url: str, nodes: dict,
+                         slots: tuple[str, ...] = ("7",)) -> dict[str, bytes]:
+    """Return validated SaveImage outputs from one and the same ComfyUI job.
+
+    The multiple-output mode is used for the generated image and neural mask;
+    never mix outputs from different prompt IDs or silently use an absent mask.
+    """
+    if not 1 <= len(slots) <= 3 or any(
+            not re.fullmatch(r"[0-9]{1,3}", slot) for slot in slots
+    ) or len(set(slots)) != len(slots):
+        raise ValueError("Lista de nodos ComfyUI inválida")
     response = await client.post(base_url + "/prompt", json={
         "prompt": nodes, "client_id": str(uuid.uuid4())}, follow_redirects=False)
     response.raise_for_status()
@@ -22,7 +32,7 @@ async def render(client: httpx.AsyncClient, base_url: str, nodes: dict) -> bytes
     if not isinstance(ident, str) or not re.fullmatch(
             r"[A-Za-z0-9_-]{1,100}", ident):
         raise HTTPException(502, "ComfyUI no devolvió el ID de generación")
-    image_ref = None
+    refs: dict[str, dict] = {}
     for _ in range(180):
         history = await client.get(base_url + "/history/" + ident,
                                    follow_redirects=False)
@@ -32,32 +42,46 @@ async def render(client: httpx.AsyncClient, base_url: str, nodes: dict) -> bytes
         if isinstance(record, dict):
             if (record.get("status") or {}).get("status_str") == "error":
                 raise HTTPException(502, "ComfyUI falló al ejecutar el workflow")
-            outputs = record.get("outputs") or {}
-            slot = outputs.get("7") if isinstance(outputs, dict) else None
-            images = slot.get("images", []) if isinstance(slot, dict) else []
-            if images:
-                image_ref = images[0]
+            outputs = record.get("outputs")
+            for slot_id in slots:
+                node = outputs.get(slot_id) if isinstance(outputs, dict) else None
+                images = node.get("images") if isinstance(node, dict) else None
+                if isinstance(images, list) and images:
+                    refs[slot_id] = images[0]
+            if len(refs) == len(slots):
                 break
+            # A finished job that omitted the mask cannot recover by polling.
+            if (record.get("status") or {}).get("status_str") == "success":
+                raise HTTPException(
+                    502, "ComfyUI terminó sin todas las salidas de imagen y máscara")
         await asyncio.sleep(1)
-    if image_ref is None:
+    if len(refs) != len(slots):
         raise HTTPException(504, "ComfyUI no terminó antes del límite de 180 segundos")
-    if not isinstance(image_ref, dict):
-        raise HTTPException(502, "Salida ComfyUI inválida")
-    name, subfolder, kind = (
-        image_ref.get("filename"), image_ref.get("subfolder", ""),
-        image_ref.get("type", "output"))
-    if not isinstance(name, str) or not re.fullmatch(
-            r"[A-Za-z0-9_][A-Za-z0-9_. -]{0,254}", name) or ".." in name:
-        raise HTTPException(502, "ComfyUI no devolvió un archivo válido")
-    # Noble's fixed SaveImage filename_prefix creates no nested subfolders.
-    # Do not follow arbitrary provider-supplied paths when requesting /view.
-    if subfolder != "":
-        raise HTTPException(502, "Subcarpeta ComfyUI no autorizada")
-    if kind != "output":
-        raise HTTPException(502, "ComfyUI devolvió una imagen fuera de salida")
-    # /view is a provider endpoint, never a local file read.
-    view = await client.get(base_url + "/view", params={
-        "filename": name, "subfolder": subfolder, "type": kind,
-    }, follow_redirects=False)
-    view.raise_for_status()
-    return view.content
+    downloaded = {}
+    for slot_id, image_ref in refs.items():
+        if not isinstance(image_ref, dict):
+            raise HTTPException(502, "Salida ComfyUI inválida")
+        name, subfolder, kind = (
+            image_ref.get("filename"), image_ref.get("subfolder", ""),
+            image_ref.get("type", "output"))
+        if not isinstance(name, str) or not re.fullmatch(
+                r"[A-Za-z0-9_][A-Za-z0-9_. -]{0,254}", name) or ".." in name:
+            raise HTTPException(502, "ComfyUI no devolvió un archivo válido")
+        if subfolder != "":
+            raise HTTPException(502, "Subcarpeta ComfyUI no autorizada")
+        if kind != "output":
+            raise HTTPException(502, "ComfyUI devolvió una imagen fuera de salida")
+        downloaded[slot_id] = (name, subfolder, kind)
+    results = {}
+    for slot_id, (name, subfolder, kind) in downloaded.items():
+        # /view is a provider endpoint, never a local file read.
+        view = await client.get(base_url + "/view", params={
+            "filename": name, "subfolder": subfolder, "type": kind,
+        }, follow_redirects=False)
+        view.raise_for_status()
+        results[slot_id] = view.content
+    return results
+
+
+async def render(client: httpx.AsyncClient, base_url: str, nodes: dict) -> bytes:
+    return (await render_outputs(client, base_url, nodes))["7"]
