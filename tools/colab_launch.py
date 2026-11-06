@@ -96,7 +96,8 @@ def node_version(text: str) -> tuple[int, int]:
 
 def node_adequate(text: str) -> bool:
     major, minor = node_version(text)
-    return major >= 22 or major == 20 and minor >= 19
+    return (major > 22 or major == 22 and minor >= 12 or
+            major == 20 and minor >= 19)
 
 
 def shell(cmd: list[str], *, cwd: Path | None = None,
@@ -105,31 +106,47 @@ def shell(cmd: list[str], *, cwd: Path | None = None,
     """Stream real subprocess output to Colab and a per-stage logfile."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     reporter("INSTALAR", "Ejecutando: " + " ".join(cmd[:3]) + " …")
-    with (LOG_DIR / (log_name + ".log")).open("a", encoding="utf-8") as log:
+    logfile = LOG_DIR / (log_name + ".log")
+    with logfile.open("a", encoding="utf-8") as log:
         proc = subprocess.Popen(cmd, cwd=cwd, env=env,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, bufsize=1)
+                                stdout=log, stderr=subprocess.STDOUT,
+                                stdin=subprocess.DEVNULL)
         started = time.monotonic()
-        # Install commands normally finish well inside their external timeout.
-        # The log remains available if Colab disconnects or a download fails.
-        assert proc.stdout is not None
+        last_heartbeat = started
+        offset = logfile.stat().st_size
         try:
-            for line in proc.stdout:
-                log.write(line)
-                log.flush()
-                trimmed = line.rstrip()
-                if trimmed and (time.monotonic() - started > 0):
-                    print("  " + trimmed[-320:], flush=True)
-                if time.monotonic() - started > timeout:
-                    proc.kill()
-                    raise TimeoutError("Instalación excedió el tiempo máximo: " + log_name)
-            code = proc.wait(timeout=20)
+            while proc.poll() is None:
+                time.sleep(1)
+                now = time.monotonic()
+                # Keep reporting progress even when downloads are silent.
+                with logfile.open("rb") as stream:
+                    stream.seek(offset)
+                    new = stream.read(100_000)
+                    offset = stream.tell()
+                if new:
+                    output = new.decode("utf-8", errors="replace")
+                    for line in output.splitlines()[-12:]:
+                        if line.strip():
+                            print("  " + line.strip()[-300:], flush=True)
+                    last_heartbeat = now
+                elif now - last_heartbeat >= 20:
+                    reporter("ESTADO", log_name + " sigue activo; " +
+                             str(int(now-started)) + " s · " + str(logfile))
+                    last_heartbeat = now
+                if now - started > timeout:
+                    raise TimeoutError(
+                        "Instalación excedió el tiempo máximo: " + log_name)
+            code = proc.returncode
         finally:
             if proc.poll() is None:
-                proc.kill()
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
         if code:
             raise RuntimeError(log_name + " falló con código " + str(code) +
-                               "; revisa " + str(LOG_DIR / (log_name + ".log")))
+                               "; revisa " + str(logfile))
 
 
 def json_request(url: str, body: dict | None = None,
@@ -339,7 +356,14 @@ def ensure_comfy() -> str:
             downloaded.unlink(missing_ok=True)
             raise RuntimeError("El checkpoint no coincide con su SHA256 publicado")
     endpoint = "http://127.0.0.1:8188/models/checkpoints"
-    if not ready(endpoint, lambda d: False):  # list endpoint, not JSON dict
+    def checkpoint_ready() -> bool:
+        try:
+            with request.urlopen(endpoint, timeout=5) as response:
+                models = json.load(response)
+            return isinstance(models, list) and COMFY_HF_FILE in models
+        except (OSError, ValueError):
+            return False
+    if not checkpoint_ready():
         proc = spawn("comfyui", [
             sys.executable, "main.py", "--listen", "127.0.0.1",
             "--port", "8188", "--disable-auto-launch",
@@ -348,13 +372,8 @@ def ensure_comfy() -> str:
         while time.monotonic() - start < 180:
             if proc.poll() is not None:
                 raise RuntimeError("ComfyUI terminó; revisa logs/comfyui.log")
-            try:
-                with request.urlopen(endpoint, timeout=5) as response:
-                    models = json.load(response)
-                if isinstance(models, list) and COMFY_HF_FILE in models:
-                    break
-            except (OSError, ValueError):
-                pass
+            if checkpoint_ready():
+                break
             time.sleep(3)
         else:
             raise TimeoutError("ComfyUI no anunció los checkpoints a tiempo")
