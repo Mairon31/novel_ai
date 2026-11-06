@@ -346,3 +346,9 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 ### Gate completada para herramienta de benchmark
 
 [GitHub Actions #42161285281](https://github.com/Mairon31/novel_ai/actions/runs/42161285281) del commit `8b5a3aac`: **337/337 Python y 66/66 Playwright PASS, Vite build PASS**. Confirma generación de informes, comparación de imagen por expresión (modos lado a lado), telemetría simulada/missing como null y límite no destructivo de borradores. La protección adicional `.gitignore` de carpetas de reportes es posterior y no altera el código del benchmark. **No se ha ejecutado un modelo RMBG real** en CI.
+
+## Gate Google Colab todo en uno
+
+- Verificar JSON de `notebooks/noble_ai_colab_play.ipynb`, exactamente una celda ejecutable, AST Python sin errores, parámetros por defecto seguros y SHA de repo fijo antes de descargar instalador.
+- `tests/test_colab_play.py`: selección CPU/GPU, tags futuros de Ollama, protección de rutas y revisión git, único origen localhost y proxy autenticado del kernel, compilación de UI requerida antes del registro FastAPI, respeto a preferencias previas, historia demo idempotente, warm-up de narrador que debe producir tokens y copia SQLite online con medios.
+- La CI no puede demostrar que Google Colab permita el iframe en cada navegador, que el modelo realmente se descargue, que ComfyUI use la GPU o que el respaldo periódico termine antes de una desconexión abrupta. Esas validaciones requieren registro físico de notebook + logs, y se mantienen como pendientes.

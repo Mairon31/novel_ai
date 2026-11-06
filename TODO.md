@@ -188,3 +188,9 @@
 3. No duplicar funcionalidades ya presentes: verificar primero contra el `master` actual, no solo el ZIP estático auditado.
 4. Documentar de forma separada **implementado en código**, **probado en CI** y **validado en hardware GPU real**.
 5. Cerrar una casilla solo con evidencia reproducible; los problemas parciales conservan subtareas abiertas. 
+
+## Entrega Colab — prueba jugable y arranque automático
+
+- [ ] **Notebook Noble AI todo en uno (una celda)**: `notebooks/noble_ai_colab_play.ipynb` + `tools/colab_launch.py`: resuelve SHA de `master` y usa instalador de ese mismo commit, clona actualización, instala requisitos React/Python/Node, inicia API loopback y UI vía proxy autenticado Colab, instala Ollama y modelo de prueba, prepara una historia inicial solo en biblioteca vacía y verifica inferencia corta; ComfyUI opcional sobre GPU y checkpoint SD1.5 FP16 con SHA256. Logs y salida degradada si un servicio opcional no pudo configurarse. Test de contratos `tests/test_colab_play.py` agregado, **CI funcional pendiente al registrar**.
+- [ ] **Validación física Colab pendiente**: ejecutar notebook en runtime GPU/CPU real, comprobar proxy/iframes en navegador, descarga real del modelo, salida del narrador, consumo de VRAM, imágenes ComfyUI, reinicios, cuotas y restauración/copia de historias a Drive. CI no sustituye esta prueba.
+- [ ] **Distribución Colab avanzada**: selección automática de checkpoint según presupuesto físico, compatibilidad y prueba con modelos narrativos grandes; Piper/voz e instalación selectiva de plugins RMBG/IPAdapter. No están incluidos automáticamente en esta primera versión.

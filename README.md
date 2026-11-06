@@ -112,6 +112,12 @@ flowchart LR
 
 ## 🚀 Primeros pasos
 
+### Google Colab — aplicación completa en una sola celda
+
+[**Abrir Noble AI y jugar en Google Colab**](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_play.ipynb)
+
+El notebook instala automáticamente el proyecto actual de `master`, dependencias, frontend, backend, un narrador Ollama con modelo seleccionado por hardware y, cuando existe GPU, intenta preparar ComfyUI y un checkpoint inicial para ilustraciones. Abre la interfaz por el proxy de sesión de Colab, **sin crear un túnel público**; también puede restaurar historias desde Drive si activas esa opción antes de iniciar. El código cambia con los commits futuros, mientras los datos permanecen fuera del checkout. La ejecución física en un runtime real requiere verificarse por separado de CI. [Guía del notebook](docs/COLAB_PLAY.md).
+
 Noble AI se ejecuta como **aplicación web local**. Para desarrollarla o probarla necesitas **Python 3.11+**, **Node.js 22+** y **Git**.
 
 <details open>
