@@ -34,7 +34,7 @@ Tablas SQLite: creator_media_assets y stories.cover_asset_id. Al crear una rama 
 
 ## Próximas mejoras de este módulo
 
-Editor de capas de personajes, varias expresiones por NPC, selección manual de escena, recorte del fondo automático, reglas de transición explícitas y validación de múltiples personajes. El diseño usa principios generales documentados por Isekai Zero, sin tomar sus recursos de imagen.
+Compositor de hasta tres NPC y variantes por expresión/pose ya implementado. Siguen pendientes generación IA de hojas, selección manual avanzada de posición, rig 2D, recorte del fondo automático y validación visual de identidad en imágenes generadas. El diseño usa principios generales documentados por Isekai Zero, sin tomar sus recursos de imagen.
 
 ## Seguridad y evolución según auditoría Argon (2026-11-05)
 
@@ -44,3 +44,11 @@ Editor de capas de personajes, varias expresiones por NPC, selección manual de 
 - **Validación:** pruebas de permisos de historia, symlink, traversal, clonación, borrado seguro, roundtrip de tarjetas y reproducción de la misma expresión sin llamar a la GPU.
 
 Seguimiento: [TODO](../TODO.md), [auditoría §§08, 12, 16](ARGON_AUDITORIA.md).
+
+## Identidad visual y hojas de expresiones importadas (2026-11-05/06)
+
+En **Creator Studio → Personajes** se configura `visual_dna` independiente de la personalidad del narrador. Sus etiquetas normalizadas y semilla se fijan al guardarlas (si no estaban establecidas); los modelos LoRA se registran por nombre sin ruta y peso, pero **no se cargan ni se ejecutan**. Los datos viajan como parte del JSON de cada NPC en el canon, instantáneas, bifurcaciones y backups existentes.
+
+**Importación de hoja**: en **Creator Studio → Imágenes**, selecciona el NPC, describe el contexto de la escena, elige pose y una fila de cinco (1 × 5) o columna de cinco (5 × 1). El PNG/WebP debe ser transparente, con cinco celdas de tamaño igual y ninguna celda vacía; orden: neutral → alegría → enojo → tristeza → sorpresa. Se crean cinco PNG RGBA y metadatos `foreground` asociados al NPC de la misma historia. Puedes importar otra hoja para otra pose sin sustituir la primera. Los archivos se preparan antes de insertar el conjunto en SQLite; un fallo SQL revierte los registros y elimina los archivos de esta operación.
+
+Ruta: `POST /api/v1/stories/{id}/creator/characters/{character_id}/expression-sheet` (multipart `caption`, `pose`, `layout`, `file`). Respuesta `201` con `assets[]` y `count:5`. La selección de variante por el lector continúa siendo heurística y necesita captions compatibles con el texto narrado. Importar no genera recursos con IA ni garantiza consistencia artística entre dibujos distintos.

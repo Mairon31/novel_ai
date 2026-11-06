@@ -126,7 +126,7 @@
 - [x] **Caché de variantes de sprites importados** por personaje, expresión `neutral/joy/anger/sadness/surprise` y pose; selección determinista desde narración guardada, fallback neutral, sin nueva generación ni cambios en fondo durante **10 turnos**. Índice SQLite/migración de esquema, snapshots, forks y restauración de respaldos v1 anteriores conservados. [CI #42136052387](https://github.com/Mairon31/novel_ai/actions/runs/42136052387): **247 Python + 60 Playwright PASS**.
 
 ### Imágenes, personajes y voz
-- [ ] `visual_dna`, etiquetas inmutables, semilla y LoRAs opcionales; hoja de expresiones generada o importada por personaje.
+- [ ] `visual_dna`, etiquetas inmutables, semilla y LoRAs opcionales; hoja de expresiones generada o importada por personaje. **Implementación candidata:** ficha canónica con validaciones y bloqueo de identidad, importación manual horizontal/vertical de cinco variantes con rollback, editor React y tests añadidos en `1777d12`–`4ce9d5c`; pendiente cierre tras CI de `master`. La generación IA de hojas y el consumo de LoRA por ComfyUI siguen en otras tareas.
 - [ ] Workflows parametrizados ComfyUI (SD/SDXL/Illustrious/Flux según disponibilidad) y referencias/consistencia opcionales.
 - [ ] Voces Piper por personaje, síntesis segmentada bajo demanda, control de cola y sincronización visual; lip-sync opcional.
 - [ ] Modos de recursos *Solo sprites / Equilibrado / Cine*, con presupuesto GPU y configuración transparente.

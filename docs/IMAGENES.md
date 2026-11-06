@@ -152,3 +152,9 @@ El contrato objetivo será un `VisualStageState` con `location_id`, `time_of_day
 La clave de caché prevista será `(location_id, time_of_day, weather, camera_shot)` con revisión del activo. Los sprites por expresión `neutral/joy/anger/sadness/surprise` se vincularán a identidad y apariencia inmutable (`visual_dna`, seed, LoRA opcional). `images.py` aceptará plantillas validadas para diferentes familias de ComfyUI y cargará referencias únicamente con consentimiento del usuario; no prometer consistencia facial perfecta.
 
 **Criterio de aceptación:** 10 turnos sucesivos en una misma ubicación no invocan regeneración de fondo; un cambio de emoción actualiza el sprite sin llamada a ComfyUI; al cambiar de lugar, transición visible sin bloquear narración; completar QA desktop y mobile. Control de GPU serializado, sin dejar pesos innecesarios residentes. Ver [TODO](../TODO.md) y [auditoría §§12, 19](ARGON_AUDITORIA.md).
+
+## ADN visual de Creator y hoja de sprites local
+
+`CreatorCharacter.visual_dna` registra etiquetas inmutables de identidad (una vez fijadas), semilla opcional y nombre/intensidad de LoRA. No se inyecta todavía en `images.py`, los workflows ComfyUI ni en el prompt narrativo: separarlo de personalidad evita que la configuración visual aparezca como instrucciones ocultas de narración. Las llamadas de generación y los proveedores existentes no cambian.
+
+`CreatorMediaService.import_expression_sheet` convierte bajo demanda un PNG/WebP alfa horizontal (1×5) o vertical (5×1) en cinco variantes `neutral/joy/anger/sadness/surprise` de un NPC identificado; cada variante sigue la caché editorial y el lector multicapa existentes. Todas las inserciones son una transacción SQLite con limpieza de archivos si se produce un error. La hoja importada es manual; ControlNet/IPAdapter, generación de hojas por IA, aplicación LoRA a checkpoints y cambios de apariencia versionados siguen pendientes.

@@ -184,3 +184,9 @@ El iluminado de hablante solo se activa con patrones atribuidos explícitamente 
 Clonación e instantáneas serializan la metadata de expresión/pose. La restauración de backup v1 sigue validando el mismo conjunto de tablas, SHA y propietario; para filas `creator_media_assets` anteriores admite exclusivamente la ausencia de `expression` y `pose`, rellenándolas con `neutral` y `standing`. Esa compatibilidad no desactiva validaciones del ZIP ni permite extensiones arbitrarias de tabla.
 
 **Gate final:** [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723): 247 pruebas Python, 60 Playwright (escritorio y móvil) y build Vite PASS; las imágenes de historias distintas no se mezclan al navegar sin recargar.
+
+## Ficha canónica y hoja de expresiones (Creator Studio)
+
+Las configuraciones JSON de `creator_characters` contienen `visual_dna` (etiquetas, seed, nombre y fuerza de LoRA) con validación Pydantic; `CreatorService` rechaza mutaciones de tags/seed fijadas bajo la misma conexión de escritura. `CreatorCharacter` expone defaults al leer filas antiguas y preserva DNA ante PUT de clientes legados que no envían el campo. La voz y personalidad se mantienen separadas y no toman estos datos como prompt narrativo.
+
+`CreatorMediaService` recibe una hoja transparente de cinco celdas iguales, la recorta en memoria y prepara PNGs de cada expresión con UUID diferentes; registra los cinco recursos en una transacción SQLite. Al fallar la inserción limpia sus archivos, y los demás recursos permanecen intactos. Esta ruta reusa `creator_media_assets`, `creator_media_turn_snapshots`, los clonadores con mapeo de personajes y el exportador/importador de historias. No añade cargas de GPU ni rutas de modelos externos, y no configura el motor ComfyUI.
