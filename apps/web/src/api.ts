@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -266,6 +266,14 @@ export const api = {
   startCreatorOpening: (id: string, index: number) => request<StoryTurn>(
     '/stories/' + encodeURIComponent(id) + '/creator/opening',
     {method: 'POST', body: JSON.stringify({index})}),
+  draftStoryWithAI: (input: {
+    idea: string; protagonist_name: string; genre: string; tone: string;
+  }) => request<{ draft: GeneratedStoryDraft; saved: boolean;
+    stages_completed: number; model: string }>('/creator/assistant/draft', json(input)),
+  installAIDraft: (draft: GeneratedStoryDraft) => request<{
+    story: Story; source: string; characters_installed: number;
+    lore_installed: number; openings_installed: number; generated_media: number;
+  }>('/creator/assistant/install', json(draft)),
   storyHub: () => request<{ packs: StoryHubPack[]; source: string;
     community_online: boolean }>('/story-hub'),
   storyHubDetail: (id: string) => request<StoryHubPack>(

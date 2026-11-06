@@ -1,3 +1,12 @@
+export type GeneratedStoryDraft = {
+  title: string; synopsis: string; player_plot: string; ai_plot: string;
+  guidelines: string; reminder: string; openings: string[];
+  genre: string; tags: string[]; protagonist_name: string;
+  characters: Array<{ name: string; description: string; personality: string;
+    dialogue_examples: string }>;
+  lore: Array<{ title: string; content: string; keys: string[] }>;
+};
+
 export type ModelRole = 'narrator' | 'image' | 'tts';
 export type StoryHubPack = {
   id: string; version: string; author: string; source: 'bundled-original';

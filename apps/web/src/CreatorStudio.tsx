@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
+import { AssistantStoryWizard } from './AssistantStoryWizard';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
   CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft,
@@ -91,6 +92,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [editingAsset, setEditingAsset] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState('');
   const [createNew, setCreateNew] = useState(false);
+  const [assistantVisible, setAssistantVisible] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newPremise, setNewPremise] = useState('');
   const [newProtagonist, setNewProtagonist] = useState('');
@@ -503,6 +505,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         </button>)}
         {!stories.length && !loading && <p className="creator-placeholder">
           Aún no hay historias. Crea tu primer proyecto para diseñar su mundo.</p>}
+        <button className="creator-new" onClick={() => {
+          setActive(null); setAssistantVisible(true);
+        }}><Sparkles size={17}/> Crear con IA</button>
         <button className="creator-new" onClick={() => setCreateNew(true)}>
           <Plus size={17}/> Nuevo proyecto
         </button>
@@ -511,7 +516,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       <div className="creator-editor">
         {error && <p className="narrative-error" role="alert">{error}</p>}
         {notice && <p className="narrative-saved" role="status"><Check size={16}/>{notice}</p>}
-        {!active ? <div className="creator-welcome">
+        {!active && assistantVisible ? <AssistantStoryWizard
+          onCancel={() => setAssistantVisible(false)}
+          onCreated={saved => {
+            setStories(previous => [saved, ...previous]);
+            setActive(saved); setSection('story'); setAssistantVisible(false);
+            onStoryChange?.(saved.id);
+          }}/>
+        : !active ? <div className="creator-welcome">
           <Sparkles size={40}/><h2>Selecciona una historia para editarla</h2>
           <p>Desde aquí puedes escribir la trama para el jugador, la información
             interna para el modelo, las fichas de personajes y los distintos inicios.</p>
