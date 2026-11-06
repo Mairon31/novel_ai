@@ -108,3 +108,20 @@ El Creator Studio necesita un **formulario/flujo por etapas con validación sem�
 | Transversal | N-24 QA de integración | Todos | CI, pruebas físicas Colab/Windows y screenshots comparativos |
 
 **No marcar como completadas las subtareas por redactar este documento.** Cada entrega exige código, pruebas de unidad/integración, evidencia UI escritorio/móvil y validación física cuando corresponda. Los módulos de TTS/imagen ya existentes son piezas de infraestructura, **no** satisfacen todavía estos requisitos de experiencia completa.
+
+## 9. N-25: Separación de páginas de Configuración (2026-11-06)
+
+**Retroalimentación adicional:** el usuario rechaza que elementos de naturaleza distinta compartan el mismo apartado de ajustes. Actualmente `WorkspaceSettings.tsx` contiene la pestaña **«Imágenes y voz»** (componente `CreativeSettings.tsx`, que reúne controles ComfyUI y Piper) y **«Sobre y actualizaciones»** (información del producto y búsqueda de releases). **Las cuatro áreas deben ser independientes**, no solo dos acordeones dentro del mismo panel.
+
+**Estructura objetivo de navegación en Configuración:**
+- **Imágenes:** modelo/checkpoint, instalación, LoRA y referencias, estilo anime, prompts, resolución, sampler/scheduler/CFG/semilla, integración ComfyUI, colas visuales y recursos GPU pertinentes. Su propia pantalla, ajustes y feedback. El control de recursos GPU compartido puede ubicarse en un apartado propio de Recursos/Runtimes, enlazado desde ambos sin duplicar inconsistencias.
+- **Voz / TTS:** motores (Piper, y futuros Pocket TTS/OmniVoice/Kokoro/Qwen3 TTS), instalación y modelos, voces, selección para narrador/NPC, idioma/pronunciación, muestras, síntesis y colas de voz. No mezclar controles de imagen en esta pantalla.
+- **Acerca de Noble AI:** versión instalada, identificador de compilación, información técnica, documentación, créditos, licencias y enlaces oficiales; solo información del producto.
+- **Actualizaciones:** canal de versión, comprobación manual/automática, versión disponible, notas de cambios, estado/progreso, errores, instalación o instrucciones según plataforma. No mezclar contenido estático de «Acerca de».
+
+**Contrato UX:** cuatro entradas navegables y rotuladas por separado, sin agrupaciones tipo «Imágenes y voz», «Imágenes y TTS» o «Sobre y actualizaciones»; accesibles desde escritorio y móvil con estado de pestaña activo, navegación por teclado, enlaces directos/recarga y rutas estables. Los componentes nuevos pueden compartir hooks o API, **pero no compartir un panel monolítico**. Conservar las preferencias y datos SQLite existentes, sin reiniciar modelos o descargas al cambiar pestañas. Las notificaciones de actualización pueden aparecer globalmente, pero su configuración debe residir en Actualizaciones.
+
+**Aceptación QA:** capturas desktop/móvil muestran los cuatro destinos separados; entrar en **Imágenes** no presenta controles de voz y viceversa; entrar en **Acerca de** no presenta botones de actualización y viceversa; cada pantalla conserva cambios tras recarga y deep link, y los controles actuales de ComfyUI, Piper, la voz preferida y los avisos de release no se pierden durante la migración. Verificar navegación con Playwright, accesibilidad, APIs actuales y ausencia de duplicados.
+
+**Estado:** [ ] pendiente de implementación. Esta sección solo documenta el trabajo; no se ha dividido todavía `WorkspaceSettings.tsx`, `CreativeSettings.tsx` ni las rutas.
+

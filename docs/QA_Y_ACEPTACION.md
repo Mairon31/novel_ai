@@ -379,3 +379,12 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 8. **Configuración todo en uno N-21:** cada control multimedia mostrado debe cambiar payload y resultado cuando el backend lo admita; persistencia global/por historia, cancelación y mediciones reales diferenciadas de estimaciones.
 
 **Gate para marcar [x]:** contrato/documentación + código + pruebas deterministas CI + QA visual real desktop/móvil + ensayo físico imagen/TTS cuando afecte a GPU/audio. No declarar completado un escenario solo por estar simuladas las respuestas HTTP.
+
+## Gate N-25 — Separación de los apartados de Ajustes (PENDIENTE)
+
+- Confirmar cuatro entradas **Imágenes**, **Voz / TTS**, **Acerca de Noble AI** y **Actualizaciones** como destinos individuales en navegación de Ajustes y accesos de resumen. Prohibir rótulos agregados «Imágenes y voz» y «Sobre y actualizaciones».
+- Validación Playwright **desktop y móvil**: Imágenes contiene ComfyUI/checkpoint/parámetros visuales pero no controles Piper; Voz contiene motor/modelos/voces/previsualización pero no controles visuales; Acerca de contiene versión/créditos/enlaces pero no comprobación de releases; Actualizaciones contiene canal/revisión/versiones, sin contenido estático de Acerca de.
+- Comprobar selección activa, foco, navegación por teclado/lector de pantalla, historial y enlace directo/recarga; ningún control desaparece tras dividir componentes.
+- Comprobar persistencia/migración de ajustes actuales (voz predeterminada, configuración ComfyUI, canal de actualización, búsqueda de releases, progreso de descarga) y que cambiar de apartado no arranca una inferencia, TTS ni descarga.
+- Requerir capturas comparativas desktop/móvil y pruebas CI; QA funcional del flujo de actualización cuando se implemente un actualizador real. **Esta gate está pendiente; documentarla no la supera.**
+

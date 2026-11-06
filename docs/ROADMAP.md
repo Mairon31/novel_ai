@@ -282,3 +282,7 @@ La retroalimentación de uso real, incluidas dos capturas del cuadro de entrada,
 8. **Puertas QA (N-24):** pruebas de no complacencia y acciones imposibles a lo largo de 10–20 turnos; screenshots escritorio/móvil; preflight/errores/recuperación y ejecución física Windows/Colab. No marcar [x] por diseñar los flujos.
 
 Los sistemas de Piper, ComfyUI, Creator Studio y Story Hub existentes se reutilizarán; su disponibilidad parcial no acredita este conjunto de requisitos.
+
+### Reorganización de Ajustes N-25 — planificación (2026-11-06)
+
+Antes de ampliar los parámetros de imagen/TTS de N-21, separar físicamente la navegación y los componentes del panel: **Imágenes** y **Voz / TTS** como pantallas independientes. Dividir asimismo **Acerca de Noble AI** y **Actualizaciones**, actualmente reunidas en «Sobre y actualizaciones». Mantener todo integrado dentro de Noble AI, **no** volver a juntar opciones no relacionadas por ahorrar pestañas. Preservar preferencias actuales, instalación de Piper/ComfyUI, controles de actualización y acceso móvil. `WorkspaceSettings.tsx` y `CreativeSettings.tsx` son puntos de migración, no evidencia de implementación. [Diseño y pruebas de aceptación](PLAN_HISTORIAS_ANIME_2026_11_06.md#9-n-25-separacion-de-paginas-de-configuracion).
