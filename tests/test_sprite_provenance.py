@@ -181,6 +181,64 @@ class SpriteProvenanceTests(unittest.TestCase):
         denied = self.restore(forged, as_copy=True, client=self.a)
         self.assertEqual(denied.status_code, 422, denied.text)
 
+    def test_neural_matte_model_provenance_survives_archive_and_rejects_tamper(self):
+        from noble_api.sprite_provenance import normalize_sprite_generation
+        neural = {
+            **self.details,
+            "workflow_version": "comfy-sprite-v3-matting",
+            "quality": {**self.details["quality"], "method": "neural_birefnet"},
+            "matting": {"mode": "neural_birefnet_portrait",
+                        "model": "BiRefNet-portrait"},
+        }
+        self.assertEqual(normalize_sprite_generation(neural), neural)
+        self.source.state.creator_media.import_expression_sheet(
+            self.story, self.npc, sheet(), "Aira en bosque", generation={
+                name: neural for name in EXPRESSIONS})
+        backed = self.backup()
+        result = self.restore(backed)
+        self.assertEqual(result.status_code, 201, result.text)
+        assets = self.b.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]
+        self.assertEqual(assets[0]["generation_details"]["matting"],
+                         neural["matting"])
+        for modified in (
+            {**neural, "matting": {"mode": "neural_birefnet_portrait",
+                                  "model": "RMBG-2.0"}},
+            {**neural, "quality": {**neural["quality"],
+                                  "method": "border_chroma_key"}},
+            {**neural, "matting": {"mode": "../unsafe", "model": "RMBG-2.0"}},
+            {**neural, "workflow_version": "comfy-sprite-v1"},
+        ):
+            with self.assertRaises(ValueError):
+                normalize_sprite_generation(modified)
+            forged = rewrite(backed, lambda manifest: [
+                row.__setitem__("generation_json", json.dumps(modified))
+                for row in manifest["tables"]["creator_media_assets"]])
+            denied = self.restore(forged, as_copy=True, client=self.a)
+            self.assertEqual(denied.status_code, 422, denied.text)
+
+    def test_neural_ipadapter_v4_keeps_both_reference_and_model(self):
+        from noble_api.sprite_provenance import normalize_sprite_generation
+        v4 = {**self.details,
+              "workflow_version": "comfy-sprite-v4-matting-ipadapter",
+              "quality": {**self.details["quality"], "method": "neural_rmbg"},
+              "matting": {"mode": "neural_rmbg2", "model": "RMBG-2.0"},
+              "adapter": {
+                  "preset": "PLUS FACE (portraits)",
+                  "weight": 0.7, "reference_sha256": "a" * 64,
+                  "reference_kind": "sprite"}}
+        self.assertEqual(normalize_sprite_generation(v4), v4)
+        self.source.state.creator_media.import_expression_sheet(
+            self.story, self.npc, sheet(), "Aira en bosque", generation={
+                name: v4 for name in EXPRESSIONS})
+        restored = self.restore(self.backup())
+        self.assertEqual(restored.status_code, 201, restored.text)
+        files = self.b.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]
+        self.assertTrue(all(
+            row["generation_details"]["workflow_version"]
+            == "comfy-sprite-v4-matting-ipadapter" for row in files))
+
     def test_regular_manual_assets_remain_manual_with_empty_generation(self):
         asset = self.source.state.creator_media.add(
             self.story, "foreground", "Aira", "Aira recorre el bosque",
