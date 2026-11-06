@@ -111,3 +111,64 @@ def transparent_sprite(data: bytes) -> tuple[bytes, dict]:
         "method": method, "coverage": round(coverage, 4),
         "requires_author_review": True,
     }
+
+
+def transparent_sprite_from_matte(
+        image_bytes: bytes, mask_bytes: bytes, mode: str) -> tuple[bytes, dict]:
+    """Build local PNG RGBA from the *same job*'s processed IMAGE and MASK.
+
+    ComfyUI's SaveImage may discard RGB(A) alpha depending on node/version.
+    The independent MaskToImage output is authoritative; malformed, empty,
+    reversed, clipped or implausibly large masks are rejected.
+    """
+    from .comfy_matting import MODELS
+
+    if mode not in MODELS:
+        raise ValueError("Motor neuronal desconocido")
+    if (not 0 < len(image_bytes) <= MAX_MEDIA_BYTES or
+            not 0 < len(mask_bytes) <= MAX_MEDIA_BYTES):
+        raise ValueError("Imagen o máscara excede el límite de 12 MiB")
+    try:
+        with Image.open(io.BytesIO(image_bytes)) as original, Image.open(
+                io.BytesIO(mask_bytes)) as mask_source:
+            if original.format not in {"PNG", "JPEG", "WEBP"} or mask_source.format != "PNG":
+                raise ValueError("Imagen/máscara de ComfyUI en formato no admitido")
+            width, height = original.size
+            if (min(width, height) < 128 or
+                    width * height > MAX_MEDIA_PIXELS or
+                    mask_source.size != original.size):
+                raise ValueError("La máscara neuronal no coincide con la imagen")
+            original.load()
+            mask_source.load()
+            photo = ImageOps.exif_transpose(original).convert("RGB")
+            matte = mask_source.convert("L")
+            if photo.size != matte.size:
+                raise ValueError("Máscara e imagen no tienen la misma orientación")
+    except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
+        raise ValueError("Imagen o máscara neuronal inválida") from exc
+
+    histogram = matte.histogram()
+    coverage = sum(histogram[192:]) / (width * height)
+    # A perimeter mask is a strong signal of a background or reversed-mask
+    # failure. Check *before* saving; never smooth away a cut-off subject.
+    border = (
+        [matte.getpixel((x, 0)) for x in range(width)] +
+        [matte.getpixel((x, height - 1)) for x in range(width)] +
+        [matte.getpixel((0, y)) for y in range(height)] +
+        [matte.getpixel((width - 1, y)) for y in range(height)]
+    )
+    edge_ratio = sum(value > 32 for value in border) / len(border)
+    if (not 0.04 <= coverage <= 0.82 or edge_ratio > 0.06):
+        raise ValueError(
+            "Máscara neuronal no fiable: fondo, silueta o bordes incorrectos")
+    result = photo.convert("RGBA")
+    result.putalpha(matte)
+    out = io.BytesIO()
+    result.save(out, "PNG", optimize=True)
+    if out.tell() > MAX_MEDIA_BYTES:
+        raise ValueError("PNG con máscara neuronal demasiado grande")
+    return out.getvalue(), {
+        "method": MODELS[mode]["method"],
+        "coverage": round(coverage, 4),
+        "requires_author_review": True,
+    }
