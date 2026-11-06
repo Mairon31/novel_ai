@@ -11,6 +11,8 @@ Repositorio: [`notebooks/noble_ai_colab_play.ipynb`](../notebooks/noble_ai_colab
 3. La instalación muestra logs y un mensaje cada cierto tiempo mientras instala paquetes/descarga modelos. Al completarse aparece **Abrir Noble AI en una pestaña** y un marco incrustado en la salida.
 4. Abre **Biblioteca → La estación de la última luna** para probar la historia de ejemplo, creada solo cuando la biblioteca estaba vacía. En bibliotecas que ya contienen historias, no se añade otra. Desde allí también puedes crear tu historia y sus personajes.
 
+**No necesitas que termine la descarga de los modelos de imagen para empezar a leer.** Tras instalar la API y comprobar Ollama, el notebook abre la interfaz y después continúa preparando ComfyUI si elegiste imágenes. Mientras tanto puedes crear o abrir historias desde la UI.
+
 El enlace a la interfaz usa **el proxy del kernel autenticado de la misma sesión Colab**. No se inicia Cloudflare Tunnel, ngrok ni una URL pública. Si tu navegador bloquea la pestaña o cookies de terceros, usa la vista incrustada; los enlaces del proxy dejan de ser válidos al desconectar Colab.
 
 ## Qué se instala automáticamente

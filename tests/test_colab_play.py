@@ -52,6 +52,10 @@ class ColabPlayTests(unittest.TestCase):
         self.assertIn("NOBLE_DATA_DIR", source)
         self.assertIn("noble_api.main:app", source)
         self.assertIn("COMFY_SHA256", source)
+        self.assertLess(
+            source.index("    display_colab_ui()\n    # Image provider"),
+            source.index("            image_checkpoint = ensure_comfy()"),
+            "La UI debe abrirse antes de instalar el ComfyUI opcional")
         self.assertNotIn("cloudflared", source)
         self.assertNotIn("ngrok", source)
         self.assertNotIn("--host\", \"0.0.0.0", source)
