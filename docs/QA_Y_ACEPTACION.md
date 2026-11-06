@@ -363,3 +363,19 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 - `story-hub.spec.ts` añade verificación de `#/descubrir` por enlace directo/recarga, navegación independiente del catálogo y apertura del detalle de una copia recién instalada. La gate de esta navegación adicional debe comprobarse en la CI posterior al cambio (no confundirla con #42169215781, que comprobó Biblioteca).
 
 - Verificado `#/descubrir` y deep link/recarga en [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099): 358 Python/70 Playwright + Vite PASS. La regresión adicional de respaldo del mundo `jardin-mecanico` → importación como copia independiente y conservación de NPC/Lorebook/aperturas pasó en Python [CI #42170420070](https://github.com/Mairon31/novel_ai/actions/runs/42170420070); frontend aún no confirmado al documentar.
+
+
+## Gate pendiente: experiencia anime, orquestador inteligente y preparación visual (2026-11-06)
+
+**Sin ejecución ni PASS: requisitos de aceptación futuros del feedback real.** Fuente: [plan N-16 a N-24](PLAN_HISTORIAS_ANIME_2026_11_06.md). Las dos capturas originales del usuario muestran el editor con barra separada CONTINUAR/REINTENTAR/BORRAR, iconos pequeños y contador lateral; usar la estructura observada para la prueba visual antes/después, no presentarlas como archivos ya publicados en el repo.
+
+1. **Creación N-23:** formulario con campos obligatorios condicionales; enviar vacío/faltantes/plantilla inconsistente debe impedir creación tanto en UI como API, reportar el campo y no dejar filas/assets parciales. Guardar/reabrir un borrador no debe perderlo.
+2. **Preflight visual N-22/N-23:** historia ilustrada recién creada o importada sin portada/fondo/NPC debe entrar en estado «Preparando historia», generar assets vinculados a historia/personajes reales, bloquear el primer turno LLM y cuadro de entrada, y pasar a jugable solo con recursos exigidos completos. Con assets ya válidos no hay descargas ni generaciones redundantes.
+3. **Fallos y durabilidad:** modelo no instalado, OOM, red cortada, reintentos, pausa, refresh, cancelación, importación manual y fallback texto explícito; colas sin duplicación, no sobrescribir imágenes originales, progreso/errores veraces, no spinner sin salida.
+4. **Director N-18:** 10–20 turnos por historia y por tres tipos de jugador: cooperativo, imposible/potencia ilimitada y fuera de personaje. Verificar reglas, causalidad, reacciones no complacientes de NPC, continuidad y progresión de objetivos. El usuario mantiene decisiones coherentes, no recibe aprobación automática ni ve spoilers del narrador.
+5. **Interfaz N-19:** capturas E2E desktop y móvil del editor, barra de roleplay, ajustes por historia, teclado/scroll, modos VN/Libro/Chat y botones enviar/continuar/reintentar/borrar; iconos con etiquetas, foco accesible, targets táctiles y confirmación para acciones destructivas.
+6. **Estética N-20:** muestra de al menos dos mundos anime/fantasía, primer fondo, portada y varios sprites/expresiones; evaluación de consistencia de identidad y escena con prompts/versiones, no evaluar imagen con mocks como si fuera calidad final.
+7. **Audio N-16/N-17:** proveedores Pocket TTS, OmniVoice, Kokoro TTS y Qwen3 TTS verificados individualmente antes de anunciar soporte; probar voz propia de narrador y varios NPC, idioma, fallbacks, edición, uso de memoria/latencia y ausencia de síntesis involuntaria.
+8. **Configuración todo en uno N-21:** cada control multimedia mostrado debe cambiar payload y resultado cuando el backend lo admita; persistencia global/por historia, cancelación y mediciones reales diferenciadas de estimaciones.
+
+**Gate para marcar [x]:** contrato/documentación + código + pruebas deterministas CI + QA visual real desktop/móvil + ensayo físico imagen/TTS cuando afecte a GPU/audio. No declarar completado un escenario solo por estar simuladas las respuestas HTTP.

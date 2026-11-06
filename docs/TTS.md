@@ -47,3 +47,16 @@ Estado: **P1.4 — Piper local CPU implementado con reproducción explícita**; 
 - Pulsa **Escuchar** en un turno guardado: Piper ejecuta la síntesis CPU de ese texto. Los WAV se guardan en `story-assets/{story_id}/speech/` y se reutilizan para la misma intervención/voz.
 - No se ejecuta al continuar una historia ni cuando `tts_enabled=false`; tampoco se habilita `tts_autoread`. Si falta Piper o la voz, se devuelve un error y la historia permanece disponible.
 - Solo una síntesis activa a la vez; límite de 3500 caracteres y 120 s por llamada; futuros adaptadores podrán chunkear frases y usar GPU.
+
+
+## Backlog TTS multi-motor y voz por personaje — 2026-11-06 (PENDIENTE)
+
+Noble AI debe operar como un producto integral con selección, descarga, configuración y pruebas de modelos TTS desde su propia interfaz. Los motores **Pocket TTS, OmniVoice, Kokoro TTS y Qwen3 TTS** se añaden como **candidatos de integración**, no como motores ya implementados ni como garantía de compatibilidad en español latinoamericano. Mantener Piper. Para cada uno verificar repositorio de origen, licencia de código/pesos, formato, instalación/runtime, voz/es-419, requisitos reales CPU/GPU, dependencias y compatibilidad Colab/Windows.
+
+- **Contrato común de proveedor:** \`discover/capabilities/install/voices/configure/preview/synthesize/cancel/unload/health\`; mapear y validar únicamente parámetros que el motor realmente acepte (velocidad, tono, expresividad, idioma, temperatura, tipo de voz, etc.). Parámetros no soportados deben deshabilitarse o rechazarse, no ignorarse silenciosamente.
+- **Voces diferenciadas por reparto:** narrador independiente, cada NPC con \`provider_id + model_id + voice_id + options\`, overrides por historia, persistencia y remapeo de ramas. Si falta la voz, fallback declarado por la UI; si no se puede atribuir el hablante, no inventar personaje.
+- **Montaje de audio:** segmentar narración y líneas atribuidas a NPC, mantener orden/pausas y niveles consistentes; caché invalidada por cambios de texto, voz, proveedor y configuración. Probar reparto completo sin disparar síntesis al abrir historias.
+- **UX interna:** catálogo/instalación/progreso, parámetros avanzados del motor seleccionado, voz por personaje, escucha de muestras, dispositivos, colas, fallos y métricas en un único apartado multimedia de Noble AI. No asumir que una UI externa del runtime es el panel de configuración del usuario.
+- **Evidencia requerida:** 10 frases con pronunciación ES-LA, turno con narrador y 3+ NPC, cambio y ausencia de voz, sincronización, cancelación, memoria y latencia en Colab/Windows, y pruebas unitarias de los adaptadores.
+
+Ver [plan detallado N-16/N-17/N-21](PLAN_HISTORIAS_ANIME_2026_11_06.md) y [tareas maestras](../TODO.md). Estas tareas no sustituyen ni marcan terminado el instalador parcial de voces Piper descrito en [PIPER_VOICES.md](PIPER_VOICES.md).

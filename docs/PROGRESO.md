@@ -873,3 +873,10 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] API `/api/v1/tts/preview`: texto limitado a 400 caracteres, fuente `preview_button`, verificación de voz y binario, bloqueo compartido de síntesis, timeout y WAV temporal (se elimina, no se escribe historia).
 - [x] Interfaz: texto de prueba, botón explícito y reproductor de audio nativo tras recibir WAV, sin autoplay ni activación accidental.
 - [x] Pruebas Python con motor ficticio y Playwright escritorio/móvil aprobadas: [CI #42265155907](https://github.com/Mairon31/novel_ai/actions/runs/42265155907), 381 Python / 76 navegador y Vite PASS. Pruebas con Piper real y voz real pendientes.
+
+
+## 2026-11-06 · Feedback de producto documentado (solo backlog, sin implementaciones nuevas)
+
+- [x] Registrados nuevos requisitos de usuario **N-16 a N-24** en [TODO.md](../TODO.md), todos **[ ] pendientes** en la fuente maestra: Pocket TTS/OmniVoice/Kokoro/Qwen3 TTS, reparto de voces NPC/narrador, dirección narrativa con reglas de mundo y NPC no complacientes, editor roleplay/ajustes de historia, estética anime/fantasía, paneles de imagen/TTS integrados, preflight visual al abrir historia sin arte y generación de recursos al confirmar creación con campos obligatorios.
+- [x] Especificación funcional y criterios de aceptación en [PLAN_HISTORIAS_ANIME_2026_11_06.md](PLAN_HISTORIAS_ANIME_2026_11_06.md), vinculados a [ROADMAP.md](ROADMAP.md), [TTS.md](TTS.md) y [QA_Y_ACEPTACION.md](QA_Y_ACEPTACION.md). Dos capturas del editor recibidas por chat y descritas; **no se han añadido los archivos de imagen al repositorio**.
+- [ ] Ninguna de esas nuevas capacidades N-16 a N-24 ha quedado implementada, ni se ha realizado en esta entrada ensayo de modelos TTS/imagen o prueba de historia ilustrada completa. La disponibilidad previa de módulos parciales no debe usarse para marcar estos puntos como resueltos.

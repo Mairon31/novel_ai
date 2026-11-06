@@ -266,3 +266,19 @@ Existe un catálogo de tres historias originales de texto, instalables como copi
 Creator Studio ya incluye asistente de propuesta narrativa de 3 etapas mediante el proveedor de LLM configurado: mundo público/privado, cuatro NPC, tres Lorebooks y tres aperturas, con previsualización y confirmación de instalación SQLite. No confundir con generación integral de novelas ilustradas. Faltan edición granular del borrador, regeneración por componente, planes visuales, portadas, fondos, sprites, TTS y QA de historias extensas con GPU real. Ver STORY_HUB.md y TODO.md.
 
 - [x] Pruebas del asistente y confirmación: [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437), **365 Python + 72 Playwright y build Vite PASS** para `3be0b5c`. Incluye edición de NPC, Lorebook, etiquetas y aperturas.
+
+
+## Prioridades de experiencia anime/roleplay y arranque visual — 2026-11-06 (planificado, NO implementado)
+
+La retroalimentación de uso real, incluidas dos capturas del cuadro de entrada, cambia el foco hacia historias de fantasía/anime jugables y completas antes de optimizaciones cosméticas. El [plan detallado](PLAN_HISTORIAS_ANIME_2026_11_06.md) y el [TODO N-16 a N-24](../TODO.md) son los requisitos fuente.
+
+1. **Autoría fiable:** wizard con parámetros esenciales, plantillas anime/fantasía, validación front/server y previsualización editable (N-23).
+2. **Todo en uno:** instalar/seleccionar/configurar modelos de ilustración y TTS y controlar recursos y colas **desde Noble AI**, no obligar a usar una interfaz externa para la experiencia normal (N-21; depende de N-01, N-03 y N-11).
+3. **Historia ilustrada lista antes de interactuar:** al crear o abrir una historia sin imágenes, generar portada, primer fondo y sprites necesarios, mostrar «Preparando historia», persistir/reanudar trabajos y habilitar entrada/LLM únicamente tras verificar los recursos exigidos (N-22, N-23). Ante un error, reintentar o cambiar expresamente a texto; no inventar fondos ni quedar bloqueado para siempre.
+4. **Narrador director, no modelo complaciente:** arcos, canon, reglas de mundo, NPC autónomos, consecuencias e intervención fuera de personaje tratada explícitamente (N-18); elección graduada de libertad sin romper la coherencia narrativa.
+5. **Interfaz enfocada en roleplay:** barra superior del editor con acciones Hablar/Actuar/Pensar/Observar/Interactuar, ajustes por historia y separación de reintentar/borrar; rediseño responsive de la zona mostrada en las capturas (N-19).
+6. **Arte y contenido:** fantasía/anime como estilo inicial, worldbuilding, capítulos y tono propios del género; prompts, fondos, sprites y portadas visualmente consistentes (N-20).
+7. **Audio con reparto:** ampliar Piper con Pocket TTS, OmniVoice, Kokoro TTS y Qwen3 TTS tras investigar compatibilidad/licencia/ES-LA; voz distinta por NPC y narrador (N-16/N-17).
+8. **Puertas QA (N-24):** pruebas de no complacencia y acciones imposibles a lo largo de 10–20 turnos; screenshots escritorio/móvil; preflight/errores/recuperación y ejecución física Windows/Colab. No marcar [x] por diseñar los flujos.
+
+Los sistemas de Piper, ComfyUI, Creator Studio y Story Hub existentes se reutilizarán; su disponibilidad parcial no acredita este conjunto de requisitos.
