@@ -35,6 +35,10 @@ test('four settings panels are independent, deep-linkable and responsive', async
   expect(imageRequests).toBeGreaterThan(0);
   expect(voiceRequests).toBe(0);
   expect(downloadActions).toBe(0);
+  await page.screenshot({
+    path: 'test-results/' + test.info().project.name + '-settings-images-separate.png',
+    fullPage: true,
+  });
 
   await nav.getByRole('button', { name: 'Voz / TTS' }).click();
   await expect(page).toHaveURL(/#\/configuracion\/voice$/);
@@ -43,6 +47,10 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   expect(voiceRequests).toBeGreaterThan(0);
   expect(downloadActions).toBe(0);
+  await page.screenshot({
+    path: 'test-results/' + test.info().project.name + '-settings-voice-separate.png',
+    fullPage: true,
+  });
   const imagesBeforeReload = imageRequests;
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
@@ -57,6 +65,10 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await expect(page.getByRole('heading', { name: 'Acerca de Noble AI' })).toBeVisible();
   await expect(page.getByText('Tipo de instalación')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Comprobar actualizaciones' })).toHaveCount(0);
+  await page.screenshot({
+    path: 'test-results/' + test.info().project.name + '-settings-about-separate.png',
+    fullPage: true,
+  });
   await nav.getByRole('button', { name: 'Actualizaciones', exact: true }).click();
   await expect(page).toHaveURL(/#\/configuracion\/updates$/);
   await expect(page.getByRole('heading', { name: 'Actualizaciones', exact: true })).toBeVisible();
