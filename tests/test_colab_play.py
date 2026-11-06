@@ -36,6 +36,8 @@ class ColabPlayTests(unittest.TestCase):
         self.assertIn('revision=PINNED_SHA', source)
         self.assertIn('MODELO = "auto"', source)
         self.assertIn('IMAGENES = "auto"', source)
+        self.assertIn('VOZ = "auto"', source)
+        self.assertIn('voice=VOZ', source)
         self.assertIn("colab_launch.py", source)
         self.assertIn("launcher.launch", source)
         self.assertIn("spec.loader.exec_module(launcher)", source)
