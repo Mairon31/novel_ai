@@ -336,3 +336,9 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 ### Resultado verificado del matting opcional
 
 [CI #42158275044](https://github.com/Mairon31/novel_ai/actions/runs/42158275044), commit `63db653c`: **326/326 Python, 66/66 Playwright PASS y Vite build PASS**. El módulo de máscara neuronal conserva validación, origen editorial y aprobación manual; el recorrido visual del selector también pasó en móvil. El fallo de `reader-modes.spec.ts` en [CI #42158080563](https://github.com/Mairon31/novel_ai/actions/runs/42158080563) no se reprodujo en la ejecución aprobada, pero la posibilidad de flakiness del atajo queda identificada para seguimiento. No se considera validada la generación con GPUs o pesos RMBG reales.
+
+## Gate de herramienta de benchmark físico de sprites
+
+`tests/test_sprite_gpu_benchmark.py` verifica contratos de la herramienta **sin GPU**: entradas y URL loopback, consulta de IDs sin cambios, `--check-only`, medidor de alfa de PNG, preflight de modelos disponibles, generación solo por consentimiento, simulación de `nvidia-smi` con controles de valores, medición/agrupación, persistencia JSON/HTML/CSV, límite de borradores y limpieza explícita; faltan pruebas reales de variabilidad VRAM, calidad de pelo y ejecución de modelos instalados. La suite deberá demostrar no llamar a `/approve` nunca.
+
+La tarea de implementación se puede cerrar con CI automática, pero la tarea de validación **física** seguirá pendiente hasta obtener los artefactos de un ensayo real con los checkpoints elegidos. [Comandos y criterios](GPU_SPRITE_BENCHMARK.md).
