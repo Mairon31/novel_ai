@@ -358,6 +358,7 @@ export type CreatorMediaAsset = {
     prompt_sha256?: string; lora?: { lora_name: string; strength: number };
     adapter?: { preset: string; weight: number;
       reference_sha256: string; reference_kind: string };
+    matting?: { mode: NeuralCutoutMode; model: string };
     quality?: { method: string; coverage: number; author_approved: boolean };
   };
 };
@@ -369,6 +370,7 @@ export type SpriteDraft = {
   id: string; story_id: string; character_id: string; character_name: string;
   caption: string; pose: string; seed: number; checkpoint: string;
   style: string; use_lora: boolean; reference_asset_id: string | null;
+  cutout_mode?: NeuralCutoutMode;
   reference_sprite_asset_id?: string | null;
   reference_mode?: 'img2img' | 'ipadapter';
   ipadapter_preset?: string; ipadapter_weight?: number;
@@ -376,6 +378,16 @@ export type SpriteDraft = {
   ready_count: number; created_at: number; updated_at: number;
   alignment_warnings?: string[];
   alignment_review_needed?: boolean;
+};
+export type NeuralCutoutMode =
+  'chroma_green' | 'neural_rmbg2' | 'neural_birefnet_portrait' |
+  'neural_birefnet_matting';
+export type MattingStatus = {
+  neural_available: boolean;
+  modes: Array<{
+    mode: NeuralCutoutMode; model: string | null;
+    node: string | null; ready: boolean; reason: string;
+  }>;
 };
 export type IdentityAdapterStatus = {
   available: boolean; presets: string[]; model_count: number;
@@ -386,6 +398,7 @@ export type NewSpriteDraft = {
   reference_asset_id?: string; reference_sprite_asset_id?: string;
   reference_mode: 'img2img' | 'ipadapter';
   ipadapter_preset: string; ipadapter_weight: number;
+  cutout_mode: NeuralCutoutMode;
   use_lora: boolean;
 };
 export type SceneSprite = CreatorMediaAsset & {

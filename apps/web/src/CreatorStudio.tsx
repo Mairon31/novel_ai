@@ -8,7 +8,7 @@ import { WorldStateEditor } from './WorldStateEditor';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
   CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft,
-  VisualAsset, IdentityAdapterStatus,
+  VisualAsset, IdentityAdapterStatus, MattingStatus, NeuralCutoutMode,
   LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
@@ -72,6 +72,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [draftAdapterWeight, setDraftAdapterWeight] = useState(0.7);
   const [adapterStatus, setAdapterStatus] = useState<IdentityAdapterStatus | null>(null);
   const [checkingAdapter, setCheckingAdapter] = useState(false);
+  const [draftCutoutMode, setDraftCutoutMode] = useState<NeuralCutoutMode>('chroma_green');
+  const [mattingStatus, setMattingStatus] = useState<MattingStatus | null>(null);
+  const [checkingMatting, setCheckingMatting] = useState(false);
   const [alignmentConfirmed, setAlignmentConfirmed] = useState<Record<string, boolean>>({});
   const [draftProgress, setDraftProgress] = useState('');
   const [galleryAssets, setGalleryAssets] = useState<VisualAsset[]>([]);
@@ -123,7 +126,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setAssets([]); setMediaFile(null); setSheetFile(null); setSheetCharacter('');
     setSpriteDrafts([]); setDraftCharacter(''); setDraftReference('');
     setDraftSpriteReference(''); setDraftReferenceMode('img2img');
-    setAdapterStatus(null);
+    setAdapterStatus(null); setMattingStatus(null);
+    setDraftCutoutMode('chroma_green');
     setAlignmentConfirmed({});
     setGalleryAssets([]); setDraftProgress('');
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
@@ -226,6 +230,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     finally { setWorking(false); }
   }
 
+  async function checkMatting() {
+    setCheckingMatting(true); setError('');
+    try { setMattingStatus(await api.mattingStatus()); }
+    catch (exc) { setError((exc as Error).message); }
+    finally { setCheckingMatting(false); }
+  }
+
   async function checkIdentityAdapter() {
     setCheckingAdapter(true); setError('');
     try { setAdapterStatus(await api.identityAdapterStatus()); }
@@ -248,6 +259,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         reference_mode: draftReferenceMode,
         ipadapter_preset: draftAdapterPreset,
         ipadapter_weight: draftAdapterWeight,
+        cutout_mode: draftCutoutMode,
         use_lora: draftUseLora,
       });
       if (storyGuard.current === active.id) {
@@ -810,6 +822,40 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     o un sprite aprobado del mismo NPC. No se descargan modelos.
                   </p>
                 </>}
+                <div className="creator-double">
+                  <label>Método de recorte del fondo
+                    <select aria-label="Recorte de fondo para sprites IA"
+                      value={draftCutoutMode}
+                      onChange={event => setDraftCutoutMode(
+                        event.target.value as NeuralCutoutMode)}>
+                      <option value="chroma_green">Fondo verde · rápido, sin modelo adicional</option>
+                      <option value="neural_rmbg2">RMBG 2.0 · máscara neuronal</option>
+                      <option value="neural_birefnet_portrait">BiRefNet Portrait · retratos</option>
+                      <option value="neural_birefnet_matting">BiRefNet Matting · transparencias</option>
+                    </select>
+                  </label>
+                  <div className="creator-fields">
+                    <button className="secondary-button" disabled={working || checkingMatting}
+                      onClick={() => void checkMatting()}>
+                      {checkingMatting ? 'Comprobando pesos...' :
+                        'Comprobar modelos de recorte'}
+                    </button>
+                  </div>
+                </div>
+                {mattingStatus && <div className="creator-hint" role="status"
+                    aria-label="Estado de los modelos de recorte">
+                  {mattingStatus.modes.filter(item => item.mode !== 'chroma_green')
+                    .map(item => <p key={item.mode}>
+                      {item.model}: {item.ready ? 'Listo' : item.reason || 'No disponible'}
+                    </p>)}
+                </div>}
+                <p className="creator-hint">
+                  El recorte neuronal utiliza ComfyUI-RMBG y reconstruye la transparencia
+                  desde una máscara PNG independiente. Deben estar instalados los nodos
+                  y todos los archivos del modelo. Si faltan, la generación se detiene
+                  sin cambiar los sprites anteriores ni descargar modelos desde Noble AI.
+                  La máscara también requiere revisión visual.
+                </p>
                 <label>
                   <input type="checkbox" aria-label="Usar LoRA del NPC para sprites IA"
                     checked={draftUseLora} onChange={event => setDraftUseLora(event.target.checked)}/>
@@ -841,6 +887,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <h4>{draft.character_name} · {draft.ready_count}/5 expresiones</h4>
                   <p className="creator-hint">{draft.checkpoint} · Semilla {draft.seed} ·
                     {' '}{draft.use_lora ? 'LoRA activado' : 'Sin LoRA'} · {draft.pose}
+                    {' · Recorte: ' + (draft.cutout_mode === 'neural_rmbg2' ? 'RMBG 2.0'
+                      : draft.cutout_mode === 'neural_birefnet_portrait' ? 'BiRefNet retratos'
+                      : draft.cutout_mode === 'neural_birefnet_matting' ? 'BiRefNet matting'
+                      : 'Verde')}
                     {draft.reference_mode === 'ipadapter'
                       ? ' · IPAdapter ' + draft.ipadapter_preset +
                         ' (' + draft.ipadapter_weight + ')' : ''}</p>
@@ -859,7 +909,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                           <small>{slot.ready ? 'Por revisar' : 'Sin generar'}</small>
                           {slot.quality && <small>
                             Fondo: {slot.quality.method === 'border_chroma_key'
-                              ? 'recorte verde' : 'transparencia original'} ·
+                              ? 'recorte verde' : slot.quality.method.startsWith('neural_')
+                              ? 'máscara ' + slot.quality.method
+                              : 'transparencia original'} ·
                             Cobertura {Math.round(slot.quality.coverage * 100)}%
                           </small>}
                           <button className="secondary-button" disabled={working}
