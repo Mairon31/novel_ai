@@ -49,6 +49,9 @@ test('AI Creator previews a whole world before an explicit local install', async
         '{{user}} llega a la plaza y descubre que la campana ha desaparecido mientras el cielo se oscurece por completo.',
       ],
     };
+    if (request.instruction === 'verificar edición concurrente') {
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
     await route.fulfill({ status: 200, contentType: 'application/json',
       body: JSON.stringify({ draft: updated, section: request.section, saved: false, model: 'test-mock',
         generation_budget: { context_characters: 3200, input_tokens_estimate: 800,
@@ -108,13 +111,22 @@ test('AI Creator previews a whole world before an explicit local install', async
   await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
   await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/carta del farero/);
   await expect(page.getByLabel('Estimación de presupuesto de generación')).toBeVisible();
+  await page.getByLabel('Indicaciones para regenerar').fill('verificar edición concurrente');
+  await page.getByRole('button', { name: 'Regenerar sección' }).click();
+  await page.getByLabel('Sinopsis generada editable').fill(
+    'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
+  );
+  await expect(page.getByRole('alert')).toContainText('borrador cambió durante la solicitud');
+  await expect(page.getByLabel('Sinopsis generada editable')).toHaveValue(
+    'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
+  );
   await page.getByRole('button', { name: 'Crear historia con esta propuesta' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Personajes \(4\)/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Lorebook \(3\)/ })).toBeVisible();
   await page.getByRole('button', { name: 'Trama y contexto', exact: true }).click();
   await expect(page.getByLabel('Sinopsis para lectores')).toHaveValue(
-    'Los guardianes de la bahía empiezan a revelar una conspiración que amenaza sus recuerdos.'
+    'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-creator-ai-installed.png',
