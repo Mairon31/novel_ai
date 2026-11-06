@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -164,12 +164,14 @@ export const api = {
     '/stories/' + encodeURIComponent(storyId) + '/creator/assets/scene'),
   async uploadCreatorAsset(storyId: string, data: {
     kind: 'cover' | 'background' | 'foreground'; label: string; caption: string;
-    character_id?: string; file: File;
+    character_id?: string; expression?: SpriteExpression; pose?: string; file: File;
   }): Promise<CreatorMediaAsset> {
     const body = new FormData();
     body.append('kind', data.kind); body.append('label', data.label);
     body.append('caption', data.caption);
     if (data.character_id) body.append('character_id', data.character_id);
+    if (data.expression) body.append('expression', data.expression);
+    if (data.pose) body.append('pose', data.pose);
     body.append('file', data.file);
     const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
       '/creator/assets', { method: 'POST', body });
@@ -179,10 +181,11 @@ export const api = {
     }
     return response.json() as Promise<CreatorMediaAsset>;
   },
-  editCreatorAsset: (storyId: string, assetId: string, label: string, caption: string) =>
+  editCreatorAsset: (storyId: string, assetId: string, label: string, caption: string,
+    expression?: SpriteExpression, pose?: string) =>
     request<CreatorMediaAsset>('/stories/' + encodeURIComponent(storyId) +
       '/creator/assets/' + encodeURIComponent(assetId),
-      { method: 'PUT', body: JSON.stringify({ label, caption }) }),
+      { method: 'PUT', body: JSON.stringify({ label, caption, expression, pose }) }),
   deleteCreatorAsset: (storyId: string, assetId: string) =>
     request<void>('/stories/' + encodeURIComponent(storyId) + '/creator/assets/' +
       encodeURIComponent(assetId), { method: 'DELETE' }),

@@ -25,6 +25,15 @@ from .narrative import NarrativeService
 
 MAX_MEDIA_BYTES = 12 * 1024 * 1024
 MAX_MEDIA_PIXELS = 20_000_000
+EXPRESSIONS = ("neutral", "joy", "anger", "sadness", "surprise")
+POSE_PATTERN = re.compile(r"[a-z0-9_-]{1,32}")
+EXPRESSION_HINTS = {
+    "joy": r"sonr[ií]e|sonri[oó]|feliz|alegr[eí]|r[ií]e|laugh|smil",
+    "anger": r"enojad|enfurecid|furios|airad|grit[aó]|angry|furious",
+    "sadness": r"trist|llor[aó]|solloz|apenad|sad|crying",
+    "surprise": r"sorprendid|asombrad|boquiabiert|astonish|surpris",
+}
+
 STOP_WORDS = frozenset({
     "a", "al", "de", "del", "el", "ella", "en", "es", "esta", "este", "estos", "la",
     "las", "lo", "los", "que", "un", "una", "uno", "y", "por", "para", "con", "cuando",
@@ -36,6 +45,44 @@ class AssetCaption(BaseModel):
     model_config = ConfigDict(extra="forbid")
     caption: str = Field(min_length=3, max_length=220)
     label: str = Field(min_length=1, max_length=100)
+    expression: Literal["neutral", "joy", "anger", "sadness", "surprise"] | None = None
+    pose: str | None = Field(default=None, max_length=32)
+
+
+def validate_pose(pose: str) -> str:
+    normalized = pose.strip().casefold()
+    if not POSE_PATTERN.fullmatch(normalized):
+        raise ValueError("La pose debe usar 1–32 letras ASCII, números, guiones o guion bajo")
+    return normalized
+
+
+def _expression_in_text(text: str, name: str, cast_names=()) -> str:
+    """Associate an expression with its named NPC, not the next NPC's mood."""
+    matches = list(re.finditer(r"(?<!\w)" + re.escape(name) + r"(?!\w)",
+                               text, re.IGNORECASE))
+    other_names = [other for other in cast_names if other and other.casefold() != name.casefold()]
+    for mention in reversed(matches):
+        end = min(len(text), mention.end() + 100)
+        suffix = text[mention.end():end]
+        punctuation = re.search(r"[.!?;\n]", suffix)
+        if punctuation:
+            end = min(end, mention.end() + punctuation.start())
+        for other in other_names:
+            next_name = re.search(r"(?<!\w)" + re.escape(other) + r"(?!\w)",
+                                  text[mention.end():end], re.IGNORECASE)
+            if next_name:
+                end = min(end, mention.end() + next_name.start())
+        # A short left-side window catches "sonríe Aira" while limiting
+        # accidental emotion bleed from an unrelated earlier sentence.
+        left = text[max(0, mention.start()-24):mention.start()]
+        preceding_end = re.search(r"[.!?;\n](?!.*[.!?;\n])", left)
+        begin = (max(0, mention.start()-24) + preceding_end.end()
+                 if preceding_end else max(0, mention.start()-24))
+        context = text[begin:end]
+        for emotion, pattern in EXPRESSION_HINTS.items():
+            if re.search(pattern, context, re.IGNORECASE):
+                return emotion
+    return "neutral"
 
 
 def _tokens(value: str) -> set[str]:
@@ -97,7 +144,9 @@ class CreatorMediaService:
                     character_id TEXT,
                     filename TEXT NOT NULL,
                     media_type TEXT NOT NULL,
-                    created_at REAL NOT NULL
+                    created_at REAL NOT NULL,
+                    expression TEXT NOT NULL DEFAULT 'neutral',
+                    pose TEXT NOT NULL DEFAULT 'standing'
                 );
                 CREATE INDEX IF NOT EXISTS creator_media_by_story
                     ON creator_media_assets(story_id,kind,created_at);
@@ -111,6 +160,17 @@ class CreatorMediaService:
                 CREATE INDEX IF NOT EXISTS creator_media_turn_history
                     ON creator_media_turn_snapshots(story_id,created_at,turn_id);
             """)
+            # Upgrade databases created before expression/pose variants existed.
+            media_columns = {row["name"] for row in db.execute(
+                "PRAGMA table_info(creator_media_assets)")}
+            if "expression" not in media_columns:
+                db.execute("ALTER TABLE creator_media_assets ADD COLUMN "
+                           "expression TEXT NOT NULL DEFAULT 'neutral'")
+            if "pose" not in media_columns:
+                db.execute("ALTER TABLE creator_media_assets ADD COLUMN "
+                           "pose TEXT NOT NULL DEFAULT 'standing'")
+            db.execute("""CREATE INDEX IF NOT EXISTS creator_sprite_variant
+                ON creator_media_assets(story_id,kind,character_id,expression,pose)""")
 
     def _require_story(self, story_id: str) -> None:
         if not self.narrative.get_story(story_id):
@@ -159,7 +219,8 @@ class CreatorMediaService:
         return dict(row)
 
     def add(self, story_id: str, kind: str, label: str, caption: str,
-            data: bytes, character_id: str | None = None) -> dict:
+            data: bytes, character_id: str | None = None,
+            expression: str = "neutral", pose: str = "standing") -> dict:
         self._require_story(story_id)
         if kind not in ("cover", "background", "foreground"):
             raise ValueError("El recurso debe ser portada, fondo o primer plano")
@@ -168,6 +229,11 @@ class CreatorMediaService:
         if not 3 <= len(caption.strip()) <= 220:
             raise ValueError("La descripción debe tener entre 3 y 220 caracteres")
         form = AssetCaption(label=label.strip(), caption=caption.strip())
+        if expression not in EXPRESSIONS:
+            raise ValueError("Expresión de personaje no admitida")
+        pose = validate_pose(pose)
+        if kind != "foreground" and (expression != "neutral" or pose != "standing"):
+            raise ValueError("Solo los sprites admiten expresiones y poses")
         if character_id:
             if kind != "foreground":
                 raise ValueError("Solo los primeros planos pueden asociarse a un personaje")
@@ -185,9 +251,11 @@ class CreatorMediaService:
             file.write_bytes(processed)
             with self.store._conn() as db:
                 db.execute(
-                    "INSERT INTO creator_media_assets VALUES(?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO creator_media_assets "
+                    "(id,story_id,kind,label,caption,character_id,filename,"
+                    "media_type,created_at,expression,pose) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                     (ident, story_id, kind, form.label.strip(), form.caption.strip(),
-                     character_id, file.name, media_type, time.time()))
+                     character_id, file.name, media_type, time.time(), expression, pose))
         except Exception:
             file.unlink(missing_ok=True)
             raise
@@ -197,10 +265,17 @@ class CreatorMediaService:
         if not form.label.strip() or len(form.caption.strip()) < 3:
             raise ValueError("El nombre y la descripción no pueden estar vacíos")
         self.get(story_id, asset_id)
+        asset = self.get(story_id, asset_id)
+        expression = form.expression if form.expression is not None else asset["expression"]
+        pose = validate_pose(form.pose) if form.pose is not None else asset["pose"]
+        if asset["kind"] != "foreground" and (expression != "neutral" or pose != "standing"):
+            raise ValueError("Solo los sprites admiten expresiones y poses")
         with self.store._conn() as db:
-            db.execute("UPDATE creator_media_assets SET label=?,caption=? "
+            db.execute("UPDATE creator_media_assets "
+                       "SET label=?,caption=?,expression=?,pose=? "
                        "WHERE story_id=? AND id=?",
-                       (form.label.strip(), form.caption.strip(), story_id, asset_id))
+                       (form.label.strip(), form.caption.strip(), expression, pose,
+                        story_id, asset_id))
         return next(row for row in self.list(story_id) if row["id"] == asset_id)
 
     def set_cover(self, story_id: str, asset_id: str | None) -> dict:
@@ -247,34 +322,96 @@ class CreatorMediaService:
                      "X-Content-Type-Options": "nosniff"})
 
     def presentation(self, story_id: str) -> dict:
+        """Compose a saved background and up to three named transparent sprites.
+
+        Eligibility is determined by *completed, visible* narration only.
+        A sprite variant is selected by explicit character mention plus a
+        local expression hint, with neutral fallback. No inference or assets
+        are created, so repeated turns reuse the same PNG bytes.
+        """
         assets = self.list(story_id)
         turns = self.narrative.turns(story_id, limit=1)
         latest = turns[-1]["assistant_text"] if turns else ""
         scene = self.narrative.visual.scene(story_id)
         context = (scene["location"] + "\n" + latest)[:9000]
-        selected: dict[str, dict | None] = {}
-        # A linked NPC portrait should never show up just because a place
-        # happened to contain the caption words. That character must actually
-        # be mentioned in the saved narration.
         with self.store._conn() as db:
             linked = {
                 row["id"]: json.loads(row["config_json"]).get("name", "")
-                for row in db.execute("SELECT id,config_json FROM creator_characters WHERE story_id=?",
-                                      (story_id,))
+                for row in db.execute(
+                    "SELECT id,config_json FROM creator_characters WHERE story_id=?",
+                    (story_id,))
             }
-        for kind in ("background", "foreground"):
-            eligible = [asset for asset in assets if asset["kind"] == kind and
-                        (not asset["character_id"] or
-                         bool(re.search(r"(?<!\w)" +
-                             re.escape(linked.get(asset["character_id"], "\x00")) +
-                             r"(?!\w)", latest, re.IGNORECASE)))]
-            matches = [(asset, _score(asset["caption"], context)) for asset in eligible]
-            matches = [(asset, score) for asset, score in matches if score > 0]
-            matches.sort(key=lambda pair: (pair[1], pair[0]["created_at"]), reverse=True)
-            selected[kind] = matches[0][0] if matches else None
+
+        background_matches = [
+            (asset, _score(asset["caption"], context)) for asset in assets
+            if asset["kind"] == "background"
+        ]
+        background_matches = [
+            (asset, score) for asset, score in background_matches if score > 0
+        ]
+        background_matches.sort(
+            key=lambda item: (item[1], item[0]["created_at"], item[0]["id"]),
+            reverse=True)
+        background = background_matches[0][0] if background_matches else None
+
+        # A unique cast per scene avoids stacking different poses of the
+        # same person. Order is based on latest mentioned names, not gallery
+        # upload order. A name mentioned only in an internal Creator field
+        # is never enough to expose a sprite to the reader.
+        mentions = []
+        for character_id, name in linked.items():
+            if not name:
+                continue
+            occurrences = list(re.finditer(
+                r"(?<!\w)" + re.escape(name) + r"(?!\w)", latest,
+                re.IGNORECASE))
+            if occurrences:
+                mentions.append((occurrences[-1].start(), character_id, name))
+        mentions.sort(key=lambda row: row[0], reverse=True)
+        speaker_character_id = mentions[0][1] if mentions else None
+        sprites: list[dict] = []
+
+        for _, character_id, name in mentions:
+            options = [asset for asset in assets if asset["kind"] == "foreground"
+                       and asset["character_id"] == character_id]
+            wanted = _expression_in_text(latest, name, linked.values())
+            scored = [(asset, _score(asset["caption"], context))
+                      for asset in options if asset["expression"] in {wanted, "neutral"}]
+            scored = [(asset, score) for asset, score in scored if score > 0]
+            if not scored:
+                continue
+            scored.sort(key=lambda item: (
+                item[0]["expression"] == wanted, item[1],
+                item[0]["pose"] == "standing", item[0]["created_at"], item[0]["id"]),
+                reverse=True)
+            chosen = dict(scored[0][0])
+            chosen["expression_target"] = wanted
+            chosen["speaker"] = character_id == speaker_character_id
+            sprites.append(chosen)
+            if len(sprites) >= 3:
+                break
+
+        # Legacy unlinked foreground assets may still be used as one generic
+        # illustration, but never displace more than one explicitly named NPC.
+        if not sprites:
+            unlinked = [(asset, _score(asset["caption"], context))
+                        for asset in assets if asset["kind"] == "foreground"
+                        and asset["character_id"] is None]
+            unlinked = [(asset, score) for asset, score in unlinked if score > 0]
+            unlinked.sort(key=lambda item: (item[1], item[0]["created_at"]),
+                          reverse=True)
+            if unlinked:
+                sprites.append({**unlinked[0][0],
+                                "expression_target": "neutral", "speaker": True})
+
         return {
-            "background": selected["background"], "foreground": selected["foreground"],
-            "selection": "caption_match" if any(selected.values()) else "no_match",
+            "background": background,
+            "foreground": sprites[0] if sprites else None,  # v1 clients
+            "sprites": sprites,
+            "speaker_character_id": (speaker_character_id
+                                     if any(asset["character_id"] == speaker_character_id
+                                            for asset in sprites) else None),
+            "selection": "caption_match" if background or sprites else "no_match",
             "context_excerpt": scene["location"],
             "generated": False,
         }
@@ -373,11 +510,12 @@ class CreatorMediaService:
                 row = remap(asset)
                 db.execute(
                     "INSERT INTO creator_media_assets "
-                    "(id,story_id,kind,label,caption,character_id,filename,media_type,created_at) "
-                    "VALUES (?,?,?,?,?,?,?,?,?)",
+                    "(id,story_id,kind,label,caption,character_id,filename,media_type,"
+                    "created_at,expression,pose) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                     (row["id"], row["story_id"], row["kind"], row["label"],
                      row["caption"], row["character_id"], row["filename"],
-                     row["media_type"], time.time())
+                     row["media_type"], time.time(),
+                     row.get("expression", "neutral"), row.get("pose", "standing"))
                 )
             if chosen_cover and chosen_cover in {item["id"] for item in active}:
                 db.execute("UPDATE stories SET cover_asset_id=? WHERE id=?",
@@ -401,6 +539,8 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
     async def upload_asset(story_id: uuid.UUID, kind: Literal["cover", "background", "foreground"] = Form(...),
                            label: str = Form(...), caption: str = Form(...),
                            character_id: uuid.UUID | None = Form(None),
+                           expression: Literal["neutral", "joy", "anger", "sadness", "surprise"] = Form("neutral"),
+                           pose: str = Form("standing"),
                            file: UploadFile = File(...)):
         if file.content_type not in {"image/png", "image/jpeg", "image/webp"}:
             raise HTTPException(415, "Solo PNG, JPEG o WebP")
@@ -409,7 +549,8 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
             raise HTTPException(413, "Archivo superior a 12 MiB")
         try:
             return media.add(str(story_id), kind, label, caption, data,
-                             str(character_id) if character_id else None)
+                             str(character_id) if character_id else None,
+                             expression=expression, pose=pose)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 

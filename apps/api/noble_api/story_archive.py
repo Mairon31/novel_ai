@@ -246,7 +246,16 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                 if total_rows > MAX_ROWS:
                     raise ValueError("Demasiadas filas en respaldo")
                 for record in records:
-                    if not isinstance(record, dict) or set(record) != columns:
+                    if not isinstance(record, dict):
+                        raise ValueError("Columnas ajenas o incompatibles en " + table)
+                    # Schema extension in v1: old exported media rows predate
+                    # sprite expressions and poses. Only these two explicitly
+                    # defaultable columns may be absent; never ignore unknowns.
+                    if (table == "creator_media_assets"
+                            and set(record) == columns - {"expression", "pose"}):
+                        record["expression"] = "neutral"
+                        record["pose"] = "standing"
+                    if set(record) != columns:
                         raise ValueError("Columnas ajenas o incompatibles en " + table)
                     if table != "stories":
                         if record.get("story_id") not in allowed:

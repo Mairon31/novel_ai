@@ -1273,3 +1273,64 @@
 .noble-director-result p{line-height:1.65}
 .noble-director-result small{display:block;margin:8px 0 12px;color:#aab8d9;font-size:10px;line-height:1.8;overflow-wrap:anywhere}
 .noble-director-result .secondary-button{margin-top:8px}
+
+/* VN stage v2: existing PNG sprites, three stable slots and non-destructive transitions.
+   This never generates sprites: Creator Studio imports transparent PNG originals. */
+.noble-scene-art .noble-scene-background {
+  position:absolute;inset:0;z-index:0;
+  background-size:cover;background-position:center 30%;background-color:#252b45;
+  animation:noble-vn-background-enter .5s ease-out both;
+}
+@keyframes noble-vn-background-enter {
+  from { opacity:0;transform:scale(1.025) } to { opacity:1;transform:scale(1) }
+}
+.noble-sprite-stage{position:absolute;inset:0;z-index:2;pointer-events:none}
+.noble-sprite-stage .noble-character-sprite{
+  position:absolute;bottom:110px;top:auto;left:50%;right:auto;
+  transform:translateX(-50%);height:62%;width:80%;object-fit:contain;
+  object-position:center bottom;filter:brightness(.76) drop-shadow(0 12px 24px #050514a8);
+  transition:filter .24s ease,opacity .24s ease;animation:noble-vn-sprite-enter .35s ease both;
+}
+@keyframes noble-vn-sprite-enter {
+  from{opacity:0}to{opacity:1}
+}
+.noble-sprite-stage .noble-character-sprite.is-speaker{
+  filter:brightness(1.13) drop-shadow(0 14px 24px #050514c9);
+}
+.noble-sprite-stage[data-sprite-count="2"] .noble-sprite-slot-0{left:30%;width:57%}
+.noble-sprite-stage[data-sprite-count="2"] .noble-sprite-slot-1{left:71%;width:57%}
+.noble-sprite-stage[data-sprite-count="3"] .noble-sprite-slot-0{left:19%;width:50%}
+.noble-sprite-stage[data-sprite-count="3"] .noble-sprite-slot-1{left:50%;width:50%}
+.noble-sprite-stage[data-sprite-count="3"] .noble-sprite-slot-2{left:81%;width:50%}
+.noble-scene-art .noble-scene-bottom{
+  position:absolute;top:12px;bottom:auto;left:0;right:0;
+  z-index:4;padding:14px 15px;
+  background:linear-gradient(180deg,#080b1bda,transparent);
+}
+.noble-scene-art .noble-scene-bottom h3{font-size:clamp(14px,1.7vw,21px);margin:5px 0}
+.noble-scene-art .noble-scene-bottom p{margin:5px 0}
+.noble-scene-art .noble-scene-wash{z-index:1}
+.noble-vn-subtitle{
+  position:absolute;bottom:13px;left:12px;right:12px;z-index:4;
+  padding:11px 14px;border-radius:11px;background:#101428e8;
+  border:1px solid #8a7abb7d;box-shadow:0 15px 38px #0009;
+  backdrop-filter:blur(8px);max-height:104px;overflow:hidden;
+}
+.noble-vn-subtitle strong{
+  color:#e3caff;font-size:11px;letter-spacing:.35px;display:block;margin-bottom:5px;
+}
+.noble-vn-subtitle p{
+  color:#eef0fa;font-size:11px;line-height:1.5;margin:0;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+}
+:root[data-noble-reader-layout="classic"] .noble-vn-subtitle,
+:root[data-noble-reader-layout="chat"] .noble-vn-subtitle{display:none}
+@media(max-width:850px){
+  .noble-sprite-stage .noble-character-sprite{bottom:112px;height:62%}
+  .noble-vn-subtitle{bottom:8px;left:8px;right:8px}
+  .noble-scene-art .noble-scene-bottom{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .noble-scene-art .noble-scene-background,
+  .noble-sprite-stage .noble-character-sprite{animation:none;transition:none}
+}

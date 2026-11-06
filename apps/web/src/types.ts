@@ -337,13 +337,20 @@ export type LorebookPreview = {
   skipped_budget: number; skipped_visibility: number;
 };
 
+export type SpriteExpression = 'neutral' | 'joy' | 'anger' | 'sadness' | 'surprise';
 export type CreatorMediaAsset = {
   id: string; story_id: string; kind: 'cover' | 'background' | 'foreground';
   label: string; caption: string; character_id: string | null;
+  expression: SpriteExpression; pose: string;
   filename: string; media_type: string; created_at: number; url: string;
 };
+export type SceneSprite = CreatorMediaAsset & {
+  expression_target: SpriteExpression;
+  speaker: boolean;
+};
 export type ScenePresentation = {
-  background: CreatorMediaAsset | null; foreground: CreatorMediaAsset | null;
+  background: CreatorMediaAsset | null; foreground: SceneSprite | null;
+  sprites: SceneSprite[]; speaker_character_id: string | null;
   selection: 'caption_match' | 'no_match'; context_excerpt: string; generated: false;
 };
 

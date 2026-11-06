@@ -7,7 +7,7 @@ import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter,
-  CreatorCharacterDraft, CreatorMediaAsset, LorebookEntry, LorebookEntryDraft, LorebookPreview,
+  CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
 type Section = 'story' | 'cast' | 'lorebook' | 'world' | 'openings' | 'media';
@@ -54,6 +54,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [mediaLabel, setMediaLabel] = useState('');
   const [mediaCaption, setMediaCaption] = useState('');
   const [mediaCharacter, setMediaCharacter] = useState('');
+  const [mediaExpression, setMediaExpression] = useState<SpriteExpression>('neutral');
+  const [mediaPose, setMediaPose] = useState('standing');
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [editingAsset, setEditingAsset] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState('');
@@ -243,23 +245,30 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   function editAsset(asset: CreatorMediaAsset) {
     setEditingAsset(asset.id); setMediaKind(asset.kind);
     setMediaLabel(asset.label); setMediaCaption(asset.caption);
-    setMediaCharacter(asset.character_id || ''); setMediaFile(null);
+    setMediaCharacter(asset.character_id || '');
+    setMediaExpression(asset.expression); setMediaPose(asset.pose);
+    setMediaFile(null);
   }
   function resetMediaEditor() {
     setEditingAsset(null); setMediaLabel(''); setMediaCaption('');
-    setMediaCharacter(''); setMediaFile(null);
+    setMediaCharacter(''); setMediaExpression('neutral');
+    setMediaPose('standing'); setMediaFile(null);
   }
   async function saveMediaAsset() {
     if (!active || !mediaLabel.trim() || mediaCaption.trim().length < 3) return;
     setWorking(true); setError(''); setNotice('');
     try {
       if (editingAsset) {
-        await api.editCreatorAsset(active.id, editingAsset, mediaLabel.trim(), mediaCaption.trim());
+        await api.editCreatorAsset(active.id, editingAsset, mediaLabel.trim(),
+          mediaCaption.trim(), mediaKind === 'foreground' ? mediaExpression : undefined,
+          mediaKind === 'foreground' ? mediaPose.trim() : undefined);
       } else {
         if (!mediaFile) throw new Error('Selecciona un archivo de imagen.');
         const imported = await api.uploadCreatorAsset(active.id, {
           kind: mediaKind, label: mediaLabel.trim(), caption: mediaCaption.trim(),
           character_id: mediaKind === 'foreground' ? (mediaCharacter || undefined) : undefined,
+          expression: mediaKind === 'foreground' ? mediaExpression : undefined,
+          pose: mediaKind === 'foreground' ? mediaPose.trim() : undefined,
           file: mediaFile,
         });
         if (mediaKind === 'cover') rememberStory(await api.setStoryCover(active.id, imported.id));
@@ -402,6 +411,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       asset.kind === 'background' ? 'FONDO' : 'PRIMER PLANO'}
                       {asset.id === active.cover_asset_id ? ' · ACTUAL' : ''}</small>
                     <strong>{asset.label}</strong><p>{asset.caption}</p>
+                    {asset.kind === 'foreground' && <small>
+                      Expresión: {asset.expression} · Pose: {asset.pose}
+                    </small>}
                     <div>
                       {asset.kind === 'cover' && asset.id !== active.cover_asset_id &&
                         <button className="secondary-button" disabled={working}
@@ -438,6 +450,23 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>}
                 </div>}
+                {mediaKind === 'foreground' && <div className="creator-double">
+                  <label>Expresión de sprite
+                    <select aria-label="Expresión de sprite" value={mediaExpression}
+                      onChange={e => setMediaExpression(e.target.value as SpriteExpression)}>
+                      <option value="neutral">Neutral</option>
+                      <option value="joy">Alegría</option>
+                      <option value="anger">Enojo</option>
+                      <option value="sadness">Tristeza</option>
+                      <option value="surprise">Sorpresa</option>
+                    </select>
+                  </label>
+                  <label>Pose (identificador)
+                    <input aria-label="Pose de sprite" maxLength={32} value={mediaPose}
+                      onChange={e => setMediaPose(e.target.value)}
+                      placeholder="standing, sitting, waving..."/>
+                  </label>
+                </div>}
                 <label>Nombre
                   <input aria-label="Nombre de imagen" maxLength={100} value={mediaLabel}
                     placeholder="Salón del trono, Aira sonriendo..."
@@ -461,7 +490,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </label>}
                 <div className="creator-actions">
                   <button className="primary-button" disabled={working || !mediaLabel.trim() ||
-                    mediaCaption.trim().length < 3 || (!editingAsset && !mediaFile)}
+                    mediaCaption.trim().length < 3 ||
+                    (mediaKind === 'foreground' && !/^[a-z0-9_-]{1,32}$/.test(mediaPose.trim().toLowerCase())) ||
+                    (!editingAsset && !mediaFile)}
                     onClick={() => void saveMediaAsset()}><UploadCloud size={16}/>
                     {editingAsset ? 'Guardar descripción' : 'Importar imagen'}</button>
                   {editingAsset && <button className="secondary-button"

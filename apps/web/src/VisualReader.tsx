@@ -506,15 +506,31 @@ export function VisualReader({
       {hudHidden ? <Eye size={17}/> : <EyeOff size={17}/>}
     </button>
     <aside className={'noble-scene-panel ' + (displayedBackground ? 'has-art' : '')}>
-      <div className="noble-scene-art"
-        style={displayedBackground ? { backgroundImage: 'url("' + displayedBackground + '")' } : undefined}>
+      <div className="noble-scene-art">
+        {displayedBackground && <div key={displayedBackground}
+          className="noble-scene-background" aria-hidden="true"
+          style={{ backgroundImage: 'url("' + displayedBackground + '")' }}/>}
         <div className="noble-scene-wash"/>
-        {sceneMedia?.foreground && <img className="noble-character-sprite"
-          src={sceneMedia.foreground.url}
-          alt={'Personaje presente: ' + sceneMedia.foreground.label}/>}
+        {Boolean(sceneMedia?.sprites.length) && <div className="noble-sprite-stage"
+          data-sprite-count={sceneMedia?.sprites.length}>
+          {sceneMedia?.sprites.map((sprite, index) => <img key={sprite.id}
+            className={'noble-character-sprite noble-sprite-slot-' + index +
+              (sprite.speaker ? ' is-speaker' : ' is-bystander')}
+            data-expression={sprite.expression}
+            data-pose={sprite.pose}
+            data-speaker={sprite.speaker ? 'true' : 'false'}
+            src={sprite.url}
+            alt={'Personaje presente: ' + sprite.label +
+              ' · emoción ' + sprite.expression + ' · pose ' + sprite.pose}/>)}
+        </div>}
         {!displayedBackground && <div className="noble-scene-empty">
           <Image size={34}/><strong>Tu escena, tu mundo</strong>
           <p>Agrega una ilustración para acompañar la lectura.</p>
+        </div>}
+        {turns.length > 0 && <div className="noble-vn-subtitle" role="note"
+          aria-label="Última intervención de la escena">
+          <strong>{sceneMedia?.sprites.find(person => person.speaker)?.label || 'Narrador'}</strong>
+          <p>{turns[turns.length - 1].assistant_text.slice(-320)}</p>
         </div>}
         <div className="noble-scene-bottom">
           <span className="overline">NOBLE VISUAL NOVEL</span>

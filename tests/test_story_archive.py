@@ -401,6 +401,50 @@ class StoryArchiveTests(unittest.TestCase):
         self.assertEqual(self.dest.state.visual_director.preview(
             self.root_id)["background_asset_id"], asset)
 
+    def test_legacy_backup_without_sprite_columns_imports_with_safe_defaults(self):
+        self.setup_family(art=False)
+        npc = self.a.post(f"/api/v1/stories/{self.root_id}/creator/characters",
+            json={"name": "Aira",
+                  "description": "Aira vive junto al faro de esta historia."})
+        self.assertEqual(npc.status_code, 201, npc.text)
+        portrait = self.a.post(
+            f"/api/v1/stories/{self.root_id}/creator/assets",
+            data={"kind": "foreground", "label": "Retrato antiguo",
+                  "caption": "Aira en el faro",
+                  "character_id": npc.json()["id"]},
+            files={"file": ("aira.png", picture((90, 110, 160)), "image/png")})
+        self.assertEqual(portrait.status_code, 201, portrait.text)
+        raw = self.export()
+
+        def legacy(entries):
+            output = []
+            for path, data in entries:
+                if path == "manifest.json":
+                    manifest = json.loads(data)
+                    for record in manifest["tables"]["creator_media_assets"]:
+                        record.pop("expression", None)
+                        record.pop("pose", None)
+                    for checkpoint in manifest["tables"]["creator_media_turn_snapshots"]:
+                        old_assets = json.loads(checkpoint["assets_json"])
+                        for asset in old_assets:
+                            asset.pop("expression", None)
+                            asset.pop("pose", None)
+                        checkpoint["assets_json"] = json.dumps(old_assets)
+                    data = json.dumps(manifest).encode("utf-8")
+                output.append((path, data))
+            return output
+
+        imported = self.restore(repack(raw, legacy))
+        self.assertEqual(imported.status_code, 201, imported.text)
+        media = self.b.get(
+            f"/api/v1/stories/{self.root_id}/creator/assets").json()["assets"]
+        self.assertEqual(len(media), 1)
+        self.assertEqual(media[0]["expression"], "neutral")
+        self.assertEqual(media[0]["pose"], "standing")
+        self.assertEqual(self.b.get(media[0]["url"]).status_code, 200)
+        self.assertEqual(self.restore(repack(raw, legacy),
+                                      self.a, as_copy=True).status_code, 201)
+
     def test_unknown_story_missing_zip_and_invalid_extension(self):
         self.assertEqual(self.a.get(f"/api/v1/stories/{uuid.uuid4()}/archive.noble.zip").status_code, 404)
         missing = self.restore(b"not a zip")
