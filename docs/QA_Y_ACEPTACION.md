@@ -307,3 +307,7 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 ### Seguridad de transporte ComfyUI
 
 `tests/test_comfy_runtime.py` cubre un render válido y rechazo de IDs de trabajo con slash/consulta/traversal, nombres de imagen con segmentos extraños, `subfolder` no autorizado y salida que no es `output`. Los errores deben producir 502 y jamás invocar `/history` o `/view` sobre rutas inesperadas. Esta verificación aplica tanto a escenas como a borradores de sprites.
+
+### Resultado verificable de generación IA bajo revisión
+
+[CI #42152514498](https://github.com/Mairon31/novel_ai/actions/runs/42152514498), commit `c3b6d1e`: **283 Python y 64 Playwright PASS, Vite build PASS**; incluye el generador, UI desktop/móvil y procedencia de assets ante fork/restauración/backup malicioso. El test del proveedor HTTP no valida calidad artística en GPU. El endurecimiento posterior del protocolo ComfyUI suma tres escenarios Python adicionales; verificar por separado la gate final antes de incrementar el total oficial.

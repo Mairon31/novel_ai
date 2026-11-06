@@ -33,3 +33,7 @@ La CI usa transporte ComfyUI simulado, Pillow para pruebas de transparencia, SQL
 ### Endurecimiento del protocolo de difusión
 
 Los nombres/ID recibidos de ComfyUI se validan antes de componer rutas `/history` o consultas `/view`. La plantilla propia de `SaveImage` no necesita subcarpetas, por lo que se rechazan respuestas con rutas arbitrarias. El archivo se obtiene únicamente por HTTP desde el loopback configurado; no hay lectura local de rutas indicadas por el proveedor.
+
+### Resultado de aceptación de esta versión
+
+[GitHub Actions #42152514498](https://github.com/Mairon31/novel_ai/actions/runs/42152514498): 283/283 pruebas Python y 64/64 Playwright (desktop/móvil) aprobadas, además de build Vite. La ejecución utiliza un proveedor ComfyUI simulado; no hay validación física de generación o extracción de fondos en una GPU.
