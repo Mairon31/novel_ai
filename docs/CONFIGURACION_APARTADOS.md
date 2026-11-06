@@ -1,6 +1,6 @@
 # Configuración de Noble AI — cuatro apartados independientes
 
-**Estado:** implementación UI publicada directamente en `master` el 6 de noviembre de 2026. Pruebas automatizadas en curso. Seguimiento: [N-25 en TODO](../TODO.md).
+**Estado:** implementación UI publicada directamente en `master` el 6 de noviembre de 2026 y verificada en [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131): 381 Python / 80 Playwright / Vite PASS. Seguimiento: [N-25 en TODO](../TODO.md).
 
 ## Navegación
 
@@ -32,3 +32,9 @@ Se conserva `#/configuracion` para el resumen de ajustes y `#/configuracion/mult
 - Test principal: `apps/web/tests/settings-separation.spec.ts`, además de `app.spec.ts`, `multimedia.spec.ts`, `tts-preferences.spec.ts` y `piper-installer.spec.ts`.
 
 **Pendiente N-21:** ampliar las configuraciones internas de imagen y voz por modelo, además de otros motores TTS. La separación N-25 no equivale a completar N-21.
+
+## Evidencia de implementación
+
+La suite genera **capturas de los cuatro apartados para escritorio y móvil** en `test-results/` como artefacto de GitHub Actions. La prueba `settings-separation.spec.ts` valida rutas persistentes, navegador Atrás, compatibilidad `/multimedia`, aislamiento de APIs imagen/voz y ausencia de descargas automáticas al abrir ajustes. `multimedia.spec.ts`, `tts-preferences.spec.ts` y `piper-installer.spec.ts` confirman que siguen operativos los controles anteriores. [Run #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131).
+
+La revisión visual manual de las capturas sigue disponible para mejoras de estética; no se confunde con validación de motores reales en GPU.

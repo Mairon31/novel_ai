@@ -888,10 +888,10 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] **No se modificó el código de la UI** ni se crearon pantallas nuevas. Pendiente N-25 y pruebas de navegación/guardado desktop+móvil. No marcar como implementación.
 
 
-## 2026-11-06 · Implementación real N-25 — configuración separada (CI pendiente)
+## 2026-11-06 · Implementación real N-25 — configuración separada (CI verificada)
 
 - [x] Refactor del panel multimedia a `ImageSettingsPanel.tsx` y `VoiceSettingsPanel.tsx`: carga independiente de API, guardado y diagnóstico ComfyUI/GPU frente a catálogo, preferencias y prueba Piper. Eliminado `CreativeSettings.tsx` combinado.
 - [x] `WorkspaceSettings.tsx` ofrece cuatro destinos separados: Imágenes, Voz / TTS, Acerca de Noble AI y Actualizaciones. Los dos últimos tienen ahora sus propios componentes independientes, y las consultas de releases ocurren en Actualizaciones.
 - [x] URLs directas `#/configuracion/images`, `/voice`, `/about` y `/updates`, soporte de recarga/atrás/adelante y enlace heredado `/multimedia` que abre Imágenes; no se alteraron preferencias SQLite, API ni motores.
 - [x] Tests antiguos de imágenes, Piper y Ajustes migrados; nuevo `settings-separation.spec.ts` con validación de cuatro pantallas, APIs aisladas, recarga, navegación e interfaz móvil/escritorio. Corregidos selectores ambiguos detectados por CI intermedia.
-- [ ] **No cerrar N-25 hasta que el CI más reciente pase en su totalidad**. Falta comprobación visual subjetiva con capturas fuera de mock cuando esté disponible el entorno real.
+- [x] **N-25 cerrado en código y CI:** [run #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131) con **381/381 Python + 80/80 Playwright** desktop/móvil y Vite PASS, incluyendo capturas de Imágenes, Voz, Acerca y Actualizaciones y pruebas de deep link/aislamiento API. Las pruebas de navegador usan API local, pero no incluyen revisión humana de capturas ni instalaciones físicas GPU/Piper (pendientes N-21/N-24).
