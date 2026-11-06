@@ -204,6 +204,14 @@ class ComfySceneTests(unittest.TestCase):
         self.assertFalse(first.json()["cached"])
         self.assertNotEqual(first.json()["asset_id"], plain.json()["asset_id"])
         self.assertEqual(first.json()["applied_loras"][0]["lora_name"], "aira.safetensors")
+        archive = self.client.get(f"/api/v1/stories/{self.story}/visual-state")
+        self.assertEqual(archive.status_code, 200, archive.text)
+        rendered = next(item for item in archive.json()["assets"]
+                        if item["id"] == first.json()["asset_id"])
+        self.assertEqual(rendered["render_details"]["workflow_version"],
+                         "comfy-native-v3-lora")
+        self.assertEqual(rendered["render_details"]["loras"],
+                         first.json()["applied_loras"])
         self.assertEqual(self.fixture.last_workflow["10"]["class_type"], "LoraLoader")
         self.assertEqual(self.fixture.last_workflow["10"]["inputs"], {
             "model": ["1", 0], "clip": ["1", 1],
