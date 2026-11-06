@@ -55,3 +55,33 @@ test('story-first bundled hub installs an independent playable world without a m
     expect(turnsData.turns[0].model).toBe('inicio-del-creador');
     expect(turnsData.turns[0].assistant_text).toContain('Sara');
   });
+
+
+test('Discover Stories has its own shareable route and installs into the library',
+  async ({ page }) => {
+    await page.goto('/#/descubrir');
+    await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+    const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+    if (await welcome.isVisible())
+      await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await expect(page).toHaveURL(/#\/descubrir$/);
+    await expect(page.getByRole('region', { name: 'Catálogo de historias' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Historias para jugar' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('region', { name: 'Catálogo de historias' })).toBeVisible();
+    const hub = page.getByRole('region', { name: 'Descubrir historias para jugar' });
+    await hub.getByRole('button', { name: 'Ver historia El jardín de las horas rotas' }).click();
+    const installed = page.waitForResponse(r =>
+      r.url().includes('/api/v1/story-hub/jardin-mecanico/install') &&
+      r.request().method() === 'POST');
+    await hub.getByRole('button', { name: 'Añadir a mi biblioteca' }).click();
+    const reply = await installed;
+    expect(reply.status()).toBe(201);
+    const data = await reply.json() as { story: { id: string } };
+    await expect(page).toHaveURL(new RegExp('#/historia/' + data.story.id + '$'));
+    await expect(page.getByRole('region', { name: 'Detalle de El jardín de las horas rotas' }))
+      .toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Elige cómo empieza la historia' }))
+      .toBeVisible();
+  });
