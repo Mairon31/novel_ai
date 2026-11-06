@@ -282,6 +282,13 @@ def ensure_ollama(data_root: Path, requested: str,
     model = model_for_vram(requested, vram_mb)
     if not shutil.which("ollama"):
         say("OLLAMA", "Instalando el runtime desde el instalador oficial.")
+        # Current official Linux archives prefer zstd; a fresh Colab image may
+        # not ship the decompressor and the upstream installer then exits.
+        if not shutil.which("zstd"):
+            shell(["apt-get", "update", "-qq"], log_name="ollama-apt-update",
+                  timeout=420)
+            shell(["apt-get", "install", "-y", "zstd"],
+                  log_name="ollama-zstd", timeout=420)
         script = BASE / "ollama-install.sh"
         with request.urlopen(OLLAMA_INSTALL_URL, timeout=30) as response:
             script.write_bytes(response.read(90_000))
@@ -520,7 +527,12 @@ def display_colab_ui(port: int = NOBLE_PORT) -> None:
         from google.colab import output
         from IPython.display import HTML, display
         from html import escape
-        # This is the session-scoped, authenticated Colab kernel port proxy.
+    except ImportError:
+        say("ACCESO", "Abre este notebook en Google Colab para acceder a la UI.")
+        return
+    try:
+        # A top-level link uses the notebook-authenticated kernel proxy and
+        # can work when third-party cookies block embedded frames.
         url = output.eval_js("google.colab.kernel.proxyPort(" + str(port) + ")")
         if not isinstance(url, str) or not url.startswith("https://"):
             raise ValueError("Colab no devolvió una URL de proxy")
@@ -529,11 +541,17 @@ def display_colab_ui(port: int = NOBLE_PORT) -> None:
             escape(url, quote=True) +
             '">Abrir Noble AI en una pestaña</a></p>'
             '<p>También puedes usar la aplicación dentro del notebook:</p>'))
+    except Exception as exc:
+        say("ACCESO", "Enlace en pestaña no disponible: " +
+            type(exc).__name__ + ". Intentando vista incrustada.")
+    # The iframe is independent: an unavailable top-level proxy link must
+    # not prevent using the application inside the same Colab notebook.
+    try:
         output.serve_kernel_port_as_iframe(port, height="840px")
-        say("ACCESO", "Enlace mostrado. Solo funciona mientras Colab siga conectado.")
-    except (ImportError, ValueError, RuntimeError) as exc:
-        say("ACCESO", "No se pudo mostrar proxy Colab: " + str(exc)[:150])
-        say("ACCESO", "Comprueba que abriste el archivo en colab.research.google.com")
+        say("ACCESO", "Vista del lector disponible mientras Colab esté conectado.")
+    except Exception as exc:
+        say("ACCESO", "No se pudo abrir el iframe: " + type(exc).__name__)
+        say("ACCESO", "Revisa los permisos de cookies de Colab y vuelve a abrir el notebook.")
 
 
 def launch(args) -> dict:
