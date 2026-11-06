@@ -54,6 +54,11 @@ def transparent_sprite(data: bytes) -> tuple[bytes, dict]:
         if green_ratio < 0.9:
             raise ValueError(
                 "Fondo no uniforme: genera un personaje aislado sobre verde sólido")
+        # Check *before* MinFilter/GaussianBlur: filtering can erase a
+        # one-pixel contact and falsely make a clipped figure appear valid.
+        if green_ratio < 1.0:
+            raise ValueError(
+                "El recorte no es fiable: la silueta toca el borde del lienzo")
         visited = bytearray(width * height)
         background = bytearray(width * height)
         queue = deque()
