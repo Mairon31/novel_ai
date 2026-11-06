@@ -134,6 +134,11 @@ class ScenePlanner:
                          f"{row['distinguishing_features']}" for row in cast)
         else:
             lines.append("No se indican personajes presentes.")
+        identity = self.visual.creator_visual_identity_lines(
+            story_id, prompt, {row["id"] for row in cast})
+        if identity:
+            lines.append("Etiquetas de identidad visual del creador:")
+            lines.extend(identity)
         lines.append("Solicitud visual: " + prompt.strip())
         return "\n".join(lines)
 

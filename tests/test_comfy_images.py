@@ -108,6 +108,42 @@ class ComfySceneTests(unittest.TestCase):
         self.client.get(f"/api/v1/stories/{self.story}")
         self.assertEqual(len([r for r in self.fixture.requests if r.url.path == "/prompt"]), 1)
 
+    def test_creator_visual_tags_reach_explicit_comfy_prompt_and_invalidate_cache(self):
+        self.setup_comfy()
+        uri = f"/api/v1/stories/{self.story}"
+        body = {"prompt": "Un castillo al anochecer con Aira", "seed": 9876}
+        first = self.client.post(uri + "/illustrate", json=body)
+        self.assertEqual(first.status_code, 200, first.text)
+        previous = first.json()["asset_id"]
+        self.assertNotIn("cabello plateado", self.fixture.last_workflow["2"]["inputs"]["text"])
+        creator = self.client.post(uri + "/creator/characters", json={
+            "name": "Aira",
+            "description": "Guardiana de las puertas de cristal del castillo.",
+            "visual_dna": {"tags": ["cabello plateado", "ojos ámbar"],
+                           "seed": 345, "lora_name": "aira.safetensors"},
+        })
+        self.assertEqual(creator.status_code, 201, creator.text)
+        # Preview and rendering use the same canonical prompt enrichment.
+        preview = self.client.post(uri + "/illustration-prompt",
+                                   json={"prompt": body["prompt"]})
+        self.assertEqual(preview.status_code, 200, preview.text)
+        self.assertIn("cabello plateado", preview.json()["prompt"])
+        self.assertNotIn("aira.safetensors", preview.json()["prompt"])
+        second = self.client.post(uri + "/illustrate", json=body)
+        self.assertEqual(second.status_code, 200, second.text)
+        self.assertNotEqual(previous, second.json()["asset_id"])
+        self.assertFalse(second.json()["cached"])
+        prompt = self.fixture.last_workflow["2"]["inputs"]["text"]
+        self.assertIn("cabello plateado", prompt)
+        self.assertIn("ojos ámbar", prompt)
+        self.assertNotIn("aira.safetensors", prompt)
+        self.assertEqual(self.fixture.last_workflow["5"]["inputs"]["seed"], 9876)
+        replay = self.client.post(uri + "/illustrate", json=body)
+        self.assertTrue(replay.json()["cached"])
+        self.assertEqual(replay.json()["asset_id"], second.json()["asset_id"])
+        self.assertEqual(len([request for request in self.fixture.requests
+                              if request.url.path == "/prompt"]), 2)
+
     def test_invalid_or_offline_provider_does_not_replace_previous_art(self):
         self.setup_comfy()
         good = self.client.post(f"/api/v1/stories/{self.story}/illustrate",

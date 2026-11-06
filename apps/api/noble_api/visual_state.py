@@ -328,6 +328,52 @@ class VisualState:
             return dict(db.execute("""SELECT * FROM visual_characters
                 WHERE story_id=? AND id=?""", (story_id, character_id)).fetchone())
 
+    def creator_visual_identity_lines(
+        self, story_id: str, prompt: str,
+        selected_visual_ids: set[str] | None = None,
+    ) -> list[str]:
+        """Read only owned canonical visual tags for on-screen characters.
+
+        Without a saved visual cast, require an exact NPC name in the requested
+        prompt. With a cast, require an explicit Creator-to-Visual ID link;
+        text-only name matches must not override a creator's visible cast.
+        Seeds and optional LoRA filenames are *not* sent to the text encoder.
+        """
+        self.scene(story_id)
+        with self.store._conn() as db:
+            creators = [json.loads(row["config_json"]) for row in db.execute(
+                "SELECT config_json FROM creator_characters WHERE story_id=? "
+                "ORDER BY created_at,id", (story_id,)
+            )]
+        names = [str(npc.get("name", "")).casefold() for npc in creators]
+        ambiguous = {name for name in names if name and names.count(name) > 1}
+        lines: list[str] = []
+        for npc in creators:
+            name = npc.get("name")
+            if not isinstance(name, str) or not name or name.casefold() in ambiguous:
+                continue
+            if selected_visual_ids is None:
+                present = bool(re.search(
+                    r"(?<!\\w)" + re.escape(name) + r"(?!\\w)",
+                    prompt, re.IGNORECASE))
+            else:
+                present = npc.get("visual_character_id") in selected_visual_ids
+            if not present:
+                continue
+            dna = npc.get("visual_dna") or {}
+            if not isinstance(dna, dict):
+                continue
+            tags = dna.get("tags")
+            if not isinstance(tags, list):
+                continue
+            # Defensive: old archive records may predate current validation.
+            clean = [tag.strip() for tag in tags[:16]
+                     if isinstance(tag, str) and 2 <= len(tag.strip()) <= 64
+                     and all(ord(ch) >= 32 and ord(ch) != 127 for ch in tag)]
+            if clean:
+                lines.append(f"{name}: " + ", ".join(clean))
+        return lines
+
     def enriched_prompt(self, story_id: str, prompt: str) -> str:
         scene = self.scene(story_id)
         characters = self.characters(story_id)
@@ -341,10 +387,13 @@ class VisualState:
             appearance.append(
                 f"{row['name']}: {row['appearance']}; ropa: {row['outfit']}; "
                 f"rasgos: {row['distinguishing_features']}")
-        # No vision claim: this is text guidance, not IPAdapter or an identity lock.
+        identity = self.creator_visual_identity_lines(story_id, prompt)
+        # Textual guidance only, not IPAdapter, a LoRA loader or a face lock.
         return ("Escenario actual: " + scene["location"] + ".\n" +
                 ("Fichas visuales canónicas (mantener rasgos, no intercambiarlos):\n" +
                  "\n".join(appearance) + "\n" if appearance else "") +
+                ("Etiquetas de identidad visual del creador (solo NPC presentes):\n" +
+                 "\n".join(identity) + "\n" if identity else "") +
                 "Solicitud visual: " + prompt).strip()
 
     def all(self, story_id: str) -> dict:
