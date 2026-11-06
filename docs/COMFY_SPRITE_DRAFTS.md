@@ -29,3 +29,7 @@ La semilla es compartida entre expresiones, pero las cinco condiciones de expres
 ## QA
 
 La CI usa transporte ComfyUI simulado, Pillow para pruebas de transparencia, SQLite real y Playwright escritorio/móvil. No prueba un checkpoint físico, calidad visual real, continuidad facial ni la instalación de LoRA en la GPU. Ver `tests/test_sprite_cutout.py`, `tests/test_sprite_drafts.py`, `tests/test_sprite_provenance.py` y `apps/web/tests/sprite-drafts.spec.ts`.
+
+### Endurecimiento del protocolo de difusión
+
+Los nombres/ID recibidos de ComfyUI se validan antes de componer rutas `/history` o consultas `/view`. La plantilla propia de `SaveImage` no necesita subcarpetas, por lo que se rechazan respuestas con rutas arbitrarias. El archivo se obtiene únicamente por HTTP desde el loopback configurado; no hay lectura local de rutas indicadas por el proveedor.

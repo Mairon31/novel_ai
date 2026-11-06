@@ -303,3 +303,7 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - `apps/web/tests/sprite-drafts.spec.ts`: Creator Studio desktop/mobile con API real para crear borrador y proveedores simulados para generación; estado 0/5→5/5, cinco vistas previas, aprobación solo al completar y captura visual. La nueva etiqueta de pose se hizo inequívoca para evitar romper `creator-media.spec.ts`.
 - `tests/test_sprite_provenance.py`: `source=ai_reviewed` y `generation_json` en assets finales, supervivencia por fork, exportación/restauración/copia, compatibilidad de v1 anterior a las columnas y rechazo de JSON/rutas/inconsistencias manipuladas.
 - Sin validación física GPU: fondos verdes complejos, coherencia facial, artefactos en cabello, LoRA de checkpoint incompatible y resultados de segmentadores neuronales deben evaluarse en ComfyUI real. No se declara identidad garantizada.
+
+### Seguridad de transporte ComfyUI
+
+`tests/test_comfy_runtime.py` cubre un render válido y rechazo de IDs de trabajo con slash/consulta/traversal, nombres de imagen con segmentos extraños, `subfolder` no autorizado y salida que no es `output`. Los errores deben producir 502 y jamás invocar `/history` o `/view` sobre rutas inesperadas. Esta verificación aplica tanto a escenas como a borradores de sprites.
