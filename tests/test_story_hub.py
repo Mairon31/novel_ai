@@ -34,7 +34,7 @@ class StoryHubTests(unittest.TestCase):
         self.assertEqual(len(payload["packs"]), 3)
         for item in payload["packs"]:
             with self.subTest(item=item["id"]):
-                self.assertEqual(item["license"], "CC0-1.0")
+                self.assertEqual(item["license"], "Texto original incluido")
                 self.assertEqual(item["source"], "bundled-original")
                 self.assertEqual(item["language"], "es-419")
                 self.assertFalse(item["has_images"])
