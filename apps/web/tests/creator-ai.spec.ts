@@ -64,9 +64,9 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByText('El primer faro · Editar conocimiento').click();
   await page.getByLabel('Activadores Lorebook 1').fill('faro, luz antigua');
   await expect(page.getByLabel('Activadores Lorebook 1')).toHaveValue('faro, luz antigua');
-  await page.getByText('Aria · Editar ficha').click();
+  await page.getByText('Sara · Editar ficha').click();
   await page.getByLabel('Descripción NPC 1').fill(
-    'Aria conoce los antiguos pactos del puerto, guarda una llave y duda de su misión como guardiana.');
+    'Sara conoce los antiguos pactos del puerto, guarda una llave y duda de su misión como guardiana.');
   await page.getByLabel('Apertura generada 1').fill(
     '{{user}} llega al muelle y descubre la carta del farero. Una extraña silueta aparece frente a una campana al otro lado de la bahía.');
   await page.screenshot({
