@@ -325,6 +325,57 @@ def configure_narrative(model: str) -> None:
     say("NARRADOR", "Configurado: " + model)
 
 
+def ensure_demo_story() -> str | None:
+    """Provide one immediately playable example only in a new, empty library."""
+    base = "http://127.0.0.1:8000"
+    stories = json_request(base + "/api/v1/stories").get("stories")
+    if not isinstance(stories, list):
+        raise ValueError("La biblioteca no devolvió una lista de historias")
+    if stories:
+        say("BIBLIOTECA", "Se conservan " + str(len(stories)) +
+            " historias existentes; no se añade una demo.")
+        return None
+    story = json_request(base + "/api/v1/stories", method="POST", body={
+        "title": "La estación de la última luna",
+        "premise": (
+            "En una ciudad costera, una estación de tren abandonada vuelve a "
+            "encender sus luces cada medianoche. Los pasajeros recuerdan "
+            "fragmentos de futuros que todavía no han ocurrido. Una joven "
+            "llamada Mara busca a su hermano desaparecido, mientras el "
+            "protagonista recibe un boleto con su propio nombre y una fecha "
+            "que nadie conoce. El jugador decide qué investiga, a quién "
+            "confía sus secretos y si sube al tren. Los personajes toman "
+            "decisiones propias sin controlar al protagonista."),
+        "protagonist_name": "Alex",
+    })
+    ident = story.get("id")
+    if not isinstance(ident, str):
+        raise ValueError("Noble no devolvió el UUID de la historia de demostración")
+    say("BIBLIOTECA", "Creé una historia inicial opcional para probar el lector.")
+    return ident
+
+
+def verify_narrator() -> bool:
+    """Real 24-token warm-up without persisting or generating any story turn."""
+    root = "http://127.0.0.1:8000"
+    config = json_request(root + "/api/v1/narrative/config")
+    if config.get("provider") != "ollama" or not config.get("model"):
+        return False
+    say("INFERENCIA", "Probando realmente el modelo de Ollama (sin guardar turnos).")
+    try:
+        warmed = json_request(root + "/api/v1/narrative/prepare",
+                              method="POST", body={}, timeout=200)
+        if warmed.get("ready") is not True:
+            raise ValueError("La inferencia no confirmó contenido")
+        say("INFERENCIA", "Respuesta real verificada · " +
+            str(warmed.get("duration_ms")) + " ms.")
+        return True
+    except (OSError, ValueError, urllib.error.URLError) as exc:
+        say("INFERENCIA", "No se pudo verificar la generación: " +
+            type(exc).__name__ + ". Se mantiene la aplicación disponible.")
+        return False
+
+
 def checksum_file(path: Path) -> str:
     dig = hashlib.sha256()
     with path.open("rb") as stream:
@@ -530,6 +581,21 @@ def launch(args) -> dict:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     (LOG_DIR / "launch_state.json").write_text(
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        ensure_demo_story()
+    except (OSError, ValueError, urllib.error.URLError) as exc:
+        say("BIBLIOTECA", "No se pudo preparar la historia inicial: " +
+            type(exc).__name__)
+    infer_ready = verify_narrator() if model else False
+    state["narrator_smoke_ok"] = infer_ready
+    (LOG_DIR / "launch_state.json").write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    if args.drive_backup:
+        try:
+            backup_data_to_drive(DATA_DIR,
+                                 Path("/content/drive/MyDrive/NobleAI-Colab"))
+        except (OSError, sqlite3.Error) as exc:
+            say("DRIVE", "Respaldo inicial pendiente: " + type(exc).__name__)
     say("LISTO", "Noble AI commit " + sha[:10])
     say("LISTO", "Narración: " + (model or "requiere configuración"))
     say("LISTO", "Imágenes: " + (image_checkpoint or "sin checkpoint autoinstalado"))
