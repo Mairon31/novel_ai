@@ -167,6 +167,14 @@ class BenchmarkScriptTests(unittest.TestCase):
             page = (directory / "review.html").read_text(encoding="utf-8")
             self.assertIn("chroma_green-neutral.png", page)
             self.assertIn("neural_rmbg2-joy.png", page)
+            self.assertIn("Resumen medido por método", page)
+            self.assertIn("VRAM pico muestreada", page)
+            self.assertIn("3800 MiB", page)
+            self.assertLess(page.index("<h2>neutral</h2>"),
+                            page.index("<h2>joy</h2>"))
+            self.assertLess(
+                page.index('chroma_green-neutral.png'),
+                page.index('neural_rmbg2-neutral.png'))
             saved = (directory / "report.json").read_text(encoding="utf-8")
             self.assertNotIn(STORY, saved)
             self.assertNotIn(NPC, saved)
