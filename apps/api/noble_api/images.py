@@ -23,6 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .media import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from .narrative import NarrativeService, validate_endpoint
 from .resource_policy import ResourceController
+from .comfy_loras import selected_character_loras, validate_lora_inventory
 
 
 class ImageSettings(BaseModel):
@@ -43,11 +44,13 @@ class SceneIllustration(BaseModel):
     reference_asset_id: uuid.UUID | None = None
     denoise: float = Field(default=0.62, ge=0.2, le=0.95)
     allow_low_vram: bool = False
+    apply_character_loras: bool = False
 
 
 def workflow(settings: dict, prompt: str, seed: int,
-             reference_name: str | None = None, denoise: float = 0.62) -> dict:
-    """ComfyUI native img2img when a previously saved reference was selected."""
+             reference_name: str | None = None, denoise: float = 0.62,
+             lora_stack: list[dict] | None = None) -> dict:
+    """Standard ComfyUI workflow with optional ordered LoraLoader chain."""
     model = settings["checkpoint"]
     nodes = {
         "1": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": model}},
@@ -72,6 +75,20 @@ def workflow(settings: dict, prompt: str, seed: int,
         nodes["9"] = {"class_type": "VAEEncode", "inputs": {
             "pixels": ["8", 0], "vae": ["1", 2]}}
         nodes.pop("4")
+    model_port = ["1", 0]
+    clip_port = ["1", 1]
+    for index, item in enumerate(lora_stack or []):
+        node_id = str(10 + index)
+        nodes[node_id] = {"class_type": "LoraLoader", "inputs": {
+            "model": model_port, "clip": clip_port,
+            "lora_name": item["lora_name"],
+            "strength_model": item["strength"],
+            "strength_clip": item["strength"],
+        }}
+        model_port, clip_port = [node_id, 0], [node_id, 1]
+    nodes["2"]["inputs"]["clip"] = clip_port
+    nodes["3"]["inputs"]["clip"] = clip_port
+    nodes["5"]["inputs"]["model"] = model_port
     return nodes
 
 
@@ -157,6 +174,38 @@ class SceneImageService:
             return {"online": False, "provider": "comfyui",
                     "checkpoints": [], "error": str(exc)[:180]}
 
+    async def lora_status(self) -> dict:
+        """Discover installed LoRAs only on an explicit user or generation call."""
+        config = self.config()
+        try:
+            async with httpx.AsyncClient(transport=self.transport, trust_env=False,
+                    timeout=8) as client:
+                response = await client.get(config["base_url"] + "/models/loras",
+                                            follow_redirects=False)
+                response.raise_for_status()
+                names = validate_lora_inventory(response.json())
+            return {"online": True, "loras": names, "error": None}
+        except (httpx.HTTPError, ValueError) as exc:
+            return {"online": False, "loras": [], "error": str(exc)[:180]}
+
+    async def validate_lora_nodes(self) -> None:
+        config = self.config()
+        try:
+            async with httpx.AsyncClient(transport=self.transport, trust_env=False,
+                    timeout=8) as client:
+                response = await client.get(config["base_url"] + "/object_info/LoraLoader",
+                                            follow_redirects=False)
+                response.raise_for_status()
+                node = response.json().get("LoraLoader")
+                required = (node.get("input", {}).get("required")
+                            if isinstance(node, dict) else None)
+                expected = {"model", "clip", "lora_name", "strength_model", "strength_clip"}
+                if not isinstance(required, dict) or not expected.issubset(required):
+                    raise ValueError("Nodo ComfyUI LoraLoader no disponible o incompatible")
+        except (httpx.HTTPError, ValueError) as exc:
+            raise HTTPException(422, "No se pudo validar LoraLoader: " +
+                                str(exc)[:160]) from exc
+
     async def illustrate(self, story_id: str, request: SceneIllustration) -> dict:
         story = self.narrative.get_story(story_id)
         if not story:
@@ -185,10 +234,23 @@ class SceneImageService:
                         story_id, reference_id)
                 except ValueError as exc:
                     raise HTTPException(422, str(exc)) from exc
+            lora_stack = []
+            if request.apply_character_loras:
+                try:
+                    lora_stack = selected_character_loras(
+                        self.narrative.visual, story_id, request.prompt)
+                except ValueError as exc:
+                    raise HTTPException(422, str(exc)) from exc
+                if not lora_stack:
+                    raise HTTPException(422,
+                        "No hay LoRAs configurados para los personajes presentes")
             active_scene = self.narrative.visual.scene(story_id)
             signature = hashlib.sha256(json.dumps({
                 "scene_id": active_scene["id"], "prompt": visual_prompt,
-                "config": config, "seed": seed, "workflow_version": "comfy-native-v2",
+                "config": config, "seed": seed,
+                "workflow_version": ("comfy-native-v3-lora"
+                                     if lora_stack else "comfy-native-v2"),
+                "lora_stack": lora_stack if lora_stack else None,
                 "reference_sha256": reference_digest,
                 "denoise": request.denoise if reference is not None else None,
             }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
@@ -203,6 +265,7 @@ class SceneImageService:
                             "asset_id": hit["id"], "reference_asset_id": reference_id,
                             "seed": seed,
                             "checkpoint": config["checkpoint"],
+                            "applied_loras": lora_stack,
                             "duration_ms": round((time.monotonic()-started)*1000, 1),
                             "cached": True}
             if self.resources is not None:
@@ -216,6 +279,18 @@ class SceneImageService:
                 raise HTTPException(503, "ComfyUI no está disponible")
             if config["checkpoint"] not in connected["checkpoints"]:
                 raise HTTPException(422, "El checkpoint seleccionado ya no está disponible")
+            if lora_stack:
+                installed = await self.lora_status()
+                if not installed["online"]:
+                    raise HTTPException(503,
+                        "No se pudo consultar LoRAs instalados en ComfyUI: " +
+                        str(installed["error"]))
+                missing = [entry["lora_name"] for entry in lora_stack
+                           if entry["lora_name"] not in installed["loras"]]
+                if missing:
+                    raise HTTPException(422,
+                        "LoRA no instalado en ComfyUI: " + ", ".join(missing))
+                await self.validate_lora_nodes()
             async with httpx.AsyncClient(
                     transport=self.transport, trust_env=False,
                     timeout=httpx.Timeout(25, connect=5)) as client:
@@ -236,7 +311,7 @@ class SceneImageService:
                         raise HTTPException(502, "ComfyUI devolvió una referencia de imagen inválida")
                 response = await client.post(config["base_url"] + "/prompt",
                     json={"prompt": workflow(config, visual_prompt, seed,
-                        reference_name, request.denoise),
+                        reference_name, request.denoise, lora_stack),
                           "client_id": str(uuid.uuid4())}, follow_redirects=False)
                 response.raise_for_status()
                 ident = response.json().get("prompt_id")
@@ -277,6 +352,7 @@ class SceneImageService:
                     "asset_id": gallery["selected_asset_id"],
                     "reference_asset_id": reference_id,
                     "seed": seed, "checkpoint": config["checkpoint"],
+                    "applied_loras": lora_stack,
                     "duration_ms": round((time.monotonic() - started) * 1000, 1),
                     "cached": False}
         except (httpx.HTTPError, ValueError) as exc:
@@ -302,6 +378,10 @@ def mount_image_routes(app, images: SceneImageService):
     @app.get("/api/v1/images/status")
     async def image_status():
         return await images.status()
+
+    @app.get("/api/v1/images/loras")
+    async def image_loras():
+        return await images.lora_status()
 
     @app.post("/api/v1/stories/{story_id}/illustrate")
     async def illustrate(story_id: uuid.UUID, body: SceneIllustration):
