@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+import uuid
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -23,7 +24,7 @@ def sheet(layout="horizontal", opaque=False):
         x0, y0 = (index * 16, 0) if layout == "horizontal" else (0, index * 16)
         for y in range(y0 + 4, y0 + (28 if layout == "horizontal" else 12)):
             for x in range(x0 + 4, x0 + (12 if layout == "horizontal" else 28)):
-                canvas.putpixel((x, y), (index * 40, 140, 220, 240))
+                canvas.putpixel((x, y), (index * 40, 140, 220, 255 if opaque else 240))
     stream = io.BytesIO()
     canvas.save(stream, "PNG")
     return stream.getvalue()
@@ -131,6 +132,18 @@ class VisualIdentityTests(unittest.TestCase):
                 self.assertEqual(decoded.size, (32, 16))
         self.assertEqual(len(self.client.get(self.base + "/creator/assets")
                              .json()["assets"]), 10)
+        self.app.state.narrative.append(
+            self.story, str(uuid.uuid4()), "do", "Observar",
+            "Aira sonríe en el castillo de cristal.", "sheet-offline-fixture")
+        stage = self.client.get(self.base + "/creator/assets/scene")
+        self.assertEqual(stage.status_code, 200, stage.text)
+        self.assertEqual(stage.json()["sprites"][0]["expression"], "joy")
+        fork = self.client.post(self.base + "/fork", json={})
+        self.assertEqual(fork.status_code, 201, fork.text)
+        cloned = self.client.get(
+            f"/api/v1/stories/{fork.json()['id']}/creator/assets").json()["assets"]
+        self.assertEqual(len(cloned), 10)
+        self.assertNotEqual(cloned[0]["character_id"], npc["id"])
 
     def test_sheet_rejects_opaque_or_unowned_without_partial_files(self):
         npc = self.create_npc()
