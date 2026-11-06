@@ -196,7 +196,8 @@ class SceneImageService:
                 response = await client.get(config["base_url"] + "/object_info/LoraLoader",
                                             follow_redirects=False)
                 response.raise_for_status()
-                node = response.json().get("LoraLoader")
+                registry = response.json()
+                node = registry.get("LoraLoader") if isinstance(registry, dict) else None
                 required = (node.get("input", {}).get("required")
                             if isinstance(node, dict) else None)
                 expected = {"model", "clip", "lora_name", "strength_model", "strength_clip"}
@@ -245,15 +246,19 @@ class SceneImageService:
                     raise HTTPException(422,
                         "No hay LoRAs configurados para los personajes presentes")
             active_scene = self.narrative.visual.scene(story_id)
-            signature = hashlib.sha256(json.dumps({
+            signature_parts = {
                 "scene_id": active_scene["id"], "prompt": visual_prompt,
-                "config": config, "seed": seed,
-                "workflow_version": ("comfy-native-v3-lora"
-                                     if lora_stack else "comfy-native-v2"),
-                "lora_stack": lora_stack if lora_stack else None,
+                "config": config, "seed": seed, "workflow_version": "comfy-native-v2",
                 "reference_sha256": reference_digest,
                 "denoise": request.denoise if reference is not None else None,
-            }, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+            }
+            # Preserve pre-LoRA signatures for existing scenes and offline caches.
+            if lora_stack:
+                signature_parts["workflow_version"] = "comfy-native-v3-lora"
+                signature_parts["lora_stack"] = lora_stack
+            signature = hashlib.sha256(json.dumps(
+                signature_parts, ensure_ascii=False, sort_keys=True
+            ).encode("utf-8")).hexdigest()
             started = time.monotonic()
             # If the user supplied a deterministic seed, an identical image
             # is already available without starting the diffusion provider.

@@ -21,6 +21,10 @@ class ComfyFixture:
         self.invalid_image = False
         self.bad_model = False
         self.bad_upload = False
+        self.missing_lora = False
+        self.lora_nodes_available = True
+        self.lora_inventory_invalid = False
+        self.lora_offline = False
         self.last_workflow = None
 
     def __call__(self, request: httpx.Request):
@@ -31,6 +35,20 @@ class ComfyFixture:
         if path == "/models/checkpoints":
             return httpx.Response(200, json=[
                 "my-story-checkpoint.safetensors" if not self.bad_model else "different.safetensors"])
+        if path == "/models/loras":
+            if self.lora_offline:
+                return httpx.Response(503)
+            return httpx.Response(200, json=(
+                {"incorrect": "format"} if self.lora_inventory_invalid else
+                ["other.safetensors"] if self.missing_lora else
+                ["aira.safetensors", "bel.safetensors", "cora.safetensors"]))
+        if path == "/object_info/LoraLoader":
+            if not self.lora_nodes_available:
+                return httpx.Response(200, json={})
+            required = {key: [] for key in
+                        ("model", "clip", "lora_name", "strength_model", "strength_clip")}
+            return httpx.Response(200, json={
+                "LoraLoader": {"input": {"required": required}}})
         if path == "/upload/image":
             self.uploaded_bytes = request.content
             return httpx.Response(200, json={"name": "../escape.png" if self.bad_upload else "reference.png", "type": "input"})
@@ -143,6 +161,158 @@ class ComfySceneTests(unittest.TestCase):
         self.assertEqual(replay.json()["asset_id"], second.json()["asset_id"])
         self.assertEqual(len([request for request in self.fixture.requests
                               if request.url.path == "/prompt"]), 2)
+
+    def add_lora_character(self, name="Aira", filename="aira.safetensors",
+                           visual_id=None, weight=0.7):
+        body = {"name": name,
+                "description": f"{name} protege la entrada al antiguo castillo.",
+                "visual_dna": {"tags": ["ojos verdes"], "lora_name": filename,
+                               "lora_strength": weight}}
+        if visual_id is not None:
+            body["visual_character_id"] = visual_id
+        response = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters", json=body)
+        self.assertEqual(response.status_code, 201, response.text)
+        return response.json()
+
+    def test_explicit_opt_in_required_for_lora_and_inventory_available(self):
+        self.setup_comfy()
+        self.add_lora_character()
+        result = self.client.post(f"/api/v1/stories/{self.story}/illustrate",
+            json={"prompt": "Aira observa Un castillo al anochecer", "seed": 4001})
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(result.json()["applied_loras"], [])
+        self.assertNotIn("10", self.fixture.last_workflow)
+        self.assertFalse(any(r.url.path == "/models/loras"
+                             for r in self.fixture.requests))
+        checked = self.client.get("/api/v1/images/loras")
+        self.assertEqual(checked.status_code, 200)
+        self.assertEqual(checked.json()["loras"][0], "aira.safetensors")
+        self.assertTrue(checked.json()["online"])
+
+    def test_active_lora_is_in_comfy_graph_and_signature_separates_modes(self):
+        self.setup_comfy()
+        self.add_lora_character()
+        endpoint = f"/api/v1/stories/{self.story}/illustrate"
+        body = {"prompt": "Aira camina por Un castillo al anochecer",
+                "seed": 4002}
+        plain = self.client.post(endpoint, json=body)
+        self.assertEqual(plain.status_code, 200, plain.text)
+        first = self.client.post(endpoint, json={
+            **body, "apply_character_loras": True})
+        self.assertEqual(first.status_code, 200, first.text)
+        self.assertFalse(first.json()["cached"])
+        self.assertNotEqual(first.json()["asset_id"], plain.json()["asset_id"])
+        self.assertEqual(first.json()["applied_loras"][0]["lora_name"], "aira.safetensors")
+        self.assertEqual(self.fixture.last_workflow["10"]["class_type"], "LoraLoader")
+        self.assertEqual(self.fixture.last_workflow["10"]["inputs"], {
+            "model": ["1", 0], "clip": ["1", 1],
+            "lora_name": "aira.safetensors", "strength_model": 0.7,
+            "strength_clip": 0.7})
+        self.assertEqual(self.fixture.last_workflow["2"]["inputs"]["clip"], ["10", 1])
+        self.assertEqual(self.fixture.last_workflow["3"]["inputs"]["clip"], ["10", 1])
+        self.assertEqual(self.fixture.last_workflow["5"]["inputs"]["model"], ["10", 0])
+        again = self.client.post(endpoint, json={
+            **body, "apply_character_loras": True})
+        self.assertEqual(again.status_code, 200, again.text)
+        self.assertTrue(again.json()["cached"])
+        self.assertEqual(again.json()["asset_id"], first.json()["asset_id"])
+        self.assertEqual(len([r for r in self.fixture.requests
+                              if r.url.path == "/prompt"]), 2)
+        self.fixture.offline = True
+        offline = self.client.post(endpoint, json={
+            **body, "apply_character_loras": True})
+        self.assertEqual(offline.status_code, 200, offline.text)
+        self.assertTrue(offline.json()["cached"])
+
+    def test_lora_multi_character_planned_chain_and_img2img_reference(self):
+        self.setup_comfy()
+        ref = io.BytesIO()
+        Image.new("RGB", (64, 64), (20, 130, 170)).save(ref, "PNG")
+        imported = self.client.post(
+            f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("reference.png", ref.getvalue(), "image/png")})
+        self.assertEqual(imported.status_code, 200, imported.text)
+        asset = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        ids = []
+        for name, filename in [("Aira", "aira.safetensors"),
+                               ("Bel", "bel.safetensors"),
+                               ("Cora", "cora.safetensors")]:
+            visual = self.client.post(
+                f"/api/v1/stories/{self.story}/visual-characters",
+                json={"name": name, "appearance":
+                      f"{name} lleva un elegante manto de aventurero."})
+            self.assertEqual(visual.status_code, 201, visual.text)
+            ident = visual.json()["id"]
+            ids.append(ident)
+            self.add_lora_character(name, filename, ident)
+        plan = self.client.put(f"/api/v1/stories/{self.story}/scene-plan",
+            json={"visible_character_ids": ids[:2],
+                  "shot": "medium", "lighting": "natural"})
+        self.assertEqual(plan.status_code, 200, plan.text)
+        result = self.client.post(f"/api/v1/stories/{self.story}/illustrate", json={
+            "prompt": "Una visita a Un castillo al anochecer",
+            "seed": 4003, "reference_asset_id": asset,
+            "apply_character_loras": True})
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual([x["lora_name"] for x in result.json()["applied_loras"]],
+                         ["aira.safetensors", "bel.safetensors"])
+        graph = self.fixture.last_workflow
+        self.assertEqual(graph["10"]["inputs"]["model"], ["1", 0])
+        self.assertEqual(graph["11"]["inputs"]["model"], ["10", 0])
+        self.assertEqual(graph["11"]["inputs"]["clip"], ["10", 1])
+        self.assertEqual(graph["2"]["inputs"]["clip"], ["11", 1])
+        self.assertEqual(graph["5"]["inputs"]["model"], ["11", 0])
+        self.assertEqual(graph["5"]["inputs"]["latent_image"], ["9", 0])
+        self.assertNotIn("12", graph)
+        self.assertNotIn("4", graph)
+        self.assertEqual(graph["8"]["class_type"], "LoadImage")
+
+    def test_lora_missing_node_or_inventory_fails_before_submission(self):
+        self.setup_comfy()
+        self.add_lora_character()
+        endpoint = f"/api/v1/stories/{self.story}/illustrate"
+        payload = {"prompt": "Aira visita Un castillo al anochecer",
+                   "seed": 9109, "apply_character_loras": True}
+        self.fixture.missing_lora = True
+        missing = self.client.post(endpoint, json=payload)
+        self.assertEqual(missing.status_code, 422, missing.text)
+        self.assertIn("LoRA no instalado", missing.text)
+        self.fixture.missing_lora = False
+        self.fixture.lora_nodes_available = False
+        absent = self.client.post(endpoint, json=payload)
+        self.assertEqual(absent.status_code, 422, absent.text)
+        self.assertIn("LoraLoader", absent.text)
+        self.fixture.lora_nodes_available = True
+        self.fixture.lora_offline = True
+        offline = self.client.post(endpoint, json=payload)
+        self.assertEqual(offline.status_code, 503, offline.text)
+        self.fixture.lora_offline = False
+        self.fixture.lora_inventory_invalid = True
+        malformed = self.client.post(endpoint, json=payload)
+        self.assertEqual(malformed.status_code, 503, malformed.text)
+        self.assertEqual(len([r for r in self.fixture.requests
+                              if r.url.path == "/prompt"]), 0)
+        self.assertIsNone(self.client.get(
+            f"/api/v1/stories/{self.story}").json()["scene_image_url"])
+
+    def test_lora_without_active_character_or_duplicate_fails_closed(self):
+        self.setup_comfy()
+        self.add_lora_character()
+        endpoint = f"/api/v1/stories/{self.story}/illustrate"
+        absent = self.client.post(endpoint, json={
+            "prompt": "Un castillo al anochecer, nadie en el salón",
+            "apply_character_loras": True})
+        self.assertEqual(absent.status_code, 422, absent.text)
+        self.assertFalse(any(r.url.path == "/models/loras"
+                             for r in self.fixture.requests))
+        self.add_lora_character("Bel", "aira.safetensors")
+        repeated = self.client.post(endpoint, json={
+            "prompt": "Aira y Bel recorren Un castillo al anochecer",
+            "apply_character_loras": True})
+        self.assertEqual(repeated.status_code, 422, repeated.text)
+        self.assertIn("misma LoRA", repeated.text)
 
     def test_invalid_or_offline_provider_does_not_replace_previous_art(self):
         self.setup_comfy()
