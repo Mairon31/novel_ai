@@ -88,8 +88,8 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByLabel('Sección para regenerar').selectOption('openings');
   await page.getByLabel('Indicaciones para regenerar').fill('Aperturas con más misterio');
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
-  await expect(page.getByLabel('Apertura generada 1')).toContainText('llave brillante');
-  await expect(page.getByLabel('Descripción NPC 1')).toContainText('Sara conoce los antiguos pactos');
+  await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/llave brillante/);
+  await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
   await page.getByRole('button', { name: 'Crear historia con esta propuesta' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Personajes \(4\)/ })).toBeVisible();
