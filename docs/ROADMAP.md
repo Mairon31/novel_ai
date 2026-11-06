@@ -264,3 +264,5 @@ Existe un catálogo de tres historias originales de texto, instalables como copi
 ### N-07 — primer corte implementado, alcance restante abierto (2026-11-06)
 
 Creator Studio ya incluye asistente de propuesta narrativa de 3 etapas mediante el proveedor de LLM configurado: mundo público/privado, cuatro NPC, tres Lorebooks y tres aperturas, con previsualización y confirmación de instalación SQLite. No confundir con generación integral de novelas ilustradas. Faltan edición granular del borrador, regeneración por componente, planes visuales, portadas, fondos, sprites, TTS y QA de historias extensas con GPU real. Ver STORY_HUB.md y TODO.md.
+
+- [x] Pruebas del asistente y confirmación: [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437), **365 Python + 72 Playwright y build Vite PASS** para `3be0b5c`. Incluye edición de NPC, Lorebook, etiquetas y aperturas.
