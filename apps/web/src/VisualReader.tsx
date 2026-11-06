@@ -529,7 +529,7 @@ export function VisualReader({
         </div>}
         {turns.length > 0 && <div className="noble-vn-subtitle" role="note"
           aria-label="Última intervención de la escena">
-          <strong>{sceneMedia?.sprites.find(person => person.speaker)?.label || 'Narrador'}</strong>
+          <strong>Narrador</strong>
           <p>{turns[turns.length - 1].assistant_text.slice(-320)}</p>
         </div>}
         <div className="noble-scene-bottom">

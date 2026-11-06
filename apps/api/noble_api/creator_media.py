@@ -85,6 +85,24 @@ def _expression_in_text(text: str, name: str, cast_names=()) -> str:
     return "neutral"
 
 
+def _speaker_from_narration(text: str, cast: list[tuple[int, str, str]]) -> str | None:
+    """Recognize an explicit speech attribution; never treat any mention as speech."""
+    speaking = (
+        r"dice|dijo|pregunt[oó]|respondi[oó]|exclam[oó]|susurr[oó]|"
+        r"grit[oó]|murmur[oó]|afirm[oó]|coment[oó]|said|asked|replied|whispered"
+    )
+    results = []
+    for _, character_id, name in cast:
+        escaped = re.escape(name)
+        for pattern in (
+            r"(?<!\w)" + escaped + r"\s+(?:" + speaking + r")\b",
+            r"\b(?:" + speaking + r")\s+" + escaped + r"(?!\w)",
+        ):
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                results.append((match.end(), character_id))
+    return max(results)[1] if results else None
+
+
 def _tokens(value: str) -> set[str]:
     return {item for item in re.findall(r"[^\W_]+", value.casefold(), re.UNICODE)
             if len(item) >= 3 and item not in STOP_WORDS}
@@ -367,8 +385,9 @@ class CreatorMediaService:
                 re.IGNORECASE))
             if occurrences:
                 mentions.append((occurrences[-1].start(), character_id, name))
-        mentions.sort(key=lambda row: row[0], reverse=True)
-        speaker_character_id = mentions[0][1] if mentions else None
+        speaker_character_id = _speaker_from_narration(latest, mentions)
+        mentions.sort(key=lambda row: (row[1] == speaker_character_id, row[0]),
+                      reverse=True)
         sprites: list[dict] = []
 
         for _, character_id, name in mentions:

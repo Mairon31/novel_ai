@@ -42,7 +42,7 @@ test('VN scene composites three owned transparent NPC sprites with focus and sub
     const blueprint = await page.request.put(base + '/creator', {
       data: { opening_scenarios: [
         'Desde el castillo cristal paisaje, Bel observa los vitrales. ' +
-        'Cora consulta el mapa. Aira sonríe en el castillo y saluda a Luna.',
+        'Cora consulta el mapa. Aira dice: «Hola». Aira sonríe en el castillo.',
       ] },
     });
     expect(blueprint.ok()).toBeTruthy();

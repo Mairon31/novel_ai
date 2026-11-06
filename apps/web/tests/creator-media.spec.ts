@@ -58,7 +58,7 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByRole('button', { name: 'Continuar historia' }).click();
   const portrait = page.getByRole('img', { name: 'Personaje presente: Aira feliz' });
   await expect(portrait).toBeVisible();
-  await expect(page.locator('.noble-scene-art'))
+  await expect(page.locator('.noble-scene-background'))
     .toHaveCSS('background-image', /creator\/assets/);
   // On narrow screens the stage footer may intentionally hide captions.
   await expect(page.getByText('Recursos del creador según la escena')).toHaveCount(1);

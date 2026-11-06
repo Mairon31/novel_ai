@@ -100,7 +100,7 @@ class SpriteStageTests(unittest.TestCase):
                 self.turn(
                     "En el castillo salón cristal, Daro lee un pergamino. "
                     "Cora estudia los mapas. Bel contempla la luna. "
-                    "Aira sonríe junto a la puerta.")
+                    "Aira dice: «Bienvenidos». Aira sonríe junto a la puerta.")
                 image = self.presentation()
                 self.assertEqual(image["background"]["id"], bg["id"])
                 self.assertEqual(len(image["sprites"]), 3)
@@ -231,6 +231,21 @@ class SpriteStageTests(unittest.TestCase):
                     "PRAGMA table_info(creator_media_assets)")]
                 self.assertEqual(columns.count("expression"), 1)
                 self.assertEqual(columns.count("pose"), 1)
+
+    def test_last_mention_is_not_automatically_assumed_to_be_speaker(self):
+        self.upload("foreground", "Aira neutral",
+                    "Aira en el castillo", "Aira")
+        self.turn("Aira contempla en silencio el castillo; nadie pronuncia una palabra.")
+        shot = self.presentation()
+        self.assertIsNone(shot["speaker_character_id"])
+        self.assertFalse(shot["sprites"][0]["speaker"])
+        self.turn("Aira dice: «El castillo está abierto».")
+        speech = self.presentation()
+        self.assertEqual(speech["speaker_character_id"], self.npcs["Aira"])
+        self.assertTrue(speech["sprites"][0]["speaker"])
+        self.turn("«¿A dónde vamos?», preguntó Aira desde el castillo.")
+        inverse = self.presentation()
+        self.assertEqual(inverse["speaker_character_id"], self.npcs["Aira"])
 
     def test_no_character_name_no_leak_even_when_caption_matches(self):
         self.upload("foreground", "Aira en el castillo",
