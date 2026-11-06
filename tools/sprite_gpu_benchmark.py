@@ -237,50 +237,81 @@ def store_json(report: dict, directory: Path) -> None:
 
 
 def write_review(report: dict, directory: Path) -> None:
-    """Static, offline HTML and empty CSV for author hair/face/outfit inspection."""
+    """Standalone comparison *by expression* so different cutout modes align."""
     styles = """
-    body{font:15px/1.5 system-ui, sans-serif;background:#101421;color:#e9ebf1;
-         max-width:1300px;margin:20px auto;padding:12px}
-    h1,h2{line-height:1.2}.grid{display:grid;grid-template-columns:
-         repeat(auto-fit,minmax(190px,1fr));gap:16px}
-    article{border:1px solid #344057;border-radius:12px;background:#1d2535;padding:12px}
-    img{width:100%;height:300px;object-fit:contain;background:
-         repeating-conic-gradient(#334052 0 25%,#1e293a 0 50%) 50%/20px 20px}
-    small{color:#bec8d8}label{display:block}input[type=checkbox]{width:20px;height:20px}
+    :root{color-scheme:dark}body{font:15px/1.5 system-ui,sans-serif;
+    background:#0e1320;color:#f0f3fa;max-width:1400px;margin:20px auto;
+    padding:12px}h1,h2{line-height:1.2}.grid{display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px}
+    article{border:1px solid #35435c;border-radius:12px;background:#1a2333;
+    padding:12px;min-height:380px}img{width:100%;height:285px;object-fit:contain;
+    background:repeating-conic-gradient(#30415a 0 25%,#192338 0 50%) 50%/20px 20px}
+    small{color:#c1cee2}table{border-collapse:collapse;width:100%;
+    margin:16px 0 30px}td,th{border-bottom:1px solid #35435c;padding:10px;
+    text-align:left}thead{background:#1a2333}code{background:#26364c;padding:3px}
+    .hint{color:#bdcde3}.failed{opacity:.75}article strong{word-break:break-word}
     """
+    def label(value):
+        return html.escape(str(value), quote=True)
     chunks = [
         '<!doctype html><html lang="es"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<title>Noble AI - revisión de sprites</title><style>' + styles +
-        '</style></head><body><h1>Noble AI · revisión de sprites</h1>',
-        '<p>Comparación local. Las máscaras y métricas no verifican identidad '
-        'facial, anatomía ni calidad artística. No hay aprobación automática.</p>',
+        '<title>Noble AI · revisión física de sprites</title><style>' +
+        styles + '</style></head><body><h1>Comparativa de sprites</h1>',
+        '<p class="hint">Los tiempos/VRAM son muestreados por el host. El '
+        'alfa suave y la silueta no certifican identidad facial ni fidelidad '
+        'artística. Las imágenes son vistas previas, no sprites publicados.</p>',
+        "<h2>Resumen medido por método</h2><table><thead><tr><th>Método</th>"
+        "<th>Estado</th><th>P50</th><th>P95</th>"
+        "<th>VRAM pico muestreada</th></tr></thead><tbody>",
     ]
-    csv_rows = []
     for mode in report["modes"]:
-        chunks.append("<h2>" + html.escape(mode["mode"]) + "</h2><div class=grid>")
-        for entry in mode["expressions"]:
-            expression = entry["expression"]
-            if entry["status"] != "success":
-                chunks.append("<article><strong>" + html.escape(expression) +
-                              "</strong><p>No disponible</p></article>")
+        peak = mode.get("gpu_peak_used_mb")
+        chunks.append(
+            "<tr><td>" + label(mode["mode"]) + "</td><td>" +
+            label(mode["status"]) + "</td><td>" +
+            label(mode.get("latency_p50_ms") or "—") + " ms</td><td>" +
+            label(mode.get("latency_p95_ms") or "—") + " ms</td><td>" +
+            (label(peak) + " MiB" if peak is not None else "Sin lecturas") +
+            "</td></tr>"
+        )
+    chunks.append("</tbody></table><p class=hint>La comparación visual se agrupa "
+                  "por expresión, mostrando los métodos uno junto al otro. "
+                  "Registra evaluaciones persistentes en <code>review.csv</code>; "
+                  "este HTML es de solo lectura.</p>")
+    csv_rows = []
+    for expression in report["expressions_requested"]:
+        chunks.append("<h2>" + label(expression) + "</h2><section class=grid>")
+        for mode in report["modes"]:
+            name = mode["mode"]
+            entry = next((item for item in mode["expressions"]
+                          if item["expression"] == expression), None)
+            if not entry or entry["status"] != "success":
+                chunks.append(
+                    '<article class="failed"><strong>' + label(name) +
+                    '</strong><p>No disponible: ' + label(
+                        mode.get("error") or (entry or {}).get("error") or
+                        mode["status"]) + "</p></article>"
+                )
                 continue
-            filename = entry["preview_file"]
+            file = entry["preview_file"]
             chunks.append(
-                "<article><strong>" + html.escape(expression) + "</strong>"
-                '<img loading="lazy" alt="' + html.escape(expression) +
-                '" src="' + html.escape(filename, quote=True) +
-                '"><p><small>' + str(entry["duration_ms"]) + " ms · alfa suave: " +
-                str(entry["image_metrics"]["soft_alpha_fraction"]) +
-                "</small></p><label><input type=checkbox> Revisé rostro, "
-                "ropa, cabello y bordes</label></article>"
+                "<article><strong>" + label(name) +
+                '</strong><img loading="lazy" alt="' + label(
+                    expression + " / " + name) + '" src="' +
+                label(file) + '"><p><small>' +
+                label(entry["duration_ms"]) + " ms · alfa suave " +
+                label(entry["image_metrics"]["soft_alpha_fraction"]) +
+                " · cobertura " + label(entry["image_metrics"]["opaque_coverage"]) +
+                "</small></p><p class=hint>Compara bordes, proporciones, "
+                "rostro y vestuario con el resto de la fila.</p></article>"
             )
             csv_rows.append({
-                "mode": mode["mode"], "expression": expression,
+                "mode": name, "expression": expression,
                 "hair_edges_ok": "", "face_consistent": "",
                 "outfit_consistent": "", "notes": "",
             })
-        chunks.append("</div>")
+        chunks.append("</section>")
     chunks.append("</body></html>")
     (directory / "review.html").write_text(
         "\n".join(chunks), encoding="utf-8")
