@@ -13,7 +13,7 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     } });
     expect(created.status()).toBe(201);
     const story = await created.json() as { id: string };
-    await page.goto('/#/crear/' + story.id);
+    await page.goto('/#/creator/' + story.id);
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
     if (await setup.isVisible())

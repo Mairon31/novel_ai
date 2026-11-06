@@ -57,7 +57,7 @@ class VisualDNA(BaseModel):
         if not name:
             return None
         # Metadata only. Never accept filesystem paths or download URLs here.
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,146}\\.safetensors", name):
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,146}\.safetensors", name):
             raise ValueError("LoRA debe ser un archivo .safetensors sin ruta")
         return name
 
