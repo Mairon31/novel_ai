@@ -98,6 +98,40 @@ class SpeechTests(unittest.TestCase):
         self.assertEqual(reset.json()["default_voice_id"],"")
         self.assertFalse(self.counter.exists())
 
+    def test_explicit_voice_preview_returns_wav_and_discards_temporary_audio(self):
+        self.assertFalse(self.counter.exists())
+        with patch("noble_api.speech.shutil.which", return_value=str(self.fake)):
+            sample = self.client.post("/api/v1/tts/preview", json={
+                "voice_id": self.voice.name,
+                "text": "Hola, esta es una prueba de voz latinoamericana.",
+                "request_source": "preview_button",
+            })
+        self.assertEqual(sample.status_code, 200, sample.text)
+        self.assertEqual(sample.headers["content-type"], "audio/wav")
+        self.assertEqual(sample.headers["cache-control"], "no-store")
+        with wave.open(io.BytesIO(sample.content), "rb") as wav:
+            self.assertEqual(wav.getframerate(), 22050)
+            self.assertGreater(wav.getnframes(), 0)
+        self.assertEqual(self.counter.read_text(), "1")
+        self.assertFalse(list(self.voice_dir.glob(".noble-piper-test-*")))
+        self.assertFalse((self.root / "story-assets" / self.story / "speech").exists())
+
+    def test_preview_requires_explicit_button_source_and_installed_engine(self):
+        attempt = {"voice_id": self.voice.name,
+                   "text": "Hola, esta es una prueba de voz.",
+                   "request_source": "auto_narration"}
+        with patch("noble_api.speech.shutil.which", return_value=str(self.fake)):
+            denied = self.client.post("/api/v1/tts/preview", json=attempt)
+        self.assertEqual(denied.status_code, 422)
+        with patch("noble_api.speech.shutil.which", return_value=None):
+            missing = self.client.post("/api/v1/tts/preview",
+                json={**attempt, "request_source": "preview_button"})
+        self.assertEqual(missing.status_code, 503)
+        self.assertEqual(self.client.post("/api/v1/tts/preview", json={
+            **attempt, "text": "abc", "request_source": "preview_button",
+        }).status_code, 422)
+        self.assertFalse(self.counter.exists())
+
     def test_explicit_piper_audio_and_cache(self):
         turn=self.new_turn()
         enabled=self.client.patch("/api/v1/settings",json={"tts_enabled":True})
