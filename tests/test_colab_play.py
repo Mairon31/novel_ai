@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import io
 import importlib.util
 import json
 import os
@@ -122,6 +123,25 @@ class ColabPlayTests(unittest.TestCase):
             return {"models": ["qwen3:1.7b"]}
         with patch.object(launcher, "json_request", side_effect=existing_ollama):
             launcher.configure_narrative("qwen3:4b-instruct")
+
+    def test_ui_is_actually_compiled_and_served_by_same_origin(self):
+        class HTTPPayload(io.BytesIO):
+            def __init__(self, content, media="text/html; charset=utf-8"):
+                super().__init__(content)
+                self.headers = {"Content-Type": media}
+        valid = HTTPPayload(
+            b'<html><body><div id="root"></div>'
+            b'<script src="/assets/index-test.js"></script></body></html>')
+        with patch.object(launcher.request, "urlopen", return_value=valid):
+            launcher.verify_web_bundle()
+        for response in (
+            HTTPPayload(b'{"status":"ok"}', "application/json"),
+            HTTPPayload(b'<html><div id="root"></div></html>'),
+        ):
+            with patch.object(launcher.request, "urlopen",
+                              return_value=response):
+                with self.assertRaisesRegex(RuntimeError, "React compilado"):
+                    launcher.verify_web_bundle()
 
     def test_drive_backup_uses_online_sqlite_backup_and_restores_media(self):
         with tempfile.TemporaryDirectory() as td:
