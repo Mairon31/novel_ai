@@ -50,7 +50,9 @@ test('AI Creator previews a whole world before an explicit local install', async
       ],
     };
     await route.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ draft: updated, section: 'openings', saved: false, model: 'test-mock' }) });
+      body: JSON.stringify({ draft: updated, section: request.section, saved: false, model: 'test-mock',
+        generation_budget: { context_characters: 3200, input_tokens_estimate: 800,
+          max_output_tokens: 3072, estimate_only: true } }) });
   });
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
