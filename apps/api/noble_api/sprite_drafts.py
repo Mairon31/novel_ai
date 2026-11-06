@@ -37,6 +37,7 @@ from .creator_media import (CreatorMediaService, EXPRESSIONS,
 from .images import SceneImageService, resized_reference_png, workflow
 from .sprite_cutout import transparent_sprite
 from .sprite_provenance import normalize_sprite_generation
+from .sprite_alignment import geometry_from_png, silhouette_geometry, alignment_warnings
 
 DRAFT_TTL = 48 * 60 * 60
 MAX_DRAFTS_PER_STORY = 3
@@ -70,6 +71,11 @@ class NewSpriteDraft(BaseModel):
 class SpriteStep(BaseModel):
     model_config = ConfigDict(extra="forbid")
     allow_low_vram: bool = False
+
+
+class ApproveSpriteDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    accept_alignment_warnings: bool = False
 
 
 class SpriteDraftService:
@@ -171,7 +177,16 @@ class SpriteDraftService:
                                f"/api/v1/stories/{row['story_id']}/creator/"
                                f"sprite-drafts/{row['id']}/expressions/{name}/preview"
                                if present else None)}
+        geometry = {
+            name: saved[name]["geometry"]
+            for name in EXPRESSIONS
+            if slots[name]["ready"] and isinstance(saved.get(name), dict)
+            and isinstance(saved[name].get("geometry"), dict)
+        }
+        warnings = alignment_warnings(geometry)
         return {
+            "alignment_warnings": warnings,
+            "alignment_review_needed": bool(warnings),
             "id": row["id"], "story_id": row["story_id"],
             "character_id": row["character_id"],
             "character_name": settings["character_name"],
@@ -406,6 +421,8 @@ class SpriteDraftService:
                 png, quality = transparent_sprite(raw)
             except ValueError as exc:
                 raise HTTPException(422, "Recorte no aceptado: " + str(exc)) from exc
+            geometry = geometry_from_png(png)
+            file_sha256 = hashlib.sha256(png).hexdigest()
             new_name = expression + "-" + str(uuid.uuid4()) + ".png"
             target = self._file(story_id, draft_id, expression, new_name)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -422,6 +439,7 @@ class SpriteDraftService:
                     slots = json.loads(current["slots_json"])
                     slots[expression] = {
                         "file": new_name, "quality": quality,
+                        "geometry": geometry, "content_sha256": file_sha256,
                         "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
                     }
                     db.execute(
@@ -460,7 +478,8 @@ class SpriteDraftService:
                             headers={"Cache-Control": "no-store",
                                      "X-Content-Type-Options": "nosniff"})
 
-    def approve(self, story_id: str, draft_id: str) -> dict:
+    def approve(self, story_id: str, draft_id: str,
+                accept_alignment_warnings: bool = False) -> dict:
         row = self._require(story_id, draft_id)
         if self.active == draft_id:
             raise HTTPException(409, "El borrador está generando una expresión")
@@ -473,13 +492,20 @@ class SpriteDraftService:
         if any(name not in entries for name in EXPRESSIONS):
             raise ValueError("Genera las cinco expresiones antes de aprobar")
         frames = []
+        geometry = {}
         dims = None
         for name in EXPRESSIONS:
             location = self._file(
                 story_id, draft_id, name, entries[name]["file"])
             if not location.is_file() or location.stat().st_size > MAX_MEDIA_BYTES:
                 raise ValueError("Falta una vista previa válida")
-            with Image.open(location) as image:
+            raw = location.read_bytes()
+            expected_sha = entries[name].get("content_sha256")
+            if (expected_sha is not None and
+                    hashlib.sha256(raw).hexdigest() != expected_sha):
+                raise HTTPException(409,
+                    "Una vista previa cambió después de generarse: " + name)
+            with Image.open(io.BytesIO(raw)) as image:
                 image.load()
                 if image.format != "PNG" or image.mode != "RGBA":
                     raise ValueError("Vista previa de sprite inválida")
@@ -487,6 +513,12 @@ class SpriteDraftService:
                     raise ValueError("Las cinco expresiones tienen tamaños diferentes")
                 dims = image.size
                 frames.append(image.copy())
+                geometry[name] = silhouette_geometry(image)
+        warnings = alignment_warnings(geometry)
+        if warnings and not accept_alignment_warnings:
+            raise HTTPException(409,
+                "Revisa las diferencias de silueta antes de aprobar: " +
+                "; ".join(warnings[:5]))
         sheet = Image.new("RGBA", (dims[0] * 5, dims[1]))
         for index, image in enumerate(frames):
             sheet.paste(image, (index * dims[0], 0))
@@ -571,9 +603,11 @@ def mount_sprite_draft_routes(app, sprites: SpriteDraftService) -> None:
             raise HTTPException(404, str(exc)) from exc
 
     @app.post("/api/v1/stories/{story_id}/creator/sprite-drafts/{draft_id}/approve")
-    def approve_draft(story_id: uuid.UUID, draft_id: uuid.UUID):
+    def approve_draft(story_id: uuid.UUID, draft_id: uuid.UUID,
+                      body: ApproveSpriteDraft = ApproveSpriteDraft()):
         try:
-            return sprites.approve(str(story_id), str(draft_id))
+            return sprites.approve(
+                str(story_id), str(draft_id), body.accept_alignment_warnings)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
