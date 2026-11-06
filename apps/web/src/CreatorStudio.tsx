@@ -685,7 +685,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>
                   <label>Pose del sprite generado
-                    <input aria-label="Pose de sprites IA" maxLength={32}
+                    <input aria-label="Postura generativa del NPC" maxLength={32}
                       value={draftPose} onChange={event => setDraftPose(event.target.value)}/>
                   </label>
                 </div>
