@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "apps" / "api"))
 from noble_api.main import create_app
 from noble_api.creator_media import EXPRESSIONS
 from noble_api.sprite_drafts import DRAFT_TTL
+from noble_api.comfy_matting import MODELS
 
 
 def sprite_png(bad_background=False, horizontal_offset=0):
@@ -35,6 +36,29 @@ def sprite_png(bad_background=False, horizontal_offset=0):
     return buf.getvalue()
 
 
+def mock_mask_png(invalid=False):
+    mask = Image.new("L", (256, 256), 0)
+    if not invalid:
+        ImageDraw.Draw(mask).ellipse((85, 35, 170, 228), fill=255)
+    buf = io.BytesIO()
+    mask.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def mock_matte_node(name):
+    if name == "MaskToImage":
+        return {"input": {"required": {"mask": ["MASK"]}}}
+    return {"input": {
+        "required": {"image": ["IMAGE"], "model": [[
+            "RMBG-2.0", "BiRefNet-portrait", "BiRefNet-matting"]]},
+        "optional": {
+            "sensitivity": ["FLOAT"], "mask_blur": ["INT"],
+            "mask_offset": ["INT"], "invert_output": ["BOOLEAN"],
+            "refine_foreground": ["BOOLEAN"], "unload_model": ["BOOLEAN"],
+            "background": [["Alpha", "Color"]],
+            "background_color": ["COLORCODE"], "process_res": ["INT"]}}}
+
+
 class SpriteComfy:
     def __init__(self):
         self.history = []
@@ -46,6 +70,10 @@ class SpriteComfy:
         self.ipadapter_weights_missing = False
         self.horizontal_offset = 0
         self.last_upload = None
+        self.matte_node_missing = False
+        self.matte_weights_missing = False
+        self.matte_mask_missing = False
+        self.matte_mask_invalid = False
 
     def __call__(self, request: httpx.Request):
         self.history.append(request)
@@ -75,6 +103,19 @@ class SpriteComfy:
                 "required": {field: [] for field in (
                     "model", "ipadapter", "image", "weight", "start_at",
                     "end_at", "weight_type")}}}})
+        if path.startswith("/object_info/") and path.rsplit("/", 1)[-1] in (
+                "RMBG", "BiRefNetRMBG", "MaskToImage"):
+            name = path.rsplit("/", 1)[-1]
+            if self.matte_node_missing and name in ("RMBG", "BiRefNetRMBG"):
+                return httpx.Response(404)
+            return httpx.Response(200, json={name: mock_matte_node(name)})
+        if path == "/models/rmbg":
+            files = sorted(set(file for spec in MODELS.values()
+                               for file in spec["expected"]))
+            if self.matte_weights_missing:
+                files = [name for name in files
+                         if name != "RMBG-2.0/model.safetensors"]
+            return httpx.Response(200, json=files)
         if path in {"/models/ipadapter", "/models/clip_vision"}:
             return httpx.Response(200, json=[] if self.ipadapter_weights_missing else
                                   ["mock-model.safetensors"])
@@ -86,12 +127,21 @@ class SpriteComfy:
             self.graphs.append(graph)
             return httpx.Response(200, json={"prompt_id": "sprite-job"})
         if path == "/history/sprite-job":
-            return httpx.Response(200, json={"sprite-job": {
-                "outputs": {"7": {"images": [
-                    {"filename": "sprite.png", "subfolder": "", "type": "output"}]}}}})
+            outputs = {"7": {"images": [
+                {"filename": "sprite.png", "subfolder": "", "type": "output"}]}}
+            if (self.graphs and "25" in self.graphs[-1] and
+                    not self.matte_mask_missing):
+                outputs["25"] = {"images": [
+                    {"filename": "matte.png", "subfolder": "", "type": "output"}]}
+            return httpx.Response(200, json={"sprite-job": {"outputs": outputs,
+                "status": {"status_str": "success"}}})
         if path == "/view":
+            if request.url.params.get("filename") == "matte.png":
+                return httpx.Response(200, content=mock_mask_png(
+                    self.matte_mask_invalid))
             return httpx.Response(200, content=sprite_png(
-                self.bad_background, self.horizontal_offset))
+                self.bad_background or bool(self.graphs and
+                    "25" in self.graphs[-1]), self.horizontal_offset))
         return httpx.Response(404)
 
 
@@ -430,6 +480,103 @@ class SpriteDraftApiTests(unittest.TestCase):
             self.assertEqual(sprite["generation_details"]["adapter"]["weight"], 0.52)
             self.assertEqual(sprite["generation_details"]["adapter"]["reference_kind"],
                              "gallery")
+
+    def test_neural_rmbg_uses_two_outputs_and_keeps_soft_mask(self):
+        listing = self.client.get("/api/v1/images/matting/status")
+        self.assertEqual(listing.status_code, 200, listing.text)
+        self.assertTrue(listing.json()["neural_available"])
+        self.assertEqual(len(self.mock.graphs), 0)
+        draft = self.draft(cutout_mode="neural_rmbg2")
+        self.assertEqual(draft["cutout_mode"], "neural_rmbg2")
+        result = self.generate(draft, "neutral")
+        self.assertEqual(result.status_code, 200, result.text)
+        report = result.json()["slots"]["neutral"]["quality"]
+        self.assertEqual(report["method"], "neural_rmbg")
+        graph = self.mock.graphs[-1]
+        self.assertEqual(graph["23"]["class_type"], "RMBG")
+        self.assertEqual(graph["23"]["inputs"]["background"], "Alpha")
+        self.assertEqual(graph["7"]["inputs"]["images"], ["23", 0])
+        self.assertEqual(graph["24"]["inputs"]["mask"], ["23", 1])
+        self.assertEqual(graph["25"]["inputs"]["images"], ["24", 0])
+        preview = self.client.get(result.json()["slots"]["neutral"]["preview_url"])
+        self.assertEqual(preview.status_code, 200, preview.text)
+        with Image.open(io.BytesIO(preview.content)) as image:
+            self.assertEqual(image.mode, "RGBA")
+            self.assertEqual(image.getpixel((0, 0))[3], 0)
+            self.assertEqual(image.getpixel((128, 128))[3], 255)
+
+    def test_neural_mask_missing_invalid_fails_without_publishing(self):
+        draft = self.draft(cutout_mode="neural_rmbg2")
+        self.mock.matte_mask_missing = True
+        missing = self.generate(draft, "neutral")
+        self.assertEqual(missing.status_code, 502, missing.text)
+        self.assertIn("máscara", missing.text)
+        self.mock.matte_mask_missing = False
+        self.mock.matte_mask_invalid = True
+        rejected = self.generate(draft, "neutral")
+        self.assertEqual(rejected.status_code, 422, rejected.text)
+        self.assertIn("Máscara neuronal", rejected.text)
+        self.assertEqual(self.client.get(self.url(
+            f"/{draft['id']}")).json()["ready_count"], 0)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"], [])
+
+    def test_matting_model_or_node_absent_fails_before_prompt(self):
+        draft = self.draft(cutout_mode="neural_rmbg2")
+        for name in ("matte_weights_missing", "matte_node_missing"):
+            setattr(self.mock, name, True)
+            denied = self.generate(draft, "neutral")
+            self.assertEqual(denied.status_code, 422, (name, denied.text))
+            self.assertEqual(len(self.mock.graphs), 0)
+            setattr(self.mock, name, False)
+        accepted = self.generate(draft, "neutral")
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+
+    def test_birefnet_portrait_neural_approval_has_versioned_model_provenance(self):
+        draft = self.draft(cutout_mode="neural_birefnet_portrait")
+        for expression in EXPRESSIONS:
+            generated = self.generate(draft, expression)
+            self.assertEqual(generated.status_code, 200, generated.text)
+            self.assertEqual(generated.json()["slots"][expression]["quality"][
+                "method"], "neural_birefnet")
+            self.assertEqual(self.mock.graphs[-1]["23"]["class_type"],
+                             "BiRefNetRMBG")
+        approval = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(approval.status_code, 200, approval.text)
+        self.assertEqual(approval.json()["count"], 5)
+        for item in approval.json()["assets"]:
+            meta = item["generation_details"]
+            self.assertEqual(meta["workflow_version"], "comfy-sprite-v3-matting")
+            self.assertEqual(meta["quality"]["method"], "neural_birefnet")
+            self.assertEqual(meta["matting"], {
+                "mode": "neural_birefnet_portrait", "model": "BiRefNet-portrait"})
+
+    def test_neural_combined_with_ipadapter_and_lora_publishes_v4(self):
+        ref = self.client.post(
+            f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("portrait.png", sprite_png(), "image/png")})
+        self.assertEqual(ref.status_code, 200, ref.text)
+        identity = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        draft = self.draft(cutout_mode="neural_rmbg2",
+                           reference_mode="ipadapter", use_lora=True,
+                           reference_asset_id=identity)
+        for expression in EXPRESSIONS:
+            r = self.generate(draft, expression)
+            self.assertEqual(r.status_code, 200, r.text)
+        graph = self.mock.graphs[-1]
+        self.assertEqual(graph["10"]["class_type"], "LoraLoader")
+        self.assertEqual(graph["20"]["class_type"], "IPAdapterUnifiedLoader")
+        self.assertEqual(graph["23"]["class_type"], "RMBG")
+        self.assertEqual(graph["5"]["inputs"]["model"], ["22", 0])
+        self.assertEqual(graph["7"]["inputs"]["images"], ["23", 0])
+        approved = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(approved.status_code, 200, approved.text)
+        meta = approved.json()["assets"][0]["generation_details"]
+        self.assertEqual(meta["workflow_version"], "comfy-sprite-v4-matting-ipadapter")
+        self.assertEqual(meta["matting"]["model"], "RMBG-2.0")
+        self.assertEqual(meta["adapter"]["reference_kind"], "gallery")
+        self.assertEqual(meta["lora"]["lora_name"], "aira.safetensors")
 
     def test_approval_failure_preserves_review_draft(self):
         draft = self.draft()
