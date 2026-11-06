@@ -52,3 +52,7 @@ En **Creator Studio → Personajes** se configura `visual_dna` independiente de 
 **Importación de hoja**: en **Creator Studio → Imágenes**, selecciona el NPC, describe el contexto de la escena, elige pose y una fila de cinco (1 × 5) o columna de cinco (5 × 1). El PNG/WebP debe ser transparente, con cinco celdas de tamaño igual y ninguna celda vacía; orden: neutral → alegría → enojo → tristeza → sorpresa. Se crean cinco PNG RGBA y metadatos `foreground` asociados al NPC de la misma historia. Puedes importar otra hoja para otra pose sin sustituir la primera. Los archivos se preparan antes de insertar el conjunto en SQLite; un fallo SQL revierte los registros y elimina los archivos de esta operación.
 
 Ruta: `POST /api/v1/stories/{id}/creator/characters/{character_id}/expression-sheet` (multipart `caption`, `pose`, `layout`, `file`). Respuesta `201` con `assets[]` y `count:5`. La selección de variante por el lector continúa siendo heurística y necesita captions compatibles con el texto narrado. Importar no genera recursos con IA ni garantiza consistencia artística entre dibujos distintos.
+
+### Vinculación de NPC a fichas visuales
+
+La sección **Personajes** ofrece el selector **Ficha visual vinculada**. Esta ficha pertenece a la Galería de la misma historia; su UUID une el NPC narrativo con el personaje del plan de escena. Cuando un autor utiliza un elenco explícito, la guía textual de ADN solo se añade a esos UUID vinculados y presentes; una coincidencia del nombre por sí sola no introduce otro personaje. El enlace no genera arte ni instala LoRA.
