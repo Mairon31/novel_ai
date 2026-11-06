@@ -332,3 +332,7 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - `tests/test_sprite_drafts.py`: solicitud real HTTP de dos nodos `7/25` por el mismo ID, no publicación si falta la máscara, rechazo de falta de modelo y prueba combinada LoRA+IPAdapter+RMBG con procedencia de versión v4. `tests/test_comfy_runtime.py`: validación conjunta y bloqueo de `/view` si una salida resulta sospechosa. `test_sprite_provenance.py`: v3/v4, archivado de modelos y rechazo de metadatos incoherentes.
 - `apps/web/tests/sprite-ipadapter.spec.ts`: selección de BiRefNet, diagnóstico local simulado y persistencia de `cutout_mode` del borrador en navegador de escritorio y móvil. La creación no llama a `/prompt`.
 - CI funcional integrada: pendiente al registrar estos cambios. Aunque pase CI, la evaluación de pesos RMBG reales, hardware físico y calidad de pelo/cabello queda **sin cobertura**.
+
+### Resultado verificado del matting opcional
+
+[CI #42158275044](https://github.com/Mairon31/novel_ai/actions/runs/42158275044), commit `63db653c`: **326/326 Python, 66/66 Playwright PASS y Vite build PASS**. El módulo de máscara neuronal conserva validación, origen editorial y aprobación manual; el recorrido visual del selector también pasó en móvil. El fallo de `reader-modes.spec.ts` en [CI #42158080563](https://github.com/Mairon31/novel_ai/actions/runs/42158080563) no se reprodujo en la ejecución aprobada, pero la posibilidad de flakiness del atajo queda identificada para seguimiento. No se considera validada la generación con GPUs o pesos RMBG reales.

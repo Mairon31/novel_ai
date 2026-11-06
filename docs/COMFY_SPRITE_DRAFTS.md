@@ -73,3 +73,7 @@ El validador rechaza entradas mayores de 12 MiB, formatos inesperados, máscaras
 Los sprites aprobados por recorte neuronal guardan `quality.method=neural_rmbg|neural_birefnet` y el objeto `matting:{mode,model}`. Si no usaron IPAdapter, la versión es `comfy-sprite-v3-matting`; al combinar ambos se usa `comfy-sprite-v4-matting-ipadapter`. Los respaldos `.noble.zip` y bifurcaciones conservan estos datos y rechazan variantes alteradas. Versiones v1/v2 y archivos manuales siguen siendo válidos.
 
 Los tests emulan las respuestas de ComfyUI y comprueban composición, máscaras inválidas, rutas, catálogo de pesos y UI, pero no demuestran que un checkpoint concreto y el modelo RMBG estén instalados o produzcan buena segmentación. La VRAM y la fidelidad de bordes/peinados deben medirse con un ensayo físico antes de recomendar un preset para hardware determinado.
+
+### Gate de implementación neuronal
+
+[GitHub Actions #42158275044](https://github.com/Mairon31/novel_ai/actions/runs/42158275044) del commit `63db653c`: **326 Python, 66 Playwright escritorio/móvil y compilación Vite aprobadas**. Las pruebas cubren el grafo IMAGE/MASK, ausencia de salida secundaria, inventario de modelos, no-fallback, alfa real y procedencia v3/v4 con IPAdapter. **El resultado todavía no certifica funcionamiento con una instalación física de ComfyUI-RMBG**; la inspección visual del pelo fino y la VRAM quedan pendientes.
