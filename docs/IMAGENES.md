@@ -178,3 +178,7 @@ La transparencia es una **extracción local de croma verde** (`sprite_cutout.py`
 ## Consistencia de NPC mediante referencia IPAdapter (opt-in)
 
 Para sprites IA, `reference_mode=ipadapter` soporta la cadena del plugin local `IPAdapterUnifiedLoader + IPAdapter`, con referencia de Galería o sprite propio del mismo NPC, sin usar la misma imagen como latent img2img. Disponible con LoRA complementario y preflight de nodos/modelos instalados, nunca automático al jugar. Los activos aprobados guardan el preset, fuerza y digest de referencia en `generation_json`. Las cinco variantes se contrastan por geometría de silueta (desplazamiento y tamaño) antes de aprobar, con aceptación humana explícita de diferencias; no es comparación de rostros ni IA de segmentación.
+
+## Matting neuronal de sprites (RMBG/BiRefNet)
+
+Además del recorte verde predeterminado, los borradores admiten `neural_rmbg2`, `neural_birefnet_portrait` y `neural_birefnet_matting`. Se prueba primero el inventario de archivos y los nodos ComfyUI-RMBG. El grafo exporta IMAGE y MASK mediante dos `SaveImage` de una única generación. Noble compone el alfa con la máscara original de grises y aplica criterios de cobertura, borde y tamaño; no asume que ComfyUI conserve los cuatro canales. El sistema guarda método y modelo en procedencia `comfy-sprite-v3/v4`, respeta las aprobaciones editoriales y no se ejecuta al avanzar turnos. No se ha medido rendimiento ni precisión de segmentación con GPU.

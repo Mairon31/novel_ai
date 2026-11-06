@@ -51,3 +51,25 @@ Además de validar el croma de cada candidato, Noble compara la escala y el cent
 ### Gates de aceptación completadas
 
 La funcionalidad IPAdapter de NPC y el editor (sin gate de siluetas) obtuvieron [CI #42155018903](https://github.com/Mairon31/novel_ai/actions/runs/42155018903): **298 Python y 66 Playwright PASS**. La revisión de desplazamiento/escala y validación SHA256 de cada preview obtuvo [CI #42155457588](https://github.com/Mairon31/novel_ai/actions/runs/42155457588): **307 Python y 66 Playwright PASS**, ambos con compilación Vite. Son regresiones HTTP simuladas; ni una CI puede afirmar que el checkpoint físico produzca rostro coherente o que los pesos IPAdapter estén instalados y sean compatibles.
+
+## Recorte neuronal opcional (RMBG-2.0 y BiRefNet)
+
+**Creator Studio → Imágenes → Recorte de fondo para sprites IA** ofrece cuatro métodos:
+
+- **Fondo verde** (`chroma_green`, predeterminado): algoritmo local de croma, sin red neuronal adicional. El prompt exige un fondo verde uniforme; puede fallar con ropa/cabello verdes o sombras y exige bordes despejados.
+- **RMBG-2.0** (`neural_rmbg2`): nodo `RMBG` del complemento [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG), con el modelo `RMBG-2.0`.
+- **BiRefNet Portrait** (`neural_birefnet_portrait`) y **BiRefNet Matting** (`neural_birefnet_matting`): nodo `BiRefNetRMBG` y sus modelos especializados.
+
+El método se fija al crear cada borrador, junto con ADN visual, seed, LoRA y referencia opcionales. El prompt de modos neuronales solicita fondo neutro simple, sin prohibir ropa verde. No se ejecuta ninguna inferencia al crear el borrador ni al verificar el estado. El botón **Comprobar modelos de recorte** consulta `/object_info/RMBG`, `/object_info/BiRefNetRMBG`, `/object_info/MaskToImage` y `/models/rmbg`; inspecciona las entradas reales de nodos y exige todos los archivos de modelo registrados por ComfyUI (código auxiliar, configuración y pesos). Si no están expuestos, devuelve un diagnóstico concreto y la solicitud de generación falla antes de enviar el trabajo. **Noble no instala ni descarga pesos**. El plugin RMBG de terceros podría ofrecer descargas si se invoca fuera de este flujo; aquí Noble no llama a su nodo sin confirmar primero el inventario.
+
+### Transparencia a partir de dos salidas de un mismo trabajo
+
+El workflow mantiene `VAEDecode(6)`, conecta `RMBG/BiRefNetRMBG(23)` a esa imagen, guarda la imagen procesada en `SaveImage(7)` y convierte la salida MASK en una segunda imagen PNG `MaskToImage(24) → SaveImage(25)`. **Ambas salen del mismo ID `/prompt`**; si falta cualquiera, no se publica nada. Noble descarga exclusivamente esas dos salidas bajo el endpoint loopback configurado y valida IDs, nombres, tipos y subcarpetas antes de recuperar recursos. La segunda imagen se interpreta como alfa gris real; Pillow crea un PNG RGBA a partir de los píxeles de la imagen procesada y la máscara. Esto evita depender de que `SaveImage` preserve el alfa de un tensor de cuatro canales. Se conservan los valores suaves de pelo/bordes en vez de binarizar toda la máscara.
+
+El validador rechaza entradas mayores de 12 MiB, formatos inesperados, máscaras con dimensiones diferentes, fondos con alfa mayoritario, máscaras vacías o invertidas, coberturas implausibles y contornos que toquen el borde de forma importante. El resultado conserva la propiedad editorial y la revisión de geometría de las cinco expresiones. No se ofrece un fallback silencioso al croma.
+
+### Proveniencia y límites
+
+Los sprites aprobados por recorte neuronal guardan `quality.method=neural_rmbg|neural_birefnet` y el objeto `matting:{mode,model}`. Si no usaron IPAdapter, la versión es `comfy-sprite-v3-matting`; al combinar ambos se usa `comfy-sprite-v4-matting-ipadapter`. Los respaldos `.noble.zip` y bifurcaciones conservan estos datos y rechazan variantes alteradas. Versiones v1/v2 y archivos manuales siguen siendo válidos.
+
+Los tests emulan las respuestas de ComfyUI y comprueban composición, máscaras inválidas, rutas, catálogo de pesos y UI, pero no demuestran que un checkpoint concreto y el modelo RMBG estén instalados o produzcan buena segmentación. La VRAM y la fidelidad de bordes/peinados deben medirse con un ensayo físico antes de recomendar un preset para hardware determinado.

@@ -324,3 +324,11 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 ### Gate final verificada para siluetas y referencias
 
 [CI #42155457588](https://github.com/Mairon31/novel_ai/actions/runs/42155457588), commit `8fcd976`: **307/307 Python y 66/66 Playwright PASS; build Vite correcto**. Incluye cuatro tests geométricos, tres de normalización de referencia, dos regresiones API sobre aceptación/rechazo y control Playwright de la revisión previa. No confundir tolerancia de silueta con garantía de identidad facial.
+
+## Gate de recorte neuronal (2026-11-05/06)
+
+- `tests/test_comfy_matting.py`: conexiones reales IMAGE/MASK del plugin, presets RMBG y BiRefNet, validación de esquema `RMBG/BiRefNetRMBG/MaskToImage`, inventario de archivos completos, no usar `/prompt` al sondear, fail-closed sin pesos o nodos.
+- `tests/test_neural_matte.py`: reconstrucción RGBA en Pillow con máscara separada, conservación de píxeles semitransparentes (pelo), fondo originalmente no verde, BiRefNet, rechazo de dimensiones diferentes, máscara ausente, invertida, vacía o cortada.
+- `tests/test_sprite_drafts.py`: solicitud real HTTP de dos nodos `7/25` por el mismo ID, no publicación si falta la máscara, rechazo de falta de modelo y prueba combinada LoRA+IPAdapter+RMBG con procedencia de versión v4. `tests/test_comfy_runtime.py`: validación conjunta y bloqueo de `/view` si una salida resulta sospechosa. `test_sprite_provenance.py`: v3/v4, archivado de modelos y rechazo de metadatos incoherentes.
+- `apps/web/tests/sprite-ipadapter.spec.ts`: selección de BiRefNet, diagnóstico local simulado y persistencia de `cutout_mode` del borrador en navegador de escritorio y móvil. La creación no llama a `/prompt`.
+- CI funcional integrada: pendiente al registrar estos cambios. Aunque pase CI, la evaluación de pesos RMBG reales, hardware físico y calidad de pelo/cabello queda **sin cobertura**.
