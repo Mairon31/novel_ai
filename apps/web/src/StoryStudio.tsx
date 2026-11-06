@@ -361,7 +361,7 @@ export function StoryStudio({
         </button>)}
         {!loading && stories.length===0 && <div className="noble-library-empty">
           <BookOpen size={38}/><h3>Tu próxima aventura comienza aquí</h3>
-          <p>Crea el mundo y el protagonista para empezar a escribir tu primera historia.</p>
+          <p>Instala un mundo preparado del catálogo o crea una historia original desde cero.</p>
           <button className="secondary-button" onClick={() => setCreating(true)}>Crear historia</button>
         </div>}
       </div>
