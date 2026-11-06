@@ -231,7 +231,7 @@
 
 ## Retroalimentación jugable — editor, fantasía anime y multimedia integrado (2026-11-06)
 
-**Todas las tareas siguientes están pendientes [ ].** Las dos capturas compartidas muestran el cuadro «Habla como Kai…», la fila superior \`CONTINUAR / REINTENTAR / BORRAR\`, iconos de acción poco descriptivos bajo el campo y un indicador de destellos a la derecha. Son referencias del problema de UX, no una interfaz aprobada. Especificación y criterios ampliados: [PLAN_HISTORIAS_ANIME_2026_11_06.md](docs/PLAN_HISTORIAS_ANIME_2026_11_06.md). No duplicar hitos N-01 a N-15 ya completados parcialmente.
+**Todas las tareas siguientes están pendientes [ ].** Las dos capturas compartidas muestran el cuadro «Habla como Kai…», la fila superior `CONTINUAR / REINTENTAR / BORRAR`, iconos de acción poco descriptivos bajo el campo y un indicador de destellos a la derecha. Son referencias del problema de UX, no una interfaz aprobada. Especificación y criterios ampliados: [PLAN_HISTORIAS_ANIME_2026_11_06.md](docs/PLAN_HISTORIAS_ANIME_2026_11_06.md). No duplicar hitos N-01 a N-15 ya completados parcialmente.
 
 ### P1 — Autoría, arte inicial y estructura de novela
 
@@ -246,7 +246,7 @@
 ### P2 — TTS multi-motor y voz de reparto
 
 - [ ] **N-16 — Adaptadores TTS alternativos:** investigar, validar e integrar **Pocket TTS, OmniVoice, Kokoro TTS y Qwen3 TTS**, sin eliminar Piper; compatibilidad local/Colab, licencias/archivos, requisitos de CPU/GPU, idioma español latinoamericano, instalación/configuración, model hub, inferencia, cancelación, caché, telemetría y descarga del runtime cuando corresponda. **Aceptación:** interfaz común por capacidades y ensayo real por cada motor compatible, sin afirmar que todos aceptan los mismos parámetros.
-- [ ] **N-17 — Voces propias para narrador y cada personaje:** mapeo persistente \`personaje → voz/modelo\` y una voz separada del narrador, prioridad/fallback explícitos, identificación fiable de quién habla y segmentación del diálogo; ajustes por personaje, muestras individuales, mezcla/volumen y continuidad al cambiar de rama/escena. **Aceptación:** conversación con varios NPC y narrador conserva la identidad vocal, no asigna voz aleatoria a hablante desconocido y respeta el orden de escenas.
+- [ ] **N-17 — Voces propias para narrador y cada personaje:** mapeo persistente `personaje → voz/modelo` y una voz separada del narrador, prioridad/fallback explícitos, identificación fiable de quién habla y segmentación del diálogo; ajustes por personaje, muestras individuales, mezcla/volumen y continuidad al cambiar de rama/escena. **Aceptación:** conversación con varios NPC y narrador conserva la identidad vocal, no asigna voz aleatoria a hablante desconocido y respeta el orden de escenas.
 
 ### QA transversal y dependencias
 
