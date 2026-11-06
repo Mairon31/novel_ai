@@ -854,3 +854,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] N-02 sigue abierto: falta instalador desde UI de archivos Piper ONNX/JSON con integridad, progreso de descarga, catálogos y opción de prueba de voz real.
 
 - [x] Robustecimiento de GitHub Actions: validación del paquete nativo de Rollup en Linux y recuperación de la misma versión antes de invocar Vite; responde a fallo de instalación intermitente en CI #42257230770. Cambio publicado, ejecución posterior aún pendiente de resultado.
+
+
+## 2026-11-06 · Primer instalador Piper desde la UI
+
+- [x] Backend `voice_installer.py`: catálogo inicial de dos voces mexicanas verificables, trabajo SQL independiente, revisión HF fijada al instalar, descarga binaria por pareja ONNX/JSON con integridad y tamaño, pausa, Range, cancelación y publicación solo después de verificar.
+- [x] Frontend en Generación multimedia: catálogo, enlace a ficha/licencia, botón Instalar, barra de progreso MiB, pausar/reanudar/cancelar y actualización de las voces seleccionables; no hay descarga al abrir Ajustes.
+- [x] Pruebas Python (Hugging Face simulado) y Playwright (escritorio/móvil, proveedor mock) añadidas. **CI de esta fase aún pendiente**, no equiparar cobertura simulada a instalación física.
+- [ ] Instalación del motor Piper, otros idiomas/voz por personaje y prueba real Windows/Colab pendientes. Checkpoint de imagen desde interfaz pendiente.
