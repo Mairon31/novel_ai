@@ -352,7 +352,10 @@ class SceneImageService:
                 gallery = self.narrative.visual.publish(
                     story_id, view.content, origin="comfyui",
                     prompt=visual_prompt, checkpoint=config["checkpoint"], seed=seed,
-                    render_signature=signature)
+                    render_signature=signature,
+                    render_details={"workflow_version": (
+                        "comfy-native-v3-lora" if lora_stack else "comfy-native-v2"),
+                        "loras": lora_stack})
             return {"story": self.narrative.get_story(story_id),
                     "asset_id": gallery["selected_asset_id"],
                     "reference_asset_id": reference_id,

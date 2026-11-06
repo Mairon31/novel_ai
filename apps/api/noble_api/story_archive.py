@@ -255,8 +255,20 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                             and set(record) == columns - {"expression", "pose"}):
                         record["expression"] = "neutral"
                         record["pose"] = "standing"
+                    # Earlier v1 archives did not include render provenance.
+                    # This extension has an unambiguous, empty legacy default.
+                    if (table == "visual_assets"
+                            and set(record) == columns - {"render_details_json"}):
+                        record["render_details_json"] = "{}"
                     if set(record) != columns:
                         raise ValueError("Columnas ajenas o incompatibles en " + table)
+                    if table == "visual_assets":
+                        try:
+                            details = json.loads(record["render_details_json"])
+                        except (TypeError, ValueError) as exc:
+                            raise ValueError("Metadatos visuales JSON inválidos") from exc
+                        if not isinstance(details, dict):
+                            raise ValueError("Metadatos visuales deben ser un objeto JSON")
                     if table != "stories":
                         if record.get("story_id") not in allowed:
                             raise ValueError("Registro fuera del árbol de historias")

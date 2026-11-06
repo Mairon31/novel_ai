@@ -124,7 +124,8 @@ class VisualState:
                     file_name TEXT NOT NULL, content_sha256 TEXT NOT NULL,
                     origin TEXT NOT NULL, prompt TEXT NOT NULL,
                     checkpoint TEXT, seed INTEGER, created_at REAL NOT NULL,
-                    render_signature TEXT
+                    render_signature TEXT,
+                    render_details_json TEXT NOT NULL DEFAULT '{}'
                 );
                 CREATE INDEX IF NOT EXISTS idx_visual_assets_story
                     ON visual_assets(story_id, created_at, id);
@@ -146,6 +147,9 @@ class VisualState:
             columns = [row[1] for row in conn.execute("PRAGMA table_info(visual_assets)")]
             if "render_signature" not in columns:
                 conn.execute("ALTER TABLE visual_assets ADD COLUMN render_signature TEXT")
+            if "render_details_json" not in columns:
+                conn.execute("ALTER TABLE visual_assets ADD COLUMN "
+                             "render_details_json TEXT NOT NULL DEFAULT '{}'")
             conn.execute("""CREATE INDEX IF NOT EXISTS idx_visual_assets_signature
                 ON visual_assets(story_id, render_signature)""")
 
@@ -424,6 +428,11 @@ class VisualState:
         for item in rows:
             item["url"] = f"/api/v1/stories/{story_id}/gallery/{item['id']}"
             item["selected"] = item["id"] == current
+            try:
+                details = json.loads(item.get("render_details_json") or "{}")
+                item["render_details"] = details if isinstance(details, dict) else {}
+            except (TypeError, ValueError):
+                item["render_details"] = {}
         return {"current_scene": active_scene, "scenes": scenes,
                 "assets": rows, "characters": self.characters(story_id),
                 "selected_asset_id": current}
@@ -503,12 +512,13 @@ class VisualState:
                     asset_map[art["id"]] = new_asset
                     db.execute("""INSERT INTO visual_assets
                         (id,story_id,scene_id,file_name,content_sha256,origin,prompt,
-                         checkpoint,seed,created_at,render_signature)
-                        VALUES(?,?,?,?,?,?,?,?,?,?,?)""", (
+                         checkpoint,seed,created_at,render_signature,render_details_json)
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""", (
                         new_asset, branch_id, scene_map[art["scene_id"]],
                         new_file.name, art["content_sha256"], art["origin"],
                         art["prompt"], art["checkpoint"], art["seed"],
-                        now + index * 0.00001, art.get("render_signature")))
+                        now + index * 0.00001, art.get("render_signature"),
+                        art.get("render_details_json", "{}")))
                 for index, person in enumerate(chars):
                     copied_id = str(uuid.uuid4())
                     character_map[person["id"]] = copied_id
@@ -636,9 +646,16 @@ class VisualState:
 
     def publish(self, story_id: str, raw: bytes, origin: str,
                 prompt: str = "", checkpoint: str | None = None,
-                seed: int | None = None, render_signature: str | None = None) -> dict:
+                seed: int | None = None, render_signature: str | None = None,
+                render_details: dict | None = None) -> dict:
         if origin not in {"manual", "comfyui"}:
             raise ValueError("Origen de imagen no admitido")
+        if render_details is not None and not isinstance(render_details, dict):
+            raise ValueError("Metadatos del render inválidos")
+        raw_details = json.dumps(render_details or {}, ensure_ascii=False,
+                                 sort_keys=True, allow_nan=False)
+        if len(raw_details) > 4096:
+            raise ValueError("Metadatos de render demasiado largos")
         scene = self.scene(story_id)
         transformed = image_bytes_to_webp(raw)
         digest = hashlib.sha256(transformed).hexdigest()
@@ -655,10 +672,10 @@ class VisualState:
             with self.store._conn() as conn:
                 conn.execute("""INSERT INTO visual_assets
                     (id,story_id,scene_id,file_name,content_sha256,origin,prompt,
-                     checkpoint,seed,created_at,render_signature)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                     checkpoint,seed,created_at,render_signature,render_details_json)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (ident, story_id, scene["id"], asset.name, digest, origin,
-                     prompt, checkpoint, seed, now, render_signature))
+                     prompt, checkpoint, seed, now, render_signature, raw_details))
                 conn.execute("""INSERT INTO visual_current(story_id,asset_id)
                     VALUES (?,?) ON CONFLICT(story_id)
                     DO UPDATE SET asset_id=excluded.asset_id""", (story_id, ident))

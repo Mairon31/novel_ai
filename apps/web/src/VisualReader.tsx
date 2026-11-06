@@ -944,6 +944,10 @@ export function VisualReader({
                 alt={'Versión ilustrada ' + asset.id.slice(0, 8)}/>
               <small>{asset.origin === 'comfyui' ? 'ComfyUI' : 'Importada'}
                 {asset.seed != null ? ' · Seed ' + asset.seed : ''}</small>
+              {!!asset.render_details?.loras?.length && <small>
+                LoRAs: {asset.render_details.loras.map(lora =>
+                  lora.lora_name + ' (' + lora.strength + ')').join(', ')}
+              </small>}
               <button disabled={visualBusy || asset.selected}
                 onClick={() => void chooseArtwork(asset.id)}>
                 {asset.selected ? 'En uso' : 'Usar esta versión'}</button>
