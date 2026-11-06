@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import {
-  ArrowUpRight, ArrowRight, Check, Cpu, Download, ExternalLink, Globe2, Image,
+  ArrowUpRight, ArrowRight, Check, Cpu, Download, Globe2, Image,
   KeyRound, Keyboard, Languages, LoaderCircle, LockKeyhole, MonitorCog,
-  MoonStar, Palette, RefreshCcw, Server, Settings2, ShieldCheck,
+  Palette, RefreshCcw, Server, Settings2, ShieldCheck,
   SlidersHorizontal, Trash2, Volume2,
 } from 'lucide-react';
 import { api } from './api';
 import type {
   About, NetworkCapabilities, ProviderCredentialStatus, RuntimeDiagnostics,
-  Updates, WorkspacePreferences,
+  WorkspacePreferences,
 } from './types';
 import { NarrativeSettings } from './NarrativeSettings';
 import { RuntimeManager } from './RuntimeManager';
 import { RemoteWorkers } from './RemoteWorkers';
 import { ImageSettingsPanel } from './ImageSettingsPanel';
+import { AboutSettingsPanel } from './AboutSettingsPanel';
+import { UpdatesSettingsPanel } from './UpdatesSettingsPanel';
 import { VoiceSettingsPanel } from './VoiceSettingsPanel';
 
 type Tab = 'overview' | 'narration' | 'images' | 'voice' | 'languages' | 'providers' |
@@ -92,7 +94,6 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
   }
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const [about, setAbout] = useState<About | null>(null);
-  const [release, setRelease] = useState<Updates | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostics | null>(null);
   const [network, setNetwork] = useState<NetworkCapabilities | null>(null);
   const [credential, setCredential] = useState<ProviderCredentialStatus | null>(null);
@@ -109,16 +110,13 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    if (tab === 'updates' && !release) {
-      void api.updates().then(setRelease).catch((e: Error) => setError(e.message));
-    }
     if (tab === 'runtimes' && !diagnostics) {
       void api.runtimeDiagnostics().then(setDiagnostics).catch((e: Error) => setError(e.message));
     }
     if (tab === 'network' && !network) {
       void api.networkCapabilities().then(setNetwork).catch((e: Error) => setError(e.message));
     }
-  }, [tab, release, diagnostics, network]);
+  }, [tab, diagnostics, network]);
 
   async function update<K extends keyof WorkspacePreferences>(field: K, value: WorkspacePreferences[K]) {
     if (!prefs || busy) return;
@@ -129,7 +127,6 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       window.dispatchEvent(new CustomEvent('noble-shortcuts-changed', { detail: next.shortcuts_enabled }));
       if (field === 'accent' || field === 'font_scale' || field === 'reader_layout')
         applyAppearance(next);
-      if (field === 'update_channel') setRelease(null);
       setFeedback('Preferencia guardada.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
@@ -143,12 +140,6 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       setCredential(updated); setKeyDraft('');
       setFeedback(remove ? 'Clave retirada del almacén.' : 'Clave guardada en el almacén de credenciales del sistema.');
     } catch (e) { setError((e as Error).message); }
-    finally { setBusy(false); }
-  }
-  async function refreshReleases() {
-    setBusy(true); setError('');
-    try { setRelease(await api.updates(true)); }
-    catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
   function option<T extends string | number>(name: string, value: T, choices: [T, string][],
@@ -376,51 +367,11 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <RemoteWorkers onActivated={onNarratorActivated}/>
         </>}
 
-        {tab === 'about' && prefs && <>
-          <div className="setting-section-intro"><h2>Acerca de Noble AI</h2>
-            <p>Versión, compilación y ubicación de los archivos de usuario.</p></div>
-          <div className="workspace-panel">
-            <div className="workspace-about-title"><MoonStar size={27}/><div><strong>Noble AI</strong><span>Local Story Studio</span></div></div>
-            {about && <div className="workspace-diagnostics-list">
-              <div><span>Versión</span><code>{about.version}</code></div>
-              <div><span>Commit</span><code>{about.commit}</code></div>
-              <div><span>Tipo de instalación</span><code>{about.build_type}</code></div>
-              <div><span>Datos</span><code>{about.data_dir}</code></div>
-              <div><span>Modelos</span><code>{modelsDir || about.models_dir}</code></div>
-              <div><span>Python</span><code>{about.python}</code></div>
-            </div>}
-          </div>
-        </>}
-
-        {tab === 'updates' && prefs && <>
-          <div className="setting-section-intro"><h2>Actualizaciones</h2>
-            <p>Consulta publicaciones y decide qué canal de versiones quieres recibir.</p></div>
-          <div className="workspace-panel">
-            <h3><Download size={17}/> Actualizaciones</h3>
-            <div className="workspace-field-grid">
-              {option('Canal de versiones', prefs.update_channel, [
-                ['stable', 'Stable · versiones probadas'],
-                ['beta', 'Beta · versiones preliminares'],
-                ['nightly', 'Nightly · cambios recientes'],
-              ], v => void update('update_channel', v))}
-            </div>
-            {toggle('Comprobar novedades al abrir la aplicación',
-              prefs.check_updates_on_start, v => void update('check_updates_on_start', v))}
-            {release && <div className="workspace-release-card">
-              {release.check_success ? release.release ? <>
-                <strong>{release.release.name}</strong>
-                <span>Publicación encontrada para el canal {release.channel}.</span>
-                {release.release.url && <a href={release.release.url} target="_blank" rel="noreferrer">
-                  Ver publicación <ExternalLink size={14}/></a>}
-              </> : <span>No hay releases publicadas para el canal {release.channel}.</span> :
-                <span>{release.message}</span>}
-            </div>}
-            <p>Esta ejecución es de código fuente. Podemos consultar releases pero no instalar una actualización automáticamente hasta disponer de un empaquetador, verificación de integridad y rollback.</p>
-            <button className="secondary-button" disabled={busy} onClick={() => void refreshReleases()}>
-              {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCcw size={16}/>}
-              Comprobar actualizaciones</button>
-          </div>
-        </>}
+        {tab === 'about' && <AboutSettingsPanel about={about} modelsDir={modelsDir}/>}
+        {tab === 'updates' && prefs && <UpdatesSettingsPanel
+          prefs={prefs} parentBusy={busy}
+          onChangeChannel={value => { void update('update_channel', value); }}
+          onAutoCheck={enabled => { void update('check_updates_on_start', enabled); }}/>}
       </div>
     </div>
   </section>;
