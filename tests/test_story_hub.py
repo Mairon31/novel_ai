@@ -132,6 +132,40 @@ class StoryHubTests(unittest.TestCase):
         self.assertEqual(len(self.client.get(
             "/api/v1/stories").json()["stories"]), before)
 
+    def test_bundled_world_roundtrip_portable_archive_preserves_lore_and_npcs(self):
+        created = self.client.post(
+            "/api/v1/story-hub/jardin-mecanico/install",
+            json={"protagonist_name": "Luna"})
+        self.assertEqual(created.status_code, 201, created.text)
+        story_id = created.json()["story"]["id"]
+        download = self.client.get(
+            f"/api/v1/stories/{story_id}/archive.noble.zip")
+        self.assertEqual(download.status_code, 200, download.text)
+        self.assertEqual(download.content[:2], b"PK")
+        copied = self.client.post(
+            "/api/v1/stories/archive/import?as_copy=true",
+            files={"file": ("world.noble.zip", download.content,
+                            "application/zip")})
+        self.assertEqual(copied.status_code, 201, copied.text)
+        other_id = copied.json()["root_story_id"]
+        self.assertNotEqual(other_id, story_id)
+        prefix = "/api/v1/stories/"
+        blueprint = self.client.get(prefix + other_id + "/creator").json()
+        self.assertEqual(blueprint["ai_plot"], PACK_BY_ID["jardin-mecanico"]["ai_plot"])
+        self.assertEqual(len(blueprint["opening_scenarios"]), 3)
+        cast = self.client.get(prefix + other_id + "/creator/characters").json()[
+            "characters"]
+        lore = self.client.get(prefix + other_id + "/lorebook").json()["entries"]
+        self.assertEqual(len(cast), 4)
+        self.assertEqual(len(lore), 3)
+        self.assertTrue(set(x["id"] for x in cast).isdisjoint(
+            x["id"] for x in self.client.get(
+                prefix + story_id + "/creator/characters").json()["characters"]))
+        first = self.client.post(prefix + other_id + "/creator/opening",
+                                 json={"index": 2})
+        self.assertEqual(first.status_code, 201, first.text)
+        self.assertIn("Luna", first.json()["assistant_text"])
+
     def test_sqlite_failure_in_lore_rolls_back_entire_package(self):
         narrative = self.app.state.narrative
         hub = StoryHubService(narrative)
