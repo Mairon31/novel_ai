@@ -10,11 +10,12 @@ import asyncio
 import hashlib
 import json
 import shutil
+import tempfile
 import uuid
 from pathlib import Path
 
 from fastapi import HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field, ConfigDict
 
 from .narrative import NarrativeService
@@ -28,6 +29,13 @@ class SpeechPreferences(BaseModel):
 class SpeechRequest(BaseModel):
     voice_id: str = Field(min_length=1, max_length=180)
     request_source: str = "listen_button"
+
+
+class VoicePreviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    voice_id: str = Field(min_length=1, max_length=180)
+    text: str = Field(min_length=10, max_length=400)
+    request_source: str = "preview_button"
 
 
 class SpeechService:
@@ -80,6 +88,46 @@ class SpeechService:
         if not sidecar.is_file() or sidecar.is_symlink():
             raise HTTPException(422, "Falta la configuración JSON de la voz Piper")
         return target
+
+    async def preview(self, body: VoicePreviewRequest) -> Response:
+        """Synthesize an explicitly requested short sample without saving it."""
+        if body.request_source != "preview_button" or not body.text.strip():
+            raise HTTPException(422, "La prueba de voz requiere una solicitud explícita y texto")
+        model = self.voice_path(body.voice_id)
+        executable = shutil.which("piper")
+        if not executable:
+            raise HTTPException(503, "Piper no está instalado en PATH")
+        if self.lock.locked():
+            raise HTTPException(409, "El motor Piper está ocupado")
+        await self.lock.acquire()
+        try:
+            with tempfile.TemporaryDirectory(prefix=".noble-piper-test-", dir=self.root) as directory:
+                target = Path(directory) / "sample.wav"
+                process = await asyncio.create_subprocess_exec(
+                    executable, "--model", str(model), "--output_file", str(target),
+                    stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
+                    stderr=asyncio.subprocess.PIPE)
+                try:
+                    _, stderr = await asyncio.wait_for(
+                        process.communicate((body.text.strip() + "\n").encode("utf-8")),
+                        timeout=60)
+                except asyncio.TimeoutError:
+                    process.kill()
+                    await process.communicate()
+                    raise HTTPException(504, "Piper agotó el tiempo de prueba de voz")
+                if process.returncode != 0 or not target.is_file():
+                    raise HTTPException(502, "Piper no pudo generar la prueba: " +
+                                        stderr.decode("utf-8", errors="replace")[:160])
+                if not 44 < target.stat().st_size <= 16 * 1024 * 1024:
+                    raise HTTPException(502, "La prueba WAV tiene tamaño inválido")
+                data = target.read_bytes()
+                if data[:4] != b"RIFF" or data[8:12] != b"WAVE":
+                    raise HTTPException(502, "Piper devolvió audio WAV inválido")
+                return Response(data, media_type="audio/wav", headers={
+                    "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+                })
+        finally:
+            self.lock.release()
 
     async def synthesize(self, story_id: str, turn_id: str,
                          request: SpeechRequest) -> FileResponse:
@@ -158,6 +206,10 @@ def mount_speech_routes(app, speech: SpeechService):
     @app.get("/api/v1/tts/voices")
     def voices():
         return speech.voices()
+
+    @app.post("/api/v1/tts/preview")
+    async def preview_voice(body: VoicePreviewRequest):
+        return await speech.preview(body)
 
     @app.post("/api/v1/stories/{story_id}/turns/{turn_id}/speech")
     async def synthesize(story_id: uuid.UUID, turn_id: uuid.UUID, body: SpeechRequest):
