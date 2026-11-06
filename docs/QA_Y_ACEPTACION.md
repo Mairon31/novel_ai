@@ -320,3 +320,7 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [CI #42155018903](https://github.com/Mairon31/novel_ai/actions/runs/42155018903) (commit `47c0cf8`): **298 Python y 66 Playwright PASS, build Vite PASS**, incluye corrección de dependencia npm ausente en versiones anteriores.
 - `test_sprite_alignment.py` y cobertura adicional de `test_sprite_drafts.py`/Playwright comprueban métricas geométricas, confirmación por autor y prevención de previews alteradas mediante SHA256. Esta segunda gate se cerrará cuando termine la CI del commit `8fcd976` o posterior.
 - PENDIENTE: test real de modelos IPAdapter/checkpoint/CLIP Vision, latencias GPU, consistencia facial entre cinco sprites, máscaras neuronales, adaptación regional de NPC simultáneos. Una prueba que solo compara siluetas no certifica identidad.
+
+### Gate final verificada para siluetas y referencias
+
+[CI #42155457588](https://github.com/Mairon31/novel_ai/actions/runs/42155457588), commit `8fcd976`: **307/307 Python y 66/66 Playwright PASS; build Vite correcto**. Incluye cuatro tests geométricos, tres de normalización de referencia, dos regresiones API sobre aceptación/rechazo y control Playwright de la revisión previa. No confundir tolerancia de silueta con garantía de identidad facial.

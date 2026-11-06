@@ -47,3 +47,7 @@ Al generar, el backend comprueba que ambos nodos anuncien sus entradas correctas
 ## Revisión de continuidad de la silueta
 
 Además de validar el croma de cada candidato, Noble compara la escala y el centro del rectángulo alfa de las cinco variantes. Muestra avisos de diferencias fuertes. Si los hay, **Aprobar cinco expresiones** queda desactivado hasta marcar que revisaste y aceptas las diferencias; la API también exige `accept_alignment_warnings=true` explícito. En aprobación se revisan de nuevo las cinco imágenes, comprobando el SHA256 guardado para evitar publicar un PNG alterado desde que se generó. Estas alarmas son geométricas: pueden detectar una silueta desplazada o con tamaño muy distinto, **no** garantizan que el rostro, ojos, vestuario o edad coincidan.
+
+### Gates de aceptación completadas
+
+La funcionalidad IPAdapter de NPC y el editor (sin gate de siluetas) obtuvieron [CI #42155018903](https://github.com/Mairon31/novel_ai/actions/runs/42155018903): **298 Python y 66 Playwright PASS**. La revisión de desplazamiento/escala y validación SHA256 de cada preview obtuvo [CI #42155457588](https://github.com/Mairon31/novel_ai/actions/runs/42155457588): **307 Python y 66 Playwright PASS**, ambos con compilación Vite. Son regresiones HTTP simuladas; ni una CI puede afirmar que el checkpoint físico produzca rostro coherente o que los pesos IPAdapter estén instalados y sean compatibles.
