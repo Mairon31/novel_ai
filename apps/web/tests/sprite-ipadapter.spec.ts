@@ -35,6 +35,20 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     } });
     expect(configured.status()).toBe(200);
 
+    await page.route('**/api/v1/images/matting/status', async route => {
+      await route.fulfill({ status: 200, json: {
+        neural_available: true, modes: [
+          { mode: 'chroma_green', model: null, node: null, ready: true,
+            reason: '' },
+          { mode: 'neural_rmbg2', model: 'RMBG-2.0', node: 'RMBG', ready: true,
+            reason: '' },
+          { mode: 'neural_birefnet_portrait', model: 'BiRefNet-portrait',
+            node: 'BiRefNetRMBG', ready: true, reason: '' },
+          { mode: 'neural_birefnet_matting', model: 'BiRefNet-matting',
+            node: 'BiRefNetRMBG', ready: true, reason: '' },
+        ],
+      } });
+    });
     await page.route('**/api/v1/images/identity-adapter/status', async route => {
       await route.fulfill({ status: 200, json: {
         available: true, presets: [
@@ -56,6 +70,10 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
       name: 'Preparar borrador de cinco expresiones',
     })).toBeDisabled();
     await page.getByLabel('Sprite de referencia IA').selectOption(sprite);
+    await page.getByLabel('Recorte de fondo para sprites IA')
+      .selectOption('neural_birefnet_portrait');
+    await page.getByRole('button', { name: 'Comprobar modelos de recorte' }).click();
+    await expect(page.getByText('BiRefNet-portrait: Listo')).toBeVisible();
     await page.getByLabel('Preset IPAdapter de sprites IA').selectOption(
       'STANDARD (medium strength)');
     await page.getByLabel('Fuerza IPAdapter de sprites IA').fill('0.9');
@@ -69,16 +87,19 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     const items = (await response.json() as {drafts: Array<{
       reference_sprite_asset_id: string;
       reference_mode: string; ipadapter_preset: string;
+      cutout_mode: string;
       ipadapter_weight: number; ready_count: number;
     }>}).drafts;
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({
       reference_sprite_asset_id: sprite, reference_mode: 'ipadapter',
+      cutout_mode: 'neural_birefnet_portrait',
       ipadapter_preset: 'STANDARD (medium strength)',
       ipadapter_weight: 0.9, ready_count: 0,
     });
     await expect(page.getByText(/IPAdapter STANDARD \(medium strength\) \(0.9\)/))
       .toBeVisible();
+    await expect(page.getByText(/Recorte: BiRefNet retratos/)).toBeVisible();
     const media = await page.request.get(
       '/api/v1/stories/' + story + '/creator/assets');
     expect((await media.json() as {assets: unknown[]}).assets).toHaveLength(1);
