@@ -130,6 +130,30 @@ class VisualRenderProvenanceTests(unittest.TestCase):
                              (self.story,)).fetchone()
         self.assertEqual(row["render_details_json"], "{}")
 
+    def test_untrusted_archive_provenance_cannot_render_unbounded_loras(self):
+        self.publish()
+        payload = self.download()
+        for detail in (
+            {"workflow_version": "v3", "loras": "not-an-array"},
+            {"workflow_version": "v3", "loras": [
+                {"character_name": "Aira", "lora_name": "../outside.safetensors",
+                 "strength": 0.8}]},
+            {"workflow_version": "v3", "loras": [
+                {"character_name": "Aira", "lora_name": "aira.safetensors",
+                 "strength": 900}]},
+            {"workflow_version": "v3", "loras": [
+                {"character_name": "Aira", "lora_name": "aira.safetensors",
+                 "strength": 0.8}] * 4},
+        ):
+            forged = change_archive(payload, lambda manifest: [
+                row.__setitem__("render_details_json", json.dumps(detail))
+                for row in manifest["tables"]["visual_assets"]])
+            result = self.restore(forged)
+            self.assertEqual(result.status_code, 422, (detail, result.text))
+        with self.other.state.store._conn() as db:
+            self.assertEqual(db.execute(
+                "SELECT COUNT(*) FROM stories").fetchone()[0], 0)
+
     def test_tampered_provenance_json_rejected_without_writes(self):
         self.publish()
         forged = change_archive(self.download(), lambda manifest: [

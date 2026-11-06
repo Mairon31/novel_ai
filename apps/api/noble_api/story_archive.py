@@ -21,6 +21,8 @@ import zipfile
 from fastapi import File, HTTPException, UploadFile
 from fastapi.responses import Response
 
+from .render_provenance import normalized_render_details
+
 FORMAT = "noble-story-family"
 VERSION = 1
 MAX_STORIES = 64
@@ -263,12 +265,7 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                     if set(record) != columns:
                         raise ValueError("Columnas ajenas o incompatibles en " + table)
                     if table == "visual_assets":
-                        try:
-                            details = json.loads(record["render_details_json"])
-                        except (TypeError, ValueError) as exc:
-                            raise ValueError("Metadatos visuales JSON inválidos") from exc
-                        if not isinstance(details, dict):
-                            raise ValueError("Metadatos visuales deben ser un objeto JSON")
+                        normalized_render_details(record["render_details_json"])
                     if table != "stories":
                         if record.get("story_id") not in allowed:
                             raise ValueError("Registro fuera del árbol de historias")

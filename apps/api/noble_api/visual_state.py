@@ -24,6 +24,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field, ConfigDict
 
 from .store import Store
+from .render_provenance import normalized_render_details
 
 MAX_BYTES = 12 * 1024 * 1024
 MAX_PIXELS = 20_000_000
@@ -429,9 +430,10 @@ class VisualState:
             item["url"] = f"/api/v1/stories/{story_id}/gallery/{item['id']}"
             item["selected"] = item["id"] == current
             try:
-                details = json.loads(item.get("render_details_json") or "{}")
-                item["render_details"] = details if isinstance(details, dict) else {}
-            except (TypeError, ValueError):
+                item["render_details"] = normalized_render_details(
+                    item.get("render_details_json", "{}"))
+            except ValueError:
+                # Bad local metadata must not prevent reading stored images.
                 item["render_details"] = {}
         return {"current_scene": active_scene, "scenes": scenes,
                 "assets": rows, "characters": self.characters(story_id),
@@ -650,9 +652,8 @@ class VisualState:
                 render_details: dict | None = None) -> dict:
         if origin not in {"manual", "comfyui"}:
             raise ValueError("Origen de imagen no admitido")
-        if render_details is not None and not isinstance(render_details, dict):
-            raise ValueError("Metadatos del render inválidos")
-        raw_details = json.dumps(render_details or {}, ensure_ascii=False,
+        details = normalized_render_details(render_details)
+        raw_details = json.dumps(details, ensure_ascii=False,
                                  sort_keys=True, allow_nan=False)
         if len(raw_details) > 4096:
             raise ValueError("Metadatos de render demasiado largos")
