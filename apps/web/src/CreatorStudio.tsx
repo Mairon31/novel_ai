@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
   Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X, BookKey, Globe2,
@@ -7,7 +7,8 @@ import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
-  CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, LorebookEntry, LorebookEntryDraft, LorebookPreview,
+  CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, VisualAsset,
+  LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
 type Section = 'story' | 'cast' | 'lorebook' | 'world' | 'openings' | 'media';
@@ -56,6 +57,17 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [sheetPose, setSheetPose] = useState('standing');
   const [sheetLayout, setSheetLayout] = useState<'horizontal' | 'vertical'>('horizontal');
   const [sheetFile, setSheetFile] = useState<File | null>(null);
+  const [spriteDrafts, setSpriteDrafts] = useState<SpriteDraft[]>([]);
+  const [draftCharacter, setDraftCharacter] = useState('');
+  const [draftStyle, setDraftStyle] = useState('clean anime visual novel art');
+  const [draftCaption, setDraftCaption] = useState('');
+  const [draftPose, setDraftPose] = useState('standing');
+  const [draftSeed, setDraftSeed] = useState('');
+  const [draftUseLora, setDraftUseLora] = useState(false);
+  const [draftReference, setDraftReference] = useState('');
+  const [draftProgress, setDraftProgress] = useState('');
+  const [galleryAssets, setGalleryAssets] = useState<VisualAsset[]>([]);
+  const storyGuard = useRef<string | null>(null);
   const [openingDraft, setOpeningDraft] = useState('');
   const [assets, setAssets] = useState<CreatorMediaAsset[]>([]);
   const [mediaKind, setMediaKind] = useState<CreatorMediaAsset['kind']>('background');
@@ -99,11 +111,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setEditingLorebook(null); setLorebookDraft(blankLorebook);
     setLoreKeysInput(''); setLoreSecondaryInput(''); setLorePreview(null);
     setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
+    storyGuard.current = active.id;
     setAssets([]); setMediaFile(null); setSheetFile(null); setSheetCharacter('');
+    setSpriteDrafts([]); setDraftCharacter(''); setDraftReference('');
+    setGalleryAssets([]); setDraftProgress('');
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
                  api.creatorAssets(active.id), api.lorebookEntries(active.id),
-                 api.visualState(active.id)])
-      .then(([data, cast, media, lorebook, visuals]) => {
+                 api.visualState(active.id), api.spriteDrafts(active.id)])
+      .then(([data, cast, media, lorebook, visuals, draftResult]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
           opening_scenarios, genre, tags, language } = data;
@@ -112,6 +127,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
         setVisualCharacters(visuals.characters);
+        setGalleryAssets(visuals.assets);
+        setSpriteDrafts(draftResult.drafts);
         setAssets(media.assets);
         setLorebookEntries(lorebook.entries);
       })
@@ -195,6 +212,86 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setSheetFile(null);
       setNotice('Se importaron ' + result.count + ' expresiones para el personaje.');
     } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function startSpriteDraft() {
+    if (!active || !draftCharacter || draftCaption.trim().length < 3) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      const seed = draftSeed.trim() ? Number(draftSeed) : undefined;
+      if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
+        throw new Error('La semilla debe ser un entero positivo seguro.');
+      const created = await api.startSpriteDraft(active.id, draftCharacter, {
+        caption: draftCaption.trim(), pose: draftPose.trim(),
+        style: draftStyle.trim(), seed,
+        reference_asset_id: draftReference || undefined, use_lora: draftUseLora,
+      });
+      if (storyGuard.current === active.id) {
+        setSpriteDrafts(prev => [created, ...prev]);
+        setNotice('Borrador creado. Genera las expresiones y revísalas antes de aprobar.');
+      }
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  const spriteExpressions: Array<{ id: SpriteExpression; label: string }> = [
+    { id: 'neutral', label: 'Neutral' },
+    { id: 'joy', label: 'Alegría' },
+    { id: 'anger', label: 'Enojo' },
+    { id: 'sadness', label: 'Tristeza' },
+    { id: 'surprise', label: 'Sorpresa' },
+  ];
+
+  async function generateSprites(draft: SpriteDraft, expression?: SpriteExpression) {
+    if (!active || working) return;
+    const storyId = active.id;
+    setWorking(true); setError(''); setNotice('');
+    let current = draft;
+    try {
+      const chosen = spriteExpressions
+        .filter(entry => expression === entry.id || (!expression && !current.slots[entry.id].ready));
+      for (const [index, entry] of chosen.entries()) {
+        if (storyGuard.current !== storyId) break;
+        setDraftProgress('Generando ' + entry.label + ' (' +
+          (index + 1) + '/' + chosen.length + ') mediante ComfyUI...');
+        current = await api.generateSpriteExpression(storyId, draft.id, entry.id);
+        if (storyGuard.current === storyId)
+          setSpriteDrafts(prev => prev.map(item => item.id === draft.id ? current : item));
+      }
+      if (storyGuard.current === storyId) {
+        setNotice('Borrador actualizado. Comprueba contornos, expresión y coherencia antes de aprobar.');
+      }
+    } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
+    finally { setDraftProgress(''); setWorking(false); }
+  }
+
+  async function approveSprites(draft: SpriteDraft) {
+    if (!active || working || draft.ready_count !== 5) return;
+    const storyId = active.id;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      const result = await api.approveSpriteDraft(storyId, draft.id);
+      if (storyGuard.current === storyId) {
+        setAssets((await api.creatorAssets(storyId)).assets);
+        setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
+        setNotice('Aprobadas ' + result.count + ' expresiones. Ya están disponibles en el lector.');
+      }
+    } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function discardSprites(draft: SpriteDraft) {
+    if (!active || working || !window.confirm('¿Descartar este borrador y sus vistas previas?')) return;
+    const storyId = active.id;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      await api.discardSpriteDraft(storyId, draft.id);
+      if (storyGuard.current === storyId) {
+        setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
+        setNotice('Borrador descartado. No se han cambiado los sprites publicados.');
+      }
+    } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setWorking(false); }
   }
 
@@ -573,6 +670,118 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onClick={() => void importSheet()}><UploadCloud size={16}/>
                   Importar cinco expresiones
                 </button>
+              </div>
+              <div className="creator-media-form">
+                <h4>Generar expresiones con IA · revisión previa</h4>
+                <p>ComfyUI produce cinco retratos individuales, uno por solicitud. Noble
+                  intenta quitar el fondo verde; si el recorte no es fiable se rechaza.
+                  Los resultados son borradores hasta que apruebes las cinco vistas previas.</p>
+                <div className="creator-double">
+                  <label>Personaje para IA
+                    <select aria-label="NPC para generar expresiones" value={draftCharacter}
+                      onChange={event => setDraftCharacter(event.target.value)}>
+                      <option value="">Selecciona un NPC</option>
+                      {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
+                    </select>
+                  </label>
+                  <label>Pose del sprite generado
+                    <input aria-label="Pose de sprites IA" maxLength={32}
+                      value={draftPose} onChange={event => setDraftPose(event.target.value)}/>
+                  </label>
+                </div>
+                <label>Descripción para seleccionar los sprites durante la historia
+                  <input aria-label="Contexto de sprites IA" maxLength={220}
+                    value={draftCaption} onChange={event => setDraftCaption(event.target.value)}
+                    placeholder="Aira en la biblioteca antigua"/>
+                </label>
+                <label>Estilo visual de las expresiones
+                  <input aria-label="Estilo visual de sprites IA" maxLength={220}
+                    value={draftStyle} onChange={event => setDraftStyle(event.target.value)}/>
+                </label>
+                <div className="creator-double">
+                  <label>Semilla opcional (si está vacía se usa la del NPC)
+                    <input type="number" aria-label="Semilla de sprites IA"
+                      min={0} step={1} value={draftSeed}
+                      onChange={event => setDraftSeed(event.target.value)}
+                      placeholder="Semilla del ADN visual"/>
+                  </label>
+                  <label>Referencia de Galería (opcional)
+                    <select aria-label="Referencia de sprites IA"
+                      value={draftReference} onChange={event => setDraftReference(event.target.value)}>
+                      <option value="">Sin referencia, texto a imagen</option>
+                      {galleryAssets.map(asset => <option value={asset.id} key={asset.id}>
+                        {asset.origin === 'comfyui' ? 'ComfyUI' : 'Importada'} · {asset.id.slice(0, 8)}
+                      </option>)}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  <input type="checkbox" aria-label="Usar LoRA del NPC para sprites IA"
+                    checked={draftUseLora} onChange={event => setDraftUseLora(event.target.checked)}/>
+                  {' '}Aplicar el LoRA configurado para este NPC (si está instalado)
+                </label>
+                <p className="creator-hint">
+                  Se usa el mismo checkpoint, seed y estilo en las cinco expresiones.
+                  Una referencia activa img2img; no garantiza conservar exactamente el rostro.
+                  Se admiten tres borradores por historia y caducan después de 48 horas.
+                  No se realizan cinco generaciones en paralelo.
+                </p>
+                <button className="secondary-button" disabled={working || !draftCharacter ||
+                    draftCaption.trim().length < 3 ||
+                    !/^[a-z0-9_-]{1,32}$/.test(draftPose.trim().toLowerCase())}
+                  onClick={() => void startSpriteDraft()}>
+                  <Sparkles size={16}/> Preparar borrador de cinco expresiones
+                </button>
+                {draftProgress && <p role="status" className="creator-hint">
+                  <LoaderCircle className="rotating" size={15}/> {draftProgress}
+                </p>}
+                {spriteDrafts.map(draft => <section key={draft.id}
+                    className="creator-sprite-draft" aria-label={'Borrador de sprites ' + draft.character_name}>
+                  <h4>{draft.character_name} · {draft.ready_count}/5 expresiones</h4>
+                  <p className="creator-hint">{draft.checkpoint} · Semilla {draft.seed} ·
+                    {' '}{draft.use_lora ? 'LoRA activado' : 'Sin LoRA'} · {draft.pose}</p>
+                  <div className="creator-media-grid">
+                    {spriteExpressions.map(entry => {
+                      const slot = draft.slots[entry.id];
+                      return <article className="creator-media-card" key={entry.id}>
+                        <div className="creator-media-thumbnail foreground">
+                          {slot.preview_url ? <img
+                            src={slot.preview_url + '?v=' + draft.updated_at}
+                            alt={'Vista previa ' + entry.label + ' de ' + draft.character_name}
+                            loading="lazy"/> : <ImageIcon size={28}/>}
+                        </div>
+                        <div className="creator-media-copy">
+                          <strong>{entry.label}</strong>
+                          <small>{slot.ready ? 'Por revisar' : 'Sin generar'}</small>
+                          {slot.quality && <small>
+                            Fondo: {slot.quality.method === 'border_chroma_key'
+                              ? 'recorte verde' : 'transparencia original'} ·
+                            Cobertura {Math.round(slot.quality.coverage * 100)}%
+                          </small>}
+                          <button className="secondary-button" disabled={working}
+                            aria-label={'Generar expresión ' + entry.label}
+                            onClick={() => void generateSprites(draft, entry.id)}>
+                            {slot.ready ? 'Regenerar' : 'Generar'}
+                          </button>
+                        </div>
+                      </article>;
+                    })}
+                  </div>
+                  <div className="creator-actions">
+                    <button className="secondary-button" disabled={working || draft.ready_count === 5}
+                      onClick={() => void generateSprites(draft)}>
+                      <Sparkles size={16}/> Generar expresiones faltantes
+                    </button>
+                    <button className="primary-button" disabled={working || draft.ready_count !== 5}
+                      onClick={() => void approveSprites(draft)}>
+                      <Check size={16}/> Aprobar cinco expresiones
+                    </button>
+                    <button className="secondary-button" disabled={working}
+                      onClick={() => void discardSprites(draft)}>
+                      <Trash2 size={15}/> Descartar borrador
+                    </button>
+                  </div>
+                </section>)}
               </div>
             </div> :
             section === 'lorebook' ? <div className="creator-fields">

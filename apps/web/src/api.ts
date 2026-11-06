@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -197,6 +197,23 @@ export const api = {
     }
     return response.json() as Promise<{ assets: CreatorMediaAsset[]; count: number }>;
   },
+  spriteDrafts: (storyId: string) => request<{drafts: SpriteDraft[]}>(
+    '/stories/' + encodeURIComponent(storyId) + '/creator/sprite-drafts'),
+  startSpriteDraft: (storyId: string, characterId: string, input: NewSpriteDraft) =>
+    request<SpriteDraft>('/stories/' + encodeURIComponent(storyId) +
+      '/creator/characters/' + encodeURIComponent(characterId) + '/sprite-drafts', json(input)),
+  generateSpriteExpression: (storyId: string, draftId: string,
+                            expression: SpriteExpression, allowLowVram = false) =>
+    request<SpriteDraft>('/stories/' + encodeURIComponent(storyId) +
+      '/creator/sprite-drafts/' + encodeURIComponent(draftId) +
+      '/expressions/' + expression, json({ allow_low_vram: allowLowVram })),
+  approveSpriteDraft: (storyId: string, draftId: string) =>
+    request<{count: number; assets: CreatorMediaAsset[]; approved: boolean}>(
+      '/stories/' + encodeURIComponent(storyId) + '/creator/sprite-drafts/' +
+      encodeURIComponent(draftId) + '/approve', json({})),
+  discardSpriteDraft: (storyId: string, draftId: string) =>
+    request<void>('/stories/' + encodeURIComponent(storyId) +
+      '/creator/sprite-drafts/' + encodeURIComponent(draftId), { method: 'DELETE' }),
   editCreatorAsset: (storyId: string, assetId: string, label: string, caption: string,
     expression?: SpriteExpression, pose?: string) =>
     request<CreatorMediaAsset>('/stories/' + encodeURIComponent(storyId) +

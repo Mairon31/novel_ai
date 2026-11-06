@@ -353,6 +353,21 @@ export type CreatorMediaAsset = {
   expression: SpriteExpression; pose: string;
   filename: string; media_type: string; created_at: number; url: string;
 };
+export type SpriteDraftSlot = {
+  ready: boolean; preview_url: string | null;
+  quality: { method: string; coverage: number; requires_author_review: boolean } | null;
+};
+export type SpriteDraft = {
+  id: string; story_id: string; character_id: string; character_name: string;
+  caption: string; pose: string; seed: number; checkpoint: string;
+  style: string; use_lora: boolean; reference_asset_id: string | null;
+  slots: Record<SpriteExpression, SpriteDraftSlot>;
+  ready_count: number; created_at: number; updated_at: number;
+};
+export type NewSpriteDraft = {
+  caption: string; pose: string; style: string; seed?: number;
+  reference_asset_id?: string; use_lora: boolean;
+};
 export type SceneSprite = CreatorMediaAsset & {
   expression_target: SpriteExpression;
   speaker: boolean;
