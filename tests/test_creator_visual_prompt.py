@@ -90,6 +90,11 @@ class CanonicalVisualPromptTests(unittest.TestCase):
         text = self.preview("Una biblioteca iluminada por velas antiguas")
         self.assertIn("cabello blanco puro", text)
         self.assertNotIn("cicatriz violeta", text)
+        # The general illustration preview must match the actual render plan.
+        render_preview = self.client.post(self.base + "/illustration-prompt", json={
+            "prompt": "Una biblioteca iluminada por velas antiguas"})
+        self.assertEqual(render_preview.status_code, 200, render_preview.text)
+        self.assertEqual(render_preview.json()["prompt"], text)
         none = self.client.put(self.base + "/scene-plan", json={
             "visible_character_ids": [], "shot": "medium",
             "lighting": "natural",

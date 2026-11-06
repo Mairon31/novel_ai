@@ -787,7 +787,11 @@ def mount_visual_routes(app, visual: VisualState):
         if not isinstance(prompt, str) or not 8 <= len(prompt) <= 2400:
             raise HTTPException(422, "El prompt debe tener entre 8 y 2400 caracteres")
         try:
-            return {"prompt": visual.enriched_prompt(str(story_id), prompt),
-                    "inference_used": False}
+            # Preview uses the same saved scene plan as actual ComfyUI rendering.
+            planner = getattr(visual, "planner", None)
+            composed = (planner.prompt(str(story_id), prompt)
+                        if planner is not None else
+                        visual.enriched_prompt(str(story_id), prompt))
+            return {"prompt": composed, "inference_used": False}
         except ValueError as exc:
             raise HTTPException(404, str(exc)) from exc
