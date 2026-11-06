@@ -34,6 +34,10 @@ OLLAMA_INSTALL_URL = "https://ollama.com/install.sh"
 COMFY_HF_REPO = "Comfy-Org/stable-diffusion-1.5"
 COMFY_HF_FILE = "v1-5-pruned-emaonly-fp16.safetensors"
 COMFY_SHA256 = "e9476a13728cd75d8279f6ec8bad753a66a1957ca375a1464dc63b37db6e3916"
+PIPER_REPO = "rhasspy/piper-voices"
+PIPER_VOICE = "es_MX-claude-high.onnx"
+PIPER_FILE = "es/es_MX/claude/high/" + PIPER_VOICE
+PIPER_SHA256 = "3ef40a71ea63852cd8ab7e6fa7d2ecdcfa67a0b47c9c48e3f10e02ee02083ea0"
 BASE = Path("/content/noble-ai-colab")
 APP_DIR = BASE / "app"
 DATA_DIR = BASE / "data"
@@ -542,6 +546,61 @@ def ensure_comfy() -> str:
     return COMFY_HF_FILE
 
 
+def ensure_spanish_voice(*, enable_for_fresh_data: bool) -> str:
+    """Install an opt-in-on-start, on-demand es-419 Piper voice.
+
+    Never auto-synthesize during page navigation, never overwrite an existing
+    configured voice and never re-enable TTS if the user previously disabled it.
+    """
+    if not shutil.which("piper"):
+        say("VOZ", "Instalando Piper para lectura de turnos bajo demanda.")
+        shell([sys.executable, "-m", "pip", "install", "piper-tts"],
+              log_name="piper-deps", timeout=1200)
+    voice_dir = DATA_DIR / "models" / "voices"
+    voice_dir.mkdir(parents=True, exist_ok=True)
+    target = voice_dir / PIPER_VOICE
+    sidecar = voice_dir / (PIPER_VOICE + ".json")
+    if not target.is_file() or checksum_file(target) != PIPER_SHA256 or (
+            not sidecar.is_file()):
+        say("VOZ", "Descargando ONNX español latinoamericano (~63 MB).")
+        shell([sys.executable, "-m", "pip", "install", "huggingface_hub", "hf_xet"],
+              log_name="voice-hf-deps", timeout=1200)
+        from huggingface_hub import hf_hub_download
+        raw = hf_hub_download(
+            repo_id=PIPER_REPO, filename=PIPER_FILE,
+            cache_dir=str(BASE / "hf-piper"))
+        config = hf_hub_download(
+            repo_id=PIPER_REPO, filename=PIPER_FILE + ".json",
+            cache_dir=str(BASE / "hf-piper"))
+        if checksum_file(Path(raw)) != PIPER_SHA256:
+            raise RuntimeError("No coincide la huella publicada de la voz Piper")
+        with Path(config).open("r", encoding="utf-8") as stream:
+            metadata = json.load(stream)
+        if metadata.get("espeak", {}).get("voice") != "es-419":
+            raise RuntimeError("La configuración Piper no es español latinoamericano")
+        shutil.copy2(raw, target)
+        shutil.copy2(config, sidecar)
+    available = json_request("http://127.0.0.1:8000/api/v1/tts/voices")
+    if (not available.get("available") or
+            PIPER_VOICE not in {x.get("id") for x in available.get("voices", [])
+                                if isinstance(x, dict)}):
+        raise RuntimeError("Noble AI no detecta la voz Piper instalada")
+    settings = json_request("http://127.0.0.1:8000/api/v1/tts/config")
+    if not settings.get("default_voice_id"):
+        result = json_request(
+            "http://127.0.0.1:8000/api/v1/tts/config",
+            {"default_voice_id": PIPER_VOICE})
+        if result.get("default_voice_id") != PIPER_VOICE:
+            raise RuntimeError("No se pudo guardar la voz Piper")
+    if enable_for_fresh_data:
+        app_settings = json_request("http://127.0.0.1:8000/api/v1/settings")
+        if not app_settings.get("tts_enabled"):
+            json_request("http://127.0.0.1:8000/api/v1/settings",
+                         {"tts_enabled": True}, method="PATCH")
+    say("VOZ", "Piper " + PIPER_VOICE + " preparado; escuchar es opcional.")
+    return PIPER_VOICE
+
+
 def clone_data_from_drive(local: Path, cloud: Path) -> None:
     if (local / "noble.sqlite").exists():
         say("DRIVE", "Conservo los datos locales de esta sesión.")
@@ -638,13 +697,15 @@ def display_colab_ui(port: int = NOBLE_PORT) -> None:
 def launch(args) -> dict:
     valid_revision(args.revision)
     valid_model_tag(args.model)
-    if args.images not in ("auto", "on", "off"):
-        raise ValueError("Perfil de imágenes inválido")
+    if args.images not in ("auto", "on", "off") or (
+            getattr(args, "voice", "auto") not in ("auto", "on", "off")):
+        raise ValueError("Perfil de imágenes o voz inválido")
     BASE.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     sha = ensure_git(args.revision)
     if args.drive_backup:
         activate_drive(DATA_DIR)
+    fresh_library = not (DATA_DIR / "noble.sqlite").exists()
     ensure_app()
     gpu, vram = gpu_info()
     say("HARDWARE", (gpu + " (" + str(vram) + " MiB)" if gpu else
@@ -685,7 +746,7 @@ def launch(args) -> dict:
     infer_ready = verify_narrator() if model else False
     state = {
         "source_revision": sha, "model": model,
-        "image_checkpoint": None,
+        "image_checkpoint": None, "voice": None,
         "data_dir": str(DATA_DIR), "logs_dir": str(LOG_DIR),
         "gpu_name": gpu, "gpu_total_mb": vram,
         "narrator_smoke_ok": infer_ready,
@@ -697,6 +758,20 @@ def launch(args) -> dict:
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     say("LISTO", "El lector y el narrador ya pueden utilizarse.")
     display_colab_ui()
+    # Voice and image providers are best-effort extras after the playable UI.
+    voice = None
+    if getattr(args, "voice", "auto") != "off":
+        try:
+            voice = ensure_spanish_voice(enable_for_fresh_data=fresh_library)
+        except (RuntimeError, TimeoutError, OSError, ValueError,
+                urllib.error.URLError, ImportError) as exc:
+            say("VOZ", "Instalación opcional incompleta: " + str(exc)[:220])
+            say("VOZ", "Puedes seguir leyendo y escuchando después de instalarla.")
+    else:
+        say("VOZ", "Instalación Piper desactivada.")
+    state["voice"] = voice
+    (LOG_DIR / "launch_state.json").write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     # Image provider is a best-effort extra, not a prerequisite for reading.
     image_checkpoint = None
     if args.images == "on" or args.images == "auto" and vram is not None:
@@ -721,6 +796,7 @@ def launch(args) -> dict:
     say("TERMINADO", "Noble AI commit " + sha[:10])
     say("TERMINADO", "Narración: " + (model or "requiere configuración"))
     say("TERMINADO", "Imágenes: " + (image_checkpoint or "sin checkpoint autoinstalado"))
+    say("TERMINADO", "Voz: " + (voice or "sin Piper autoinstalado"))
     return state
 
 def main(argv: list[str] | None = None) -> int:
@@ -729,6 +805,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default="auto",
                         help="auto o cualquier tag de Ollama válido")
     parser.add_argument("--images", choices=("auto", "on", "off"), default="auto")
+    parser.add_argument("--voice", choices=("auto", "on", "off"), default="auto")
     parser.add_argument("--drive-backup", action="store_true")
     args = parser.parse_args(argv)
     try:
