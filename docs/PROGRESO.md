@@ -872,4 +872,4 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] API `/api/v1/tts/preview`: texto limitado a 400 caracteres, fuente `preview_button`, verificación de voz y binario, bloqueo compartido de síntesis, timeout y WAV temporal (se elimina, no se escribe historia).
 - [x] Interfaz: texto de prueba, botón explícito y reproductor de audio nativo tras recibir WAV, sin autoplay ni activación accidental.
-- [x] Pruebas Python con motor ficticio y Playwright escritorio/móvil añadidas; CI aún pendiente. Pruebas con Piper real y voz real pendientes.
+- [x] Pruebas Python con motor ficticio y Playwright escritorio/móvil aprobadas: [CI #42265155907](https://github.com/Mairon31/novel_ai/actions/runs/42265155907), 381 Python / 76 navegador y Vite PASS. Pruebas con Piper real y voz real pendientes.
