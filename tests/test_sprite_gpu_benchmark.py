@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from sprite_gpu_benchmark import (
     MODES, EXPRESSIONS, benchmark, comma_list, image_metrics,
-    loopback_base, nvidia_snapshot, quantile,
+    loopback_base, list_resources, nvidia_snapshot, quantile,
 )
 
 
@@ -47,6 +47,17 @@ class FakeNoble:
     def __call__(self, req: httpx.Request):
         route = req.url.path
         self.requests.append((req.method, route))
+        if route == "/api/v1/stories" and req.method == "GET":
+            return httpx.Response(200, json={"stories": [
+                {"id": STORY, "title": "Libro privado"},
+            ]})
+        if route == f"/api/v1/stories/{STORY}/creator/characters":
+            return httpx.Response(200, json={"characters": [
+                {"id": NPC, "name": "Personaje de prueba"},
+            ]})
+        if (req.method == "DELETE" and route.startswith(
+                f"/api/v1/stories/{STORY}/creator/sprite-drafts/")):
+            return httpx.Response(204)
         if route == "/api/v1/images/config":
             return httpx.Response(200, json={
                 "checkpoint": "SDXL-test.safetensors", "width": 256,
@@ -207,6 +218,44 @@ class BenchmarkScriptTests(unittest.TestCase):
             self.assertTrue((Path(out) / "chroma_green-neutral.png").is_file())
             self.assertEqual(json.loads((Path(out) / "report.json").read_text())[
                 "modes"][0]["status"], "partial")
+
+    def test_discovery_is_local_read_only_and_keeps_private_data_out_of_reports(self):
+        fake = FakeNoble()
+        transport = httpx.MockTransport(fake)
+        stories = asyncio.run(list_resources("http://127.0.0.1:8000",
+                                             transport=transport))
+        cast = asyncio.run(list_resources(
+            "http://127.0.0.1:8000", STORY, transport=transport))
+        self.assertEqual(stories, [{"id": STORY, "label": "Libro privado"}])
+        self.assertEqual(cast, [{"id": NPC, "label": "Personaje de prueba"}])
+        self.assertEqual(len(fake.requests), 2)
+        self.assertTrue(all(method == "GET" for method, _ in fake.requests))
+
+    def test_discards_own_temporary_drafts_for_all_four_modes(self):
+        fake = FakeNoble()
+        # The mocked provider only advertises two modes; the other two skip
+        # safely rather than claiming the four-model comparison completed.
+        with tempfile.TemporaryDirectory() as out:
+            result = asyncio.run(benchmark(
+                base="http://127.0.0.1:8000", story_id=STORY,
+                character_id=NPC, modes=MODES,
+                expressions=("neutral",), seed=3, directory=Path(out),
+                discard_after=True, transport=httpx.MockTransport(fake),
+                gpu_probe=lambda _: None, progress=lambda _: None))
+            self.assertEqual([r["status"] for r in result["modes"]],
+                             ["success", "success", "skipped", "skipped"])
+            self.assertEqual([r["draft_cleanup"] for r in result["modes"][:2]],
+                             ["discarded", "discarded"])
+            deleted = [p for method, p in fake.requests if method == "DELETE"]
+            self.assertEqual(len(deleted), 2)
+            self.assertTrue((Path(out) / "chroma_green-neutral.png").is_file())
+            self.assertTrue((Path(out) / "neural_rmbg2-neutral.png").is_file())
+            with self.assertRaisesRegex(ValueError, "tres borradores"):
+                asyncio.run(benchmark(
+                    base="http://127.0.0.1:8000", story_id=STORY,
+                    character_id=NPC, modes=MODES,
+                    expressions=("neutral",), seed=3, directory=Path(out),
+                    discard_after=False, transport=httpx.MockTransport(fake)))
 
     def test_declared_ipadapter_is_preflighted_without_exposing_reference(self):
         fake = FakeNoble()
