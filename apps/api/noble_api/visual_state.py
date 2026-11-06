@@ -354,7 +354,7 @@ class VisualState:
                 continue
             if selected_visual_ids is None:
                 present = bool(re.search(
-                    r"(?<!\\w)" + re.escape(name) + r"(?!\\w)",
+                    r"(?<!\w)" + re.escape(name) + r"(?!\w)",
                     prompt, re.IGNORECASE))
             else:
                 present = npc.get("visual_character_id") in selected_visual_ids
