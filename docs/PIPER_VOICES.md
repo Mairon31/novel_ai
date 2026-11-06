@@ -44,3 +44,7 @@ Estados: `queued`, `downloading`, `verifying`, `paused`, `failed`, `cancelled`, 
 - Pruebas físicas con la voz real de Hugging Face, Piper real y reproducción en Windows/Colab. La suite automatizada simula las respuestas HTTP y no prueba calidad de voz ni descarga real.
 
 **Pruebas de contrato**: `tests/test_piper_voice_installer.py` reproduce metadatos Hugging Face, descargas completas y parciales, integridad, archivo ausente, reanudación y cancelación sin usar red real; `apps/web/tests/piper-installer.spec.ts` comprueba el ciclo de UI en escritorio y móvil con proveedor simulado. Resultado CI se registra en `docs/PROGRESO.md`.
+
+## Evidencia de integración
+
+[CI #42263945875](https://github.com/Mairon31/novel_ai/actions/runs/42263945875): 378/378 pruebas Python, 76/76 pruebas Playwright en escritorio/móvil y compilación Vite PASS (descarga HF y motor Piper simulados). Se incorporó después un test de bloqueo de sobrescritura sobre archivos manuales, y una corrección independiente de atajos del lector: ambos requieren confirmación de la nueva CI.

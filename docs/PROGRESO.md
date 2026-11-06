@@ -860,5 +860,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] Backend `voice_installer.py`: catálogo inicial de dos voces mexicanas verificables, trabajo SQL independiente, revisión HF fijada al instalar, descarga binaria por pareja ONNX/JSON con integridad y tamaño, pausa, Range, cancelación y publicación solo después de verificar.
 - [x] Frontend en Generación multimedia: catálogo, enlace a ficha/licencia, botón Instalar, barra de progreso MiB, pausar/reanudar/cancelar y actualización de las voces seleccionables; no hay descarga al abrir Ajustes.
-- [x] Pruebas Python (Hugging Face simulado) y Playwright (escritorio/móvil, proveedor mock) añadidas. **CI de esta fase aún pendiente**, no equiparar cobertura simulada a instalación física.
+- [x] Pruebas Python (Hugging Face simulado) y Playwright (escritorio/móvil, proveedor mock) aprobadas en [CI #42263945875](https://github.com/Mairon31/novel_ai/actions/runs/42263945875): 378 Python, 76 Playwright y Vite PASS. No equiparar cobertura simulada a instalación física.
 - [ ] Instalación del motor Piper, otros idiomas/voz por personaje y prueba real Windows/Colab pendientes. Checkpoint de imagen desde interfaz pendiente.
+
+- [x] Arreglo del contador de descarga: los bytes del JSON de configuración estaban buffered y no se reportaban al 100 %. Corregido, verificado en CI #42263945875.
+- [x] Protección adicional ante archivos ONNX/JSON del usuario preexistentes, antes de transferir bytes, con prueba Python específica. Última ejecución CI pendiente.
+- [x] Fix de atajos del lector: si un cambio de modo aún se guarda, conserva el último Alt+1/2/3 para aplicarlo después, en lugar de ignorarlo por carrera. Última ejecución CI pendiente.
