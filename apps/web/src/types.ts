@@ -352,6 +352,12 @@ export type CreatorMediaAsset = {
   label: string; caption: string; character_id: string | null;
   expression: SpriteExpression; pose: string;
   filename: string; media_type: string; created_at: number; url: string;
+  source: 'manual' | 'ai_reviewed';
+  generation_details: {
+    workflow_version?: string; checkpoint?: string; seed?: number;
+    prompt_sha256?: string; lora?: { lora_name: string; strength: number };
+    quality?: { method: string; coverage: number; author_approved: boolean };
+  };
 };
 export type SpriteDraftSlot = {
   ready: boolean; preview_url: string | null;

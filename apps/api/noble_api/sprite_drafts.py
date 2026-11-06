@@ -31,6 +31,7 @@ from .creator_media import (CreatorMediaService, EXPRESSIONS,
                             MAX_MEDIA_BYTES, validate_pose)
 from .images import SceneImageService, resized_reference_png, workflow
 from .sprite_cutout import transparent_sprite
+from .sprite_provenance import normalize_sprite_generation
 
 DRAFT_TTL = 48 * 60 * 60
 MAX_DRAFTS_PER_STORY = 3
@@ -418,9 +419,20 @@ class SpriteDraftService:
         output = io.BytesIO()
         sheet.save(output, "PNG", optimize=True)
         settings = json.loads(row["settings_json"])
+        generation = {
+            name: normalize_sprite_generation({
+                "workflow_version": "comfy-sprite-v1",
+                "checkpoint": settings["comfy"]["checkpoint"],
+                "seed": settings["seed"],
+                "prompt_sha256": entries[name]["prompt_sha256"],
+                "lora": settings["lora"],
+                "quality": {**entries[name]["quality"], "author_approved": True},
+            }) for name in EXPRESSIONS
+        }
         assets = self.media.import_expression_sheet(
             story_id, row["character_id"], output.getvalue(),
-            settings["caption"], settings["pose"], layout="horizontal")
+            settings["caption"], settings["pose"], layout="horizontal",
+            generation=generation)
         self._delete(row)
         return {"count": len(assets), "assets": assets, "approved": True}
 

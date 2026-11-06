@@ -22,6 +22,7 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, ConfigDict, Field
 
 from .narrative import NarrativeService
+from .sprite_provenance import normalize_sprite_generation
 
 MAX_MEDIA_BYTES = 12 * 1024 * 1024
 MAX_MEDIA_PIXELS = 20_000_000
@@ -164,7 +165,9 @@ class CreatorMediaService:
                     media_type TEXT NOT NULL,
                     created_at REAL NOT NULL,
                     expression TEXT NOT NULL DEFAULT 'neutral',
-                    pose TEXT NOT NULL DEFAULT 'standing'
+                    pose TEXT NOT NULL DEFAULT 'standing',
+                    source TEXT NOT NULL DEFAULT 'manual',
+                    generation_json TEXT NOT NULL DEFAULT '{}'
                 );
                 CREATE INDEX IF NOT EXISTS creator_media_by_story
                     ON creator_media_assets(story_id,kind,created_at);
@@ -187,6 +190,12 @@ class CreatorMediaService:
             if "pose" not in media_columns:
                 db.execute("ALTER TABLE creator_media_assets ADD COLUMN "
                            "pose TEXT NOT NULL DEFAULT 'standing'")
+            if "source" not in media_columns:
+                db.execute("ALTER TABLE creator_media_assets ADD COLUMN "
+                           "source TEXT NOT NULL DEFAULT 'manual'")
+            if "generation_json" not in media_columns:
+                db.execute("ALTER TABLE creator_media_assets ADD COLUMN "
+                           "generation_json TEXT NOT NULL DEFAULT '{}'")
             db.execute("""CREATE INDEX IF NOT EXISTS creator_sprite_variant
                 ON creator_media_assets(story_id,kind,character_id,expression,pose)""")
 
@@ -226,6 +235,11 @@ class CreatorMediaService:
         for row in rows:
             row["url"] = (f"/api/v1/stories/{story_id}/creator/assets/"
                           f"{row['id']}/file")
+            try:
+                row["generation_details"] = normalize_sprite_generation(
+                    json.loads(row.get("generation_json") or "{}"))
+            except (ValueError, TypeError):
+                row["generation_details"] = {}
         return rows
 
     def get(self, story_id: str, asset_id: str) -> dict:
@@ -281,7 +295,8 @@ class CreatorMediaService:
 
     def import_expression_sheet(self, story_id: str, character_id: str, data: bytes,
                                 caption: str, pose: str = "standing",
-                                layout: str = "horizontal") -> list[dict]:
+                                layout: str = "horizontal",
+                                generation: dict[str, dict] | None = None) -> list[dict]:
         """Atomically register five transparent sprite cells in canonical order.
 
         The imported PNG/WebP must be a 1x5 or 5x1 grid ordered as EXPRESSIONS.
@@ -294,6 +309,14 @@ class CreatorMediaService:
             raise ValueError("La descripción de la hoja debe tener 3–220 caracteres")
         if layout not in {"horizontal", "vertical"}:
             raise ValueError("Distribución de hoja no admitida")
+        if generation is not None and set(generation) != set(EXPRESSIONS):
+            raise ValueError("La procedencia debe describir las cinco expresiones")
+        validated = {
+            expression: normalize_sprite_generation(details)
+            for expression, details in (generation or {}).items()
+        }
+        if generation is not None and any(not item for item in validated.values()):
+            raise ValueError("Procedencia generativa incompleta")
         if not 0 < len(data) <= MAX_MEDIA_BYTES:
             raise ValueError("La hoja debe ocupar entre 1 byte y 12 MiB")
         try:
@@ -356,11 +379,15 @@ class CreatorMediaService:
                     db.execute(
                         "INSERT INTO creator_media_assets "
                         "(id,story_id,kind,label,caption,character_id,filename,"
-                        "media_type,created_at,expression,pose) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                        "media_type,created_at,expression,pose,source,generation_json) "
+                        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (asset_id, story_id, "foreground",
                          f"{name} · {expression}", caption, character_id,
                          filename.name, "image/png", time.time() + index * 0.000001,
-                         expression, pose))
+                         expression, pose,
+                         "ai_reviewed" if generation is not None else "manual",
+                         json.dumps(validated[expression], ensure_ascii=False,
+                                    sort_keys=True) if generation is not None else "{}"))
         except Exception:
             for filename in written:
                 filename.unlink(missing_ok=True)
@@ -619,11 +646,13 @@ class CreatorMediaService:
                 db.execute(
                     "INSERT INTO creator_media_assets "
                     "(id,story_id,kind,label,caption,character_id,filename,media_type,"
-                    "created_at,expression,pose) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    "created_at,expression,pose,source,generation_json) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (row["id"], row["story_id"], row["kind"], row["label"],
                      row["caption"], row["character_id"], row["filename"],
                      row["media_type"], time.time(),
-                     row.get("expression", "neutral"), row.get("pose", "standing"))
+                     row.get("expression", "neutral"), row.get("pose", "standing"),
+                     row.get("source", "manual"), row.get("generation_json", "{}"))
                 )
             if chosen_cover and chosen_cover in {item["id"] for item in active}:
                 db.execute("UPDATE stories SET cover_asset_id=? WHERE id=?",

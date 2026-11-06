@@ -536,7 +536,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <div className="creator-media-copy">
                     <small>{asset.kind === 'cover' ? 'PORTADA' :
                       asset.kind === 'background' ? 'FONDO' : 'PRIMER PLANO'}
-                      {asset.id === active.cover_asset_id ? ' · ACTUAL' : ''}</small>
+                      {asset.id === active.cover_asset_id ? ' · ACTUAL' : ''}
+                      {asset.source === 'ai_reviewed' ? ' · IA REVISADA' : ''}</small>
                     <strong>{asset.label}</strong><p>{asset.caption}</p>
                     {asset.kind === 'foreground' && <small>
                       Expresión: {asset.expression} · Pose: {asset.pose}

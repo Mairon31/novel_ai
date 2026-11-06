@@ -22,6 +22,7 @@ from fastapi import File, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from .render_provenance import normalized_render_details
+from .sprite_provenance import normalize_sprite_generation
 
 FORMAT = "noble-story-family"
 VERSION = 1
@@ -250,13 +251,14 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                 for record in records:
                     if not isinstance(record, dict):
                         raise ValueError("Columnas ajenas o incompatibles en " + table)
-                    # Schema extension in v1: old exported media rows predate
-                    # sprite expressions and poses. Only these two explicitly
-                    # defaultable columns may be absent; never ignore unknowns.
-                    if (table == "creator_media_assets"
-                            and set(record) == columns - {"expression", "pose"}):
-                        record["expression"] = "neutral"
-                        record["pose"] = "standing"
+                    # Older v1 backups predate sprite variants and/or generated
+                    # provenance. Each listed field has a safe, exact default.
+                    if table == "creator_media_assets":
+                        defaults = {"expression": "neutral", "pose": "standing",
+                                    "source": "manual", "generation_json": "{}"}
+                        missing = columns - set(record)
+                        if missing <= defaults.keys():
+                            record.update({field: defaults[field] for field in missing})
                     # Earlier v1 archives did not include render provenance.
                     # This extension has an unambiguous, empty legacy default.
                     if (table == "visual_assets"
@@ -266,6 +268,18 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                         raise ValueError("Columnas ajenas o incompatibles en " + table)
                     if table == "visual_assets":
                         normalized_render_details(record["render_details_json"])
+                    if table == "creator_media_assets":
+                        if record["source"] not in {"manual", "ai_reviewed"}:
+                            raise ValueError("Origen editorial inválido")
+                        raw = record["generation_json"]
+                        if not isinstance(raw, str) or len(raw) > 4096:
+                            raise ValueError("Procedencia de sprite demasiado grande")
+                        try:
+                            generation = normalize_sprite_generation(json.loads(raw))
+                        except (ValueError, TypeError) as exc:
+                            raise ValueError("Procedencia de sprite inválida") from exc
+                        if bool(generation) != (record["source"] == "ai_reviewed"):
+                            raise ValueError("Origen y procedencia de sprite inconsistentes")
                     if table != "stories":
                         if record.get("story_id") not in allowed:
                             raise ValueError("Registro fuera del árbol de historias")
