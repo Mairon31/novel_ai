@@ -171,6 +171,10 @@ class SpriteDraftApiTests(unittest.TestCase):
         saved = self.client.get(
             f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]
         self.assertEqual({a["expression"] for a in saved}, set(EXPRESSIONS))
+        self.assertEqual({a["source"] for a in saved}, {"ai_reviewed"})
+        self.assertTrue(all(a["generation_details"]["quality"]["author_approved"]
+                            for a in saved))
+        self.assertTrue(all(a["generation_details"]["seed"] == 712 for a in saved))
         self.assertTrue(all(a["character_id"] == self.npc for a in saved))
         self.assertTrue(all(a["media_type"] == "image/png" for a in saved))
         self.assertEqual(self.client.get(self.url()).json()["drafts"], [])
