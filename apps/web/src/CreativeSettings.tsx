@@ -24,6 +24,11 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   useEffect(() => () => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
   }, []);
+  function clearPreview() {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setPreviewUrl(null);
+  }
   async function previewPiper() {
     const voiceId = voicePreferences?.default_voice_id || voices?.voices[0]?.id;
     if (!voiceId || previewBusy) return;
@@ -333,7 +338,10 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
         <label className="workspace-pref-field">Voz predeterminada del lector
           <select aria-label="Voz predeterminada de Piper" disabled={busy}
             value={voicePreferences.default_voice_id}
-            onChange={e => setVoicePreferences({ default_voice_id: e.target.value })}>
+            onChange={e => {
+              setVoicePreferences({ default_voice_id: e.target.value });
+              clearPreview();
+            }}>
             <option value="">Primera voz instalada</option>
             {voices?.voices.map(voice =>
               <option key={voice.id} value={voice.id}>{voice.name}</option>)}
@@ -350,7 +358,7 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
         <label className="workspace-pref-field">Texto para probar voz
           <input aria-label="Texto de muestra de voz" maxLength={400}
             value={previewText} disabled={previewBusy}
-            onChange={e => setPreviewText(e.target.value)}/>
+            onChange={e => { setPreviewText(e.target.value); clearPreview(); }}/>
         </label>
         <button type="button" className="secondary-button"
           disabled={previewBusy || !voices?.available || !voices.voices.length ||
