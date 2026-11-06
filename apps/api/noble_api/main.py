@@ -26,6 +26,7 @@ from .control import ControlPlane, mount_control_routes
 from .secrets import Secrets
 from .media import mount_media_routes
 from .images import SceneImageService, mount_image_routes
+from .sprite_drafts import SpriteDraftService, mount_sprite_draft_routes
 from .speech import SpeechService, mount_speech_routes
 from .visual_state import VisualState, mount_visual_routes
 from .scene_planner import ScenePlanner, mount_scene_plan_routes
@@ -116,6 +117,7 @@ def create_app(
     episodes = EpisodicMemory(narrative)
     narrative.episodes = episodes
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
+    sprite_drafts = SpriteDraftService(creator_media, images)
     speech = SpeechService(narrative)
 
     @asynccontextmanager
@@ -142,6 +144,7 @@ def create_app(
     service.state.narrative = narrative
     service.state.kobold = kobold
     service.state.images = images
+    service.state.sprite_drafts = sprite_drafts
     service.state.resources = resources
     service.state.speech = speech
     service.state.visual = visual
@@ -289,6 +292,7 @@ def create_app(
     mount_lorebook_routes(service, lorebook)
     mount_world_state_routes(service, world)
     mount_creator_media_routes(service, creator_media)
+    mount_sprite_draft_routes(service, sprite_drafts)
     mount_image_routes(service, images)
     mount_resource_routes(service, resources)
     mount_speech_routes(service, speech)
