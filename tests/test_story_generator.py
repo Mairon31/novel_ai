@@ -124,6 +124,61 @@ class GeneratorTests(unittest.TestCase):
             self.service.install(draft)
         self.assertFalse(self.client.get("/api/v1/stories").json()["stories"])
 
+    def test_regenerate_only_openings_preserves_all_other_fields(self):
+        self.fake()
+        async def generate(config, messages):
+            yield json.dumps({"openings": [
+                "{{user}} ve una señal nueva en el faro y recibe una carta con una advertencia sobre el puerto y sus secretos.",
+                "{{user}} encuentra la puerta del muelle abierta mientras alguien toca la campana y el mar permanece quieto.",
+                "{{user}} observa la torre en silencio cuando una voz desconocida menciona la llave y un nombre olvidado.",
+            ]})
+        self.app.state.narrative.generate = generate
+        draft = {**CORE, "protagonist_name": "Luna",
+                 "characters": CAST["characters"], "lore": LORE["lore"]}
+        response = self.client.post("/api/v1/creator/assistant/regenerate",
+            json={"draft": draft, "section": "openings", "instruction": "Más misterio"})
+        self.assertEqual(response.status_code, 200, response.text)
+        updated = response.json()["draft"]
+        self.assertNotEqual(updated["openings"], draft["openings"])
+        for key in draft:
+            if key != "openings":
+                self.assertEqual(updated[key], draft[key])
+        self.assertFalse(response.json()["saved"])
+        self.assertFalse(self.client.get("/api/v1/stories").json()["stories"])
+
+    def test_regenerate_invalid_section_and_bad_output_do_not_save(self):
+        self.fake()
+        draft = {**CORE, "protagonist_name": "Luna",
+                 "characters": CAST["characters"], "lore": LORE["lore"]}
+        invalid = self.client.post("/api/v1/creator/assistant/regenerate",
+            json={"draft": draft, "section": "everything", "instruction": ""})
+        self.assertEqual(invalid.status_code, 422)
+        async def bad(config, messages):
+            yield '{"characters": []}'
+        self.app.state.narrative.generate = bad
+        result = self.client.post("/api/v1/creator/assistant/regenerate",
+            json={"draft": draft, "section": "characters", "instruction": ""})
+        self.assertEqual(result.status_code, 422, result.text)
+        self.assertFalse(self.client.get("/api/v1/stories").json()["stories"])
+
+    def test_regenerate_lore_keeps_cast_and_story_untouched(self):
+        self.fake()
+        async def generate(config, messages):
+            yield json.dumps({"lore": [
+                {"title": "Nuevo faro", "content": "El faro guarda recuerdos antiguos y protege la ciudad de la tormenta que detuvo la marea.", "keys": ["faro"]},
+                {"title": "La llave", "content": "La llave abre la torre cuando la campana deja de sonar y las mareas se detienen.", "keys": ["llave"]},
+                {"title": "El sello", "content": "El sello conserva la historia de las familias del puerto y puede romperse con ayuda del guardián.", "keys": ["sello"]},
+            ]})
+        self.app.state.narrative.generate = generate
+        draft = {**CORE, "protagonist_name": "Luna",
+                 "characters": CAST["characters"], "lore": LORE["lore"]}
+        response = self.client.post("/api/v1/creator/assistant/regenerate",
+            json={"draft": draft, "section": "lore", "instruction": ""})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["draft"]["characters"], draft["characters"])
+        self.assertEqual(response.json()["draft"]["ai_plot"], draft["ai_plot"])
+        self.assertEqual(response.json()["draft"]["lore"][0]["title"], "Nuevo faro")
+
     def test_json_parser_rejects_partial_and_array(self):
         self.assertEqual(parse_json('{"x": 1}'), {"x": 1})
         self.assertEqual(parse_json(chr(96)*3+'json\n{"x": 1}\n'+chr(96)*3), {"x": 1})

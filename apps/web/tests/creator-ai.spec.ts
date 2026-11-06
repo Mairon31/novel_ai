@@ -34,6 +34,18 @@ test('AI Creator previews a whole world before an explicit local install', async
       body: JSON.stringify({ draft, saved: false, stages_completed: 3, model: 'test-mock' }),
     });
   });
+  await page.route('**/api/v1/creator/assistant/regenerate', async route => {
+    const request = route.request().postDataJSON();
+    const updated = { ...request.draft,
+      openings: [
+        '{{user}} encuentra una llave brillante junto al faro y escucha pasos detrás de la puerta de la torre abandonada.',
+        '{{user}} ve una sombra pasar sobre el muelle y recibe un mensaje urgente de alguien que ya no recuerda su nombre.',
+        '{{user}} llega a la plaza y descubre que la campana ha desaparecido mientras el cielo se oscurece por completo.',
+      ],
+    };
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ draft: updated, section: 'openings', saved: false, model: 'test-mock' }) });
+  });
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
@@ -73,6 +85,11 @@ test('AI Creator previews a whole world before an explicit local install', async
     path: 'test-results/' + test.info().project.name + '-creator-ai-preview.png',
     fullPage: true,
   });
+  await page.getByLabel('Sección para regenerar').selectOption('openings');
+  await page.getByLabel('Indicaciones para regenerar').fill('Aperturas con más misterio');
+  await page.getByRole('button', { name: 'Regenerar sección' }).click();
+  await expect(page.getByLabel('Apertura generada 1')).toContainText('llave brillante');
+  await expect(page.getByLabel('Descripción NPC 1')).toContainText('Sara conoce los antiguos pactos');
   await page.getByRole('button', { name: 'Crear historia con esta propuesta' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Personajes \(4\)/ })).toBeVisible();
