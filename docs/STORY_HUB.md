@@ -59,11 +59,19 @@ Contratos:
 - El API comparte la exclusión local GPU con la narración cuando se usa Ollama/KoboldCpp sin forzar CPU. Máximo 2048 tokens por etapa, hasta 180 s de lectura por etapa; esto no prueba capacidad de modelos concretos.
 - Pruebas: `tests/test_story_generator.py` (generación simulada, fallo a mitad, esquema, rechazo de campos extras, rollback) y `apps/web/tests/creator-ai.spec.ts` (formulario, previsualización, edición de componentes, instalación y QA móvil/escritorio con propuesta mock). [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437): **365 Python / 72 Playwright / Vite PASS**.
 
-**No equivale a N-07 completo:** aún no genera imágenes, voces, plan editorial por escenas ni ofrece regeneración selectiva; la coherencia creativa de 10–20 turnos necesita ensayo con modelo y GPU reales.
+**No equivale a N-07 completo:** aún no genera imágenes, voces ni plan editorial por escenas; la coherencia creativa de 10–20 turnos necesita ensayo con modelo y GPU reales.
 
 
 ## Regeneración selectiva de borradores (2026-11-06)
 
-El asistente admite regenerar únicamente `openings`, `characters` o `lore` mediante `POST /api/v1/creator/assistant/regenerate` con `{draft, section, instruction}`. La llamada utiliza el narrador configurado y el bloqueo GPU local existente. El canon y las secciones ajenas a la seleccionada se envían como contexto de referencia; el servidor solo sustituye la sección elegida tras validar esquema y paquete completo. Si el modelo devuelve JSON inválido, una cantidad incorrecta de elementos o falla la generación, el borrador anterior permanece intacto en la interfaz y no se escribe SQLite. No implica regeneración de imágenes, TTS ni control de costo/cancelación upstream. Estado de CI por verificar.
+El asistente admite regenerar `plot`, `openings`, `characters` o `lore` mediante `POST /api/v1/creator/assistant/regenerate` con `{draft, section, instruction}`. La llamada utiliza el narrador configurado y el bloqueo GPU local existente. El canon y las secciones ajenas a la seleccionada se envían como contexto de referencia; el servidor solo sustituye la sección elegida tras validar esquema y paquete completo. Si el modelo devuelve JSON inválido, una cantidad incorrecta de elementos o falla la generación, el borrador anterior permanece intacto en la interfaz y no se escribe SQLite. No implica regeneración de imágenes, TTS ni control de costo/cancelación upstream. Estado de CI por verificar.
 
-El contexto de regeneración se limita a 14 000 caracteres JSON. El backend compacta texto extenso y detalles secundarios de NPC, Lorebook y aperturas, sin mutar el borrador; rechaza canon que no pueda ajustarse. Es un presupuesto aproximado en caracteres, no un conteo real de tokens ni garantía de ventana de contexto del modelo.
+El contexto canónico se limita a 14 000 caracteres JSON para NPC/Lorebook/aperturas; al reescribir `plot`, el contexto fijo dispone de hasta 9 000 caracteres JSON y la trama anterior de otros 3 500, con compactación independiente. El backend compacta texto extenso y detalles secundarios de NPC, Lorebook y aperturas, sin mutar el borrador; rechaza canon que no pueda ajustarse. Es un presupuesto aproximado en caracteres, no un conteo real de tokens ni garantía de ventana de contexto del modelo.
+
+### Reescritura de trama principal y reversión (2026-11-06)
+
+La sección `plot` acepta una revisión estructurada de `synopsis`, `player_plot`, `ai_plot`, `guidelines` y `reminder`. El servidor exige todos los campos, valida longitudes y verifica el borrador entero antes de devolverlo; preserva título, género, tags, protagonista, cuatro NPC, tres entradas de Lorebook y las tres aperturas. La trama anterior se envía como texto revisable, separado del canon fijo. Para esta sección, el máximo de salida configurado es 3 072 tokens; para las otras secciones, 2 048. No se escribe SQLite hasta instalar.
+
+La UI ofrece restaurar **una versión anterior** del borrador después de cada regeneración. La comprobación de revisión local evita aplicar respuestas tardías si hubo una edición durante la espera. El resultado incluye `generation_budget`: tamaño del prompt en caracteres, estimación de entrada por caracteres/4 y máximo configurado de salida. No mide consumo real, costo ni VRAM, y puede ser impreciso según el tokenizer.
+
+Pruebas nuevas: rechazo de trama incompleta, preservación de NPC/Lorebook/aperturas y propiedades, rollback UI de aperturas y posterior reescritura de trama. CI de la última versión pendiente de observación.

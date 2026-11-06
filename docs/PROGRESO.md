@@ -834,4 +834,13 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Pruebas offline añadidas para tres etapas simuladas, JSON truncado, campos inesperados y rollback forzado de SQLite. Nuevo test Playwright escritorio/móvil para generación simulada y commit real en API.
 - [x] Resultado final de integración: [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437), commit `3be0b5c`: **365/365 Python, 72/72 Playwright en desktop/móvil y Vite build PASS**. La prueba del asistente usa LLM simulado pero realiza una instalación real mediante API/SQLite. Regresiones E2E previas detectaron y corrigieron dos selectores/datos de prueba (`d69df8b`, `3be0b5c`).
 - [x] Edición granular de todas las fichas NPC/Lorebook, aperturas, directrices y trama pública/privada antes de instalar; activadores y etiquetas conservan comas/espacios mientras se escribe (`10cbf6a`, `f235a9c`).
-- [ ] El asistente aún no produce portadas ni sprites ni sintetiza TTS ni regenera etapas aisladas, y no tiene cancelación física del modelo/worker verificada. Proveedor real, VRAM y calidad narrativa sostenida pendientes.
+- [ ] El asistente aún no produce portadas ni sprites ni sintetiza TTS y no tiene cancelación física del modelo/worker verificada. La regeneración selectiva de texto se desarrolló después de este hito; proveedor real, VRAM y calidad narrativa sostenida pendientes.
+
+
+## 2026-11-06 · Creator Studio: regeneración selectiva y reversión
+
+- [x] Regeneración de aperturas, NPC y Lorebook con canon contextual, validación tipada y confirmación explícita de instalación, más prueba UI y presupuesto de caracteres: [CI #42254112191](https://github.com/Mairon31/novel_ai/actions/runs/42254112191) PASS.
+- [x] Revisión de trama principal `plot` publicada en `master`: reescribe cinco campos de narrativa y preserva secciones no seleccionadas. Las pruebas de integración se añadieron, aún sin PASS final confirmado.
+- [x] UI: restauración de una versión previa, descarte de respuestas obsoletas, estimación de contexto y tokens etiquetada como aproximada; pruebas Playwright publicadas. CI final pendiente.
+- [x] Refactorización de `StoryGenerator` para mover la regeneración de función asociada dinámicamente a método propio de la clase; contexto de trama con saltos de línea legibles.
+- [ ] Pruebas físicas de narrador real, cancelación del proveedor, medición real de tokens y efectos narrativos sostenidos; imágenes y TTS siguen pendientes.
