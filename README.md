@@ -239,3 +239,9 @@ Asigna un archivo `.safetensors` y una intensidad a un NPC desde **Creator Studi
 ### Generador IA de expresiones para NPC
 
 En **Creator Studio → Imágenes → Generar expresiones con IA**, elige un NPC, pose, contexto y estilo; opcionalmente, fija semilla, imagen de referencia o LoRA local. El generador produce por ComfyUI cinco variantes (neutral, alegría, enojo, tristeza, sorpresa), una por vez. Puedes **reanudar, regenerar una expresión, revisar transparencias y aprobar las cinco**. Mientras son borradores no aparecen en el lector; tras aprobación se indexan como PNG transparentes en la biblioteca editorial. Los borradores duran hasta 48 horas y no se respaldan hasta convertirse en recursos aprobados. El recorte es un croma conservador de fondo verde y puede rechazar resultados complejos. No equivale a segmentación neuronal ni garantiza identidad facial. [Guía completa](docs/COMFY_SPRITE_DRAFTS.md).
+
+### Referencia IPAdapter Plus y control de coherencia en sprites
+
+Al crear un borrador de expresiones en **Creator Studio → Imágenes**, puedes elegir una imagen de Galería o un sprite ya aprobado del **mismo NPC**. El modo `img2img` conserva la composición; el modo opt-in **IPAdapter Plus** condiciona los rasgos del modelo mientras genera sobre un lienzo nuevo. Puedes combinarlo con LoRA, elegir preset `STANDARD / PLUS / PLUS FACE` y fuerza, y verificar si ComfyUI tiene el plugin/nodos y los modelos CLIP Vision/IPAdapter requeridos. No descarga ni instala pesos. Las versiones aprobadas registran preset, fuerza y huella de referencia.
+
+El creador verá avisos si algunas expresiones aparecen con desplazamiento o escala de silueta muy distintos. Para publicar el conjunto debe revisar las diferencias o regenerar variantes, sin que esto se confunda con reconocimiento facial. Se verifican los PNG contra su SHA256 antes de aprobar. [Guía y limitaciones](docs/COMFY_SPRITE_DRAFTS.md).

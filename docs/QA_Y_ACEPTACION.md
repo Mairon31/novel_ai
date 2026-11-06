@@ -311,3 +311,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 ### Resultado verificable de generación IA bajo revisión
 
 [CI #42152514498](https://github.com/Mairon31/novel_ai/actions/runs/42152514498), commit `c3b6d1e`: **283 Python y 64 Playwright PASS, Vite build PASS**; incluye el generador, UI desktop/móvil y procedencia de assets ante fork/restauración/backup malicioso. El test del proveedor HTTP no valida calidad artística en GPU. El endurecimiento posterior del protocolo ComfyUI suma tres escenarios Python adicionales; verificar por separado la gate final antes de incrementar el total oficial.
+
+## Gate IPAdapter Plus y revisión geométrica (2026-11-05/06)
+
+- `test_comfy_identity_adapter.py`: contratos `IPAdapterUnifiedLoader` + `IPAdapter`, encadenado después de LoRA con MODEL/CLIP separado y latent sin VAEEncode, presets/pesos/rutas malformados, inventario y esquema ausente, sondeo sin `/prompt`.
+- `test_sprite_drafts.py`: verificación de referencia de Galería o sprite del NPC actual, prohibición de doble referencia, rechazo de otro NPC, desaparición de referencia, comparación de SHA256, preflight del plugin y modelos, aplicación de LoRA+IPAdapter en el grafo, procedencia de aprobación.
+- `test_reference_preparation.py`: carta vertical RGBA se convierte a PNG RGB `256×256` con bordes neutros y figura sin recorte, rechazo de entradas inválidas. `sprite-ipadapter.spec.ts`: opt-in en Creator Studio desktop/móvil, consulta de status y creación de borrador con referencia propia, sin inferencia al guardar.
+- [CI #42155018903](https://github.com/Mairon31/novel_ai/actions/runs/42155018903) (commit `47c0cf8`): **298 Python y 66 Playwright PASS, build Vite PASS**, incluye corrección de dependencia npm ausente en versiones anteriores.
+- `test_sprite_alignment.py` y cobertura adicional de `test_sprite_drafts.py`/Playwright comprueban métricas geométricas, confirmación por autor y prevención de previews alteradas mediante SHA256. Esta segunda gate se cerrará cuando termine la CI del commit `8fcd976` o posterior.
+- PENDIENTE: test real de modelos IPAdapter/checkpoint/CLIP Vision, latencias GPU, consistencia facial entre cinco sprites, máscaras neuronales, adaptación regional de NPC simultáneos. Una prueba que solo compara siluetas no certifica identidad.

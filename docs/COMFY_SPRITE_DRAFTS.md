@@ -37,3 +37,13 @@ Los nombres/ID recibidos de ComfyUI se validan antes de componer rutas `/history
 ### Resultado de aceptación de esta versión
 
 [GitHub Actions #42152514498](https://github.com/Mairon31/novel_ai/actions/runs/42152514498): 283/283 pruebas Python y 64/64 Playwright (desktop/móvil) aprobadas, además de build Vite. La ejecución utiliza un proveedor ComfyUI simulado; no hay validación física de generación o extracción de fondos en una GPU.
+
+## Referencias de identidad con IPAdapter Plus
+
+El creador puede escoger `Modo de referencia → img2img` (composición del input) o `IPAdapter` (rasgos guía sobre una composición nueva). Las fuentes son **una imagen de Galería** de la historia o un **sprite aprobado y perteneciente al mismo NPC**, nunca ambas. Para IPAdapter, es obligatorio seleccionar alguna. El selector del editor ofrece `STANDARD`, `PLUS` y `PLUS FACE`, además de un peso de 0.1–1.5. ComfyUI debe disponer del complemento compatible [IPAdapter Plus](https://github.com/comfyorg/comfyui-ipadapter), sus nodos `IPAdapterUnifiedLoader` e `IPAdapter`, modelos IPAdapter y CLIP Vision para la familia del checkpoint; `Verificar IPAdapter instalado` consulta su presencia sin generar ni descargar nada.
+
+Al generar, el backend comprueba que ambos nodos anuncien sus entradas correctas y el preset exista en el catálogo. Si faltan los nodos o modelos, devuelve un error **antes** de enviar el grafo a `/prompt`. La referencia se prepara como PNG RGB con bordes neutrales sin recortar el personaje. El modelo se conecta `Checkpoint → (LoRA opcional) → IPAdapterUnifiedLoader → IPAdapter → KSampler`, sin VAEEncode en este modo. Esto no es FaceID ni control de regiones; el resultado requiere comparación facial humana. Al aprobar, la procedencia incluye `comfy-sprite-v2-ipadapter`, preset/peso y SHA256 de la referencia. Cambiar o borrar el sprite de referencia después de crear el borrador provoca rechazo, nunca sustitución por otra imagen.
+
+## Revisión de continuidad de la silueta
+
+Además de validar el croma de cada candidato, Noble compara la escala y el centro del rectángulo alfa de las cinco variantes. Muestra avisos de diferencias fuertes. Si los hay, **Aprobar cinco expresiones** queda desactivado hasta marcar que revisaste y aceptas las diferencias; la API también exige `accept_alignment_warnings=true` explícito. En aprobación se revisan de nuevo las cinco imágenes, comprobando el SHA256 guardado para evitar publicar un PNG alterado desde que se generó. Estas alarmas son geométricas: pueden detectar una silueta desplazada o con tamaño muy distinto, **no** garantizan que el rostro, ojos, vestuario o edad coincidan.
