@@ -19,6 +19,30 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   const [error, setError] = useState('');
 
   const reset = () => { setDraft(null); setError(''); };
+  function editCharacter(index: number,
+                         field: keyof GeneratedStoryDraft['characters'][number], value: string) {
+    setDraft(current => current && ({
+      ...current,
+      characters: current.characters.map((npc, i) =>
+        i === index ? { ...npc, [field]: value } : npc),
+    }));
+  }
+  function editLore(index: number, field: 'title' | 'content' | 'keys',
+                    value: string) {
+    setDraft(current => current && ({
+      ...current,
+      lore: current.lore.map((entry, i) => i === index ? {
+        ...entry, [field]: field === 'keys'
+          ? value.split(',').map(key => key.trim()).filter(Boolean) : value,
+      } : entry),
+    }));
+  }
+  function editOpening(index: number, value: string) {
+    setDraft(current => current && ({
+      ...current,
+      openings: current.openings.map((text, i) => i === index ? value : text),
+    }));
+  }
   async function generate() {
     if (busy || idea.trim().length < 30 || !protagonist.trim()) return;
     setBusy('draft'); setError(''); setDraft(null);
@@ -111,32 +135,105 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           value={draft.synopsis} onChange={e =>
             setDraft({ ...draft, synopsis: e.target.value })}/>
       </label>
+      <div className="creator-ai-row">
+        <label>Protagonista del mundo
+          <input aria-label="Protagonista del borrador" maxLength={60}
+            value={draft.protagonist_name} onChange={e =>
+              setDraft({ ...draft, protagonist_name: e.target.value })}/>
+        </label>
+        <label>Género del mundo
+          <input aria-label="Género generado editable" maxLength={80}
+            value={draft.genre} onChange={e =>
+              setDraft({ ...draft, genre: e.target.value })}/>
+        </label>
+        <label>Etiquetas (separadas por coma)
+          <input aria-label="Etiquetas generadas editables"
+            value={draft.tags.join(', ')} onChange={e =>
+              setDraft({ ...draft, tags: e.target.value.split(',')
+                .map(tag => tag.trim()).filter(Boolean) })}/>
+        </label>
+      </div>
       <div className="creator-ai-reading">
-        <h4><BookOpen size={16}/> Mundo del jugador</h4>
-        <p>{draft.player_plot}</p>
-        <h4>Contexto privado del narrador</h4>
-        <p>{draft.ai_plot}</p>
+        <label><BookOpen size={16}/> Mundo público del jugador
+          <textarea aria-label="Trama pública generada editable" rows={5}
+            maxLength={4000} value={draft.player_plot}
+            onChange={e => setDraft({ ...draft, player_plot: e.target.value })}/>
+        </label>
+        <label>Trama privada del narrador
+          <textarea aria-label="Trama secreta generada editable" rows={6}
+            maxLength={12000} value={draft.ai_plot}
+            onChange={e => setDraft({ ...draft, ai_plot: e.target.value })}/>
+        </label>
+        <label>Directrices del narrador
+          <textarea aria-label="Directrices generadas editables" rows={3}
+            maxLength={4000} value={draft.guidelines}
+            onChange={e => setDraft({ ...draft, guidelines: e.target.value })}/>
+        </label>
+        <label>Recordatorio de continuidad
+          <textarea aria-label="Recordatorio generado editable" rows={2}
+            maxLength={1200} value={draft.reminder}
+            onChange={e => setDraft({ ...draft, reminder: e.target.value })}/>
+        </label>
       </div>
       <div className="creator-ai-review-grid">
         <div>
           <h4><Users size={15}/> Personajes ({draft.characters.length})</h4>
-          {draft.characters.map(npc => <article key={npc.name}>
-            <strong>{npc.name}</strong><p>{npc.description}</p>
-          </article>)}
+          {draft.characters.map((npc, index) => <details key={index}
+            className="creator-ai-editable-item">
+            <summary>{npc.name || 'Personaje ' + (index + 1)} · Editar ficha</summary>
+            <label>Nombre
+              <input aria-label={'Nombre NPC ' + (index + 1)}
+                maxLength={80} value={npc.name}
+                onChange={e => editCharacter(index, 'name', e.target.value)}/>
+            </label>
+            <label>Descripción
+              <textarea aria-label={'Descripción NPC ' + (index + 1)}
+                rows={3} maxLength={3000} value={npc.description}
+                onChange={e => editCharacter(index, 'description', e.target.value)}/>
+            </label>
+            <label>Personalidad
+              <textarea aria-label={'Personalidad NPC ' + (index + 1)}
+                rows={2} maxLength={1500} value={npc.personality}
+                onChange={e => editCharacter(index, 'personality', e.target.value)}/>
+            </label>
+            <label>Ejemplos de diálogo
+              <textarea aria-label={'Diálogos NPC ' + (index + 1)}
+                rows={3} maxLength={3000} value={npc.dialogue_examples}
+                onChange={e => editCharacter(index, 'dialogue_examples', e.target.value)}/>
+            </label>
+          </details>)}
         </div>
         <div>
           <h4>Lorebook ({draft.lore.length})</h4>
-          {draft.lore.map(item => <article key={item.title}>
-            <strong>{item.title}</strong><p>{item.content}</p>
-          </article>)}
+          {draft.lore.map((entry, index) => <details key={index}
+            className="creator-ai-editable-item">
+            <summary>{entry.title || 'Entrada ' + (index + 1)} · Editar conocimiento</summary>
+            <label>Título
+              <input aria-label={'Título Lorebook ' + (index + 1)}
+                maxLength={100} value={entry.title}
+                onChange={e => editLore(index, 'title', e.target.value)}/>
+            </label>
+            <label>Contenido
+              <textarea aria-label={'Contenido Lorebook ' + (index + 1)}
+                rows={4} maxLength={3500} value={entry.content}
+                onChange={e => editLore(index, 'content', e.target.value)}/>
+            </label>
+            <label>Activadores (por coma)
+              <input aria-label={'Activadores Lorebook ' + (index + 1)}
+                value={entry.keys.join(', ')}
+                onChange={e => editLore(index, 'keys', e.target.value)}/>
+            </label>
+          </details>)}
         </div>
       </div>
       <h4>Tres posibles inicios</h4>
       <div className="creator-ai-openings">
-        {draft.openings.map((opening, index) => <article key={index}>
-          <strong>Inicio {index + 1}</strong>
-          <p>{opening.replace(/\{\{user\}\}/g, draft.protagonist_name)}</p>
-        </article>)}
+        {draft.openings.map((opening, index) => <label key={index}>
+          Inicio {index + 1}
+          <textarea aria-label={'Apertura generada ' + (index + 1)}
+            rows={4} maxLength={3000} value={opening}
+            onChange={e => editOpening(index, e.target.value)}/>
+        </label>)}
       </div>
       <p className="creator-ai-private-note">Estos datos quedan en tu biblioteca local.
         Después podrás modificar todos los campos desde Creator Studio.

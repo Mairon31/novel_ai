@@ -59,6 +59,11 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByLabel('Sinopsis generada editable').fill(
     'Una bahía sin memoria espera que alguien resuelva el secreto de los faros y sus guardianes.'
   );
+  await page.getByText('Aria · Editar ficha').click();
+  await page.getByLabel('Descripción NPC 1').fill(
+    'Aria conoce los antiguos pactos del puerto, guarda una llave y duda de su misión como guardiana.');
+  await page.getByLabel('Apertura generada 1').fill(
+    '{{user}} llega al muelle y descubre la carta del farero. Una extraña silueta aparece frente a una campana al otro lado de la bahía.');
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-creator-ai-preview.png',
     fullPage: true,

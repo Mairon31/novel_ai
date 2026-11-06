@@ -1402,3 +1402,10 @@
   .creator-ai-actions { align-items: stretch; }
   .creator-ai-actions .primary-button { width: 100%; }
 }
+
+.creator-ai-editable-item { margin: .65rem 0; padding: .8rem; border: 1px solid var(--border, #383342); border-radius: 12px; }
+.creator-ai-editable-item summary { cursor: pointer; font-weight: 650; }
+.creator-ai-editable-item label { margin-top: .85rem; }
+.creator-ai-reading { display: grid; gap: .9rem; }
+.creator-ai-openings label { display: grid; gap: .4rem; font-weight: 600; }
+.creator-ai-openings textarea { width: 100%; box-sizing: border-box; }
