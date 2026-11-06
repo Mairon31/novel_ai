@@ -18,6 +18,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import shutil
 import sqlite3
 import subprocess
@@ -204,9 +205,73 @@ def spawn(label: str, cmd: list[str], *, cwd: Path | None = None,
                                 stderr=subprocess.STDOUT, start_new_session=True)
     finally:
         logfile.close()
+    (LOG_DIR / (label + ".pid.json")).write_text(
+        json.dumps({"pid": proc.pid, "command": cmd, "cwd": str(cwd or "")}),
+        encoding="utf-8")
     say("SERVICIO", label + " iniciado. PID " + str(proc.pid) +
         " · logs/" + label + ".log")
     return proc
+
+
+def is_managed_api_commandline(command: bytes, expected_appdir: Path) -> bool:
+    """Only recognize this installer's Uvicorn and app dir; never arbitrary PID."""
+    try:
+        arguments = [item.decode("utf-8") for item in command.split(b"\x00")
+                     if item]
+    except UnicodeDecodeError:
+        return False
+    return (
+        "uvicorn" in arguments and "noble_api.main:app" in arguments
+        and "--app-dir" in arguments and
+        str(expected_appdir) in arguments
+        and "--host" in arguments and "127.0.0.1" in arguments
+        and "--port" in arguments and str(NOBLE_PORT) in arguments
+    )
+
+
+def restart_api_for_revision(new_sha: str) -> None:
+    """Restart ONLY a recorded, matching Noble Uvicorn process on code update.
+
+    An unmanaged process on 8000 is never killed. This protects other Colab
+    processes and ensures that Python migrations of the new Git revision run.
+    """
+    state_file = LOG_DIR / "launch_state.json"
+    pid_file = LOG_DIR / "noble-api.pid.json"
+    if not ready("http://127.0.0.1:8000/api/v1/health",
+                 lambda d: d.get("model_hub") == "available"):
+        return
+    try:
+        previous = json.loads(state_file.read_text(encoding="utf-8"))
+        if previous.get("source_revision") == new_sha:
+            say("VERSIÓN", "Servidor del mismo commit ya activo; se reutiliza.")
+            return
+    except (OSError, ValueError, TypeError):
+        pass
+    try:
+        pid_record = json.loads(pid_file.read_text(encoding="utf-8"))
+        pid = pid_record.get("pid")
+        if type(pid) is not int or not 1 < pid < 2**31:
+            raise ValueError("PID inválido")
+        actual = Path("/proc") / str(pid) / "cmdline"
+        commandline = actual.read_bytes()
+        if not is_managed_api_commandline(
+                commandline, APP_DIR / "apps/api"):
+            raise ValueError("El proceso del puerto no coincide con Noble AI")
+    except (OSError, ValueError, TypeError) as exc:
+        raise RuntimeError(
+            "El puerto 8000 está ocupado por un proceso que no puedo "
+            "verificar. No lo detuve. Usa otro runtime o detén ese proceso "
+            "manualmente.") from exc
+    say("ACTUALIZAR", "Deteniendo solo FastAPI antiguo para aplicar nuevo commit.")
+    os.kill(pid, signal.SIGTERM)
+    timeout_at = time.monotonic() + 25
+    while time.monotonic() < timeout_at:
+        if not ready("http://127.0.0.1:8000/api/v1/health",
+                     lambda d: d.get("model_hub") == "available"):
+            say("ACTUALIZAR", "API anterior detenida; los datos se conservaron.")
+            return
+        time.sleep(1)
+    raise TimeoutError("El Uvicorn anterior no liberó el puerto 8000")
 
 
 def gpu_info() -> tuple[str | None, int | None]:
@@ -568,6 +633,9 @@ def launch(args) -> dict:
     gpu, vram = gpu_info()
     say("HARDWARE", (gpu + " (" + str(vram) + " MiB)" if gpu else
                      "Sin GPU NVIDIA detectada; se usará CPU para narración"))
+    # A newer Git revision must restart the old Uvicorn to load migrations.
+    # The runtime and data directories remain untouched by git checkout.
+    restart_api_for_revision(sha)
     # Import FastAPI only after the frontend build exists. The same-origin
     # static mount is registered at module import time.
     env = dict(os.environ)
