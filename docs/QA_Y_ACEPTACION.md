@@ -276,3 +276,9 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Expresión y pose se mantienen en fork total/parcial, snapshots históricos, importación por UUID nuevo y restauración; un respaldo v1 de nueve columnas se normaliza con valores neutral/standing, sin permitir columnas arbitrarias.
 - [x] [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723): **247/247 Python + 60/60 Playwright PASS**, compilación Vite. Incluye crossfade de dos capas, ausencia de imágenes previas al cambiar de historia en la SPA, formulario de pose/expresión y capturas desktop/móvil.
 - [ ] Próximos gates: ≥500 turnos con render virtualizado, generación real de hojas de expresiones y consistencia en sprites de referencia mediante workflows GPU.
+
+## Gate de identidad visual e importación de sprites (2026-11-05/06)
+
+- Fuente: [CI #42141685494](https://github.com/Mairon31/novel_ai/actions/runs/42141685494), commit `4ce9d5c`; Python 252/252, Playwright 62/62 (desktop/móvil), build Vite. Tests específicos: `tests/test_visual_dna_expression_sheet.py` y `apps/web/tests/visual-dna-sheets.spec.ts`.
+- Cubre rechazo de etiquetas duplicadas/LoRA con rutas, semilla fuera de rango, preservación de ficha en clientes anteriores, inmutabilidad y fork; hoja con transparencia y celdas iguales, importación horizontal/vertical, PNG RGBA, rechazo de otro propietario, rollback SQLite y limpieza de archivos ante error simulado. La UI permite crear/editar un personaje e importar cinco sprites usando la API local.
+- No cubre apagón físico a mitad de escritura ni genera imágenes mediante IA. La instalación/uso de LoRA, soporte de plantillas ComfyUI y continuidad facial real requieren otra gate en GPU.
