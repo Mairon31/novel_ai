@@ -6,7 +6,7 @@ import {
 import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
 import type {
-  Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter,
+  Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
   CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, LorebookEntry, LorebookEntryDraft, LorebookPreview,
 } from './types';
 
@@ -40,6 +40,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [section, setSection] = useState<Section>('story');
   const [blueprint, setBlueprint] = useState<CreatorBlueprintDraft>(blankBlueprint);
   const [characters, setCharacters] = useState<CreatorCharacter[]>([]);
+  const [visualCharacters, setVisualCharacters] = useState<VisualCharacter[]>([]);
   const [lorebookEntries, setLorebookEntries] = useState<LorebookEntry[]>([]);
   const [lorebookDraft, setLorebookDraft] = useState<LorebookEntryDraft>(blankLorebook);
   const [editingLorebook, setEditingLorebook] = useState<string | null>(null);
@@ -94,14 +95,15 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     if (!active) return;
     let live = true;
     setLoading(true);
-    setError(''); setNotice(''); setCharacters([]); setLorebookEntries([]);
+    setError(''); setNotice(''); setCharacters([]); setVisualCharacters([]); setLorebookEntries([]);
     setEditingLorebook(null); setLorebookDraft(blankLorebook);
     setLoreKeysInput(''); setLoreSecondaryInput(''); setLorePreview(null);
     setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
     setAssets([]); setMediaFile(null); setSheetFile(null); setSheetCharacter('');
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
-                 api.creatorAssets(active.id), api.lorebookEntries(active.id)])
-      .then(([data, cast, media, lorebook]) => {
+                 api.creatorAssets(active.id), api.lorebookEntries(active.id),
+                 api.visualState(active.id)])
+      .then(([data, cast, media, lorebook, visuals]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
           opening_scenarios, genre, tags, language } = data;
@@ -109,6 +111,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           opening_scenarios, genre, tags, language });
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
+        setVisualCharacters(visuals.characters);
         setAssets(media.assets);
         setLorebookEntries(lorebook.entries);
       })
@@ -799,6 +802,20 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <label>Nombre
                 <input aria-label="Nombre de NPC" maxLength={80}
                   value={character.name} onChange={e => setCharacter(v => ({...v,name:e.target.value}))}/>
+              </label>
+              <label>Ficha visual vinculada (opcional)
+                <select aria-label="Ficha visual del NPC"
+                  value={character.visual_character_id || ''}
+                  onChange={e => setCharacter(v => ({
+                    ...v, visual_character_id: e.target.value || null,
+                  }))}>
+                  <option value="">Sin vínculo (identidad por nombre en prompts sin plan)</option>
+                  {visualCharacters.map(visual => <option value={visual.id} key={visual.id}>
+                    {visual.name}
+                  </option>)}
+                </select>
+                <small>Vincula este NPC a una ficha de Galería para que su ADN visual
+                  siga al personaje seleccionado en un plan de escena.</small>
               </label>
               <label>Trasfondo y descripción
                 <textarea rows={5} maxLength={3000} aria-label="Descripción de NPC"
