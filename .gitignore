@@ -16,6 +16,10 @@ __pycache__/
 data/
 outputs/
 reports/raw/
+# Benchmarks físicos contienen imágenes y mediciones locales privadas.
+# Mantenerlos fuera del versionado por defecto.
+reports/
+sprite-benchmark/
 noble_ai_probe_results.json
 *.gguf
 *.safetensors
