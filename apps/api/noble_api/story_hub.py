@@ -296,10 +296,14 @@ class StoryHubService:
         pack = PACK_BY_ID.get(pack_id)
         if pack is None:
             raise HTTPException(404, "Historia del catálogo inexistente")
-        blueprint, chars, lore = _validate_pack(pack)
         actor = (request.protagonist_name or pack["protagonist"]).strip()
-        if not actor or len(actor) > 60:
-            raise HTTPException(422, "Nombre del protagonista inválido")
+        return self.install_pack(pack, actor, pack_id)
+
+    def install_pack(self, pack: dict, actor: str, pack_id: str) -> dict:
+        """Atomically install one validated author-owned world."""
+        blueprint, chars, lore = _validate_pack(pack)
+        if not actor or len(actor) > 60 or not pack["title"].strip() or len(pack["title"]) > 100:
+            raise HTTPException(422, "Título o protagonista inválido")
         new_id = str(uuid.uuid4())
         now = time.time()
         # Build the package in one transaction. If any row or validation fails,
