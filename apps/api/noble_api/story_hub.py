@@ -265,7 +265,7 @@ def public_pack(pack: dict) -> dict:
     """Never leak AI-only plot, NPC hidden prompts or Lorebook into public GET."""
     return {
         "id": pack["id"], "version": pack["version"], "author": pack["author"],
-        "source": "bundled-original", "license": "CC0-1.0",
+        "source": "bundled-original", "license": "Texto original incluido",
         "title": pack["title"], "genre": pack["genre"],
         "tags": list(pack["tags"]), "language": pack["language"],
         "synopsis": pack["synopsis"], "player_plot": pack["player_plot"],

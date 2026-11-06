@@ -438,23 +438,19 @@ def ensure_demo_story() -> str | None:
         say("BIBLIOTECA", "Se conservan " + str(len(stories)) +
             " historias existentes; no se añade una demo.")
         return None
-    story = json_request(base + "/api/v1/stories", method="POST", body={
-        "title": "La estación de la última luna",
-        "premise": (
-            "En una ciudad costera, una estación de tren abandonada vuelve a "
-            "encender sus luces cada medianoche. Los pasajeros recuerdan "
-            "fragmentos de futuros que todavía no han ocurrido. Una joven "
-            "llamada Mara busca a su hermano desaparecido, mientras el "
-            "protagonista recibe un boleto con su propio nombre y una fecha "
-            "que nadie conoce. El jugador decide qué investiga, a quién "
-            "confía sus secretos y si sube al tren. Los personajes toman "
-            "decisiones propias sin controlar al protagonista."),
-        "protagonist_name": "Alex",
-    })
-    ident = story.get("id")
-    if not isinstance(ident, str):
-        raise ValueError("Noble no devolvió el UUID de la historia de demostración")
-    say("BIBLIOTECA", "Creé una historia inicial opcional para probar el lector.")
+    # Reuse the bundled, authored story package rather than creating a bare
+    # title/premise with zero NPC, lore, or openings. New empty libraries only.
+    result = json_request(
+        base + "/api/v1/story-hub/ultima-luna/install",
+        method="POST", body={"protagonist_name": "Alex"})
+    story = result.get("story")
+    ident = story.get("id") if isinstance(story, dict) else None
+    if (not isinstance(ident, str) or
+            result.get("characters_installed", 0) < 3 or
+            result.get("openings_installed", 0) < 3 or
+            result.get("lore_installed", 0) < 2):
+        raise ValueError("Noble no confirmó el paquete de historia completo")
+    say("BIBLIOTECA", "Historia inicial completa: NPC, Lorebook y tres aperturas.")
     return ident
 
 

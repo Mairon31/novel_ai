@@ -183,20 +183,32 @@ class ColabPlayTests(unittest.TestCase):
     def test_demo_is_created_only_when_library_empty(self):
         created = []
         def requests(url, body=None, method=None, timeout=8):
-            if url.endswith("/api/v1/stories") and method == "POST":
-                created.append(body)
-                return {"id": "00000000-0000-0000-0000-000000000555"}
+            if url.endswith("/api/v1/story-hub/ultima-luna/install") and method == "POST":
+                created.append((url, body))
+                return {"story": {"id": "00000000-0000-0000-0000-000000000555"},
+                        "characters_installed": 4, "lore_installed": 3,
+                        "openings_installed": 3}
             return {"stories": []}
         with patch.object(launcher, "json_request", side_effect=requests):
             self.assertEqual(launcher.ensure_demo_story(),
                              "00000000-0000-0000-0000-000000000555")
         self.assertEqual(len(created), 1)
-        self.assertGreater(len(created[0]["premise"]), 100)
-        self.assertIn("protagonista", created[0]["premise"])
+        self.assertTrue(created[0][0].endswith("/story-hub/ultima-luna/install"))
+        self.assertEqual(created[0][1], {"protagonist_name": "Alex"})
         with patch.object(launcher, "json_request", return_value={"stories": [
                 {"id": "a", "title": "Historia previa"}]}) as mocked:
             self.assertIsNone(launcher.ensure_demo_story())
         self.assertEqual(mocked.call_count, 1)
+
+    def test_incomplete_demo_package_is_not_marked_as_installed(self):
+        def response(url, body=None, method=None, timeout=8):
+            if url.endswith("/api/v1/stories"):
+                return {"stories": []}
+            return {"story": {"id": "uuid"}, "characters_installed": 0,
+                    "lore_installed": 0, "openings_installed": 0}
+        with patch.object(launcher, "json_request", side_effect=response):
+            with self.assertRaisesRegex(ValueError, "paquete de historia completo"):
+                launcher.ensure_demo_story()
 
     def test_inference_warmup_requires_real_model_output(self):
         requests = []
