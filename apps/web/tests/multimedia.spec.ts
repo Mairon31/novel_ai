@@ -47,12 +47,16 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Abrir menú' }).click();
   await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'Imágenes y voz' }).click();
-  await expect(page.getByRole('heading', { name: 'Generación multimedia' })).toBeVisible();
+  await page.getByRole('button', { name: 'Imágenes', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Imágenes', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Activar botones de voz bajo demanda')).toHaveCount(0);
   await page.getByRole('button', { name: 'Buscar checkpoints' }).click();
   await page.getByLabel('Checkpoint').fill('story-model.safetensors');
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
   await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
+  await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
+  await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   await page.getByLabel('Activar botones de voz bajo demanda').check();
   await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeChecked();
 

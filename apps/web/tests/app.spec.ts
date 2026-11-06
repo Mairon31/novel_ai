@@ -30,9 +30,12 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
   await page.locator('.workspace-overview-card').filter({ hasText: 'Motor narrativo' }).click();
   await expect(page.locator('.setting-section-intro h2', { hasText: 'Motor narrativo' })).toBeVisible();
   await page.getByRole('button', { name: 'Panel general' }).click();
-  await expect(page.locator('.workspace-overview-card')).toHaveCount(8);
-  await page.getByRole('button', { name: 'Sobre y actualizaciones' }).click();
-  await expect(page.getByText('Sobre Noble AI')).toBeVisible();
+  await expect(page.locator('.workspace-overview-card')).toHaveCount(11);
+  await page.getByRole('button', { name: 'Acerca de Noble AI' }).click();
+  await expect(page.getByRole('heading', { name: 'Acerca de Noble AI' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Comprobar actualizaciones' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Actualizaciones', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Comprobar actualizaciones' })).toBeVisible();
 
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Abrir menú' }).click();

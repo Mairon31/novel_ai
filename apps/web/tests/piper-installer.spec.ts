@@ -57,7 +57,7 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
     await page.getByRole('button', { name: 'Abrir menú' }).click();
   }
   await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'Imágenes y voz' }).click();
+  await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voces de español latinoamericano' })).toBeVisible();
   expect(downloads).toBe(0);  // opening settings must not trigger a download
   await page.getByRole('button', { name: 'Instalar voz' }).click();

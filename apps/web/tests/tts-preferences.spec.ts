@@ -41,7 +41,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
       await page.getByRole('button', { name: 'Abrir menú' }).click();
     }
     await page.getByRole('button', { name: 'Configuración' }).click();
-    await page.getByRole('button', { name: 'Imágenes y voz' }).click();
+    await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
     await expect(page.getByLabel('Voz predeterminada de Piper')).toBeVisible();
   };
   await page.goto('/');
