@@ -408,6 +408,22 @@ def configure_narrative(model: str) -> None:
     say("NARRADOR", "Configurado: " + model)
 
 
+def verify_web_bundle() -> None:
+    """Check that the SAME API origin actually serves a compiled React app."""
+    try:
+        with request.urlopen("http://127.0.0.1:8000/", timeout=8) as response:
+            body = response.read(65_536)
+            content_type = response.headers.get("Content-Type", "")
+    except (OSError, urllib.error.URLError) as exc:
+        raise RuntimeError("FastAPI responde, pero la interfaz web no carga") from exc
+    if (b'id="root"' not in body or b"/assets/" not in body
+            or "text/html" not in content_type):
+        raise RuntimeError(
+            "La API no sirvió el React compilado en el puerto 8000. "
+            "Revisa logs/vite-build.log y logs/noble-api.log")
+    say("WEB", "Verifiqué HTML React compilado servido desde FastAPI.")
+
+
 def ensure_demo_story() -> str | None:
     """Provide one immediately playable example only in a new, empty library."""
     base = "http://127.0.0.1:8000"
@@ -650,6 +666,7 @@ def launch(args) -> dict:
         wait_ready(health, lambda d: d.get("model_hub") == "available",
                    process=proc, timeout=120)
     say("API", "Servicio FastAPI y frontend React disponibles.")
+    verify_web_bundle()
     model = None
     try:
         model = ensure_ollama(BASE, args.model, vram)
