@@ -189,6 +189,33 @@
 4. Documentar de forma separada **implementado en código**, **probado en CI** y **validado en hardware GPU real**.
 5. Cerrar una casilla solo con evidencia reproducible; los problemas parciales conservan subtareas abiertas. 
 
+## Retroalimentación real de Colab — nuevo backlog P0/P1/P2 (2026-11-05)
+
+> **Todas las tareas de este bloque están PENDIENTES**, aunque el repositorio ya contenga prototipos, endpoints o controles parciales. Implementar por etapas en \`master\`, con pruebas, sin afirmar que el usuario dispone de un producto final. Detalle, dependencias y aceptación: [docs/FEEDBACK_COLAB_Y_BACKLOG.md](docs/FEEDBACK_COLAB_Y_BACKLOG.md).
+
+### P0 — Instalación, configuración y estabilidad (prioritario)
+- [ ] **N-01: Descarga/instalación de modelos de imágenes desde la aplicación**: catálogo de checkpoints SD1.5/SDXL/Illustrious/Flux y accesorios (LoRA, VAE, ControlNet/IPAdapter/RMBG), requisitos por familia, licencia, progreso, cancelación, reanudación, SHA256/rutas, espacio, asignación a ComfyUI y prueba de imagen real. No solo descubrir archivos de Hugging Face.
+- [ ] **N-02: Descarga/instalación de modelos TTS y voces desde la aplicación**: biblioteca Piper ONNX + JSON, español latinoamericano, compatibilidad, descarga verificable, selección y prueba de voz, asignación por personaje, control de cola, caché y preferencias persistentes.
+- [ ] **N-03: Configuraciones de imagen y voz completas**: secciones claras y no monolíticas; sampler/scheduler/CFG/steps/resolución/semilla/LoRA/referencia/matting y parámetros de voz realmente admitidos; perfiles de VRAM, guardado/reversión y prueba de que cada ajuste afecta su motor.
+- [ ] **N-04: Mejorar el orquestador de Narrador + ComfyUI + Piper**: cola visible, dependencias, cancelación, prioridades, liberación/offload real de memoria GPU, control de OOM, recuperación tras interrupciones y fallbacks explícitos; prueba física T4 con 20 turnos y sin imágenes/medios parciales.
+- [ ] **N-05: QA de Noble AI en la instancia Colab real**: instalación desde UI, primer arranque, modelos, inferencia, ComfyUI, TTS, vista móvil/escritorio, sesiones/reinicio, Drive y logs. La URL temporal facilitada por el usuario es una referencia de QA, **no evidencia de que sea accesible desde todos los entornos**.
+
+### P1 — Historias y creación como centro de la aplicación
+- [ ] **N-06: Biblioteca, detalle y lector enfocados en historias**: inicio en historias jugables, portadas/detalles inmersivos, continuidad de lectura, etiquetas y separación clara de Mis historias, Descubrir y Creator Studio; navegación y pruebas visuales móvil/escritorio.
+- [ ] **N-07: Creator Studio asistido por IA de extremo a extremo**: de idea/prompts a historia/novela completa con sinopsis, mundo, canon, NPC, personalidad, Lorebook, inicios, escenarios y plan/generación opcional de portada, fondos, personajes y expresiones. Todo revisable/segmentado y sin publicar assets sin consentimiento.
+- [ ] **N-08: Historia de prueba realmente completa**: reemplazar el ejemplo superficial por una historia curada con 3–5 NPC, múltiples aperturas, secretos/escenas, lore, decisiones, recursos visuales legítimos y validación jugable de 10–20 turnos sin romper instalaciones existentes.
+- [ ] **N-09: Hub de historias prearmadas instalables**: catálogo local de historias completas con portada, autor, versión, requisitos e instalación como copia independiente sin pérdida de progreso; al menos tres paquetes completos verificables.
+- [ ] **N-10: Hub de historias de la comunidad/Creators**: publicación y distribución real, cuentas/permisos, versiones, licencias, filtros, favoritos, moderación/reporte y protección de ZIP/assets; no confundir ejemplos integrados con infraestructura de comunidad real.
+- [ ] **N-11: Rediseño profundo del Model Hub al estilo de la app Urakatsu**: convertirlo en experiencia independiente de catálogo, listado → ficha detallada → archivos/variantes/estimación GPU → instalar → asignar → probar; incluir imágenes y TTS. Reutilización de código solo según licencia del archivo y créditos; no más panel genérico superficial.
+- [ ] **N-12: Reestructurar frontend y menú principal por dominios**: Biblioteca, Descubrir historias, Creator, Lector, Model Hub y Ajustes independientes; descomponer \`App.tsx\`, mantener rutas y accesibilidad, comparar visualmente escritorio/móvil.
+
+### P2 — Inmersión avanzada y observabilidad
+- [ ] **N-13: IA como directora visual de una historia creada**: propuesta de escenas y recursos antes de generar, reutilización de fondos/sprites, referencias de NPC consistentes, variantes y caché, aprobación editorial y plan de uso GPU.
+- [ ] **N-14: Ecosistema Creator/comunidad ampliado**: perfiles de autores, colecciones, puntuaciones/reportes, actualizaciones de paquetes y moderación con permisos reales.
+- [ ] **N-15: Telemetría y pruebas reales del orquestador**: diagnóstico de cola, VRAM/TPS/TTFT/imágenes/TTS, estados de trabajos, exportación de logs sin textos privados y benchmarks físicos Colab/Windows.
+
+**Dependencias prioritarias:** N-01/N-02/N-03 y N-04 habilitan N-07/N-13. N-09 (paquete local) antecede N-10/N-14 (distribución comunitaria). N-06/N-12 hacen que los flujos de historia no parezcan un panel técnico. Las [x] anteriores permanecen como hitos parciales existentes, **no cierran** este nuevo alcance.
+
 ## Entrega Colab — prueba jugable y arranque automático
 
 - [ ] **Notebook Noble AI todo en uno (una celda)**: `notebooks/noble_ai_colab_play.ipynb` + `tools/colab_launch.py`: resuelve SHA de `master` y usa instalador de ese mismo commit, clona actualización, instala requisitos React/Python/Node, inicia API loopback y UI vía proxy autenticado Colab, instala Ollama y modelo de prueba, prepara una historia inicial solo en biblioteca vacía y verifica inferencia corta; ComfyUI opcional sobre GPU y checkpoint SD1.5 FP16 con SHA256. Logs y salida degradada si un servicio opcional no pudo configurarse. Test de contratos `tests/test_colab_play.py` agregado, **CI funcional pendiente al registrar**.

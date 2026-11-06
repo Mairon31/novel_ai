@@ -15,7 +15,25 @@ La ruta anterior que aparece a continuación refleja los hitos históricos P0–
 
 **Importante:** el código de `store.py` ya usa WAL, `narrative.py` ya transmite SSE y `downloads.py` ya usa Range y SHA-256 cuando hay hash anunciado. Ninguno de estos hechos certifica que las condiciones completas de su fase estén resueltas. La tabla de Argon usa etiquetas AUD-005/006/007 distintas de §05: el identificador estable y las subtareas se mantienen en el TODO.
 
+## Cambio de prioridad por uso real en Colab — 2026-11-05
+
+El usuario ejecutó Noble AI y verificó que aún faltan funciones esenciales de instalación/gestión de modelos de **imagen y TTS**, opciones completas, un orquestador fiable, un Model Hub comparable en profundidad al de Urakatsu y recorridos atractivos para **jugar y crear historias**. También pidió un Hub de historias completas de la comunidad y un Creator Studio capaz de producir una historia estructurada con sus recursos visuales; la historia de ejemplo actual no cumple esa expectativa.
+
+**Nueva prioridad funcional:** producto **story-first / creator-first**. La administración de modelos no debe dominar el inicio. El plan **no se considera implementado** por incluirlo en documentación.
+
+| Orden | Hito | Estado |
+| --- | --- | --- |
+| P0 | Instaladores UI de imágenes/TTS, ajustes específicos, orquestador de memoria/colas, QA Colab real | **Pendiente** |
+| P1-A | Biblioteca y detalle centrados en jugar historias; historia demo completa y Story Hub local | **Pendiente** |
+| P1-B | Creator Studio «idea → mundo/NPC/lore/escenas/imágenes» editable y verificable | **Pendiente** |
+| P1-C | Model Hub independiente con detalle profundo, instalaciones reales y UX tipo Urakatsu; modularización del frontend | **Pendiente** |
+| P1-D | Publicación/Hub remoto de creadores con permisos, moderación, paquetes versionados y licencias | **Pendiente** |
+| P2 | Director visual automático, marketplace/colecciones más amplias y métricas reales del orquestador | **Pendiente** |
+
+**Fuente detallada para la nueva etapa:** [FEEDBACK_COLAB_Y_BACKLOG.md](FEEDBACK_COLAB_Y_BACKLOG.md) (N-01 a N-15); checklist operativo en [TODO.md](../TODO.md). Hacer entregas verticales en \`master\`, sin forzar estas iniciativas en una única sesión.
+
 ---
+
 
 
 ## P1.5 — estado visual persistente y galería sin sobrescrituras (IMPLEMENTADO EN CÓDIGO)

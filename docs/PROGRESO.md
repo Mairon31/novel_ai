@@ -796,3 +796,20 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] CI `tests/test_colab_play.py` y ejecución física Colab pendientes de validar. Pruebas automatizadas son offline; no se ha ejecutado aún el notebook con GPU, Ollama o ComfyUI reales desde esta sesión.
 
 - [x] Actualizaciones en el mismo runtime: `restart_api_for_revision` compara SHA, verifica el PID/argv real del Uvicorn propio y reinicia solo esa API para ejecutar los módulos/migraciones del commit nuevo. Si el puerto 8000 es ajeno, falla sin matar procesos desconocidos. Las preferencias y las historias SQLite/media se conservan fuera del checkout Git. Tres pruebas unitarias adicionales simulan PID correcto, PID ajeno y mismo commit.
+
+
+## 2026-11-05 — Feedback de usuario tras ejecutar Noble AI en Google Colab
+
+**Alcance de este registro: documentación y planificación, NO desarrollo ni cierre de funcionalidades.** El usuario señala que la app sigue demasiado centrada en la gestión técnica, que la historia demostrativa es incompleta y que Creator Studio/las historias deberían ser el foco. Pide además instalación real desde la UI de modelos de imagen y voces, configuración por motor, orquestación robusta, catálogo de historias de la comunidad y un Model Hub profundo de estilo Urakatsu.
+
+- [x] Retroalimentación descompuesta en entregables **N-01 a N-15**, con dependencias, fases P0/P1/P2 y criterios de QA en [FEEDBACK_COLAB_Y_BACKLOG.md](FEEDBACK_COLAB_Y_BACKLOG.md); checklist nuevo en [TODO.md](../TODO.md), estrategia actualizada en [ROADMAP.md](ROADMAP.md).
+- [ ] Modelos de imagen instalables directamente desde Noble AI; selección/activación verificada.
+- [ ] Voces TTS instalables desde Noble AI; prueba WAV real y asignación por NPC.
+- [ ] Configuraciones de motores y política GPU aplicadas realmente; orquestador de cola y memoria.
+- [ ] Rediseño story-first de Biblioteca, detalle, Creator y Model Hub estilo Urakatsu.
+- [ ] Generación asistida de historia completa y recursos visuales editables por el autor.
+- [ ] Historia de ejemplo enriquecida y catálogo de paquetes locales jugables.
+- [ ] Hub remoto de comunidad/Creators con publicación, licencias, permisos y moderación.
+- [ ] QA real en Colab y desktop/móvil; la URL temporal del runtime no se toma como evidencia de navegación por parte de este asistente.
+
+**No se han marcado implementaciones como completas en este registro.** Las funcionalidades existentes de catálogo HF, ComfyUI, Piper y Creator son base parcial; **no** satisfacen todavía los criterios ampliados solicitados. El trabajo futuro deberá desglosarse en cambios verificables, sin prometer entrega de todo el alcance en una sesión.
