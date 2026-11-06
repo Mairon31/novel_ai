@@ -179,6 +179,27 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(response.json()["draft"]["ai_plot"], draft["ai_plot"])
         self.assertEqual(response.json()["draft"]["lore"][0]["title"], "Nuevo faro")
 
+    def test_regeneration_context_budget_does_not_mutate_original(self):
+        from noble_api.story_generator import compact_regeneration_canon
+        canon = {
+            "title": "Historia extensa",
+            "ai_plot": "Secreto y consecuencia. " * 500,
+            "player_plot": "Un mundo amplio. " * 350,
+            "characters": [dict(name="Aria", description="Rasgo " * 800,
+                                personality="Secreto " * 300)],
+            "lore": [dict(title="Ciudad", content="Historia " * 900)],
+        }
+        original = json.dumps(canon, ensure_ascii=False)
+        result = compact_regeneration_canon(canon, max_chars=2500)
+        self.assertLessEqual(len(json.dumps(result, ensure_ascii=False)), 2500)
+        self.assertEqual(json.dumps(canon, ensure_ascii=False), original)
+        self.assertEqual(result["title"], "Historia extensa")
+
+    def test_regeneration_context_budget_rejects_oversized_immutable_field(self):
+        from noble_api.story_generator import compact_regeneration_canon
+        with self.assertRaises(ValueError):
+            compact_regeneration_canon({"title": "X" * 2000}, max_chars=500)
+
     def test_json_parser_rejects_partial_and_array(self):
         self.assertEqual(parse_json('{"x": 1}'), {"x": 1})
         self.assertEqual(parse_json(chr(96)*3+'json\n{"x": 1}\n'+chr(96)*3), {"x": 1})

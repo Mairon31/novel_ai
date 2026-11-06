@@ -65,3 +65,5 @@ Contratos:
 ## Regeneración selectiva de borradores (2026-11-06)
 
 El asistente admite regenerar únicamente `openings`, `characters` o `lore` mediante `POST /api/v1/creator/assistant/regenerate` con `{draft, section, instruction}`. La llamada utiliza el narrador configurado y el bloqueo GPU local existente. El canon y las secciones ajenas a la seleccionada se envían como contexto de referencia; el servidor solo sustituye la sección elegida tras validar esquema y paquete completo. Si el modelo devuelve JSON inválido, una cantidad incorrecta de elementos o falla la generación, el borrador anterior permanece intacto en la interfaz y no se escribe SQLite. No implica regeneración de imágenes, TTS ni control de costo/cancelación upstream. Estado de CI por verificar.
+
+El contexto de regeneración se limita a 14 000 caracteres JSON. El backend compacta texto extenso y detalles secundarios de NPC, Lorebook y aperturas, sin mutar el borrador; rechaza canon que no pueda ajustarse. Es un presupuesto aproximado en caracteres, no un conteo real de tokens ni garantía de ventana de contexto del modelo.
