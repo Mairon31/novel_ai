@@ -159,6 +159,28 @@ class SpriteProvenanceTests(unittest.TestCase):
             count = db.execute("SELECT COUNT(*) FROM stories").fetchone()[0]
         self.assertEqual(count, 0)
 
+    def test_ipadapter_provenance_survives_backup_and_rejects_invalid_weight(self):
+        from noble_api.sprite_provenance import normalize_sprite_generation
+        adapter = {"preset": "PLUS FACE (portraits)", "weight": 0.68,
+                   "reference_sha256": "b" * 64, "reference_kind": "sprite"}
+        detail = {**self.details, "workflow_version": "comfy-sprite-v2-ipadapter",
+                  "adapter": adapter}
+        expected = normalize_sprite_generation(detail)
+        self.assertEqual(expected["adapter"], adapter)
+        self.source.state.creator_media.import_expression_sheet(
+            self.story, self.npc, sheet(), "Aira en el bosque",
+            generation={item: detail for item in EXPRESSIONS})
+        restored = self.restore(self.backup())
+        self.assertEqual(restored.status_code, 201, restored.text)
+        assets = self.b.get(f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]
+        self.assertTrue(all(x["generation_details"]["adapter"] == adapter for x in assets))
+        forged = rewrite(self.backup(), lambda manifest: [
+            row.__setitem__("generation_json", json.dumps({
+                **detail, "adapter": {**adapter, "weight": 9.0}}))
+            for row in manifest["tables"]["creator_media_assets"]])
+        denied = self.restore(forged, as_copy=True, client=self.a)
+        self.assertEqual(denied.status_code, 422, denied.text)
+
     def test_regular_manual_assets_remain_manual_with_empty_generation(self):
         asset = self.source.state.creator_media.add(
             self.story, "foreground", "Aira", "Aira recorre el bosque",

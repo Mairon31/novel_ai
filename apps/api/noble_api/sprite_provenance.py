@@ -5,6 +5,7 @@ import math
 import re
 
 from .comfy_loras import LORA_FILENAME
+from .comfy_identity_adapter import PRESETS
 
 SHA = re.compile(r"[0-9a-f]{64}")
 
@@ -12,12 +13,18 @@ SHA = re.compile(r"[0-9a-f]{64}")
 def normalize_sprite_generation(value: object) -> dict:
     if value is None or value == {}:
         return {}
-    if not isinstance(value, dict) or set(value) != {
-            "workflow_version", "checkpoint", "seed", "prompt_sha256",
-            "lora", "quality"}:
+    mandatory = {"workflow_version", "checkpoint", "seed", "prompt_sha256",
+                 "lora", "quality"}
+    if (not isinstance(value, dict) or
+            not mandatory <= set(value) or set(value) - mandatory - {"adapter"}):
         raise ValueError("Procedencia de sprite inválida")
-    if value["workflow_version"] != "comfy-sprite-v1":
+    adapter = value.get("adapter")
+    version = value["workflow_version"]
+    if version != ("comfy-sprite-v2-ipadapter" if adapter is not None
+                   else "comfy-sprite-v1"):
         raise ValueError("Versión de generador de sprites inválida")
+    if "adapter" in value and adapter is None:
+        raise ValueError("Referencia IPAdapter vacía")
     checkpoint, seed, digest = (value["checkpoint"], value["seed"],
                                 value["prompt_sha256"])
     if (not isinstance(checkpoint, str) or not 1 <= len(checkpoint) <= 240 or
@@ -53,7 +60,24 @@ def normalize_sprite_generation(value: object) -> dict:
             or quality["requires_author_review"] is not True
             or quality["author_approved"] is not True):
         raise ValueError("Calidad/aprobación de sprite inválida")
-    return {"workflow_version": "comfy-sprite-v1", "checkpoint": checkpoint,
-            "seed": seed, "prompt_sha256": digest, "lora": lora,
-            "quality": {"method": quality["method"], "coverage": float(coverage),
-                        "requires_author_review": True, "author_approved": True}}
+    if adapter is not None:
+        if not isinstance(adapter, dict) or set(adapter) != {
+                "preset", "weight", "reference_sha256", "reference_kind"}:
+            raise ValueError("Configuración IPAdapter no válida")
+        preset, weight = adapter["preset"], adapter["weight"]
+        ref_digest, kind = adapter["reference_sha256"], adapter["reference_kind"]
+        if (preset not in PRESETS or isinstance(weight, bool) or
+                not isinstance(weight, (float, int)) or
+                not math.isfinite(weight) or not 0.1 <= weight <= 1.5 or
+                not isinstance(ref_digest, str) or not SHA.fullmatch(ref_digest) or
+                kind not in ("gallery", "sprite")):
+            raise ValueError("IPAdapter de procedencia inválido")
+        adapter = {"preset": preset, "weight": float(weight),
+                   "reference_sha256": ref_digest, "reference_kind": kind}
+    result = {"workflow_version": version, "checkpoint": checkpoint,
+              "seed": seed, "prompt_sha256": digest, "lora": lora,
+              "quality": {"method": quality["method"], "coverage": float(coverage),
+                          "requires_author_review": True, "author_approved": True}}
+    if adapter is not None:
+        result["adapter"] = adapter
+    return result

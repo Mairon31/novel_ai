@@ -495,7 +495,9 @@ class SpriteDraftService:
         settings = json.loads(row["settings_json"])
         generation = {
             name: normalize_sprite_generation({
-                "workflow_version": "comfy-sprite-v1",
+                "workflow_version": ("comfy-sprite-v2-ipadapter"
+                                     if settings.get("reference_mode") == "ipadapter"
+                                     else "comfy-sprite-v1"),
                 "checkpoint": settings["comfy"]["checkpoint"],
                 "seed": settings["seed"],
                 "prompt_sha256": entries[name]["prompt_sha256"],
