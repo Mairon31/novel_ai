@@ -183,11 +183,21 @@ class VoiceInstaller:
             allowed, target = ("queued", "downloading", "verifying", "paused", "failed"), "cancelled"
         else:
             raise HTTPException(422, "Acción de instalación desconocida")
-        if not self._transition(job_id, allowed, target):
-            raise HTTPException(409, "Transición no permitida desde " + job["status"])
-        if action == "resume":
-            self.pool.submit(self._run, job_id)
+        with self.lock:
+            if not self._transition(job_id, allowed, target):
+                raise HTTPException(409, "Transición no permitida desde " + job["status"])
+            if action == "resume":
+                self.pool.submit(self._run, job_id)
+            if action == "cancel":
+                # The single worker drains first; never delete a file it is writing.
+                self.pool.submit(self._cleanup_cancelled, job_id)
         return self.get(job_id)
+
+    def _cleanup_cancelled(self, job_id: str):
+        if self.get(job_id)["status"] == "cancelled":
+            stage = self.root / (".noble-voice-" + str(uuid.UUID(job_id)))
+            if not stage.is_symlink() and stage.resolve().is_relative_to(self.root):
+                shutil.rmtree(stage, ignore_errors=True)
 
     def _stage(self, job_id: str) -> Path:
         stage = self.root / (".noble-voice-" + str(uuid.UUID(job_id)))
@@ -251,14 +261,17 @@ class VoiceInstaller:
             try:
                 config = json.loads(raw)
             except (ValueError, UnicodeDecodeError) as exc:
+                part.unlink(missing_ok=True)
                 raise RuntimeError("Configuración de Piper no es JSON válido") from exc
             lang = (config.get("language") or {}).get("code") if isinstance(config, dict) else None
             if lang != VOICES[job["voice_id"]]["language"]:
+                part.unlink(missing_ok=True)
                 raise RuntimeError("Idioma de Piper no coincide con la voz elegida")
         else:
             with part.open("rb") as f:
                 prefix = f.read(16).lstrip().lower()
             if prefix.startswith((b"<", b"{", b"[")):
+                part.unlink(missing_ok=True)
                 raise RuntimeError("El modelo ONNX contiene texto o HTML, no pesos")
         sha = hashlib.sha256()
         with part.open("rb") as f:
@@ -267,6 +280,7 @@ class VoiceInstaller:
                     return
                 sha.update(chunk)
         if source["sha256"] and sha.hexdigest() != source["sha256"].lower():
+            part.unlink(missing_ok=True)
             raise RuntimeError("SHA-256 de voz distinto al catálogo")
 
     def _run(self, job_id: str):
@@ -282,20 +296,25 @@ class VoiceInstaller:
                     return
             if not self._transition(job_id, ("downloading",), "verifying"):
                 return
-            model = self.root / job["voice_id"]
-            config = self.root / (job["voice_id"] + ".json")
-            if any(p.exists() or p.is_symlink() for p in (model, config)):
-                raise RuntimeError("Existe una voz con ese nombre; no se sobrescribirá")
-            staged_model = stage / (job["voice_id"] + ".part")
-            staged_config = stage / (job["voice_id"] + ".json.part")
-            # Publish sidecar before ONNX: discovery requires both present.
-            staged_config.replace(config)
-            try:
-                staged_model.replace(model)
-            except BaseException:
-                config.unlink(missing_ok=True)
-                raise
-            self._transition(job_id, ("verifying",), "completed")
+            with self.lock:
+                # A concurrent pause or cancellation must win before publication,
+                # never between writing the sidecar and the model.
+                if self.get(job_id)["status"] != "verifying":
+                    return
+                model = self.root / job["voice_id"]
+                config = self.root / (job["voice_id"] + ".json")
+                if any(p.exists() or p.is_symlink() for p in (model, config)):
+                    raise RuntimeError("Existe una voz con ese nombre; no se sobrescribirá")
+                staged_model = stage / (job["voice_id"] + ".part")
+                staged_config = stage / (job["voice_id"] + ".json.part")
+                # Publish sidecar before ONNX: discovery requires both present.
+                staged_config.replace(config)
+                try:
+                    staged_model.replace(model)
+                except BaseException:
+                    config.unlink(missing_ok=True)
+                    raise
+                self._transition(job_id, ("verifying",), "completed")
         except Exception as exc:
             self._transition(job_id, ("queued", "downloading", "verifying"),
                              "failed", str(exc)[:300])
