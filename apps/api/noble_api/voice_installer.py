@@ -152,8 +152,9 @@ class VoiceInstaller:
     def start(self, voice_id: str) -> dict:
         if voice_id not in VOICES:
             raise HTTPException(422, "Voz no disponible en el catálogo de Noble")
-        if voice_id in {x["id"] for x in self.speech.voices()["voices"]}:
-            raise HTTPException(409, "La voz ya está instalada")
+        targets = (self.root / voice_id, self.root / (voice_id + ".json"))
+        if any(target.exists() or target.is_symlink() for target in targets):
+            raise HTTPException(409, "Ya existe un archivo de esta voz; no se sobrescribirá")
         # Resolve a pinned commit and both files before queuing any bytes.
         revision, sources = self._metadata(voice_id)
         with self.lock:

@@ -146,6 +146,15 @@ class PiperInstallerTests(unittest.TestCase):
         self.assertEqual(retry["status"], "failed")
         self.assertFalse((self.root / VOICE).exists())
 
+    def test_existing_single_voice_file_is_not_overwritten_or_downloaded(self):
+        target = self.root / VOICE
+        target.write_bytes(b"custom user model")
+        response = self.client.post("/api/v1/tts/install", json={"voice_id": VOICE})
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(target.read_bytes(), b"custom user model")
+        self.assertEqual(self.client.get("/api/v1/tts/downloads").json()["downloads"], [])
+        self.assertEqual(self.fake.requests, [])
+
     def test_missing_pair_or_arbitrary_voice_never_queues(self):
         self.assertEqual(self.client.post("/api/v1/tts/install",
                          json={"voice_id": "../../other.onnx"}).status_code, 422)
