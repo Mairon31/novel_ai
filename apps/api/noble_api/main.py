@@ -28,6 +28,7 @@ from .media import mount_media_routes
 from .images import SceneImageService, mount_image_routes
 from .sprite_drafts import SpriteDraftService, mount_sprite_draft_routes
 from .speech import SpeechService, mount_speech_routes
+from .voice_installer import VoiceInstaller, mount_voice_installer_routes
 from .visual_state import VisualState, mount_visual_routes
 from .scene_planner import ScenePlanner, mount_scene_plan_routes
 from .visual_director import VisualDirector, mount_visual_director_routes
@@ -121,11 +122,13 @@ def create_app(
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
     sprite_drafts = SpriteDraftService(creator_media, images)
     speech = SpeechService(narrative)
+    voice_installer = VoiceInstaller(speech, catalog)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
         yield
         downloads.shutdown()
+        voice_installer.shutdown()
         kobold.stop()
         catalog.close()
 
@@ -149,6 +152,7 @@ def create_app(
     service.state.sprite_drafts = sprite_drafts
     service.state.resources = resources
     service.state.speech = speech
+    service.state.voice_installer = voice_installer
     service.state.visual = visual
     service.state.scene_planner = planner
     service.state.visual_director = director
@@ -300,6 +304,7 @@ def create_app(
     mount_image_routes(service, images)
     mount_resource_routes(service, resources)
     mount_speech_routes(service, speech)
+    mount_voice_installer_routes(service, voice_installer)
     mount_worker_routes(service, workers, narrative)
     mount_control_routes(service, control)
 
