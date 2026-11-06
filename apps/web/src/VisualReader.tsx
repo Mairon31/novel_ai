@@ -84,7 +84,12 @@ export function VisualReader({
     }).finally(() => { if (alive) setRewindLoading(false); });
     return () => { alive = false; };
   }, [active?.id, rewindTurn?.id]);
-  const [sceneMedia, setSceneMedia] = useState<ScenePresentation | null>(null);
+  const [sceneMedia, setSceneMedia] = useState<{
+    storyId: string; data: ScenePresentation;
+  } | null>(null);
+  const [backgroundFrame, setBackgroundFrame] = useState<{
+    storyId: string | null; current: string | null; previous: string | null;
+  }>({ storyId: null, current: null, previous: null });
   const [visual, setVisual] = useState<VisualState | null>(null);
   const [sceneLocation, setSceneLocation] = useState('');
   const [scenePlan, setScenePlan] = useState<ScenePlan | null>(null);
@@ -146,12 +151,27 @@ export function VisualReader({
   useEffect(() => {
     if (!active) { setSceneMedia(null); return; }
     let current = true;
-    setSceneMedia(null);
     api.scenePresentation(active.id).then(data => {
-      if (current) setSceneMedia(data);
+      if (current) setSceneMedia({ storyId: active.id, data });
     }).catch(() => { /* Reader stays usable without optional creator imagery. */ });
     return () => { current = false; };
   }, [active?.id, turns.length]);
+  const currentSceneMedia = sceneMedia?.storyId === active?.id ? sceneMedia.data : null;
+  const backgroundSource = currentSceneMedia?.background?.url || active?.scene_image_url || null;
+  useEffect(() => {
+    const storyId = active?.id || null;
+    setBackgroundFrame(previous => {
+      if (previous.storyId !== storyId)
+        return { storyId, current: backgroundSource, previous: null };
+      if (previous.current === backgroundSource) return previous;
+      return { storyId, current: backgroundSource, previous: previous.current };
+    });
+    const timer = window.setTimeout(() => setBackgroundFrame(previous =>
+      previous.storyId === storyId && previous.current === backgroundSource
+        ? { ...previous, previous: null }
+        : previous), 560);
+    return () => window.clearTimeout(timer);
+  }, [active?.id, backgroundSource]);
   useEffect(() => {
     setImagePrompt(active?.premise || '');
     setReferenceAssetId('');
@@ -492,7 +512,9 @@ export function VisualReader({
     <button className="primary-button" onClick={onCreate}><Sparkles size={17}/> Crear mi primera historia</button>
   </div>;
 
-  const displayedBackground = sceneMedia?.background?.url || active.scene_image_url;
+  const displayedBackground = backgroundSource;
+  const visibleBackground = backgroundFrame.storyId === active.id
+    ? backgroundFrame : { current: displayedBackground, previous: null };
   const readerMode = prefs?.reader_layout || 'immersive';
   const matches = backlogQuery.trim().toLocaleLowerCase();
   const backlogItems = [...turns].reverse().filter(turn =>
@@ -507,13 +529,16 @@ export function VisualReader({
     </button>
     <aside className={'noble-scene-panel ' + (displayedBackground ? 'has-art' : '')}>
       <div className="noble-scene-art">
-        {displayedBackground && <div key={displayedBackground}
-          className="noble-scene-background" aria-hidden="true"
-          style={{ backgroundImage: 'url("' + displayedBackground + '")' }}/>}
+        {visibleBackground.previous && <div
+          className="noble-scene-background is-previous" aria-hidden="true"
+          style={{ backgroundImage: 'url("' + visibleBackground.previous + '")' }}/>}
+        {visibleBackground.current && <div key={visibleBackground.current}
+          className="noble-scene-background is-current" aria-hidden="true"
+          style={{ backgroundImage: 'url("' + visibleBackground.current + '")' }}/>} 
         <div className="noble-scene-wash"/>
-        {Boolean(sceneMedia?.sprites.length) && <div className="noble-sprite-stage"
-          data-sprite-count={sceneMedia?.sprites.length}>
-          {sceneMedia?.sprites.map((sprite, index) => <img key={sprite.id}
+        {Boolean(currentSceneMedia?.sprites.length) && <div className="noble-sprite-stage"
+          data-sprite-count={currentSceneMedia?.sprites.length}>
+          {currentSceneMedia?.sprites.map((sprite, index) => <img key={sprite.id}
             className={'noble-character-sprite noble-sprite-slot-' + index +
               (sprite.speaker ? ' is-speaker' : ' is-bystander')}
             data-expression={sprite.expression}
@@ -535,7 +560,7 @@ export function VisualReader({
         <div className="noble-scene-bottom">
           <span className="overline">NOBLE VISUAL NOVEL</span>
           <h3>{active.title}</h3>
-          {sceneMedia?.selection === 'caption_match' &&
+          {currentSceneMedia?.selection === 'caption_match' &&
             <small className="noble-visual-caption">Recursos del creador según la escena</small>}
           <p><UserRound size={14}/>{active.protagonist_name}</p>
           <button className="noble-scene-upload" disabled={updating}
