@@ -30,6 +30,7 @@ No ejecuta código remoto ni evalúa archivos JSON como scripts. La verificació
 | GET | `/api/v1/tts/downloads` | Progreso de trabajos recientes |
 | GET | `/api/v1/tts/downloads/{uuid}` | Estado de un trabajo |
 | POST | `/api/v1/tts/install` | `{"voice_id":"es_MX-ald-medium.onnx"}` |
+| POST | `/api/v1/tts/preview` | `{"voice_id":"es_MX-ald-medium.onnx","text":"Hola, esta es una prueba.","request_source":"preview_button"}`; WAV no persistido |
 | POST | `/api/v1/tts/downloads/{uuid}/pause` | Pausar transferencia o verificación |
 | POST | `/api/v1/tts/downloads/{uuid}/resume` | Reanudar tras pausa o fallo |
 | POST | `/api/v1/tts/downloads/{uuid}/cancel` | Cancelar instalación pendiente |
@@ -48,3 +49,9 @@ Estados: `queued`, `downloading`, `verifying`, `paused`, `failed`, `cancelled`, 
 ## Evidencia de integración
 
 [CI #42263945875](https://github.com/Mairon31/novel_ai/actions/runs/42263945875): 378/378 pruebas Python, 76/76 pruebas Playwright en escritorio/móvil y compilación Vite PASS (descarga HF y motor Piper simulados). Se incorporó después un test de bloqueo de sobrescritura sobre archivos manuales, y una corrección independiente de atajos del lector: ambos requieren confirmación de la nueva CI.
+
+## Prueba de voz desde Ajustes
+
+Después de instalar el motor Piper en el entorno y una voz válida, la sección **Texto para probar voz** permite generar un ejemplo WAV pulsando **Probar voz seleccionada**. La API requiere `request_source=preview_button`, un texto de 10–400 caracteres y un archivo ONNX/JSON realmente instalado. Responde `audio/wav` con `Cache-Control: no-store`. El backend usa un directorio temporal que se limpia al finalizar; el navegador muestra controles de reproducción, sin reproducir ni sintetizar automáticamente. Comparte el bloqueo de síntesis con el lector y tiene timeout de 60 segundos y tope de 16 MiB de salida. No es una prueba de clonación de voz ni de licencia/compatibilidad física: requiere ejecutar Piper real con el modelo.
+
+Pruebas publicadas: `tests/test_piper_speech.py` cubre muestra WAV con ejecutable simulado, eliminación del temporal y rechazo de síntesis implícita; `apps/web/tests/tts-preferences.spec.ts` valida el clic explícito en desktop y móvil. Su CI se encuentra pendiente de revisión.

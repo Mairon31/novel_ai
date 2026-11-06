@@ -866,3 +866,10 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Arreglo del contador de descarga: los bytes del JSON de configuración estaban buffered y no se reportaban al 100 %. Corregido, verificado en CI #42263945875.
 - [x] Protección adicional ante archivos ONNX/JSON del usuario preexistentes, antes de transferir bytes, con prueba Python específica. Última ejecución CI pendiente.
 - [x] Fix de atajos del lector: si un cambio de modo aún se guarda, conserva el último Alt+1/2/3 para aplicarlo después, en lugar de ignorarlo por carrera. Última ejecución CI pendiente.
+
+
+## 2026-11-06 · Prueba de voz puntual en Generación multimedia
+
+- [x] API `/api/v1/tts/preview`: texto limitado a 400 caracteres, fuente `preview_button`, verificación de voz y binario, bloqueo compartido de síntesis, timeout y WAV temporal (se elimina, no se escribe historia).
+- [x] Interfaz: texto de prueba, botón explícito y reproductor de audio nativo tras recibir WAV, sin autoplay ni activación accidental.
+- [x] Pruebas Python con motor ficticio y Playwright escritorio/móvil añadidas; CI aún pendiente. Pruebas con Piper real y voz real pendientes.
