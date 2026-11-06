@@ -17,7 +17,10 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   const [tagsText, setTagsText] = useState('');
   const [loreKeysText, setLoreKeysText] = useState<Record<number, string>>({});
   const [model, setModel] = useState('');
-  const [busy, setBusy] = useState<'draft' | 'install' | null>(null);
+  const [regenerationInstruction, setRegenerationInstruction] = useState('');
+  const [regenerationSection, setRegenerationSection] =
+    useState<'openings' | 'characters' | 'lore'>('openings');
+  const [busy, setBusy] = useState<'draft' | 'install' | 'regenerate' | null>(null);
   const [error, setError] = useState('');
 
   const reset = () => { setDraft(null); setTagsText(''); setLoreKeysText({}); setError(''); };
@@ -56,6 +59,25 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       setDraft(result.draft);
       setTagsText(result.draft.tags.join(', '));
       setLoreKeysText(Object.fromEntries(result.draft.lore.map((entry, index) => [index, entry.keys.join(', ')])));
+      setModel(result.model);
+    } catch (exc) {
+      setError((exc as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+  async function regenerate() {
+    if (!draft || busy) return;
+    setBusy('regenerate'); setError('');
+    try {
+      const result = await api.regenerateAIDraft({
+        draft, section: regenerationSection,
+        instruction: regenerationInstruction.trim(),
+      });
+      setDraft(result.draft);
+      setTagsText(result.draft.tags.join(', '));
+      setLoreKeysText(Object.fromEntries(
+        result.draft.lore.map((entry, index) => [index, entry.keys.join(', ')])));
       setModel(result.model);
     } catch (exc) {
       setError((exc as Error).message);
@@ -245,6 +267,32 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             rows={4} maxLength={3000} value={opening}
             onChange={e => editOpening(index, e.target.value)}/>
         </label>)}
+      </div>
+      <div className="creator-ai-regenerate">
+        <h4><Sparkles size={16}/> Regenerar solo una sección</h4>
+        <p>Conserva el resto del borrador, incluidos tus cambios manuales.
+          Revisa la nueva versión antes de instalarla.</p>
+        <label>Sección
+          <select aria-label="Sección para regenerar" value={regenerationSection}
+            disabled={!!busy} onChange={e => setRegenerationSection(
+              e.target.value as 'openings' | 'characters' | 'lore')}>
+            <option value="openings">Tres aperturas</option>
+            <option value="characters">Cuatro personajes</option>
+            <option value="lore">Tres entradas Lorebook</option>
+          </select>
+        </label>
+        <label>Indicaciones para mejorar (opcional)
+          <textarea aria-label="Indicaciones para regenerar" rows={2} maxLength={1000}
+            value={regenerationInstruction}
+            onChange={e => setRegenerationInstruction(e.target.value)}
+            placeholder="Por ejemplo: escenas con más tensión y decisiones abiertas."/>
+        </label>
+        <button type="button" className="secondary-button" disabled={!!busy}
+          onClick={() => void regenerate()}>
+          {busy === 'regenerate' ? <LoaderCircle size={16} className="rotating"/> :
+            <Sparkles size={16}/>}
+          {busy === 'regenerate' ? 'Regenerando...' : 'Regenerar sección'}
+        </button>
       </div>
       <p className="creator-ai-private-note">Estos datos quedan en tu biblioteca local.
         Después podrás modificar todos los campos desde Creator Studio.

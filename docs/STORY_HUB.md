@@ -60,3 +60,8 @@ Contratos:
 - Pruebas: `tests/test_story_generator.py` (generación simulada, fallo a mitad, esquema, rechazo de campos extras, rollback) y `apps/web/tests/creator-ai.spec.ts` (formulario, previsualización, edición de componentes, instalación y QA móvil/escritorio con propuesta mock). [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437): **365 Python / 72 Playwright / Vite PASS**.
 
 **No equivale a N-07 completo:** aún no genera imágenes, voces, plan editorial por escenas ni ofrece regeneración selectiva; la coherencia creativa de 10–20 turnos necesita ensayo con modelo y GPU reales.
+
+
+## Regeneración selectiva de borradores (2026-11-06)
+
+El asistente admite regenerar únicamente `openings`, `characters` o `lore` mediante `POST /api/v1/creator/assistant/regenerate` con `{draft, section, instruction}`. La llamada utiliza el narrador configurado y el bloqueo GPU local existente. El canon y las secciones ajenas a la seleccionada se envían como contexto de referencia; el servidor solo sustituye la sección elegida tras validar esquema y paquete completo. Si el modelo devuelve JSON inválido, una cantidad incorrecta de elementos o falla la generación, el borrador anterior permanece intacto en la interfaz y no se escribe SQLite. No implica regeneración de imágenes, TTS ni control de costo/cancelación upstream. Estado de CI por verificar.

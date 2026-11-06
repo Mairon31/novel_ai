@@ -270,6 +270,11 @@ export const api = {
     idea: string; protagonist_name: string; genre: string; tone: string;
   }) => request<{ draft: GeneratedStoryDraft; saved: boolean;
     stages_completed: number; model: string }>('/creator/assistant/draft', json(input)),
+  regenerateAIDraft: (input: {
+    draft: GeneratedStoryDraft; section: 'openings' | 'characters' | 'lore';
+    instruction: string;
+  }) => request<{ draft: GeneratedStoryDraft; section: string;
+    saved: boolean; model: string }>('/creator/assistant/regenerate', json(input)),
   installAIDraft: (draft: GeneratedStoryDraft) => request<{
     story: Story; source: string; characters_installed: number;
     lore_installed: number; openings_installed: number; generated_media: number;

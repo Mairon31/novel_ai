@@ -1409,3 +1409,8 @@
 .creator-ai-reading { display: grid; gap: .9rem; }
 .creator-ai-openings label { display: grid; gap: .4rem; font-weight: 600; }
 .creator-ai-openings textarea { width: 100%; box-sizing: border-box; }
+
+.creator-ai-regenerate { display: grid; gap: .8rem; padding: 1rem; border: 1px solid var(--border, #383342); border-radius: 12px; }
+.creator-ai-regenerate p { margin: 0; opacity: .8; }
+.creator-ai-regenerate label { display: grid; gap: .4rem; }
+.creator-ai-regenerate select, .creator-ai-regenerate textarea { width: 100%; box-sizing: border-box; }
