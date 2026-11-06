@@ -34,7 +34,7 @@ export function UpdatesSettingsPanel({ prefs, parentBusy, onChangeChannel, onAut
           <div className="setting-section-intro"><h2>Actualizaciones</h2>
             <p>Consulta publicaciones y decide qué canal de versiones quieres recibir.</p></div>
           <div className="workspace-panel">
-            <h3><Download size={17}/> Actualizaciones</h3>
+            <h3><Download size={17}/> Estado de las versiones</h3>
             <div className="workspace-field-grid">
               <label className="workspace-pref-field">Canal de versiones
                 <select aria-label="Canal de versiones" value={prefs.update_channel}
