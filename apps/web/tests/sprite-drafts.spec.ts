@@ -77,6 +77,9 @@ test('Creator Studio stages five AI expressions for author review before approva
           caption: 'Aira castillo de cristal', pose: 'standing', style: 'watercolor anime',
           use_lora: false, reference_asset_id: null,
           slots, ready_count: generated, updated_at: Date.now() / 1000,
+          alignment_warnings: generated === 5
+            ? ['joy: posición de silueta muy distinta'] : [],
+          alignment_review_needed: generated === 5,
         } });
       });
 
@@ -86,7 +89,16 @@ test('Creator Studio stages five AI expressions for author review before approva
     await expect(section.getByText('Aira · 5/5 expresiones')).toBeVisible();
     await expect(section.locator('img')).toHaveCount(5);
     expect(generated).toBe(5);
-    await expect(section.getByRole('button', { name: 'Aprobar cinco expresiones' })).toBeEnabled();
+    await expect(section.getByText(/Variaciones importantes de encuadre/)).toBeVisible();
+    await expect(section.getByRole('button', {
+      name: 'Aprobar cinco expresiones',
+    })).toBeDisabled();
+    await section.getByRole('checkbox', {
+      name: 'Confirmé diferencias del borrador Aira',
+    }).check();
+    await expect(section.getByRole('button', {
+      name: 'Aprobar cinco expresiones',
+    })).toBeEnabled();
     await page.screenshot({
       path: 'test-results/' + test.info().project.name + '-sprite-review.png',
       fullPage: true,
@@ -96,6 +108,9 @@ test('Creator Studio stages five AI expressions for author review before approva
     await page.route('**/api/v1/stories/*/creator/sprite-drafts/*/approve',
       async route => {
         approved = true;
+        expect(route.request().postDataJSON()).toEqual({
+          accept_alignment_warnings: true,
+        });
         await route.fulfill({ status: 200, json: {
           approved: true, count: 5, assets: [],
         } });

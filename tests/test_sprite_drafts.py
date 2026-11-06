@@ -24,10 +24,12 @@ from noble_api.creator_media import EXPRESSIONS
 from noble_api.sprite_drafts import DRAFT_TTL
 
 
-def sprite_png(bad_background=False):
+def sprite_png(bad_background=False, horizontal_offset=0):
     photo = Image.new("RGB", (256, 256),
                       (75, 80, 90) if bad_background else (4, 245, 8))
-    ImageDraw.Draw(photo).ellipse((85, 35, 170, 228), fill=(203, 87, 130))
+    ImageDraw.Draw(photo).ellipse((85 + horizontal_offset, 35,
+                                   170 + horizontal_offset, 228),
+                                  fill=(203, 87, 130))
     buf = io.BytesIO()
     photo.save(buf, "PNG")
     return buf.getvalue()
@@ -42,6 +44,7 @@ class SpriteComfy:
         self.missing_lora = False
         self.ipadapter_unavailable = False
         self.ipadapter_weights_missing = False
+        self.horizontal_offset = 0
         self.last_upload = None
 
     def __call__(self, request: httpx.Request):
@@ -87,7 +90,8 @@ class SpriteComfy:
                 "outputs": {"7": {"images": [
                     {"filename": "sprite.png", "subfolder": "", "type": "output"}]}}}})
         if path == "/view":
-            return httpx.Response(200, content=sprite_png(self.bad_background))
+            return httpx.Response(200, content=sprite_png(
+                self.bad_background, self.horizontal_offset))
         return httpx.Response(404)
 
 
@@ -441,6 +445,47 @@ class SpriteDraftApiTests(unittest.TestCase):
             f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]), 0)
         accepted = self.client.post(self.url(f"/{draft['id']}/approve"))
         self.assertEqual(accepted.status_code, 200, accepted.text)
+
+    def test_silhouette_drift_requires_separate_author_acknowledgement(self):
+        draft = self.draft()
+        for expression in EXPRESSIONS:
+            self.mock.horizontal_offset = 48 if expression == "joy" else 0
+            result = self.generate(draft, expression)
+            self.assertEqual(result.status_code, 200, result.text)
+        self.mock.horizontal_offset = 0
+        state = self.client.get(self.url(f"/{draft['id']}")).json()
+        self.assertEqual(state["ready_count"], 5)
+        self.assertTrue(state["alignment_review_needed"])
+        self.assertTrue(any("joy: posición" in warning
+                            for warning in state["alignment_warnings"]))
+        refused = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(refused.status_code, 409, refused.text)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"], [])
+        approved = self.client.post(self.url(f"/{draft['id']}/approve"),
+                                    json={"accept_alignment_warnings": True})
+        self.assertEqual(approved.status_code, 200, approved.text)
+        self.assertEqual(approved.json()["count"], 5)
+
+    def test_modified_preview_is_rejected_before_publishing(self):
+        draft = self.draft()
+        for expression in EXPRESSIONS:
+            self.assertEqual(self.generate(draft, expression).status_code, 200)
+        with self.app.state.store._conn() as db:
+            row = db.execute("SELECT slots_json FROM sprite_drafts WHERE id=?",
+                             (draft["id"],)).fetchone()
+        slots = json.loads(row["slots_json"])
+        path = self.app.state.sprite_drafts._file(
+            self.story, draft["id"], "neutral", slots["neutral"]["file"])
+        path.write_bytes(sprite_png())  # valid image, different content and alpha
+        invalid = self.client.post(self.url(f"/{draft['id']}/approve"),
+                                   json={"accept_alignment_warnings": True})
+        self.assertEqual(invalid.status_code, 409, invalid.text)
+        self.assertIn("cambió", invalid.text)
+        self.assertEqual(self.client.get(self.url(
+            f"/{draft['id']}")).json()["ready_count"], 5)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"], [])
 
     def test_draft_limit_and_no_checkpoint_are_validated(self):
         for _ in range(3):
