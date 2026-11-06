@@ -850,5 +850,7 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] Conectada la preferencia `default_voice_id` ya persistida por el backend a Generación multimedia: seleccionar una voz realmente detectada o recuperar fallback, guardar explícitamente y recibir validación del servidor.
 - [x] Lector: al entrar, utiliza preferencia persistida si existe en las voces instaladas; de lo contrario utiliza la primera voz, sin activar TTS ni sintetizar. Se mantiene la selección manual de voz mientras dure la vista.
-- [x] Test Python de API sobre persistencia, rechazo de voz inexistente y ausencia de síntesis añadida. CI de los cambios de voz pendiente de cierre.
+- [x] Test Python de API sobre persistencia, rechazo de voz inexistente y ausencia de síntesis; test Playwright de elección y relectura tras recarga en desktop/móvil. [CI #42257447516](https://github.com/Mairon31/novel_ai/actions/runs/42257447516) PASS.
 - [ ] N-02 sigue abierto: falta instalador desde UI de archivos Piper ONNX/JSON con integridad, progreso de descarga, catálogos y opción de prueba de voz real.
+
+- [x] Robustecimiento de GitHub Actions: validación del paquete nativo de Rollup en Linux y recuperación de la misma versión antes de invocar Vite; responde a fallo de instalación intermitente en CI #42257230770. Cambio publicado, ejecución posterior aún pendiente de resultado.
