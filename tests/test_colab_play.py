@@ -196,6 +196,63 @@ class ColabPlayTests(unittest.TestCase):
                           return_value={"provider": "openrouter", "model": "gpt"}):
             self.assertFalse(launcher.verify_narrator())
 
+    def test_safe_api_process_matching_does_not_accept_unrelated_services(self):
+        appdir = Path("/content/noble-ai-colab/app/apps/api")
+        args = [
+            "/usr/bin/python", "-m", "uvicorn", "noble_api.main:app",
+            "--app-dir", str(appdir), "--host", "127.0.0.1",
+            "--port", "8000",
+        ]
+        command = ("\x00".join(args) + "\x00").encode()
+        self.assertTrue(launcher.is_managed_api_commandline(command, appdir))
+        self.assertFalse(launcher.is_managed_api_commandline(
+            b"python\x00-m\x00uvicorn\x00other.main:app\x00", appdir))
+        self.assertFalse(launcher.is_managed_api_commandline(
+            command.replace(b"127.0.0.1", b"0.0.0.0"), appdir))
+        self.assertFalse(launcher.is_managed_api_commandline(
+            command.replace(b"8000", b"8001"), appdir))
+
+    def test_reload_reuses_same_commit_and_refuses_unmanaged_pid(self):
+        with tempfile.TemporaryDirectory() as td:
+            logs = Path(td)
+            (logs / "launch_state.json").write_text(
+                json.dumps({"source_revision": "b" * 40}), encoding="utf-8")
+            (logs / "noble-api.pid.json").write_text(
+                json.dumps({"pid": 321}), encoding="utf-8")
+            with patch.object(launcher, "LOG_DIR", logs), patch.object(
+                    launcher, "ready", return_value=True), patch(
+                    "os.kill") as kill:
+                launcher.restart_api_for_revision("b" * 40)
+                kill.assert_not_called()
+                with patch.object(Path, "read_bytes",
+                                  return_value=b"python\x00other-server\x00"):
+                    with self.assertRaisesRegex(RuntimeError, "no puedo verificar"):
+                        launcher.restart_api_for_revision("c" * 40)
+                kill.assert_not_called()
+
+    def test_reload_stops_only_managed_api_pid_on_revision_change(self):
+        with tempfile.TemporaryDirectory() as td:
+            logs = Path(td)
+            appdir = Path(td) / "app" / "apps" / "api"
+            (logs / "launch_state.json").write_text(
+                json.dumps({"source_revision": "b" * 40}), encoding="utf-8")
+            (logs / "noble-api.pid.json").write_text(
+                json.dumps({"pid": 654}), encoding="utf-8")
+            arguments = [
+                "python", "-m", "uvicorn", "noble_api.main:app",
+                "--app-dir", str(appdir), "--host", "127.0.0.1",
+                "--port", "8000",
+            ]
+            with patch.object(launcher, "LOG_DIR", logs), patch.object(
+                    launcher, "APP_DIR", appdir.parent.parent), patch.object(
+                    launcher, "ready", side_effect=[True, False]), patch.object(
+                    Path, "read_bytes",
+                    return_value=("\x00".join(arguments) + "\x00").encode()), patch(
+                    "os.kill") as kill:
+                launcher.restart_api_for_revision("c" * 40)
+                kill.assert_called_once()
+                self.assertEqual(kill.call_args.args[0], 654)
+
     def test_ui_proxy_uses_session_scoped_colab_port(self):
         source = LAUNCHER.read_text(encoding="utf-8")
         self.assertIn("google.colab.kernel.proxyPort(", source)
