@@ -131,6 +131,7 @@ export function VisualReader({
   const [name, setName] = useState(active?.protagonist_name || 'Protagonista');
   const [canon, setCanon] = useState(active?.canon || '');
   const [shortcuts, setShortcuts] = useState(true);
+  const pendingReaderShortcut = useRef<WorkspacePreferences['reader_layout'] | null>(null);
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const tail = useRef<HTMLDivElement | null>(null);
@@ -260,14 +261,26 @@ export function VisualReader({
         event.preventDefault(); setBacklogOpen(open => !open);
       } else if (key === 'h') {
         event.preventDefault(); setHudHidden(hidden => !hidden);
-      } else if (!updating && (key === '1' || key === '2' || key === '3')) {
+      } else if (key === '1' || key === '2' || key === '3') {
         event.preventDefault();
-        void changeReaderLayout(key === '1' ? 'immersive' : key === '2' ? 'classic' : 'chat');
+        const next = key === '1' ? 'immersive' : key === '2' ? 'classic' : 'chat';
+        if (updating) pendingReaderShortcut.current = next;
+        else void changeReaderLayout(next);
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [shortcuts, backlogOpen, hudHidden, updating, prefs]);
+
+  useEffect(() => {
+    // Mobile E2E surfaced a legitimate race: Alt+3 updates preferences
+    // asynchronously; an immediate Alt+1 was silently ignored while saving.
+    // Keep the last requested shortcut and apply it after the current save.
+    if (updating || !prefs || !pendingReaderShortcut.current) return;
+    const next = pendingReaderShortcut.current;
+    pendingReaderShortcut.current = null;
+    void changeReaderLayout(next);
+  }, [updating, prefs]);
 
   async function saveCanon() {
     if (!active) return;
