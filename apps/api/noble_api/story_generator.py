@@ -268,7 +268,7 @@ async def regenerate_section(self, body: RegenerateRequest) -> dict:
         response = await self.ask(config, system, prompt)
         if body.section == "openings":
             new_section = Core.model_validate({
-                **draft.model_dump(exclude={"characters", "lore"}),
+                **draft.model_dump(exclude={"characters", "lore", "protagonist_name"}),
                 "openings": response.get("openings"),
             }).openings
         elif body.section == "characters":
