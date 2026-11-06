@@ -305,3 +305,12 @@ Los enlaces `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creato
 - `POST /api/v1/stories/{story}/creator/characters/{npc}/sprite-drafts` admite `cutout_mode:'chroma_green'|'neural_rmbg2'|'neural_birefnet_portrait'|'neural_birefnet_matting'` con predeterminado `chroma_green`. Se guarda en `settings_json` y en `GET .../sprite-drafts`; puede combinarse con IPAdapter, LoRA o img2img. La creación no usa ComfyUI.
 - `POST /api/v1/stories/{story}/creator/sprite-drafts/{draft}/expressions/{expression}`: si es neuronal, rechaza `422` por nodo/modelo ausente **antes** de `/prompt`. Cada ejecución produce dos outputs del mismo ID de generación (`SaveImage[7]` procesado y `SaveImage[25]` máscara), que se descargan/validan como conjunto. Ausencia o ruta de máscara inválida retorna 502; máscara o composición de calidad insuficiente retorna 422 y conserva el slot anterior. No existe fallback automático a croma.
 - `creator_media_assets.generation_json` admite `comfy-sprite-v3-matting` y `comfy-sprite-v4-matting-ipadapter`, con `matting:{mode,model}` y `quality.method='neural_rmbg'|'neural_birefnet'`. Exportación/restauración valida par de valores, versión y si IPAdapter está presente. Formatos existentes v1/v2 y activos manuales no cambian.
+
+
+## Story Hub local (v1)
+
+- `GET /api/v1/story-hub` devuelve `{packs,source:"bundled-original",community_online:false}`; solo muestra campos públicos, nombres de NPC, previews, recuentos y `has_images=false`. No divulga `ai_plot`, recordatorios, diálogos de personalidad ni contenido Lorebook.
+- `GET /api/v1/story-hub/{pack_id}` devuelve ficha pública o 404.
+- `POST /api/v1/story-hub/{pack_id}/install` con `{"protagonist_name":"Alex"}` opcional devuelve 201 con `{story,package_id,version,characters_installed,lore_installed,openings_installed}`. Valida y crea claves UUID independientes en `BEGIN IMMEDIATE`; un fallo de INSERT revierte historia, personajes y lore. Id desconocido da 404, parámetros inválidos dan 422.
+- Inicio: `POST /api/v1/stories/{story_id}/creator/opening` guarda la escena seleccionada sin modelo y rechaza sobrescribirla.
+- No hay API de registro remoto ni importación de paquetes de autores en esta versión. [Guía](STORY_HUB.md).

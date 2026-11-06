@@ -73,3 +73,8 @@ Cada ejecución sobre `master` obtiene las dependencias Python y el frontend de 
 ### Reinicio seguro cuando cambia `master`
 
 El instalador almacena el PID de Uvicorn que inició. Si vuelves a ejecutar el notebook mientras una versión anterior sigue activa, compara el SHA guardado con el nuevo; cuando difieren, comprueba en `/proc/<PID>/cmdline` que el proceso pertenece a `noble_api.main:app` bajo la carpeta del proyecto y en el puerto `127.0.0.1:8000`. Solo entonces envía `SIGTERM` a ese Uvicorn para cargar el código nuevo y ejecutar migraciones SQLite. Si la comprobación no coincide, **no mata procesos ajenos** y detiene la actualización con un diagnóstico. Historias y medios siguen fuera del checkout Git. ComfyUI y Ollama se reutilizan si están activos y saludables.
+
+
+## Historia de ejemplo enriquecida desde el Story Hub
+
+En una biblioteca nueva, `ensure_demo_story()` instala «La estación de la última luna» desde `POST /api/v1/story-hub/ultima-luna/install` y confirma 4 NPC, 3 entradas Lorebook y 3 aperturas. No se modifica ninguna historia ya creada: si tu Colab contiene la demo simple anterior, entra a **Biblioteca → Descubre un mundo para jugar** para instalar el nuevo paquete como otra historia. Todavía no trae imágenes preinstaladas. [Guía](STORY_HUB.md).

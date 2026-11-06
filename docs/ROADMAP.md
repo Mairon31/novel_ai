@@ -252,3 +252,8 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 - [ ] Visor de expresión y pose múltiple por personaje; animaciones, capas y posicionamiento.
 - [ ] Motor de coincidencias semánticas revisable, con reglas por escena y sin invenciones.
 - [ ] Instalación efectiva de modelos de imagen, TTS y reportes de compatibilidad por runtime.
+
+
+### N-08/N-09 — avance parcial en Story Hub local
+
+Existe un catálogo de tres historias originales de texto, instalables como copia independiente con NPC, aperturas y Lorebooks desde Biblioteca. La demo de Colab puede usar el paquete enriquecido sin sobrescribir una biblioteca anterior. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) supera 358 Python y 68 Playwright. **N-08 y N-09 continúan abiertas** hasta tener arte, paquetes externos y QA real de inmersión. N-10 (publicación/comunidad online) no se implementó. [Documentación](STORY_HUB.md).

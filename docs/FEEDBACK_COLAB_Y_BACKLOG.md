@@ -132,3 +132,8 @@ No presentar una función como terminada porque exista un botón o un mock. Esta
 - El Hub comunitario **no se confunde** con un catálogo integrado de ejemplos: la red, publicación y moderación son entregables posteriores.
 - Si la instancia Colab compartida no es accesible por el entorno, analizar el repositorio y usar evidencia de logs/capturas; no afirmar que se navegó o probó en vivo sin hacerlo.
 - Mantener retrocompatibilidad con SQLite, historias antiguas, .noble.zip, snapshots, bifurcaciones y notebooks; cualquier migración debe probarse con datos previos.
+
+
+## Avance parcial N-09/N-08 (2026-11-05/06)
+
+`story_hub.py` + `StoryHub.tsx` entregan tres mundos de texto con 4 NPC, 3 aperturas y Lorebooks, instalación transaccional/copia independiente y demo Colab enriquecida en biblioteca vacía. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781): 358 Python + 68 Playwright + build Vite PASS. No hay portadas, imágenes, importación de paquetes versionados ni servidor comunitario; la definición de terminado N-08/N-09/N-10 sigue sin satisfacerse. [Documentación](STORY_HUB.md).

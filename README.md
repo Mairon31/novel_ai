@@ -263,3 +263,8 @@ Noble obtiene la imagen procesada y la máscara como **dos resultados del mismo 
 `tools/sprite_gpu_benchmark.py` permite medir sobre **tu ComfyUI real** las cinco expresiones de un mismo NPC con la misma semilla en recorte verde, RMBG 2.0 y BiRefNet. Incluye sondeo `--check-only` sin inferencia, `--list-stories`/`--list-characters`, muestreo de `nvidia-smi` cuando exista, tiempos, métricas transparentes, PNG comparativos, `report.json`, `review.html` y `review.csv`. Los resultados son borradores no aprobados; `--discard-after` descarta expresamente solo los borradores generados durante el ensayo, manteniendo los informes. No se ejecuta en CI ni descarga modelos; las pruebas automáticas solo validan la lógica con respuestas simuladas. [**Guía y comandos Windows/Linux**](docs/GPU_SPRITE_BENCHMARK.md).
 
 El benchmark CLI y los informes offline fueron comprobados en [CI #42161285281](https://github.com/Mairon31/novel_ai/actions/runs/42161285281) (**337 Python + 66 Playwright PASS; build Vite correcto**) usando API y muestras de NVIDIA simuladas. **Las cifras físicas dependen de ejecutarlo localmente**; los reportes y previews se excluyen de Git de forma predeterminada.
+
+
+### Story Hub integrado — historias originales para comenzar
+
+En **Biblioteca → Descubre un mundo para jugar** puedes instalar tres mundos con 4 NPC, 3 aperturas, contexto narrativo y Lorebooks: «La estación de la última luna», «Las mareas de vidrio» y «El jardín de las horas rotas». Cada instalación crea una copia editable, permite elegir protagonista e inicio, y no requiere GPU hasta que continúes la narración. Es un **catálogo local de texto**, no el hub comunitario o multimedia definitivo. [Guía y contrato](docs/STORY_HUB.md).

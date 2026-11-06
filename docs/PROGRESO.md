@@ -813,3 +813,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] QA real en Colab y desktop/móvil; la URL temporal del runtime no se toma como evidencia de navegación por parte de este asistente.
 
 **No se han marcado implementaciones como completas en este registro.** Las funcionalidades existentes de catálogo HF, ComfyUI, Piper y Creator son base parcial; **no** satisfacen todavía los criterios ampliados solicitados. El trabajo futuro deberá desglosarse en cambios verificables, sin prometer entrega de todo el alcance en una sesión.
+
+
+## 2026-11-05/06 — Primer Story Hub local jugable (texto y autoría)
+
+- [x] `story_hub.py`: catálogo original offline con tres historias de 4 NPC, 3 Lorebooks y 3 aperturas, metadatos públicos aislados de la trama privada. No incluye imágenes ni servicio comunitario.
+- [x] `StoryHub.tsx`: Biblioteca permite elegir historia, ver detalles/inicios, cambiar protagonista, instalar como copia independiente y abrir detalle para comenzar. Transacción única de SQLite para historia, blueprint, personajes y conocimiento; un fallo revierte todo.
+- [x] Colab `ensure_demo_story()` instala `ultima-luna` con contenido real si la biblioteca está vacía; conserva historias anteriores. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781): **358 Python, 68 Playwright escritorio/móvil y Vite PASS**.
+- [ ] N-08/N-09 todavía necesitan portadas/sprites y paquetes externos con versiones, mejoras de tramas/recursos y QA de 10–20 turnos. N-10 comunitario continúa pendiente. [Detalles](STORY_HUB.md).

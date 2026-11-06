@@ -354,3 +354,8 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 - La CI no puede demostrar que Google Colab permita el iframe en cada navegador, que el modelo realmente se descargue, que ComfyUI use la GPU o que el respaldo periódico termine antes de una desconexión abrupta. Esas validaciones requieren registro físico de notebook + logs, y se mantienen como pendientes.
 
 - `test_colab_play.py` también verifica que la actualización con nuevo commit reinicia únicamente el proceso Uvicorn registrado (argumentos exactos de app-dir, host y puerto) y rechaza PIDs desconocidos. No utiliza una señal `SIGTERM` real en CI.
+
+
+## Gate local Story Hub
+
+`tests/test_story_hub.py` prueba tres packs, privacidad de secretos, nombres personalizados, personajes/Lorebooks completos, primer turno sin LLM, copias aisladas, validaciones y rollback SQLite con trigger. `apps/web/tests/story-hub.spec.ts` prueba en desktop/móvil la ruta de Biblioteca, instalación, detalle y comienzo real. `tests/test_colab_play.py` protege la semilla enriquecida en biblioteca vacía. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781): **358 Python + 68 Playwright y Vite build PASS**. No hay pruebas de modelos/GPU/QA visual ni hub comunitario remoto. La ausencia de portadas se declara.
