@@ -45,3 +45,18 @@ Se añadió la página `#/descubrir` con un destino **Descubrir historias** prop
 
 - [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099): **358 Python y 70 Playwright**, compilación Vite PASS, incluido `#/descubrir` y navegación/recarga.
 - [CI #42170420070](https://github.com/Mairon31/novel_ai/actions/runs/42170420070): test Python de roundtrip exportar/importar mundo con personajes/Lorebook/inicios aprobado (359 tests Python totales); frontend en validación al registrar.
+
+
+## Creator Studio — propuesta completa con narrador configurado
+
+Se incorporó **Crear con IA** como entrada independiente de Creator Studio. El usuario escribe una idea, protagonista, género y tono. El backend ejecuta tres generaciones en secuencia: (1) mundo con trama pública/privada y tres aperturas, (2) cuatro NPC con carácter y diálogo, (3) tres entradas activables del Lorebook. Se utiliza el proveedor/modelo del narrador configurado; no hay respuestas de relleno, catálogo remoto ni historia preescrita que se haga pasar por generada.
+
+El servidor valida el JSON y los modelos tipados en cada etapa y aplica las mismas restricciones del instalador del Story Hub. **La generación no escribe SQLite.** La interfaz presenta un borrador, permite corregir título y sinopsis y requiere **Crear historia con esta propuesta** para instalarlo como una historia separada. Los datos anteriores permanecen intactos, y los nuevos campos se pueden modificar después en Creator Studio. El instalador usa una transacción para historia, blueprint, NPC y Lorebooks; un error en cualquier escritura revierte el mundo completo.
+
+Contratos:
+- POST /api/v1/creator/assistant/draft: idea (30–2500 caracteres), protagonist_name, genre y tone opcionales; devuelve draft, model, stages_completed=3 y saved=false; exige narrador configurado (409); valida cada respuesta (422) y error de proveedor/timeout (502).
+- POST /api/v1/creator/assistant/install: recibe StoryDraft tipado, confirma creando la historia en SQLite y devuelve story, recuentos de NPC/lore/aperturas y generated_media=0. No consulta el modelo en esta fase.
+- El API comparte la exclusión local GPU con la narración cuando se usa Ollama/KoboldCpp sin forzar CPU. Máximo 2048 tokens por etapa, hasta 180 s de lectura por etapa; esto no prueba capacidad de modelos concretos.
+- Pruebas: tests/test_story_generator.py (generación simulada, fallo a mitad, esquema, rechazo de campos extras, rollback) y apps/web/tests/creator-ai.spec.ts (formulario, previsualización, edición, instalación y QA móvil/escritorio con propuesta mock). CI pendiente de confirmación.
+
+**No equivale a N-07 completo:** aún no genera imágenes, voces, plan editorial por escenas ni ofrece regeneración selectiva; la coherencia creativa de 10–20 turnos necesita ensayo con modelo y GPU reales.

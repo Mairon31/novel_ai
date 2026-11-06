@@ -259,3 +259,8 @@ Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: 
 Existe un catálogo de tres historias originales de texto, instalables como copia independiente con NPC, aperturas y Lorebooks desde Biblioteca. La demo de Colab puede usar el paquete enriquecido sin sobrescribir una biblioteca anterior. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) supera 358 Python y 68 Playwright. **N-08 y N-09 continúan abiertas** hasta tener arte, paquetes externos y QA real de inmersión. N-10 (publicación/comunidad online) no se implementó. [Documentación](STORY_HUB.md).
 
 - [x] Navegación `#/descubrir` independiente agregada como base para descubrimiento remoto futuro; el contenido actual continúa siendo local y sin servidor comunitario.
+
+
+### N-07 — primer corte implementado, alcance restante abierto (2026-11-06)
+
+Creator Studio ya incluye asistente de propuesta narrativa de 3 etapas mediante el proveedor de LLM configurado: mundo público/privado, cuatro NPC, tres Lorebooks y tres aperturas, con previsualización y confirmación de instalación SQLite. No confundir con generación integral de novelas ilustradas. Faltan edición granular del borrador, regeneración por componente, planes visuales, portadas, fondos, sprites, TTS y QA de historias extensas con GPU real. Ver STORY_HUB.md y TODO.md.

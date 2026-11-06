@@ -826,3 +826,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] Ruta dedicada `#/descubrir` probada con recarga y navegación tras instalar. [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099): **358 Python, 70 Playwright y Vite PASS**.
 - [x] Regresión adicional `test_bundled_world_roundtrip_portable_archive_preserves_lore_and_npcs`: instalación de paquete → exportación `.noble.zip` → importación `as_copy=true` → comprobación de NPC, Lorebooks, tres aperturas y aislamiento de UUID → primera escena del mundo restaurado. [CI #42170420070](https://github.com/Mairon31/novel_ai/actions/runs/42170420070): **359 Python PASS**, prueba frontend aún en ejecución al redactar esta nota.
+
+
+## 2026-11-06 — Creator Studio: asistente IA narrativo, con confirmación
+
+- [x] Código publicado en master: a3bf20c (API StoryGenerator, tres etapas y validación; instalación transaccional compartida con Story Hub); f7b86c6 (formulario, previsualización y confirmación desde Creator Studio). Ningún borrador se persiste sin la acción explícita del creador.
+- [x] Pruebas offline añadidas para tres etapas simuladas, JSON truncado, campos inesperados y rollback forzado de SQLite. Nuevo test Playwright escritorio/móvil para generación simulada y commit real en API.
+- [ ] Verificar resultado final de la CI para el commit que añade pruebas de navegador; la publicación no demuestra por sí sola PASS.
+- [ ] El asistente aún no produce portadas ni sprites ni sintetiza TTS, no permite corrección granular de NPC/Lorebook antes de instalar ni tiene cancelación física del modelo/worker verificada. Proveedor real, VRAM y calidad narrativa sostenida pendientes.
