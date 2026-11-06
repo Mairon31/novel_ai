@@ -40,6 +40,8 @@ class SpriteComfy:
         self.bad_background = False
         self.offline = False
         self.missing_lora = False
+        self.ipadapter_unavailable = False
+        self.ipadapter_weights_missing = False
         self.last_upload = None
 
     def __call__(self, request: httpx.Request):
@@ -56,6 +58,23 @@ class SpriteComfy:
             return httpx.Response(200, json={"LoraLoader": {"input": {
                 "required": {name: [] for name in (
                     "model", "clip", "lora_name", "strength_model", "strength_clip")}}}})
+        if path == "/object_info/IPAdapterUnifiedLoader":
+            if self.ipadapter_unavailable:
+                return httpx.Response(404)
+            return httpx.Response(200, json={"IPAdapterUnifiedLoader": {"input": {
+                "required": {"model": ["MODEL"], "preset": [[
+                    "STANDARD (medium strength)", "PLUS (high strength)",
+                    "PLUS FACE (portraits)"]]}}}})
+        if path == "/object_info/IPAdapter":
+            if self.ipadapter_unavailable:
+                return httpx.Response(404)
+            return httpx.Response(200, json={"IPAdapter": {"input": {
+                "required": {field: [] for field in (
+                    "model", "ipadapter", "image", "weight", "start_at",
+                    "end_at", "weight_type")}}}})
+        if path in {"/models/ipadapter", "/models/clip_vision"}:
+            return httpx.Response(200, json=[] if self.ipadapter_weights_missing else
+                                  ["mock-model.safetensors"])
         if path == "/upload/image":
             self.last_upload = request.content
             return httpx.Response(200, json={"name": "reference.png"})
@@ -276,6 +295,137 @@ class SpriteDraftApiTests(unittest.TestCase):
             f"/api/v1/stories/{other}/creator/characters/{other_npc.json()['id']}/sprite-drafts",
             json={"caption": "Bel en su pueblo", "reference_asset_id": art})
         self.assertEqual(bad.status_code, 422, bad.text)
+
+    def test_ipadapter_graph_uses_owned_gallery_without_img2img_and_composes_lora(self):
+        frame = sprite_png()
+        uploaded = self.client.post(
+            f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("portrait.png", frame, "image/png")})
+        self.assertEqual(uploaded.status_code, 200, uploaded.text)
+        ident = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        draft = self.draft(
+            reference_asset_id=ident, reference_mode="ipadapter",
+            use_lora=True, ipadapter_preset="PLUS FACE (portraits)",
+            ipadapter_weight=0.63)
+        self.assertEqual(draft["reference_mode"], "ipadapter")
+        self.assertEqual(draft["ipadapter_weight"], 0.63)
+        self.assertFalse(self.mock.history)
+        result = self.generate(draft, "joy")
+        self.assertEqual(result.status_code, 200, result.text)
+        graph = self.mock.graphs[-1]
+        self.assertEqual(graph["10"]["class_type"], "LoraLoader")
+        self.assertEqual(graph["20"]["class_type"], "IPAdapterUnifiedLoader")
+        self.assertEqual(graph["20"]["inputs"]["model"], ["10", 0])
+        self.assertEqual(graph["21"]["class_type"], "LoadImage")
+        self.assertEqual(graph["22"]["class_type"], "IPAdapter")
+        self.assertEqual(graph["22"]["inputs"]["weight"], 0.63)
+        self.assertEqual(graph["5"]["inputs"]["model"], ["22", 0])
+        self.assertEqual(graph["5"]["inputs"]["latent_image"], ["4", 0])
+        self.assertEqual(graph["2"]["inputs"]["clip"], ["10", 1])
+        self.assertNotIn("8", graph)
+        self.assertNotIn("9", graph)
+        self.assertIsNotNone(self.mock.last_upload)
+
+    def test_ipadapter_status_and_missing_plugin_or_weights_fail_before_prompt(self):
+        endpoint = "/api/v1/images/identity-adapter/status"
+        response = self.client.get(endpoint)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertTrue(response.json()["available"])
+        self.assertIn("PLUS FACE (portraits)", response.json()["presets"])
+        self.assertFalse(any(r.url.path == "/prompt" for r in self.mock.history))
+        frame = sprite_png()
+        uploaded = self.client.post(
+            f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("portrait.png", frame, "image/png")})
+        self.assertEqual(uploaded.status_code, 200)
+        ident = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        draft = self.draft(reference_asset_id=ident, reference_mode="ipadapter")
+        for key in ("ipadapter_unavailable", "ipadapter_weights_missing"):
+            setattr(self.mock, key, True)
+            response = self.generate(draft, "neutral")
+            self.assertEqual(response.status_code, 422, (key, response.text))
+            self.assertIn("IPAdapter", response.text)
+            self.assertEqual(len(self.mock.graphs), 0)
+            setattr(self.mock, key, False)
+        final = self.generate(draft, "neutral")
+        self.assertEqual(final.status_code, 200, final.text)
+
+    def test_ipadapter_rejects_missing_and_wrong_story_sprite_references(self):
+        without = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters/{self.npc}/sprite-drafts",
+            json={"caption": "Aira en biblioteca",
+                  "reference_mode": "ipadapter"})
+        self.assertEqual(without.status_code, 422, without.text)
+        image = self.app.state.creator_media.add(
+            self.story, "foreground", "Aira", "Aira bosque mágico",
+            sprite_png(), self.npc)
+        other_npc = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters",
+            json={"name": "Bel", "description":
+                  "Bel protege la aldea junto al río y vive en el molino."})
+        self.assertEqual(other_npc.status_code, 201)
+        invalid = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters/{other_npc.json()['id']}/sprite-drafts",
+            json={"caption": "Bel en biblioteca",
+                  "reference_sprite_asset_id": image["id"],
+                  "reference_mode": "ipadapter"})
+        self.assertEqual(invalid.status_code, 422)
+        self.assertIn("mismo NPC", invalid.text)
+        twice = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters/{self.npc}/sprite-drafts",
+            json={"caption": "Aira en biblioteca", "reference_asset_id": image["id"],
+                  "reference_sprite_asset_id": image["id"],
+                  "reference_mode": "ipadapter"})
+        self.assertEqual(twice.status_code, 422)
+        correct = self.draft(reference_sprite_asset_id=image["id"],
+                             reference_mode="ipadapter")
+        self.assertEqual(correct["reference_sprite_asset_id"], image["id"])
+        self.assertEqual(self.generate(correct, "neutral").status_code, 200)
+        graph = self.mock.graphs[-1]
+        self.assertEqual(graph["5"]["inputs"]["latent_image"], ["4", 0])
+        self.app.state.creator_media.delete(self.story, image["id"])
+        response = self.generate(correct, "anger")
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(len(self.mock.graphs), 1)
+
+    def test_approved_sprite_reference_supports_standard_img2img(self):
+        sprite = self.app.state.creator_media.add(
+            self.story, "foreground", "Aira retrato", "Aira en jardín",
+            sprite_png(), self.npc)
+        draft = self.draft(reference_sprite_asset_id=sprite["id"])
+        result = self.generate(draft, "neutral")
+        self.assertEqual(result.status_code, 200, result.text)
+        graph = self.mock.graphs[-1]
+        self.assertEqual(graph["5"]["inputs"]["latent_image"], ["9", 0])
+        self.assertIn("8", graph)
+        self.assertNotIn("20", graph)
+        self.assertIsNotNone(self.mock.last_upload)
+
+    def test_ipadapter_provenance_is_published_only_after_author_approves(self):
+        frame = sprite_png()
+        uploaded = self.client.post(
+            f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("portrait.png", frame, "image/png")})
+        self.assertEqual(uploaded.status_code, 200)
+        ident = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        draft = self.draft(reference_asset_id=ident, reference_mode="ipadapter",
+                           ipadapter_weight=0.52)
+        for expression in EXPRESSIONS:
+            self.assertEqual(self.generate(draft, expression).status_code, 200)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"], [])
+        published = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(published.status_code, 200, published.text)
+        self.assertEqual(published.json()["count"], 5)
+        for sprite in published.json()["assets"]:
+            self.assertEqual(sprite["generation_details"]["workflow_version"],
+                             "comfy-sprite-v2-ipadapter")
+            self.assertEqual(sprite["generation_details"]["adapter"]["weight"], 0.52)
+            self.assertEqual(sprite["generation_details"]["adapter"]["reference_kind"],
+                             "gallery")
 
     def test_approval_failure_preserves_review_draft(self):
         draft = self.draft()
