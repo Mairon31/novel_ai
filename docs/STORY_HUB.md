@@ -74,4 +74,4 @@ La sección `plot` acepta una revisión estructurada de `synopsis`, `player_plot
 
 La UI ofrece restaurar **una versión anterior** del borrador después de cada regeneración. La comprobación de revisión local evita aplicar respuestas tardías si hubo una edición durante la espera. El resultado incluye `generation_budget`: tamaño del prompt en caracteres, estimación de entrada por caracteres/4 y máximo configurado de salida. No mide consumo real, costo ni VRAM, y puede ser impreciso según el tokenizer.
 
-Pruebas nuevas: rechazo de trama incompleta, preservación de NPC/Lorebook/aperturas y propiedades, rollback UI de aperturas y posterior reescritura de trama. CI de la última versión pendiente de observación.
+Pruebas nuevas: rechazo de trama incompleta, preservación de NPC/Lorebook/aperturas y propiedades, rollback UI de aperturas y posterior reescritura de trama. Validado en [CI #42256256693](https://github.com/Mairon31/novel_ai/actions/runs/42256256693): 372 tests Python / 72 Playwright en escritorio y móvil, Vite PASS. La generación del modelo es simulada; no valida GPU o calidad narrativa real.

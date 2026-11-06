@@ -840,7 +840,15 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 ## 2026-11-06 · Creator Studio: regeneración selectiva y reversión
 
 - [x] Regeneración de aperturas, NPC y Lorebook con canon contextual, validación tipada y confirmación explícita de instalación, más prueba UI y presupuesto de caracteres: [CI #42254112191](https://github.com/Mairon31/novel_ai/actions/runs/42254112191) PASS.
-- [x] Revisión de trama principal `plot` publicada en `master`: reescribe cinco campos de narrativa y preserva secciones no seleccionadas. Las pruebas de integración se añadieron, aún sin PASS final confirmado.
-- [x] UI: restauración de una versión previa, descarte de respuestas obsoletas, estimación de contexto y tokens etiquetada como aproximada; pruebas Playwright publicadas. CI final pendiente.
+- [x] Revisión de trama principal `plot` publicada en `master`: reescribe cinco campos de narrativa y preserva secciones no seleccionadas; [CI #42256256693](https://github.com/Mairon31/novel_ai/actions/runs/42256256693): 372 Python / 72 Playwright y build Vite PASS.
+- [x] UI: restauración de una versión previa, descarte de respuestas obsoletas y estimación etiquetada como aproximada; Playwright PASS escritorio y móvil en [CI #42256256693](https://github.com/Mairon31/novel_ai/actions/runs/42256256693).
 - [x] Refactorización de `StoryGenerator` para mover la regeneración de función asociada dinámicamente a método propio de la clase; contexto de trama con saltos de línea legibles.
 - [ ] Pruebas físicas de narrador real, cancelación del proveedor, medición real de tokens y efectos narrativos sostenidos; imágenes y TTS siguen pendientes.
+
+
+## 2026-11-06 · Ajustes TTS: voz Piper preferida
+
+- [x] Conectada la preferencia `default_voice_id` ya persistida por el backend a Generación multimedia: seleccionar una voz realmente detectada o recuperar fallback, guardar explícitamente y recibir validación del servidor.
+- [x] Lector: al entrar, utiliza preferencia persistida si existe en las voces instaladas; de lo contrario utiliza la primera voz, sin activar TTS ni sintetizar. Se mantiene la selección manual de voz mientras dure la vista.
+- [x] Test Python de API sobre persistencia, rechazo de voz inexistente y ausencia de síntesis añadida. CI de los cambios de voz pendiente de cierre.
+- [ ] N-02 sigue abierto: falta instalador desde UI de archivos Piper ONNX/JSON con integridad, progreso de descarga, catálogos y opción de prueba de voz real.
