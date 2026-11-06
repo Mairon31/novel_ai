@@ -3,6 +3,15 @@ import { expect, test } from '@playwright/test';
 test('Piper preferred voice is saved in settings and restored without auto-speech', async ({ page }) => {
   let selected = '';
   let writes = 0;
+  let previewCalls = 0;
+  await page.route('**/api/v1/tts/preview', async route => {
+    previewCalls++;
+    const payload = route.request().postDataJSON();
+    expect(payload.request_source).toBe('preview_button');
+    expect(payload.voice_id).toBe('voice-b.onnx');
+    await route.fulfill({ status: 200, contentType: 'audio/wav',
+      body: 'RIFF........WAVEfmt ........data....' });
+  });
   await page.route('**/api/v1/tts/voices', route => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({
@@ -46,4 +55,9 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await openSettings();
   await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveValue('voice-b.onnx');
   expect(writes).toBe(1);
+  expect(previewCalls).toBe(0);
+  await page.getByRole('button', { name: 'Probar voz seleccionada' }).click();
+  await expect(page.getByLabel('Reproducir prueba de voz')).toBeVisible();
+  await expect(page.getByText('Muestra generada. Pulsa Reproducir para escucharla.')).toBeVisible();
+  expect(previewCalls).toBe(1);
 });
