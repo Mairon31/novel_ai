@@ -230,6 +230,7 @@ export type IllustrationResult = {
   story: Story; asset_id?: string; seed: number; checkpoint: string;
   duration_ms: number; cached: boolean; applied_loras: AppliedCharacterLora[];
 };
+export type SpeechPreferences = { default_voice_id: string };
 export type SpeechVoices = {
   engine: 'piper'; available: boolean; device: string; on_demand_only: boolean;
   models_dir: string; voices: Array<{ id: string; name: string }>;

@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -131,6 +131,11 @@ export const api = {
       allow_low_vram, apply_character_loras,
     }) }),
   speechVoices: () => request<SpeechVoices>('/tts/voices'),
+  speechPreferences: () => request<SpeechPreferences>('/tts/config'),
+  saveSpeechPreferences: (default_voice_id: string) =>
+    request<SpeechPreferences>('/tts/config', {
+      method: 'PUT', body: JSON.stringify({ default_voice_id }),
+    }),
   async requestSpeech(storyId: string, turnId: string, voice_id: string): Promise<Blob> {
     const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
       '/turns/' + encodeURIComponent(turnId) + '/speech', {

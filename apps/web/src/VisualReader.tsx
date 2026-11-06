@@ -211,11 +211,14 @@ export function VisualReader({
   }, [generating]);
   useEffect(() => {
     let live = true;
-    Promise.all([api.settings(), api.speechVoices()]).then(([settings, voiceList]) => {
+    Promise.all([api.settings(), api.speechVoices(), api.speechPreferences()])
+      .then(([settings, voiceList, speechPrefs]) => {
       if (!live) return;
       setImageMode(settings.image_mode); setVoiceEnabled(settings.tts_enabled);
       setVoices(voiceList);
-      setVoiceId(previous => previous || voiceList.voices[0]?.id || '');
+      const saved = voiceList.voices.some(v => v.id === speechPrefs.default_voice_id)
+        ? speechPrefs.default_voice_id : '';
+      setVoiceId(previous => previous || saved || voiceList.voices[0]?.id || '');
     }).catch(() => { /* reader remains usable offline */ });
     return () => { live = false; };
   }, []);

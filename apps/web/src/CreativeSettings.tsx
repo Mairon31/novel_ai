@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
-import type { ImageSettings, ImageStatus, Settings, SpeechVoices, ResourceConfig, ResourceStatus } from './types';
+import type { ImageSettings, ImageStatus, Settings, SpeechVoices, SpeechPreferences, ResourceConfig, ResourceStatus } from './types';
 
 interface Props {
   imageMode: Settings['image_mode'];
@@ -13,6 +13,7 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   const [status, setStatus] = useState<ImageStatus | null>(null);
   const [setup, setSetup] = useState<Settings | null>(null);
   const [voices, setVoices] = useState<SpeechVoices | null>(null);
+  const [voicePreferences, setVoicePreferences] = useState<SpeechPreferences | null>(null);
   const [resources, setResources] = useState<ResourceConfig | null>(null);
   const [resourceStatus, setResourceStatus] = useState<ResourceStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -21,10 +22,11 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   useEffect(() => {
     let active = true;
     Promise.all([api.imageConfig(), api.settings(), api.speechVoices(),
-                 api.resourceConfig(), api.resourceStatus()])
-      .then(([imageSettings, appSettings, speech, policy, telemetry]) => {
+                 api.resourceConfig(), api.resourceStatus(), api.speechPreferences()])
+      .then(([imageSettings, appSettings, speech, policy, telemetry, speechPrefs]) => {
         if (!active) return;
         setImage(imageSettings); setSetup(appSettings); setVoices(speech);
+        setVoicePreferences(speechPrefs);
         setResources(policy); setResourceStatus(telemetry);
       }).catch((exc: Error) => { if (active) setError(exc.message); });
     return () => { active = false; };
@@ -55,6 +57,17 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
       setMessage('Política GPU guardada.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
+  }
+
+  async function saveDefaultVoice() {
+    if (!voicePreferences) return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      setVoicePreferences(await api.saveSpeechPreferences(voicePreferences.default_voice_id));
+      setMessage('Voz predeterminada guardada para el lector.');
+    } catch (exc) {
+      setError((exc as Error).message);
+    } finally { setBusy(false); }
   }
 
   async function toggleSpeech(enabled: boolean) {
@@ -200,6 +213,23 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
       <p>Compatible con voces Piper ONNX en CPU. Coloca archivos <code>.onnx</code> y <code>.onnx.json</code> en el directorio de voces del backend. La síntesis comienza únicamente al pulsar «Escuchar» en un turno guardado.</p>
       {voices && <p>Motor: {voices.available ? 'Piper detectado' : 'Piper no instalado en PATH'} ·
         Voces instaladas: {voices.voices.length} · Carpeta: <code>{voices.models_dir}</code></p>}
+      {voicePreferences && <div className="workspace-field-grid">
+        <label className="workspace-pref-field">Voz predeterminada del lector
+          <select aria-label="Voz predeterminada de Piper" disabled={busy}
+            value={voicePreferences.default_voice_id}
+            onChange={e => setVoicePreferences({ default_voice_id: e.target.value })}>
+            <option value="">Primera voz instalada</option>
+            {voices?.voices.map(voice =>
+              <option key={voice.id} value={voice.id}>{voice.name}</option>)}
+          </select>
+        </label>
+        <button className="secondary-button" disabled={busy ||
+          (!!voicePreferences.default_voice_id &&
+           !voices?.voices.some(v => v.id === voicePreferences.default_voice_id))}
+          onClick={() => void saveDefaultVoice()} type="button">
+          <Check size={16}/> Guardar voz predeterminada
+        </button>
+      </div>}
       <label className="workspace-pref-toggle">
         <span>Activar botones de voz bajo demanda</span>
         <input type="checkbox" checked={setup?.tts_enabled || false} disabled={busy || !setup}
