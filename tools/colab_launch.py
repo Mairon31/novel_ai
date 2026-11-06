@@ -58,9 +58,20 @@ def valid_revision(value: str) -> str:
     return value
 
 
+def valid_model_tag(profile: str) -> str:
+    """Accept future Ollama model tags without allowing URL, shell or path syntax."""
+    if profile == "auto":
+        return profile
+    if (not isinstance(profile, str) or len(profile) > 180 or not re.fullmatch(
+            r"[A-Za-z0-9][A-Za-z0-9_.-]*"
+            r"(?:/[A-Za-z0-9][A-Za-z0-9_.-]*){0,2}"
+            r"(?::[A-Za-z0-9][A-Za-z0-9_.-]*)?", profile)):
+        raise ValueError("Modelo Ollama inválido; usa un tag como qwen3:4b-instruct")
+    return profile
+
+
 def model_for_vram(profile: str, vram_mb: int | None) -> str:
-    if profile not in MODEL_OPTIONS:
-        raise ValueError("Modelo Ollama no admitido en este perfil")
+    valid_model_tag(profile)
     if profile != "auto":
         return profile
     return "qwen3:4b-instruct" if vram_mb is not None and vram_mb >= 11000 \
@@ -527,8 +538,9 @@ def display_colab_ui(port: int = NOBLE_PORT) -> None:
 
 def launch(args) -> dict:
     valid_revision(args.revision)
-    if args.model not in MODEL_OPTIONS or args.images not in ("auto", "on", "off"):
-        raise ValueError("Perfil de modelos o imágenes inválido")
+    valid_model_tag(args.model)
+    if args.images not in ("auto", "on", "off"):
+        raise ValueError("Perfil de imágenes inválido")
     BASE.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     sha = ensure_git(args.revision)
@@ -606,7 +618,8 @@ def launch(args) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Noble AI · todo en uno Google Colab")
     parser.add_argument("--revision", default="master")
-    parser.add_argument("--model", choices=MODEL_OPTIONS, default="auto")
+    parser.add_argument("--model", default="auto",
+                        help="auto o cualquier tag de Ollama válido")
     parser.add_argument("--images", choices=("auto", "on", "off"), default="auto")
     parser.add_argument("--drive-backup", action="store_true")
     args = parser.parse_args(argv)

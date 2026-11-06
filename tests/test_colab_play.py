@@ -95,6 +95,8 @@ class ColabPlayTests(unittest.TestCase):
                          "qwen3:1.7b")
         self.assertEqual(launcher.model_for_vram("qwen3.5:2b", 4096),
                          "qwen3.5:2b")
+        self.assertEqual(launcher.model_for_vram("futureorg/future-model:Q4", 16000),
+                         "futureorg/future-model:Q4")
         with self.assertRaises(ValueError):
             launcher.model_for_vram("any:risky;commands", 16000)
 
