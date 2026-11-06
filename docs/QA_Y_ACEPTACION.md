@@ -267,3 +267,12 @@ Cada gate debe enlazar commit, comandos exactos, CI y, cuando aplique, logs de h
 - [x] Cambiar emoción no invalida la clave de fondo; cambiar hora, clima, plano o iluminación exige una nueva clave y no reutiliza incorrectamente la anterior. Aplicar un resultado obsoleto responde 409 y conserva selección actual.
 - [x] La caché y sus UUID sobreviven a bifurcación, exportación de familia, restauración y remapeo en importación como copia. Rechazar asset ajeno y no reemplazar el render_signature original de ComfyUI.
 - [ ] Por verificar: GPU real, consistencia de sprites en 10+ escenas, composición de hasta tres sprites, transiciones crossfade, regeneración versionada y paginación de backlog con 500+ mensajes.
+
+
+## P2 — Escenario VN con sprites reales y poses
+
+- [x] [CI #42136052387](https://github.com/Mairon31/novel_ai/actions/runs/42136052387): **247 Python y 60 Playwright PASS**, build: escenas con hasta tres sprites distintos, PNG alfa, fondo, expresión/pose en metadata, fallback neutral, selección determinista, sin llamadas de difusión y sin nuevos recursos en 10 turnos.
+- [x] Los nombres de NPC deben constar en narración visible; un NPC solo presente en el contexto privado no aparece como sprite. El foco de hablante exige atribución explícita, no basta con la última mención.
+- [x] Expresión y pose se mantienen en fork total/parcial, snapshots históricos, importación por UUID nuevo y restauración; un respaldo v1 de nueve columnas se normaliza con valores neutral/standing, sin permitir columnas arbitrarias.
+- [x] [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723): **247/247 Python + 60/60 Playwright PASS**, compilación Vite. Incluye crossfade de dos capas, ausencia de imágenes previas al cambiar de historia en la SPA, formulario de pose/expresión y capturas desktop/móvil.
+- [ ] Próximos gates: ≥500 turnos con render virtualizado, generación real de hojas de expresiones y consistencia en sprites de referencia mediante workflows GPU.

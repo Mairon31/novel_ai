@@ -254,3 +254,12 @@ Los enlaces `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creato
 `POST /api/v1/stories/{story_id}/visual-director/apply` con `{asset_id,expected_cache_key}` selecciona un fondo previamente registrado tras validar contexto, clave, versión e historia. Retorna `{selected_asset_id,action:"REUSE_BACKGROUND",inference_used:false,generation_started:false,background_cached:true,scene_id}`, `409` si cambió la escena o la versión de fondo; `422` si el asset no es válido. La aplicación no crea una ilustración nueva.
 
 **Gate:** [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317): 239 Python + 58 Playwright y build Vite PASS, incluyendo backup/restore/as_copy de firmas de caché.
+
+
+## Sprites y compositor multicapa del lector
+
+- `POST /api/v1/stories/{story_id}/creator/assets` (form-data): junto a `kind`, `label`, `caption`, `character_id` y `file`, acepta `expression=neutral|joy|anger|sadness|surprise` y `pose` (1–32 caracteres alfanuméricos ASCII, `-` o `_`; por defecto `standing`). Solo `foreground` puede tener valores no neutros. Responde recurso con `expression` y `pose`; datos inválidos → 422.
+- `PUT /api/v1/stories/{story_id}/creator/assets/{asset_id}` (JSON): `label` y `caption` con `expression` y `pose` opcionales. Omitirlos mantiene los valores anteriores. No cambia bytes PNG ni UUID.
+- `GET /api/v1/stories/{story_id}/creator/assets/scene`: conserva `background`, `foreground`, `selection`, `context_excerpt`, `generated:false`, añade `sprites:[{...asset,expression_target,speaker}]` (0–3 objetos) y `speaker_character_id` (UUID o null). `speaker` solo es true con atribución de habla explícita; el orden no garantiza que el personaje haya hablado si `speaker_character_id=null`.
+- Persistencia: `creator_media_assets.expression/pose` en filas actuales, instantáneas, forks y backup. Importador v1 admite antiguas filas sin ambos campos y asigna `neutral/standing`; no admite campos no definidos.
+- **Sin GPU implícita**: elegir variante, mostrar sprites y realizar crossfade son operaciones locales. `GET /scene` no llama ComfyUI. [CI #42136052387](https://github.com/Mairon31/novel_ai/actions/runs/42136052387) documenta la primera gate 247 Python / 60 Playwright, y la CI final [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723) confirmó también crossfade, formulario de autor y aislamiento de fondos.

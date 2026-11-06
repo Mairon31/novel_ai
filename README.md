@@ -213,3 +213,14 @@ En el lector, **UI/UX** permite elegir **VN** (escenario e historia), **Libro** 
 Desde **Galería → Director visual**, Noble evalúa si conviene reutilizar un fondo ya registrado o preparar uno nuevo. Permite registrar manualmente una versión de galería como fondo para un contexto de lugar, hora, clima, plano e iluminación, y seleccionarla otra vez sin procesar GPU. Los cambios de emoción no invalidan la caché del paisaje; las acciones de sprites y CG son propuestas para funciones futuras, **no generaciones automáticas**. La indexación de fondos manuales sigue las historias y sus archivos `.noble.zip`.
 
 Ver [arquitectura](docs/ARQUITECTURA.md), [QA](docs/QA_Y_ACEPTACION.md) y [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317).
+
+
+## Escenario visual con sprites y expresiones
+
+En **Creator Studio → Imágenes**, importa retratos PNG con transparencia, enlázalos a los NPC y selecciona una de cinco expresiones (neutral, alegría, enojo, tristeza o sorpresa) y una pose. Al avanzar la historia, el lector VN reutiliza las imágenes disponibles para mostrar hasta tres personajes; selecciona la variante a partir de pistas en el texto narrado y conserva una expresión neutral cuando no existe una alternativa. Los personajes no aparecen por mencionar su nombre únicamente en el contexto oculto del creador.
+
+La puesta en escena distingue al hablante solo cuando el narrador le atribuye explícitamente una intervención. Incluye fondo, transiciones entre dos imágenes, iluminación del personaje que habla y caja inferior con la narración. Las imágenes originales no se regeneran para cada turno. Las ramas y respaldos transportan las variantes; las instalaciones antiguas asignan `neutral/standing` a retratos anteriores.
+
+La animación y la elección de expresiones son deterministas; **todavía no hay generación automática de hojas de expresión, rigging 2D ni identidad facial garantizada**. [Detalle técnico](docs/ARQUITECTURA.md) y [pruebas](docs/QA_Y_ACEPTACION.md).
+
+**QA del escenario multicapa:** [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723) (247 Python / 60 Playwright, escritorio y móvil).
