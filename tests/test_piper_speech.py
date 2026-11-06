@@ -79,6 +79,25 @@ class SpeechTests(unittest.TestCase):
         self.assertEqual(denied.status_code,403)
         self.assertFalse(self.counter.exists())
 
+    def test_default_voice_preference_persists_and_requires_installed_voice(self):
+        initial=self.client.get("/api/v1/tts/config")
+        self.assertEqual(initial.status_code,200)
+        self.assertEqual(initial.json()["default_voice_id"],"")
+        selected=self.client.put("/api/v1/tts/config",
+            json={"default_voice_id":self.voice.name})
+        self.assertEqual(selected.status_code,200,selected.text)
+        self.assertEqual(self.client.get("/api/v1/tts/config").json()["default_voice_id"],
+                         self.voice.name)
+        missing=self.client.put("/api/v1/tts/config",
+            json={"default_voice_id":"missing.onnx"})
+        self.assertEqual(missing.status_code,422)
+        self.assertEqual(self.client.get("/api/v1/tts/config").json()["default_voice_id"],
+                         self.voice.name)
+        reset=self.client.put("/api/v1/tts/config",json={"default_voice_id":""})
+        self.assertEqual(reset.status_code,200)
+        self.assertEqual(reset.json()["default_voice_id"],"")
+        self.assertFalse(self.counter.exists())
+
     def test_explicit_piper_audio_and_cache(self):
         turn=self.new_turn()
         enabled=self.client.patch("/api/v1/settings",json={"tts_enabled":True})
