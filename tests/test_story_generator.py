@@ -179,6 +179,53 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(response.json()["draft"]["ai_plot"], draft["ai_plot"])
         self.assertEqual(response.json()["draft"]["lore"][0]["title"], "Nuevo faro")
 
+    def test_regenerate_plot_preserves_author_cast_lore_openings_and_metadata(self):
+        self.fake()
+        original = {**CORE, "protagonist_name": "Luna",
+                    "characters": CAST["characters"], "lore": LORE["lore"]}
+        observed = []
+        revision = {
+            "synopsis": "Una nueva conspiración oculta el verdadero origen de las campanas del puerto.",
+            "player_plot": "El puerto descubre señales nuevas bajo el muelle. Los recuerdos se convierten en una pista que lleva al protagonista a una torre olvidada.",
+            "ai_plot": "La fundadora de la ciudad alteró deliberadamente el orden de las mareas para proteger a los habitantes. La alcaldesa descubrió la verdad y pretende conservar el mecanismo. Cuando se rompa el pacto, cada personaje tendrá una consecuencia distinta.",
+            "guidelines": "Mantén el misterio y la autonomía de {{user}}. Los NPC respetan su historia y revelan pistas en orden, sin dictar decisiones ni diálogos del protagonista.",
+            "reminder": "La verdad sobre las mareas solo se conoce en el faro antiguo.",
+        }
+        async def generate(config, messages):
+            observed.extend(messages)
+            yield json.dumps(revision, ensure_ascii=False)
+        self.app.state.narrative.generate = generate
+        result = self.client.post("/api/v1/creator/assistant/regenerate", json={
+            "draft": original, "section": "plot",
+            "instruction": "Haz más sólido el misterio sin cambiar a Aria ni al farero."})
+        self.assertEqual(result.status_code, 200, result.text)
+        changed = result.json()["draft"]
+        for field, value in revision.items():
+            self.assertEqual(changed[field], value)
+        for field in original:
+            if field not in revision:
+                self.assertEqual(changed[field], original[field], field)
+        self.assertIn("Aria", observed[1]["content"])
+        self.assertIn("TRAMA ACTUAL QUE PUEDES REESCRIBIR", observed[1]["content"])
+        budget = result.json()["generation_budget"]
+        self.assertTrue(budget["estimate_only"])
+        self.assertEqual(budget["max_output_tokens"], 3072)
+        self.assertGreater(budget["input_tokens_estimate"], 0)
+        self.assertFalse(result.json()["saved"])
+        self.assertFalse(self.client.get("/api/v1/stories").json()["stories"])
+
+    def test_regenerate_plot_rejects_partial_output_without_changing_story(self):
+        self.fake()
+        original = {**CORE, "protagonist_name": "Luna",
+                    "characters": CAST["characters"], "lore": LORE["lore"]}
+        async def generate(config, messages):
+            yield json.dumps({"ai_plot": "Solo una trama sin otros campos."})
+        self.app.state.narrative.generate = generate
+        result = self.client.post("/api/v1/creator/assistant/regenerate",
+            json={"draft": original, "section": "plot", "instruction": ""})
+        self.assertEqual(result.status_code, 422, result.text)
+        self.assertFalse(self.client.get("/api/v1/stories").json()["stories"])
+
     def test_regeneration_context_budget_does_not_mutate_original(self):
         from noble_api.story_generator import compact_regeneration_canon
         canon = {
