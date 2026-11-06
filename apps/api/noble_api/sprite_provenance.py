@@ -6,6 +6,7 @@ import re
 
 from .comfy_loras import LORA_FILENAME
 from .comfy_identity_adapter import PRESETS
+from .comfy_matting import MODELS
 
 SHA = re.compile(r"[0-9a-f]{64}")
 
@@ -16,15 +17,22 @@ def normalize_sprite_generation(value: object) -> dict:
     mandatory = {"workflow_version", "checkpoint", "seed", "prompt_sha256",
                  "lora", "quality"}
     if (not isinstance(value, dict) or
-            not mandatory <= set(value) or set(value) - mandatory - {"adapter"}):
+            not mandatory <= set(value) or
+            set(value) - mandatory - {"adapter", "matting"}):
         raise ValueError("Procedencia de sprite inválida")
     adapter = value.get("adapter")
+    matting = value.get("matting")
     version = value["workflow_version"]
-    if version != ("comfy-sprite-v2-ipadapter" if adapter is not None
-                   else "comfy-sprite-v1"):
+    expected_version = (
+        "comfy-sprite-v4-matting-ipadapter" if matting is not None and adapter is not None
+        else "comfy-sprite-v3-matting" if matting is not None
+        else "comfy-sprite-v2-ipadapter" if adapter is not None
+        else "comfy-sprite-v1")
+    if version != expected_version:
         raise ValueError("Versión de generador de sprites inválida")
-    if "adapter" in value and adapter is None:
-        raise ValueError("Referencia IPAdapter vacía")
+    if ("adapter" in value and adapter is None or
+            "matting" in value and matting is None):
+        raise ValueError("Procedencia de adaptadores vacía")
     checkpoint, seed, digest = (value["checkpoint"], value["seed"],
                                 value["prompt_sha256"])
     if (not isinstance(checkpoint, str) or not 1 <= len(checkpoint) <= 240 or
@@ -54,7 +62,9 @@ def normalize_sprite_generation(value: object) -> dict:
             "method", "coverage", "requires_author_review", "author_approved"}:
         raise ValueError("Metadatos de recorte inválidos")
     coverage = quality["coverage"]
-    if (quality["method"] not in {"alpha_original", "border_chroma_key"}
+    if (quality["method"] not in {
+            "alpha_original", "border_chroma_key",
+            "neural_rmbg", "neural_birefnet"}
             or isinstance(coverage, bool) or not isinstance(coverage, (int, float))
             or not math.isfinite(coverage) or not 0.04 <= coverage <= 0.82
             or quality["requires_author_review"] is not True
@@ -74,10 +84,22 @@ def normalize_sprite_generation(value: object) -> dict:
             raise ValueError("IPAdapter de procedencia inválido")
         adapter = {"preset": preset, "weight": float(weight),
                    "reference_sha256": ref_digest, "reference_kind": kind}
+    if matting is not None:
+        if (not isinstance(matting, dict) or set(matting) != {"mode", "model"}
+                or not isinstance(matting["mode"], str)
+                or matting["mode"] not in MODELS
+                or matting["model"] != MODELS[matting["mode"]]["model"]
+                or quality["method"] != MODELS[matting["mode"]]["method"]):
+            raise ValueError("Procedencia del recorte neuronal incompatible")
+        matting = dict(matting)
+    elif quality["method"] in {"neural_rmbg", "neural_birefnet"}:
+        raise ValueError("Sprite neuronal sin modelo de procedencia")
     result = {"workflow_version": version, "checkpoint": checkpoint,
               "seed": seed, "prompt_sha256": digest, "lora": lora,
               "quality": {"method": quality["method"], "coverage": float(coverage),
                           "requires_author_review": True, "author_approved": True}}
     if adapter is not None:
         result["adapter"] = adapter
+    if matting is not None:
+        result["matting"] = matting
     return result
