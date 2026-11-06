@@ -154,6 +154,48 @@ class ColabPlayTests(unittest.TestCase):
         self.assertEqual(launcher.node_version(""), (0, 0))
         self.assertIn("Comfy-Org", launcher.COMFY_HF_REPO)
 
+    def test_demo_is_created_only_when_library_empty(self):
+        created = []
+        def requests(url, body=None, method=None, timeout=8):
+            if url.endswith("/api/v1/stories") and method == "POST":
+                created.append(body)
+                return {"id": "00000000-0000-0000-0000-000000000555"}
+            return {"stories": []}
+        with patch.object(launcher, "json_request", side_effect=requests):
+            self.assertEqual(launcher.ensure_demo_story(),
+                             "00000000-0000-0000-0000-000000000555")
+        self.assertEqual(len(created), 1)
+        self.assertGreater(len(created[0]["premise"]), 100)
+        self.assertIn("protagonista", created[0]["premise"])
+        with patch.object(launcher, "json_request", return_value={"stories": [
+                {"id": "a", "title": "Historia previa"}]}) as mocked:
+            self.assertIsNone(launcher.ensure_demo_story())
+        self.assertEqual(mocked.call_count, 1)
+
+    def test_inference_warmup_requires_real_model_output(self):
+        requests = []
+        def respond(url, body=None, method=None, timeout=8):
+            requests.append((url, method, body, timeout))
+            if url.endswith("/api/v1/narrative/config"):
+                return {"provider": "ollama", "model": "qwen3:4b-instruct"}
+            if url.endswith("/api/v1/narrative/prepare"):
+                return {"ready": True, "duration_ms": 740.0}
+            raise ValueError("unexpected")
+        with patch.object(launcher, "json_request", side_effect=respond):
+            self.assertTrue(launcher.verify_narrator())
+        self.assertEqual(len(requests), 2)
+        self.assertEqual(requests[-1][1], "POST")
+        self.assertEqual(requests[-1][2], {})
+        self.assertEqual(requests[-1][3], 200)
+        self.assertNotIn("/generate", requests[-1][0])
+        with patch.object(launcher, "json_request", side_effect=[
+                {"provider": "ollama", "model": "qwen3:1.7b"},
+                {"ready": False}]):
+            self.assertFalse(launcher.verify_narrator())
+        with patch.object(launcher, "json_request",
+                          return_value={"provider": "openrouter", "model": "gpt"}):
+            self.assertFalse(launcher.verify_narrator())
+
     def test_ui_proxy_uses_session_scoped_colab_port(self):
         source = LAUNCHER.read_text(encoding="utf-8")
         self.assertIn("google.colab.kernel.proxyPort(", source)
