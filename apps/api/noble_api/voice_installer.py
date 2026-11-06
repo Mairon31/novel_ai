@@ -252,6 +252,13 @@ class VoiceInstaller:
                                 item["size"]) if (stage / (item["filename"] + ".part")).exists()
                             else 0 for item in job["sources"])
                         self._bytes(job["id"], accumulated)
+            # Buffered writes to a tiny JSON sidecar may not yet be reflected
+            # in stat() inside the write loop. Recount after file close.
+            accumulated = sum(
+                (stage / (item["filename"] + ".part")).stat().st_size
+                if (stage / (item["filename"] + ".part")).exists() else 0
+                for item in job["sources"])
+            self._bytes(job["id"], accumulated)
         if self.get(job["id"])["status"] != "downloading":
             return
         if part.stat().st_size != source["size"]:
@@ -314,6 +321,9 @@ class VoiceInstaller:
                 except BaseException:
                     config.unlink(missing_ok=True)
                     raise
+                with self._db() as db:
+                    db.execute("UPDATE tts_downloads SET received_bytes=total_bytes "
+                               "WHERE id=? AND status='verifying'", (job_id,))
                 self._transition(job_id, ("verifying",), "completed")
         except Exception as exc:
             self._transition(job_id, ("queued", "downloading", "verifying"),
