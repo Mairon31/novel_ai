@@ -156,7 +156,8 @@ export function VisualReader({
     }).catch(() => { /* Reader stays usable without optional creator imagery. */ });
     return () => { current = false; };
   }, [active?.id, turns.length]);
-  const currentSceneMedia = sceneMedia?.storyId === active?.id ? sceneMedia.data : null;
+  const currentSceneMedia = sceneMedia && sceneMedia.storyId === active?.id
+    ? sceneMedia.data : null;
   const backgroundSource = currentSceneMedia?.background?.url || active?.scene_image_url || null;
   useEffect(() => {
     const storyId = active?.id || null;
