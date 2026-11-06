@@ -81,3 +81,7 @@ El reporte marca `simulated=true` únicamente en pruebas con transporte HTTP iny
 El cliente solo acepta `http://127.0.0.1:<puerto>`, `http://localhost:<puerto>` o `http://[::1]:<puerto>`, sin credenciales, rutas externas ni redirecciones. No usa proxies de entorno ni contacta APIs externas. Ante modelo ausente, error de una expresión, timeout o máscara de baja calidad, registra el fallo, no genera las expresiones restantes de ese modo y no publica activos; las imágenes ya obtenidas se conservan. El ensayo `--check-only` sale con código no cero si los modos requeridos no están listos. En ejecuciones reales puede haber descargas automáticas propias de plugins de ComfyUI ajenos a Noble cuando **otros** workflows los activan: administra tus pesos y extensiones desde ComfyUI.
 
 La integración se prueba en CI con transporte HTTP simulado y NVIDIA simulado. **La validación real de checkpoints, familias SD/SDXL/Illustrious/Flux, latencia, VRAM, calidad visual y peso compatible exige ejecutar estos comandos localmente** y revisar sus archivos.
+
+## Estado de aceptación
+
+La implementación y su emulación HTTP/NVIDIA pasaron [CI #42161285281](https://github.com/Mairon31/novel_ai/actions/runs/42161285281): **337 Python + 66 Playwright + Vite build**. Las carpetas `reports/` y `sprite-benchmark/` están en `.gitignore` para evitar publicar imágenes y telemetría local por accidente. La **prueba física GPU aún no se ha realizado**: generar y revisar los artefactos con el checkpoint del usuario es el siguiente paso para evaluar compatibilidad y fidelidad visual.
