@@ -72,6 +72,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [draftAdapterWeight, setDraftAdapterWeight] = useState(0.7);
   const [adapterStatus, setAdapterStatus] = useState<IdentityAdapterStatus | null>(null);
   const [checkingAdapter, setCheckingAdapter] = useState(false);
+  const [alignmentConfirmed, setAlignmentConfirmed] = useState<Record<string, boolean>>({});
   const [draftProgress, setDraftProgress] = useState('');
   const [galleryAssets, setGalleryAssets] = useState<VisualAsset[]>([]);
   const storyGuard = useRef<string | null>(null);
@@ -123,6 +124,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setSpriteDrafts([]); setDraftCharacter(''); setDraftReference('');
     setDraftSpriteReference(''); setDraftReferenceMode('img2img');
     setAdapterStatus(null);
+    setAlignmentConfirmed({});
     setGalleryAssets([]); setDraftProgress('');
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
                  api.creatorAssets(active.id), api.lorebookEntries(active.id),
@@ -277,8 +279,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         setDraftProgress('Generando ' + entry.label + ' (' +
           (index + 1) + '/' + chosen.length + ') mediante ComfyUI...');
         current = await api.generateSpriteExpression(storyId, draft.id, entry.id);
-        if (storyGuard.current === storyId)
+        if (storyGuard.current === storyId) {
+          setAlignmentConfirmed(prev => ({ ...prev, [draft.id]: false }));
           setSpriteDrafts(prev => prev.map(item => item.id === draft.id ? current : item));
+        }
       }
       if (storyGuard.current === storyId) {
         setNotice('Borrador actualizado. Comprueba contornos, expresión y coherencia antes de aprobar.');
@@ -288,11 +292,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   }
 
   async function approveSprites(draft: SpriteDraft) {
-    if (!active || working || draft.ready_count !== 5) return;
+    if (!active || working || draft.ready_count !== 5 ||
+        (draft.alignment_review_needed && !alignmentConfirmed[draft.id])) return;
     const storyId = active.id;
     setWorking(true); setError(''); setNotice('');
     try {
-      const result = await api.approveSpriteDraft(storyId, draft.id);
+      const result = await api.approveSpriteDraft(
+        storyId, draft.id, !!alignmentConfirmed[draft.id]);
       if (storyGuard.current === storyId) {
         setAssets((await api.creatorAssets(storyId)).assets);
         setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
@@ -865,12 +871,31 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       </article>;
                     })}
                   </div>
+                  {!!draft.alignment_warnings?.length && <div className="creator-hint"
+                      role="status" aria-label="Advertencias de siluetas">
+                    <strong>Variaciones importantes de encuadre detectadas</strong>
+                    <p>{draft.alignment_warnings.join('; ')}</p>
+                    <p>Esta comparación solo mide posición y escala de la
+                      silueta: no verifica identidad facial. Regenera las variantes
+                      que se vean distintas, o confirma que las has revisado.</p>
+                    <label>
+                      <input type="checkbox"
+                        aria-label={'Confirmé diferencias del borrador ' + draft.character_name}
+                        checked={!!alignmentConfirmed[draft.id]}
+                        onChange={event => setAlignmentConfirmed(prev => ({
+                          ...prev, [draft.id]: event.target.checked,
+                        }))}/>
+                      {' '}Revisé personalmente las diferencias y las acepto
+                    </label>
+                  </div>}
                   <div className="creator-actions">
                     <button className="secondary-button" disabled={working || draft.ready_count === 5}
                       onClick={() => void generateSprites(draft)}>
                       <Sparkles size={16}/> Generar expresiones faltantes
                     </button>
-                    <button className="primary-button" disabled={working || draft.ready_count !== 5}
+                    <button className="primary-button" disabled={working ||
+                        draft.ready_count !== 5 ||
+                        (!!draft.alignment_review_needed && !alignmentConfirmed[draft.id])}
                       onClick={() => void approveSprites(draft)}>
                       <Check size={16}/> Aprobar cinco expresiones
                     </button>

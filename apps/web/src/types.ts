@@ -374,6 +374,8 @@ export type SpriteDraft = {
   ipadapter_preset?: string; ipadapter_weight?: number;
   slots: Record<SpriteExpression, SpriteDraftSlot>;
   ready_count: number; created_at: number; updated_at: number;
+  alignment_warnings?: string[];
+  alignment_review_needed?: boolean;
 };
 export type IdentityAdapterStatus = {
   available: boolean; presets: string[]; model_count: number;

@@ -209,10 +209,12 @@ export const api = {
     request<SpriteDraft>('/stories/' + encodeURIComponent(storyId) +
       '/creator/sprite-drafts/' + encodeURIComponent(draftId) +
       '/expressions/' + expression, json({ allow_low_vram: allowLowVram })),
-  approveSpriteDraft: (storyId: string, draftId: string) =>
+  approveSpriteDraft: (storyId: string, draftId: string,
+                       acceptAlignmentWarnings = false) =>
     request<{count: number; assets: CreatorMediaAsset[]; approved: boolean}>(
       '/stories/' + encodeURIComponent(storyId) + '/creator/sprite-drafts/' +
-      encodeURIComponent(draftId) + '/approve', json({})),
+      encodeURIComponent(draftId) + '/approve',
+      json({ accept_alignment_warnings: acceptAlignmentWarnings })),
   discardSpriteDraft: (storyId: string, draftId: string) =>
     request<void>('/stories/' + encodeURIComponent(storyId) +
       '/creator/sprite-drafts/' + encodeURIComponent(draftId), { method: 'DELETE' }),
