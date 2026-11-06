@@ -886,3 +886,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Se agregó **N-25** al TODO y al plan de experiencia anime: separar «Imágenes y voz» en dos apartados independientes **Imágenes** y **Voz / TTS**, y «Sobre y actualizaciones» en **Acerca de Noble AI** y **Actualizaciones**, manteniendo la configuración dentro de Noble AI.
 - [x] Se precisaron criterios QA y orden de trabajo en `ROADMAP.md`, `QA_Y_ACEPTACION.md` y `PLAN_HISTORIAS_ANIME_2026_11_06.md`, tras verificar que los dos nombres combinados existen en `WorkspaceSettings.tsx` y que `CreativeSettings.tsx` reúne imágenes y voz.
 - [ ] **No se modificó el código de la UI** ni se crearon pantallas nuevas. Pendiente N-25 y pruebas de navegación/guardado desktop+móvil. No marcar como implementación.
+
+
+## 2026-11-06 · Implementación real N-25 — configuración separada (CI pendiente)
+
+- [x] Refactor del panel multimedia a `ImageSettingsPanel.tsx` y `VoiceSettingsPanel.tsx`: carga independiente de API, guardado y diagnóstico ComfyUI/GPU frente a catálogo, preferencias y prueba Piper. Eliminado `CreativeSettings.tsx` combinado.
+- [x] `WorkspaceSettings.tsx` ofrece cuatro destinos separados: Imágenes, Voz / TTS, Acerca de Noble AI y Actualizaciones. Los dos últimos tienen ahora sus propios componentes independientes, y las consultas de releases ocurren en Actualizaciones.
+- [x] URLs directas `#/configuracion/images`, `/voice`, `/about` y `/updates`, soporte de recarga/atrás/adelante y enlace heredado `/multimedia` que abre Imágenes; no se alteraron preferencias SQLite, API ni motores.
+- [x] Tests antiguos de imágenes, Piper y Ajustes migrados; nuevo `settings-separation.spec.ts` con validación de cuatro pantallas, APIs aisladas, recarga, navegación e interfaz móvil/escritorio. Corregidos selectores ambiguos detectados por CI intermedia.
+- [ ] **No cerrar N-25 hasta que el CI más reciente pase en su totalidad**. Falta comprobación visual subjetiva con capturas fuera de mock cuando esté disponible el entorno real.

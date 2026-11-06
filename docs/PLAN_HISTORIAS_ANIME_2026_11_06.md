@@ -123,5 +123,5 @@ El Creator Studio necesita un **formulario/flujo por etapas con validación sem�
 
 **Aceptación QA:** capturas desktop/móvil muestran los cuatro destinos separados; entrar en **Imágenes** no presenta controles de voz y viceversa; entrar en **Acerca de** no presenta botones de actualización y viceversa; cada pantalla conserva cambios tras recarga y deep link, y los controles actuales de ComfyUI, Piper, la voz preferida y los avisos de release no se pierden durante la migración. Verificar navegación con Playwright, accesibilidad, APIs actuales y ausencia de duplicados.
 
-**Estado:** [ ] pendiente de implementación. Esta sección solo documenta el trabajo; no se ha dividido todavía `WorkspaceSettings.tsx`, `CreativeSettings.tsx` ni las rutas.
+**Estado:** implementación de cuatro pantallas separadas publicada en `master` y eliminación del antiguo componente combinado. Rutas `#/configuracion/images`, `/voice`, `/about` y `/updates` bajo el mismo workspace, pruebas Playwright escritorio/móvil y migración de pruebas previas. **CI final pendiente** y no se declara N-25 terminado hasta obtener PASS.
 
