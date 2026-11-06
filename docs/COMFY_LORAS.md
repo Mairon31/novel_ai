@@ -25,3 +25,7 @@ ComfyUI solo proporciona los nombres disponibles, no un digest SHA256 de pesos. 
 La CI integra tests Python con transporte ComfyUI simulado y Playwright desktop/móvil. Ver `tests/test_comfy_images.py`, `tests/test_visual_render_provenance.py` y `apps/web/tests/visual-gallery.spec.ts`.
 
 Referencia de implementación: [ComfyUI LoraLoader](https://github.com/Comfy-Org/docs/blob/main/built-in-nodes/LoraLoader.mdx). No se copió código de ese repositorio, se utiliza su contrato de nodos.
+
+## Verificación de esta fase
+
+La integración opt-in obtuvo [CI #42145790071](https://github.com/Mairon31/novel_ai/actions/runs/42145790071) (**261 Python, 62 Playwright PASS**). La procedencia visual y validadores de respaldo obtuvieron [CI #42146552556](https://github.com/Mairon31/novel_ai/actions/runs/42146552556) (**266 Python, 62 Playwright PASS**). Ambos resultados incluyen build Vite correcto y modelos ComfyUI simulados por HTTP; falta prueba visual con GPU física.
