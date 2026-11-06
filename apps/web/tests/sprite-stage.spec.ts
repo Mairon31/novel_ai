@@ -85,4 +85,29 @@ test('VN scene composites three owned transparent NPC sprites with focus and sub
       path: 'test-results/' + test.info().project.name + '-vn-three-sprites.png',
       fullPage: true,
     });
+
+    // Reusing the SPA reader for another story must never expose the former
+    // story's background during the new route's asynchronous media load.
+    const other = await page.request.post('/api/v1/stories', { data: {
+      title: 'Otra ruta visual ' + test.info().project.name,
+      premise: 'Una casa solitaria bajo una lluvia de estrellas.',
+      protagonist_name: 'Nora',
+    } });
+    expect(other.status()).toBe(201);
+    const second = await other.json() as { id: string };
+    const uploaded = await page.request.post(
+      '/api/v1/stories/' + second.id + '/scene-image', {
+        multipart: {
+          file: { name: 'other.png', mimeType: 'image/png', buffer: spritePng },
+        },
+      });
+    expect(uploaded.status()).toBe(200);
+    await page.evaluate(id => {
+      window.location.hash = '#/historia/' + id + '/leer';
+    }, second.id);
+    await expect(page.locator('.noble-reader-chapter')).toContainText('Otra ruta visual');
+    await expect(page.locator('.noble-scene-background.is-current'))
+      .toHaveCSS('background-image', new RegExp(second.id));
+    await expect(page.locator('.noble-scene-background.is-previous'))
+      .toHaveCount(0);
   });
