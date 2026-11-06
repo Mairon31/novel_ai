@@ -42,3 +42,6 @@ Cuando la Biblioteca está **vacía**, `tools/colab_launch.py` instala `ultima-l
 Se añadió la página `#/descubrir` con un destino **Descubrir historias** propio del menú, accesible en desktop y móvil. La Biblioteca conserva una selección destacada, pero `#/descubrir` constituye una ruta compartible que no necesita abrir historias existentes ni Creator Studio. Instalar allí vuelve a `#/historia/{uuid}`, abre el detalle del nuevo proyecto y permite escoger apertura.
 
 `apps/web/tests/story-hub.spec.ts` incluye pruebas adicionales de deep link, recarga y posterior navegación desde el catálogo al detalle de historia; no altera los enlaces previos de Biblioteca, Lector ni Creator.
+
+- [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099): **358 Python y 70 Playwright**, compilación Vite PASS, incluido `#/descubrir` y navegación/recarga.
+- [CI #42170420070](https://github.com/Mairon31/novel_ai/actions/runs/42170420070): test Python de roundtrip exportar/importar mundo con personajes/Lorebook/inicios aprobado (359 tests Python totales); frontend en validación al registrar.

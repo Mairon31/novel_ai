@@ -823,3 +823,6 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [ ] N-08/N-09 todavía necesitan portadas/sprites y paquetes externos con versiones, mejoras de tramas/recursos y QA de 10–20 turnos. N-10 comunitario continúa pendiente. [Detalles](STORY_HUB.md).
 
 - [x] Espacio de navegación `#/descubrir` y entrada «Descubrir historias» separada de Biblioteca/Creator Studio, con deep links, recarga y redirección a detalle tras instalar. Nuevo E2E desktop/móvil añadido; cerrar cuando CI final de este bloque termine.
+
+- [x] Ruta dedicada `#/descubrir` probada con recarga y navegación tras instalar. [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099): **358 Python, 70 Playwright y Vite PASS**.
+- [x] Regresión adicional `test_bundled_world_roundtrip_portable_archive_preserves_lore_and_npcs`: instalación de paquete → exportación `.noble.zip` → importación `as_copy=true` → comprobación de NPC, Lorebooks, tres aperturas y aislamiento de UUID → primera escena del mundo restaurado. [CI #42170420070](https://github.com/Mairon31/novel_ai/actions/runs/42170420070): **359 Python PASS**, prueba frontend aún en ejecución al redactar esta nota.
