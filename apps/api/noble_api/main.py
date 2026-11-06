@@ -32,6 +32,7 @@ from .visual_state import VisualState, mount_visual_routes
 from .scene_planner import ScenePlanner, mount_scene_plan_routes
 from .visual_director import VisualDirector, mount_visual_director_routes
 from .creator import CreatorService, mount_creator_routes
+from .story_hub import mount_story_hub_routes
 from .lorebook import LorebookService, mount_lorebook_routes
 from .world_state import WorldStateService, mount_world_state_routes
 from .creator_media import CreatorMediaService, mount_creator_media_routes
@@ -289,6 +290,7 @@ def create_app(
     mount_scene_plan_routes(service, planner)
     mount_visual_director_routes(service, director)
     mount_creator_routes(service, creator)
+    mount_story_hub_routes(service, narrative)
     mount_lorebook_routes(service, lorebook)
     mount_world_state_routes(service, world)
     mount_creator_media_routes(service, creator_media)
