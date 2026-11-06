@@ -1,4 +1,12 @@
 export type ModelRole = 'narrator' | 'image' | 'tts';
+export type StoryHubPack = {
+  id: string; version: string; author: string; source: 'bundled-original';
+  license: string; title: string; genre: string; tags: string[];
+  language: string; synopsis: string; player_plot: string;
+  protagonist: string; character_names: string[]; opening_previews: string[];
+  character_count: number; lore_count: number; has_images: boolean;
+};
+
 export type Page = 'inicio' | 'crear' | 'modelos' | 'descargas' | 'ajustes' | 'diagnostico';
 export type CatalogEntry = {
   repo_id: string; revision: string | null; description: string;

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, P
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
+import { StoryHub } from './StoryHub';
 import type { BranchTree, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn } from './types';
 
 interface StoryStudioProps {
@@ -334,6 +335,12 @@ export function StoryStudio({
           <BookOpen size={72}/>
         </div>
       </div>
+      <StoryHub onInstall={story => {
+        setStories(old => [story, ...old.filter(existing => existing.id !== story.id)]);
+        setActive(story); setReading(false); setCreating(false);
+        setNotice('Historia instalada: elige una de las tres aperturas para comenzar.');
+        onRouteChange?.(story.id, false);
+      }}/>
       <div className="noble-library-section-heading">
         <div><span className="overline">TU COLECCIÓN</span><h2>Mis historias <small>{stories.length}</small></h2></div>
         {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> Cargando...</div>}

@@ -1337,3 +1337,39 @@
   .noble-scene-art .noble-scene-background,
   .noble-sprite-stage .noble-character-sprite{animation:none;transition:none}
 }
+
+
+/* Local story hub v1 — story-first editorial discovery, no remote marketplace. */
+.noble-story-hub{margin:30px 0 36px;border-top:1px solid #36415a;padding-top:25px}
+.noble-story-hub-heading{display:flex;justify-content:space-between;gap:22px;align-items:start;margin-bottom:18px}
+.noble-story-hub-heading h2{font-size:clamp(20px,2.3vw,30px);margin:7px 0}
+.noble-story-hub-heading p{max-width:660px;font-size:13px;color:#b7c2d9;line-height:1.7;margin:0}
+.noble-story-hub-source{color:#bdd1e1;font-size:11px;border:1px solid #4e5872;padding:7px 10px;border-radius:18px;white-space:nowrap}
+.noble-story-hub-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.noble-story-hub-tile{padding:0;border:1px solid #3f4b66;border-radius:14px;background:#161d30;text-align:left;color:#e8edfb;overflow:hidden;cursor:pointer;transition:border-color .17s,transform .17s}
+.noble-story-hub-tile:hover{border-color:#a49dca;transform:translateY(-2px)}
+.noble-story-hub-tile.is-selected{border-color:#bfb3ff;box-shadow:0 0 0 1px #bfb3ff77}
+.noble-story-hub-tile:disabled{opacity:.7;cursor:wait}
+.noble-story-hub-art{height:114px;display:flex;align-items:center;justify-content:center;color:#e3d4fa;background:radial-gradient(circle at 75% 10%,#896fb888,transparent 60%),linear-gradient(135deg,#243457,#121a37)}
+.noble-story-hub-art.hub-art-1{background:radial-gradient(circle at 30% 20%,#3b9aa888,transparent 60%),linear-gradient(135deg,#164858,#152337)}
+.noble-story-hub-art.hub-art-2{background:radial-gradient(circle at 70% 40%,#d69b6280,transparent 60%),linear-gradient(135deg,#59402f,#1d263f)}
+.noble-story-hub-tile-copy{display:flex;flex-direction:column;gap:8px;padding:17px;min-height:166px}
+.noble-story-hub-tile-copy small,.noble-story-hub-tile-copy em{font-size:11px;color:#bcc6df;font-style:normal}
+.noble-story-hub-tile-copy strong{font-size:17px;line-height:1.35}
+.noble-story-hub-tile-copy span{font-size:12px;line-height:1.55;color:#cad1e6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.noble-story-hub-detail{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:26px;margin-top:17px;padding:24px;background:#1b2538;border:1px solid #405474;border-radius:14px}
+.noble-story-hub-detail h3{font-size:clamp(22px,2.3vw,31px);margin:7px 0 12px}
+.noble-story-hub-detail-main>p{font-size:13px;color:#d2d9ed;line-height:1.75}
+.noble-story-hub-tags{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.noble-story-hub-tags span{font-size:11px;padding:4px 9px;border-radius:99px;background:#38445f;color:#e9e2fd}
+.noble-story-hub-credits{display:flex;align-items:center;gap:7px;font-size:11px!important;color:#b7c4d9!important;flex-wrap:wrap}
+.noble-hub-protagonist{display:flex;flex-direction:column;gap:7px;margin:17px 0;font-size:12px;color:#d5deef}
+.noble-hub-protagonist input{width:100%;max-width:310px;border:1px solid #66718b;border-radius:8px;background:#121a2c;color:#fff;padding:11px}
+.noble-story-hub-openings{border-left:1px solid #43516d;padding-left:22px}
+.noble-story-hub-openings>strong{display:block;font-size:13px;margin-bottom:12px}
+.noble-story-hub-openings>div{border-top:1px solid #43516d;padding:11px 0}
+.noble-story-hub-openings small{color:#bcb0f4;font-size:11px}
+.noble-story-hub-openings p{color:#d1d9eb;font-size:12px;line-height:1.65;margin:4px 0}
+@media(max-width:900px){.noble-story-hub-grid{grid-template-columns:1fr 1fr}.noble-story-hub-detail{grid-template-columns:1fr}.noble-story-hub-openings{border-left:0;border-top:1px solid #43516d;padding:18px 0 0}}
+@media(max-width:600px){.noble-story-hub-heading{flex-direction:column}.noble-story-hub-grid{grid-template-columns:1fr}.noble-story-hub-art{height:95px}.noble-story-hub-detail{padding:16px}.noble-story-hub-tile-copy{min-height:0}}
+@media(prefers-reduced-motion:reduce){.noble-story-hub-tile{transition:none}.noble-story-hub-tile:hover{transform:none}}
