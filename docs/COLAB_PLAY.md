@@ -67,3 +67,7 @@ Cada ejecución sobre `master` obtiene las dependencias Python y el frontend de 
 - `tests/test_colab_play.py`: integridad del JSON/AST, única celda obligatoria, revisión fijada, seguridad del proxy y URL de clone, selección de modelo, conservación de ajustes, historia demo idempotente, prueba de inferencia y respaldo SQLite/medios.
 - **CI GitHub** usa simulaciones: verifica estructura/contratos y build, **no ejecuta realmente Google Colab, Ollama, downloads de 2+ GB, ni genera una imagen GPU**.
 - Cuando pruebes el notebook en un runtime Colab verdadero, sus logs y `launch_state.json` permitirán cerrar el gate de instalación física con evidencia de GPU/modelo y eventuales errores.
+
+### Reinicio seguro cuando cambia `master`
+
+El instalador almacena el PID de Uvicorn que inició. Si vuelves a ejecutar el notebook mientras una versión anterior sigue activa, compara el SHA guardado con el nuevo; cuando difieren, comprueba en `/proc/<PID>/cmdline` que el proceso pertenece a `noble_api.main:app` bajo la carpeta del proyecto y en el puerto `127.0.0.1:8000`. Solo entonces envía `SIGTERM` a ese Uvicorn para cargar el código nuevo y ejecutar migraciones SQLite. Si la comprobación no coincide, **no mata procesos ajenos** y detiene la actualización con un diagnóstico. Historias y medios siguen fuera del checkout Git. ComfyUI y Ollama se reutilizan si están activos y saludables.
