@@ -114,7 +114,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await expect(page.getByRole('button', { name: /Lorebook \(3\)/ })).toBeVisible();
   await page.getByRole('button', { name: 'Trama y contexto', exact: true }).click();
   await expect(page.getByLabel('Sinopsis para lectores')).toHaveValue(
-    'Una bahía sin memoria espera que alguien resuelva el secreto de los faros y sus guardianes.'
+    'Los guardianes de la bahía empiezan a revelar una conspiración que amenaza sus recuerdos.'
   );
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-creator-ai-installed.png',
