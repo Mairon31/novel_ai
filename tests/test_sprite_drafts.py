@@ -1,0 +1,303 @@
+"""End-to-end sprite draft contract with a mocked local ComfyUI.
+
+Checks five real HTTP render workflows, local alpha conversion, ownership,
+resumability, explicit approval, and cleanup without requiring GPU hardware.
+"""
+from __future__ import annotations
+
+import io
+import json
+import sys
+import tempfile
+import time
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+import httpx
+from fastapi.testclient import TestClient
+from PIL import Image, ImageDraw
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "apps" / "api"))
+from noble_api.main import create_app
+from noble_api.creator_media import EXPRESSIONS
+from noble_api.sprite_drafts import DRAFT_TTL
+
+
+def sprite_png(bad_background=False):
+    photo = Image.new("RGB", (256, 256),
+                      (75, 80, 90) if bad_background else (4, 245, 8))
+    ImageDraw.Draw(photo).ellipse((85, 35, 170, 228), fill=(203, 87, 130))
+    buf = io.BytesIO()
+    photo.save(buf, "PNG")
+    return buf.getvalue()
+
+
+class SpriteComfy:
+    def __init__(self):
+        self.history = []
+        self.graphs = []
+        self.bad_background = False
+        self.offline = False
+        self.missing_lora = False
+        self.last_upload = None
+
+    def __call__(self, request: httpx.Request):
+        self.history.append(request)
+        path = request.url.path
+        if self.offline:
+            return httpx.Response(503)
+        if path == "/models/checkpoints":
+            return httpx.Response(200, json=["novel.safetensors"])
+        if path == "/models/loras":
+            return httpx.Response(200, json=[
+                "absent.safetensors" if self.missing_lora else "aira.safetensors"])
+        if path == "/object_info/LoraLoader":
+            return httpx.Response(200, json={"LoraLoader": {"input": {
+                "required": {name: [] for name in (
+                    "model", "clip", "lora_name", "strength_model", "strength_clip")}}}})
+        if path == "/upload/image":
+            self.last_upload = request.content
+            return httpx.Response(200, json={"name": "reference.png"})
+        if path == "/prompt":
+            graph = json.loads(request.content)["prompt"]
+            self.graphs.append(graph)
+            return httpx.Response(200, json={"prompt_id": "sprite-job"})
+        if path == "/history/sprite-job":
+            return httpx.Response(200, json={"sprite-job": {
+                "outputs": {"7": {"images": [
+                    {"filename": "sprite.png", "subfolder": "", "type": "output"}]}}}})
+        if path == "/view":
+            return httpx.Response(200, content=sprite_png(self.bad_background))
+        return httpx.Response(404)
+
+
+class SpriteDraftApiTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.mock = SpriteComfy()
+        self.root = Path(self.tmp.name)
+        self.transport = httpx.MockTransport(self.mock)
+        self.app = create_app(self.root, image_transport=self.transport)
+        self.ctx = TestClient(self.app)
+        self.client = self.ctx.__enter__()
+        res = self.client.post("/api/v1/stories", json={
+            "title": "Expresiones de Aira",
+            "premise": "Aira cuida las llaves de la biblioteca antigua del reino.",
+            "protagonist_name": "Luna",
+        })
+        self.assertEqual(res.status_code, 201, res.text)
+        self.story = res.json()["id"]
+        npc = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters", json={
+                "name": "Aira",
+                "description": "Aira es una heroína de cabello negro largo y ojos grises.",
+                "visual_dna": {"tags": ["cabello negro", "ojos grises"],
+                               "seed": 712, "lora_name": "aira.safetensors",
+                               "lora_strength": 0.78},
+            })
+        self.assertEqual(npc.status_code, 201, npc.text)
+        self.npc = npc.json()["id"]
+        configured = self.client.put("/api/v1/images/config", json={
+            "provider": "comfyui", "base_url": "http://127.0.0.1:8188",
+            "checkpoint": "novel.safetensors", "width": 256, "height": 256,
+            "steps": 10, "cfg": 6, "negative_prompt": "watermark"})
+        self.assertEqual(configured.status_code, 200, configured.text)
+
+    def tearDown(self):
+        self.ctx.__exit__(None, None, None)
+        self.tmp.cleanup()
+
+    def url(self, rest=""):
+        return f"/api/v1/stories/{self.story}/creator/sprite-drafts" + rest
+
+    def draft(self, **overrides):
+        body = {"caption": "Aira hablando en biblioteca antigua",
+                "pose": "standing", "style": "elegant Japanese anime", **overrides}
+        created = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters/{self.npc}/sprite-drafts",
+            json=body)
+        self.assertEqual(created.status_code, 201, created.text)
+        return created.json()
+
+    def generate(self, draft, expression):
+        return self.client.post(self.url(
+            f"/{draft['id']}/expressions/{expression}"), json={})
+
+    def test_create_is_offline_and_generation_requires_explicit_steps(self):
+        draft = self.draft()
+        self.assertEqual(draft["character_name"], "Aira")
+        self.assertEqual(draft["seed"], 712)
+        self.assertEqual(draft["ready_count"], 0)
+        self.assertFalse(self.mock.history)
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"], [])
+        self.assertEqual(len(self.client.get(self.url()).json()["drafts"]), 1)
+        response = self.generate(draft, "neutral")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["ready_count"], 1)
+        self.assertTrue(response.json()["slots"]["neutral"]["quality"][
+            "requires_author_review"])
+        png = self.client.get(
+            response.json()["slots"]["neutral"]["preview_url"])
+        self.assertEqual(png.status_code, 200, png.text)
+        self.assertEqual(png.headers["cache-control"], "no-store")
+        with Image.open(io.BytesIO(png.content)) as image:
+            self.assertEqual(image.mode, "RGBA")
+            self.assertEqual(image.getpixel((0, 0))[3], 0)
+            self.assertGreater(image.getpixel((128, 120))[3], 240)
+        self.assertEqual(self.mock.graphs[0]["5"]["inputs"]["seed"], 712)
+        self.assertIn("neutral expression", self.mock.graphs[0]["2"]["inputs"]["text"])
+        self.assertNotIn("10", self.mock.graphs[0])
+        self.assertEqual(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"], [])
+
+    def test_five_render_steps_need_explicit_approval_for_atomic_publication(self):
+        draft = self.draft()
+        for index, expression in enumerate(EXPRESSIONS):
+            result = self.generate(draft, expression)
+            self.assertEqual(result.status_code, 200, (expression, result.text))
+            self.assertEqual(result.json()["ready_count"], index + 1)
+        self.assertEqual(len(self.mock.graphs), 5)
+        self.assertTrue(all("no sprite sheet" in graph["2"]["inputs"]["text"]
+                            for graph in self.mock.graphs))
+        media_before = self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()
+        self.assertEqual(len(media_before["assets"]), 0)
+        approval = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(approval.status_code, 200, approval.text)
+        self.assertTrue(approval.json()["approved"])
+        self.assertEqual(approval.json()["count"], 5)
+        saved = self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]
+        self.assertEqual({a["expression"] for a in saved}, set(EXPRESSIONS))
+        self.assertTrue(all(a["character_id"] == self.npc for a in saved))
+        self.assertTrue(all(a["media_type"] == "image/png" for a in saved))
+        self.assertEqual(self.client.get(self.url()).json()["drafts"], [])
+        self.assertFalse((self.root / "sprite-drafts" /
+                          self.story / draft["id"]).exists())
+
+    def test_generation_failures_keep_existing_slot_and_no_partial_art(self):
+        draft = self.draft()
+        ok = self.generate(draft, "neutral")
+        self.assertEqual(ok.status_code, 200, ok.text)
+        preview = ok.json()["slots"]["neutral"]["preview_url"]
+        original = self.client.get(preview).content
+        self.mock.bad_background = True
+        denied = self.generate(draft, "neutral")
+        self.assertEqual(denied.status_code, 422, denied.text)
+        self.assertIn("Recorte no aceptado", denied.text)
+        self.assertEqual(self.client.get(preview).content, original)
+        self.mock.bad_background = False
+        self.mock.offline = True
+        absent = self.generate(draft, "joy")
+        self.assertEqual(absent.status_code, 503, absent.text)
+        self.assertEqual(self.client.get(self.url(
+            f"/{draft['id']}")).json()["ready_count"], 1)
+        denied_approve = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(denied_approve.status_code, 422, denied_approve.text)
+        self.assertEqual(len(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]), 0)
+
+    def test_resume_after_app_recreation_and_discard(self):
+        draft = self.draft()
+        first = self.generate(draft, "neutral")
+        self.assertEqual(first.status_code, 200, first.text)
+        with TestClient(create_app(self.root, image_transport=self.transport)) as resumed:
+            listing = resumed.get(self.url())
+            self.assertEqual(listing.status_code, 200, listing.text)
+            self.assertEqual(listing.json()["drafts"][0]["ready_count"], 1)
+            preview = resumed.get(
+                listing.json()["drafts"][0]["slots"]["neutral"]["preview_url"])
+            self.assertEqual(preview.status_code, 200)
+            discarded = resumed.delete(self.url(f"/{draft['id']}"))
+            self.assertEqual(discarded.status_code, 204, discarded.text)
+        self.assertEqual(self.client.get(self.url()).json()["drafts"], [])
+        self.assertFalse((self.root / "sprite-drafts" /
+                          self.story / draft["id"]).exists())
+
+    def test_story_ownership_and_expired_preview_cleanup(self):
+        draft = self.draft()
+        self.assertEqual(self.generate(draft, "neutral").status_code, 200)
+        other = self.client.post("/api/v1/stories", json={
+            "title": "Otro relato", "premise":
+                "Una ciudad flotante despierta bajo una tormenta distante.",
+        })
+        self.assertEqual(other.status_code, 201, other.text)
+        foreign_url = f"/api/v1/stories/{other.json()['id']}/creator/sprite-drafts/{draft['id']}"
+        self.assertEqual(self.client.get(foreign_url).status_code, 404)
+        self.assertEqual(self.client.get(
+            foreign_url + "/expressions/neutral/preview").status_code, 404)
+        self.assertEqual(self.client.post(foreign_url + "/approve").status_code, 422)
+        self.assertEqual(self.client.delete(foreign_url).status_code, 404)
+        with self.app.state.store._conn() as db:
+            db.execute("UPDATE sprite_drafts SET updated_at=? WHERE id=?",
+                       (time.time() - DRAFT_TTL - 10, draft["id"]))
+        self.assertEqual(self.client.get(self.url()).json()["drafts"], [])
+        self.assertFalse((self.root / "sprite-drafts" /
+                          self.story / draft["id"]).exists())
+
+    def test_lora_is_opt_in_and_input_reference_is_story_owned(self):
+        frame = sprite_png()
+        uploaded = self.client.post(
+            f"/api/v1/stories/{self.story}/scene-image",
+            files={"file": ("portrait.png", frame, "image/png")})
+        self.assertEqual(uploaded.status_code, 200, uploaded.text)
+        art = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()["assets"][0]["id"]
+        draft = self.draft(use_lora=True, reference_asset_id=art)
+        done = self.generate(draft, "joy")
+        self.assertEqual(done.status_code, 200, done.text)
+        graph = self.mock.graphs[-1]
+        self.assertEqual(graph["10"]["class_type"], "LoraLoader")
+        self.assertEqual(graph["10"]["inputs"]["lora_name"], "aira.safetensors")
+        self.assertEqual(graph["2"]["inputs"]["clip"], ["10", 1])
+        self.assertEqual(graph["5"]["inputs"]["latent_image"], ["9", 0])
+        self.assertIn("LoadImage", [node["class_type"] for node in graph.values()])
+        self.assertIsNotNone(self.mock.last_upload)
+        self.mock.missing_lora = True
+        rejected = self.generate(draft, "anger")
+        self.assertEqual(rejected.status_code, 422, rejected.text)
+        self.assertEqual(len(self.mock.graphs), 1)
+        other = self.client.post("/api/v1/stories", json={
+            "title": "Historia ajena", "premise":
+                "Un pueblo solitario escucha canciones al anochecer.",
+        }).json()["id"]
+        other_npc = self.client.post(
+            f"/api/v1/stories/{other}/creator/characters", json={
+                "name": "Bel", "description":
+                    "Bel vive entre montañas nevadas y protege su pueblo."})
+        self.assertEqual(other_npc.status_code, 201, other_npc.text)
+        bad = self.client.post(
+            f"/api/v1/stories/{other}/creator/characters/{other_npc.json()['id']}/sprite-drafts",
+            json={"caption": "Bel en su pueblo", "reference_asset_id": art})
+        self.assertEqual(bad.status_code, 422, bad.text)
+
+    def test_approval_failure_preserves_review_draft(self):
+        draft = self.draft()
+        for expression in EXPRESSIONS:
+            self.assertEqual(self.generate(draft, expression).status_code, 200)
+        with patch.object(self.app.state.creator_media, "import_expression_sheet",
+                          side_effect=RuntimeError("DB failure")):
+            with self.assertRaisesRegex(RuntimeError, "DB failure"):
+                self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(self.client.get(self.url(
+            f"/{draft['id']}")).json()["ready_count"], 5)
+        self.assertEqual(len(self.client.get(
+            f"/api/v1/stories/{self.story}/creator/assets").json()["assets"]), 0)
+        accepted = self.client.post(self.url(f"/{draft['id']}/approve"))
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+
+    def test_draft_limit_and_no_checkpoint_are_validated(self):
+        for _ in range(3):
+            self.draft()
+        excess = self.client.post(
+            f"/api/v1/stories/{self.story}/creator/characters/{self.npc}/sprite-drafts",
+            json={"caption": "Aira dentro de un castillo"})
+        self.assertEqual(excess.status_code, 422, excess.text)
+        self.assertIn("Máximo tres", excess.text)
+        self.assertEqual(len(self.client.get(self.url()).json()["drafts"]), 3)
+
+
+if __name__ == "__main__":
+    unittest.main()
