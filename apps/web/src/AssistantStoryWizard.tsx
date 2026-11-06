@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { BookOpen, Check, LoaderCircle, Sparkles, Users, X } from 'lucide-react';
 import { api } from './api';
 import type { GeneratedStoryDraft, Story } from './types';
@@ -19,14 +19,36 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   const [model, setModel] = useState('');
   const [regenerationInstruction, setRegenerationInstruction] = useState('');
   const [regenerationSection, setRegenerationSection] =
-    useState<'openings' | 'characters' | 'lore'>('openings');
+    useState<'plot' | 'openings' | 'characters' | 'lore'>('openings');
+  const [previousDraft, setPreviousDraft] = useState<GeneratedStoryDraft | null>(null);
+  const [lastRegenerated, setLastRegenerated] = useState('');
+  const [generationBudget, setGenerationBudget] = useState<{
+    context_characters: number; input_tokens_estimate: number;
+    max_output_tokens: number; estimate_only: boolean;
+  } | null>(null);
+  const revisionRef = useRef(0);
   const [busy, setBusy] = useState<'draft' | 'install' | 'regenerate' | null>(null);
   const [error, setError] = useState('');
 
-  const reset = () => { setDraft(null); setTagsText(''); setLoreKeysText({}); setError(''); };
+  function updateDraft(next: Parameters<typeof setDraft>[0]) {
+    revisionRef.current += 1;
+    setDraft(next);
+  }
+  function syncDerived(next: GeneratedStoryDraft) {
+    setTagsText(next.tags.join(', '));
+    setLoreKeysText(Object.fromEntries(next.lore.map(
+      (entry, index) => [index, entry.keys.join(', ')])));
+  }
+  const reset = () => {
+    updateDraft(null);
+    setPreviousDraft(null);
+    setLastRegenerated('');
+    setGenerationBudget(null);
+    setTagsText(''); setLoreKeysText({}); setError('');
+  };
   function editCharacter(index: number,
                          field: keyof GeneratedStoryDraft['characters'][number], value: string) {
-    setDraft(current => current && ({
+    updateDraft(current => current && ({
       ...current,
       characters: current.characters.map((npc, i) =>
         i === index ? { ...npc, [field]: value } : npc),
@@ -34,7 +56,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   }
   function editLore(index: number, field: 'title' | 'content' | 'keys',
                     value: string) {
-    setDraft(current => current && ({
+    updateDraft(current => current && ({
       ...current,
       lore: current.lore.map((entry, i) => i === index ? {
         ...entry, [field]: field === 'keys'
@@ -43,22 +65,21 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     }));
   }
   function editOpening(index: number, value: string) {
-    setDraft(current => current && ({
+    updateDraft(current => current && ({
       ...current,
       openings: current.openings.map((text, i) => i === index ? value : text),
     }));
   }
   async function generate() {
     if (busy || idea.trim().length < 30 || !protagonist.trim()) return;
-    setBusy('draft'); setError(''); setDraft(null);
+    setBusy('draft'); setError(''); updateDraft(null); setPreviousDraft(null); setLastRegenerated(''); setGenerationBudget(null);
     try {
       const result = await api.draftStoryWithAI({
         idea: idea.trim(), protagonist_name: protagonist.trim(),
         genre: genre.trim(), tone: tone.trim(),
       });
-      setDraft(result.draft);
-      setTagsText(result.draft.tags.join(', '));
-      setLoreKeysText(Object.fromEntries(result.draft.lore.map((entry, index) => [index, entry.keys.join(', ')])));
+      updateDraft(result.draft);
+      syncDerived(result.draft);
       setModel(result.model);
     } catch (exc) {
       setError((exc as Error).message);
@@ -68,22 +89,37 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   }
   async function regenerate() {
     if (!draft || busy) return;
+    const revisionAtStart = revisionRef.current;
     setBusy('regenerate'); setError('');
     try {
       const result = await api.regenerateAIDraft({
         draft, section: regenerationSection,
         instruction: regenerationInstruction.trim(),
       });
-      setDraft(result.draft);
-      setTagsText(result.draft.tags.join(', '));
-      setLoreKeysText(Object.fromEntries(
-        result.draft.lore.map((entry, index) => [index, entry.keys.join(', ')])));
+      if (revisionRef.current !== revisionAtStart) {
+        setError('El borrador cambió durante la solicitud. No se aplicó la respuesta para proteger tus ediciones.');
+        return;
+      }
+      setPreviousDraft(draft);
+      updateDraft(result.draft);
+      syncDerived(result.draft);
+      setLastRegenerated(regenerationSection);
+      setGenerationBudget(result.generation_budget ?? null);
       setModel(result.model);
     } catch (exc) {
       setError((exc as Error).message);
     } finally {
       setBusy(null);
     }
+  }
+  function undoRegeneration() {
+    if (!previousDraft || busy) return;
+    updateDraft(previousDraft);
+    syncDerived(previousDraft);
+    setPreviousDraft(null);
+    setLastRegenerated('');
+    setGenerationBudget(null);
+    setError('');
   }
   async function install() {
     if (!draft || busy) return;
@@ -154,30 +190,30 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       </div>
       <label>Título de la propuesta
         <input aria-label="Título generado editable" maxLength={100} value={draft.title}
-          onChange={e => setDraft({ ...draft, title: e.target.value })}/>
+          onChange={e => updateDraft({ ...draft, title: e.target.value })}/>
       </label>
       <label>Sinopsis pública
         <textarea aria-label="Sinopsis generada editable" rows={3} maxLength={250}
           value={draft.synopsis} onChange={e =>
-            setDraft({ ...draft, synopsis: e.target.value })}/>
+            updateDraft({ ...draft, synopsis: e.target.value })}/>
       </label>
       <div className="creator-ai-row">
         <label>Protagonista del mundo
           <input aria-label="Protagonista del borrador" maxLength={60}
             value={draft.protagonist_name} onChange={e =>
-              setDraft({ ...draft, protagonist_name: e.target.value })}/>
+              updateDraft({ ...draft, protagonist_name: e.target.value })}/>
         </label>
         <label>Género del mundo
           <input aria-label="Género generado editable" maxLength={80}
             value={draft.genre} onChange={e =>
-              setDraft({ ...draft, genre: e.target.value })}/>
+              updateDraft({ ...draft, genre: e.target.value })}/>
         </label>
         <label>Etiquetas (separadas por coma)
           <input aria-label="Etiquetas generadas editables"
             value={tagsText} onChange={e => {
               const value = e.target.value;
               setTagsText(value);
-              setDraft({ ...draft, tags: value.split(',')
+              updateDraft({ ...draft, tags: value.split(',')
                 .map(tag => tag.trim()).filter(Boolean) });
             }}/>
         </label>
@@ -186,22 +222,22 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         <label><BookOpen size={16}/> Mundo público del jugador
           <textarea aria-label="Trama pública generada editable" rows={5}
             maxLength={4000} value={draft.player_plot}
-            onChange={e => setDraft({ ...draft, player_plot: e.target.value })}/>
+            onChange={e => updateDraft({ ...draft, player_plot: e.target.value })}/>
         </label>
         <label>Trama privada del narrador
           <textarea aria-label="Trama secreta generada editable" rows={6}
             maxLength={12000} value={draft.ai_plot}
-            onChange={e => setDraft({ ...draft, ai_plot: e.target.value })}/>
+            onChange={e => updateDraft({ ...draft, ai_plot: e.target.value })}/>
         </label>
         <label>Directrices del narrador
           <textarea aria-label="Directrices generadas editables" rows={3}
             maxLength={4000} value={draft.guidelines}
-            onChange={e => setDraft({ ...draft, guidelines: e.target.value })}/>
+            onChange={e => updateDraft({ ...draft, guidelines: e.target.value })}/>
         </label>
         <label>Recordatorio de continuidad
           <textarea aria-label="Recordatorio generado editable" rows={2}
             maxLength={1200} value={draft.reminder}
-            onChange={e => setDraft({ ...draft, reminder: e.target.value })}/>
+            onChange={e => updateDraft({ ...draft, reminder: e.target.value })}/>
         </label>
       </div>
       <div className="creator-ai-review-grid">
@@ -275,7 +311,8 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         <label>Sección
           <select aria-label="Sección para regenerar" value={regenerationSection}
             disabled={!!busy} onChange={e => setRegenerationSection(
-              e.target.value as 'openings' | 'characters' | 'lore')}>
+              e.target.value as 'plot' | 'openings' | 'characters' | 'lore')}>
+            <option value="plot">Trama principal y directrices</option>
             <option value="openings">Tres aperturas</option>
             <option value="characters">Cuatro personajes</option>
             <option value="lore">Tres entradas Lorebook</option>
@@ -293,6 +330,20 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             <Sparkles size={16}/>}
           {busy === 'regenerate' ? 'Regenerando...' : 'Regenerar sección'}
         </button>
+        {previousDraft && <div className="creator-ai-undo">
+          <p role="status">Regeneración terminada ({lastRegenerated}).
+            Puedes recuperar la versión anterior de todo el borrador.</p>
+          <button type="button" className="secondary-button"
+            disabled={!!busy} onClick={undoRegeneration}>
+            Restaurar versión anterior
+          </button>
+        </div>}
+        {generationBudget && <small aria-label="Estimación de presupuesto de generación">
+          Contexto: {generationBudget.context_characters.toLocaleString()} caracteres,
+          aproximadamente {generationBudget.input_tokens_estimate.toLocaleString()} tokens de entrada
+          y máximo {generationBudget.max_output_tokens.toLocaleString()} tokens de salida.
+          Estimaciones, no consumos medidos por el proveedor.
+        </small>}
       </div>
       <p className="creator-ai-private-note">Estos datos quedan en tu biblioteca local.
         Después podrás modificar todos los campos desde Creator Studio.

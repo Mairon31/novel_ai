@@ -1414,3 +1414,6 @@
 .creator-ai-regenerate p { margin: 0; opacity: .8; }
 .creator-ai-regenerate label { display: grid; gap: .4rem; }
 .creator-ai-regenerate select, .creator-ai-regenerate textarea { width: 100%; box-sizing: border-box; }
+
+.creator-ai-undo { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.creator-ai-undo p { flex: 1 1 15rem; margin: 0; }

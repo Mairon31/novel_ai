@@ -271,10 +271,13 @@ export const api = {
   }) => request<{ draft: GeneratedStoryDraft; saved: boolean;
     stages_completed: number; model: string }>('/creator/assistant/draft', json(input)),
   regenerateAIDraft: (input: {
-    draft: GeneratedStoryDraft; section: 'openings' | 'characters' | 'lore';
+    draft: GeneratedStoryDraft; section: 'plot' | 'openings' | 'characters' | 'lore';
     instruction: string;
   }) => request<{ draft: GeneratedStoryDraft; section: string;
-    saved: boolean; model: string }>('/creator/assistant/regenerate', json(input)),
+    saved: boolean; model: string; generation_budget?: {
+      context_characters: number; input_tokens_estimate: number;
+      max_output_tokens: number; estimate_only: boolean;
+    } }>('/creator/assistant/regenerate', json(input)),
   installAIDraft: (draft: GeneratedStoryDraft) => request<{
     story: Story; source: string; characters_installed: number;
     lore_installed: number; openings_installed: number; generated_media: number;
