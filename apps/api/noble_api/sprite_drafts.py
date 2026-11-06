@@ -27,6 +27,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .comfy_loras import LORA_FILENAME
 from .comfy_runtime import render as render_comfy
+from .comfy_identity_adapter import (
+    DEFAULT_PRESET, PRESETS, identity_adapter_status, inject_ipadapter,
+    require_ipadapter_status,
+)
+from .reference_preparation import identity_reference_png
 from .creator_media import (CreatorMediaService, EXPRESSIONS,
                             MAX_MEDIA_BYTES, validate_pose)
 from .images import SceneImageService, resized_reference_png, workflow
@@ -52,6 +57,12 @@ class NewSpriteDraft(BaseModel):
     style: str = Field(default="clean anime visual novel art", max_length=220)
     seed: int | None = Field(default=None, ge=0, le=2**53 - 1)
     reference_asset_id: uuid.UUID | None = None
+    reference_sprite_asset_id: uuid.UUID | None = None
+    reference_mode: Literal["img2img", "ipadapter"] = "img2img"
+    ipadapter_preset: Literal[
+        "STANDARD (medium strength)", "PLUS (high strength)",
+        "PLUS FACE (portraits)"] = DEFAULT_PRESET
+    ipadapter_weight: float = Field(default=0.7, ge=0.1, le=1.5)
     use_lora: bool = False
     denoise: float = Field(default=0.77, ge=0.5, le=0.9)
 
@@ -168,6 +179,10 @@ class SpriteDraftService:
             "seed": settings["seed"], "checkpoint": settings["comfy"]["checkpoint"],
             "style": settings["style"], "use_lora": bool(settings["lora"]),
             "reference_asset_id": settings["reference_asset_id"],
+            "reference_sprite_asset_id": settings.get("reference_sprite_asset_id"),
+            "reference_mode": settings.get("reference_mode", "img2img"),
+            "ipadapter_preset": settings.get("ipadapter_preset", DEFAULT_PRESET),
+            "ipadapter_weight": settings.get("ipadapter_weight", 0.7),
             "slots": slots, "ready_count": sum(s["ready"] for s in slots.values()),
             "created_at": row["created_at"], "updated_at": row["updated_at"],
         }
@@ -219,10 +234,29 @@ class SpriteDraftService:
                 dna.get("seed") if dna.get("seed") is not None else
                 secrets.randbelow(2**53 - 1))
         reference_id = str(body.reference_asset_id) if body.reference_asset_id else None
+        sprite_id = (str(body.reference_sprite_asset_id)
+                     if body.reference_sprite_asset_id else None)
+        if reference_id and sprite_id:
+            raise ValueError("Selecciona solo una referencia por borrador")
+        if body.reference_mode == "ipadapter" and not (reference_id or sprite_id):
+            raise ValueError("IPAdapter requiere una imagen de referencia")
         reference_sha = None
         if reference_id:
             _, reference_sha = self.images.narrative.visual.reference_bytes(
                 story_id, reference_id)
+        if sprite_id:
+            source = self.media.get(story_id, sprite_id)
+            if (source["kind"] != "foreground" or
+                    source["character_id"] != character_id):
+                raise ValueError(
+                    "Solo puede usarse un sprite publicado del mismo NPC")
+            file = self.media._path(story_id, sprite_id, "foreground")
+            if not file.is_file() or file.is_symlink():
+                raise ValueError("El sprite de referencia no está disponible")
+            data = file.read_bytes()
+            if not 0 < len(data) <= MAX_MEDIA_BYTES:
+                raise ValueError("El sprite de referencia supera el tamaño admitido")
+            reference_sha = hashlib.sha256(data).hexdigest()
         lora = None
         if body.use_lora:
             filename = dna.get("lora_name")
@@ -240,7 +274,12 @@ class SpriteDraftService:
             "character_name": npc["name"], "appearance": appearance[:650],
             "caption": caption, "pose": pose, "style": body.style.strip()[:220],
             "seed": seed, "reference_asset_id": reference_id,
-            "reference_sha256": reference_sha, "denoise": body.denoise,
+            "reference_sprite_asset_id": sprite_id,
+            "reference_sha256": reference_sha,
+            "reference_mode": body.reference_mode,
+            "ipadapter_preset": body.ipadapter_preset,
+            "ipadapter_weight": body.ipadapter_weight,
+            "denoise": body.denoise,
             "lora": lora, "comfy": config,
         }
         ident = str(uuid.uuid4())
@@ -299,6 +338,12 @@ class SpriteDraftService:
                 if loras[0]["lora_name"] not in inventory["loras"]:
                     raise HTTPException(422, "El LoRA del NPC no está instalado")
                 await self.images.validate_lora_nodes()
+            adapter_mode = settings.get("reference_mode") == "ipadapter"
+            if adapter_mode:
+                probe = await identity_adapter_status(
+                    comfy["base_url"], self.images.transport)
+                require_ipadapter_status(
+                    probe, settings.get("ipadapter_preset", DEFAULT_PRESET))
             prompt = self._prompt(settings, expression)
             negative = (comfy["negative_prompt"] +
                         ", scenery, complex background, gradient backdrop, "
@@ -307,12 +352,32 @@ class SpriteDraftService:
             async with httpx.AsyncClient(transport=self.images.transport,
                     trust_env=False, timeout=httpx.Timeout(25, connect=5)) as client:
                 reference_name = None
+                reference = None
                 if settings["reference_asset_id"]:
-                    ref, digest = self.images.narrative.visual.reference_bytes(
+                    reference, digest = self.images.narrative.visual.reference_bytes(
                         story_id, settings["reference_asset_id"])
+                elif settings.get("reference_sprite_asset_id"):
+                    sprite_id = settings["reference_sprite_asset_id"]
+                    source = self.media.get(story_id, sprite_id)
+                    if (source["kind"] != "foreground" or
+                            source["character_id"] != row["character_id"]):
+                        raise HTTPException(422,
+                            "El sprite de referencia ya no pertenece al NPC")
+                    file = self.media._path(story_id, sprite_id, "foreground")
+                    if not file.is_file() or file.is_symlink():
+                        raise HTTPException(422, "La referencia de sprite desapareció")
+                    reference = file.read_bytes()
+                    if not 0 < len(reference) <= MAX_MEDIA_BYTES:
+                        raise HTTPException(422, "Referencia de sprite inválida")
+                    digest = hashlib.sha256(reference).hexdigest()
+                if reference is not None:
                     if digest != settings["reference_sha256"]:
                         raise HTTPException(409, "La referencia visual del borrador cambió")
-                    png = resized_reference_png(ref, comfy["width"], comfy["height"])
+                    png = (identity_reference_png(
+                        reference, comfy["width"], comfy["height"])
+                        if adapter_mode or settings.get("reference_sprite_asset_id")
+                        else resized_reference_png(
+                            reference, comfy["width"], comfy["height"]))
                     uploaded = await client.post(
                         comfy["base_url"] + "/upload/image",
                         files={"image": ("NobleAI-Sprite-Reference.png", png, "image/png")},
@@ -324,8 +389,17 @@ class SpriteDraftService:
                     if not isinstance(reference_name, str) or not re.fullmatch(
                             r"[A-Za-z0-9_.-]{1,180}", reference_name):
                         raise HTTPException(502, "Nombre de referencia ComfyUI inválido")
-                nodes = workflow(workflow_config, prompt, settings["seed"],
-                                 reference_name, settings["denoise"], loras)
+                nodes = workflow(
+                    workflow_config, prompt, settings["seed"],
+                    reference_name if not adapter_mode else None,
+                    settings["denoise"], loras)
+                if adapter_mode:
+                    if reference_name is None:
+                        raise HTTPException(422, "La referencia IPAdapter está ausente")
+                    inject_ipadapter(
+                        nodes, reference_name,
+                        settings.get("ipadapter_preset", DEFAULT_PRESET),
+                        settings.get("ipadapter_weight", 0.7))
                 nodes["7"]["inputs"]["filename_prefix"] = "NobleAI-Expression"
                 raw = await render_comfy(client, comfy["base_url"], nodes)
             try:
@@ -427,6 +501,14 @@ class SpriteDraftService:
                 "prompt_sha256": entries[name]["prompt_sha256"],
                 "lora": settings["lora"],
                 "quality": {**entries[name]["quality"], "author_approved": True},
+                **({"adapter": {
+                    "preset": settings.get("ipadapter_preset", DEFAULT_PRESET),
+                    "weight": settings.get("ipadapter_weight", 0.7),
+                    "reference_sha256": settings["reference_sha256"],
+                    "reference_kind": (
+                        "sprite" if settings.get("reference_sprite_asset_id")
+                        else "gallery"),
+                }} if settings.get("reference_mode") == "ipadapter" else {}),
             }) for name in EXPRESSIONS
         }
         assets = self.media.import_expression_sheet(
@@ -444,6 +526,12 @@ class SpriteDraftService:
 
 
 def mount_sprite_draft_routes(app, sprites: SpriteDraftService) -> None:
+    @app.get("/api/v1/images/identity-adapter/status")
+    async def get_identity_adapter_status():
+        config = sprites.images.config()
+        return await identity_adapter_status(config["base_url"],
+                                             sprites.images.transport)
+
     @app.get("/api/v1/stories/{story_id}/creator/sprite-drafts")
     def list_drafts(story_id: uuid.UUID):
         return {"drafts": sprites.list(str(story_id))}
