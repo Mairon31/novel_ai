@@ -231,6 +231,20 @@ export type IllustrationResult = {
   duration_ms: number; cached: boolean; applied_loras: AppliedCharacterLora[];
 };
 export type SpeechPreferences = { default_voice_id: string };
+export type PiperVoiceCatalog = {
+  source: string; language_focus: string; runtime: string; engine_installed: boolean;
+  note: string; voices: Array<{
+    id: string; name: string; language: string; quality: string;
+    installed: boolean; model_card: string;
+  }>;
+};
+export type PiperVoiceJob = {
+  id: string; voice_id: string; revision: string;
+  status: 'queued' | 'downloading' | 'verifying' | 'paused' | 'failed' | 'cancelled' | 'completed';
+  received_bytes: number; total_bytes: number; error: string | null;
+  created_at: number; updated_at: number;
+};
+
 export type SpeechVoices = {
   engine: 'piper'; available: boolean; device: string; on_demand_only: boolean;
   models_dir: string; voices: Array<{ id: string; name: string }>;

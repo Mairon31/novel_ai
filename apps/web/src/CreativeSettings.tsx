@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
-import type { ImageSettings, ImageStatus, Settings, SpeechVoices, SpeechPreferences, ResourceConfig, ResourceStatus } from './types';
+import type { ImageSettings, ImageStatus, Settings, SpeechVoices, SpeechPreferences, PiperVoiceCatalog, PiperVoiceJob, ResourceConfig, ResourceStatus } from './types';
 
 interface Props {
   imageMode: Settings['image_mode'];
@@ -14,6 +14,9 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   const [setup, setSetup] = useState<Settings | null>(null);
   const [voices, setVoices] = useState<SpeechVoices | null>(null);
   const [voicePreferences, setVoicePreferences] = useState<SpeechPreferences | null>(null);
+  const [voiceCatalog, setVoiceCatalog] = useState<PiperVoiceCatalog | null>(null);
+  const [voiceJobs, setVoiceJobs] = useState<PiperVoiceJob[]>([]);
+  const [voiceAction, setVoiceAction] = useState<string | null>(null);
   const [resources, setResources] = useState<ResourceConfig | null>(null);
   const [resourceStatus, setResourceStatus] = useState<ResourceStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -31,6 +34,52 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
       }).catch((exc: Error) => { if (active) setError(exc.message); });
     return () => { active = false; };
   }, []);
+  async function refreshVoiceDownloads() {
+    const [catalog, jobs, current] = await Promise.all([
+      api.piperCatalog(), api.piperJobs(), api.speechVoices(),
+    ]);
+    setVoiceCatalog(catalog); setVoiceJobs(jobs.downloads); setVoices(current);
+  }
+  useEffect(() => {
+    let live = true;
+    Promise.all([api.piperCatalog(), api.piperJobs()]).then(([catalog, jobs]) => {
+      if (!live) return;
+      setVoiceCatalog(catalog); setVoiceJobs(jobs.downloads);
+    }).catch((exc: Error) => { if (live) setError(exc.message); });
+    return () => { live = false; };
+  }, []);
+  useEffect(() => {
+    if (!voiceJobs.some(j => j.status === 'queued' || j.status === 'downloading' ||
+                             j.status === 'verifying')) return;
+    const interval = window.setInterval(() => {
+      void refreshVoiceDownloads().catch((exc: Error) => setError(exc.message));
+    }, 1200);
+    return () => window.clearInterval(interval);
+  }, [voiceJobs]);
+  async function installVoice(voiceId: string) {
+    if (voiceAction) return;
+    setVoiceAction(voiceId); setError(''); setMessage('');
+    try {
+      await api.installPiperVoice(voiceId);
+      await refreshVoiceDownloads();
+      setMessage('Instalación de voz iniciada; el progreso aparecerá abajo.');
+    } catch (exc) {
+      setError((exc as Error).message);
+    } finally { setVoiceAction(null); }
+  }
+  async function controlVoice(job: PiperVoiceJob, action: 'pause' | 'resume' | 'cancel') {
+    if (voiceAction) return;
+    setVoiceAction(job.voice_id); setError(''); setMessage('');
+    try {
+      await api.controlPiperVoice(job.id, action);
+      await refreshVoiceDownloads();
+      setMessage(action === 'pause' ? 'Descarga pausada.' :
+        action === 'resume' ? 'Descarga reanudada.' : 'Instalación cancelada.');
+    } catch (exc) {
+      setError((exc as Error).message);
+    } finally { setVoiceAction(null); }
+  }
+
   async function save() {
     if (!image) return;
     setBusy(true); setError(''); setMessage('');
@@ -210,7 +259,53 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
     </div>
     <div className="workspace-panel">
       <h3><Volume2 size={18}/> Voz local con Piper</h3>
-      <p>Compatible con voces Piper ONNX en CPU. Coloca archivos <code>.onnx</code> y <code>.onnx.json</code> en el directorio de voces del backend. La síntesis comienza únicamente al pulsar «Escuchar» en un turno guardado.</p>
+      <p>Instala una voz de español latinoamericano desde el catálogo o añade manualmente el modelo <code>.onnx</code> y su configuración <code>.onnx.json</code>. La síntesis ocurre únicamente cuando pulsas «Escuchar».</p>
+      <div className="noble-voice-library" aria-label="Catálogo de voces Piper">
+        <h4>Voces de español latinoamericano</h4>
+        <p className="noble-inspector-hint">Descarga explícita desde Hugging Face, con revisión fijada y verificación de archivos. El motor Piper se instala por separado.</p>
+        {voiceCatalog?.voices.map(voice => {
+          const job = voiceJobs.find(item => item.voice_id === voice.id);
+          const status = voice.installed ? 'installed' : job?.status;
+          const active = status === 'queued' || status === 'downloading' || status === 'verifying';
+          const percent = job?.total_bytes
+            ? Math.min(100, Math.round(job.received_bytes / job.total_bytes * 100)) : 0;
+          return <div className="noble-voice-card" key={voice.id}>
+            <div className="noble-voice-main">
+              <strong>{voice.name}</strong>
+              <span>{voice.language} · {voice.quality} · {status === 'installed' ?
+                'Instalada' : status || 'Disponible para instalar'}</span>
+              <a href={voice.model_card} target="_blank" rel="noopener noreferrer">
+                Consultar licencia y archivos de la voz</a>
+            </div>
+            {job && status !== 'installed' && <div className="noble-voice-progress">
+              <progress aria-label={'Progreso de ' + voice.name} value={percent} max={100}/>
+              <small>{percent}% · {(job.received_bytes / 1024 / 1024).toFixed(1)} /
+                {(job.total_bytes / 1024 / 1024).toFixed(1)} MiB
+                {job.error ? ' · ' + job.error : ''}</small>
+            </div>}
+            <div className="settings-buttons">
+              {status === 'installed' ? <span>Lista para seleccionar</span> :
+                job && active ? <>
+                  <button type="button" className="secondary-button"
+                    disabled={!!voiceAction} onClick={() => void controlVoice(job, 'pause')}>
+                    Pausar descarga</button>
+                  <button type="button" className="secondary-button"
+                    disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
+                    Cancelar descarga</button>
+                </> : job && (status === 'paused' || status === 'failed') ? <>
+                  <button type="button" className="secondary-button"
+                    disabled={!!voiceAction} onClick={() => void controlVoice(job, 'resume')}>
+                    Reanudar descarga</button>
+                  <button type="button" className="secondary-button"
+                    disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
+                    Cancelar descarga</button>
+                </> : <button type="button" className="secondary-button"
+                    disabled={!!voiceAction || busy} onClick={() => void installVoice(voice.id)}>
+                    {voiceAction === voice.id ? 'Iniciando...' : 'Instalar voz'}</button>}
+            </div>
+          </div>;
+        })}
+      </div>
       {voices && <p>Motor: {voices.available ? 'Piper detectado' : 'Piper no instalado en PATH'} ·
         Voces instaladas: {voices.voices.length} · Carpeta: <code>{voices.models_dir}</code></p>}
       {voicePreferences && <div className="workspace-field-grid">
@@ -235,9 +330,9 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
         <input type="checkbox" checked={setup?.tts_enabled || false} disabled={busy || !setup}
           onChange={e => void toggleSpeech(e.target.checked)}/>
       </label>
-      <p>No se activa autolectura, no se inicia Piper en segundo plano y no se descarga ninguna voz automáticamente.</p>
+      <p>No se activa autolectura ni Piper en segundo plano; solo se descarga una voz tras solicitarla.</p>
       <button className="secondary-button" disabled={busy}
-        onClick={() => void api.speechVoices().then(setVoices).catch((e: Error) => setError(e.message))}>
+        onClick={() => void refreshVoiceDownloads().catch((e: Error) => setError(e.message))}>
         <RefreshCcw size={16}/> Actualizar voces</button>
     </div>
   </div>;
