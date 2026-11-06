@@ -47,7 +47,7 @@ Seguimiento: [TODO](../TODO.md), [auditoría §§08, 12, 16](ARGON_AUDITORIA.md)
 
 ## Identidad visual y hojas de expresiones importadas (2026-11-05/06)
 
-En **Creator Studio → Personajes** se configura `visual_dna` independiente de la personalidad del narrador. Sus etiquetas normalizadas y semilla se fijan al guardarlas (si no estaban establecidas); los modelos LoRA se registran por nombre sin ruta y peso, pero **no se cargan ni se ejecutan**. Los datos viajan como parte del JSON de cada NPC en el canon, instantáneas, bifurcaciones y backups existentes.
+En **Creator Studio → Personajes** se configura `visual_dna` independiente de la personalidad del narrador. Sus etiquetas normalizadas y semilla se fijan al guardarlas (si no estaban establecidas); los modelos LoRA se registran por nombre sin ruta y peso y solo se aplican en peticiones ComfyUI que el autor habilita explícitamente (galería o borradores de sprites). Los datos viajan como parte del JSON de cada NPC en el canon, instantáneas, bifurcaciones y backups existentes.
 
 **Importación de hoja**: en **Creator Studio → Imágenes**, selecciona el NPC, describe el contexto de la escena, elige pose y una fila de cinco (1 × 5) o columna de cinco (5 × 1). El PNG/WebP debe ser transparente, con cinco celdas de tamaño igual y ninguna celda vacía; orden: neutral → alegría → enojo → tristeza → sorpresa. Se crean cinco PNG RGBA y metadatos `foreground` asociados al NPC de la misma historia. Puedes importar otra hoja para otra pose sin sustituir la primera. Los archivos se preparan antes de insertar el conjunto en SQLite; un fallo SQL revierte los registros y elimina los archivos de esta operación.
 
@@ -60,3 +60,9 @@ La sección **Personajes** ofrece el selector **Ficha visual vinculada**. Esta f
 ## LoRAs de NPC para nuevas ilustraciones
 
 Desde Personajes, especifica un nombre de LoRA simple (`.safetensors`) y su intensidad; enlaza la ficha visual cuando el reparto de escena use UUID. El lector puede consultar los archivos que ComfyUI reconoce y activar manualmente la carga de hasta tres LoRAs por ilustración. Al avanzar turnos o cambiar de historia no se ejecuta difusión. Los resultados conservan sus LoRAs/intensidades en la galería. [Detalles](COMFY_LORAS.md).
+
+## Hojas IA de cinco expresiones con aprobación previa
+
+La importación manual continúa sin depender de GPU. Como opción adicional, **Creator Studio → Imágenes → Generar expresiones con IA** crea borradores por NPC con semilla compartida (prioriza `visual_dna.seed`), estilo, pose, contexto, LoRA opcional y referencia visual propia de Galería por img2img. Cada botón **Generar** invoca un solo workflow ComfyUI; **Generar faltantes** ejecuta las solicitudes secuencialmente. Si una expresión no pasa el recorte a PNG transparente (fondo verde continuo, márgenes, cobertura de silueta), se rechaza ese candidato y se mantiene cualquier versión de borrador anterior.
+
+Los borradores quedan en `sprite-drafts/<story_uuid>/<draft_uuid>`, fuera del archivo `.noble.zip` y la galería publicada. SQLite guarda estados y permite retomar o descartar tras recargar. Se admiten hasta tres borradores por historia y se eliminan los inactivos tras 48 h. **Aprobar cinco expresiones** utiliza el importador transaccional de hoja preexistente; genera cinco activos `foreground` definitivos sin sustituir versiones anteriores. Los activos aprobados guardan `source=ai_reviewed` y `generation_json` con checkpoint/seed/LoRA/huella de prompt y calidad/confirmación. Sus metadatos viajan por fork y backup; borradores temporales no. [Detalle técnico y limitaciones](COMFY_SPRITE_DRAFTS.md).
