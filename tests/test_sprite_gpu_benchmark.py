@@ -156,6 +156,10 @@ class BenchmarkScriptTests(unittest.TestCase):
                                 for m in result["modes"]))
             self.assertGreaterEqual(result["modes"][0]["expressions"][0][
                 "gpu"]["samples"], 1)
+            self.assertEqual(result["modes"][0]["gpu_peak_used_mb"], 3800)
+            self.assertEqual(result["modes"][0]["gpu_peak_util_percent"], 40)
+            self.assertEqual(result["modes"][0]["gpu_device"],
+                             "Simulated for unit tests")
             self.assertTrue((directory / "chroma_green-neutral.png").is_file())
             self.assertTrue((directory / "neural_rmbg2-joy.png").is_file())
             self.assertTrue((directory / "report.json").is_file())
@@ -182,9 +186,26 @@ class BenchmarkScriptTests(unittest.TestCase):
                 gpu_probe=lambda i: self.fail("GPU probe must not run"),
                 progress=lambda _: None))
             self.assertEqual(result["modes"], [])
+            self.assertTrue(result["preflight"]["all_requested_ready"])
             self.assertEqual(fake.creates, 0)
             self.assertEqual(len(fake.requests), 3)
             self.assertTrue((Path(out) / "report.json").exists())
+            self.assertFalse((Path(out) / "review.html").exists())
+
+    def test_check_only_produces_machine_readable_missing_model_diagnostics(self):
+        fake = FakeNoble(missing_mode=True)
+        with tempfile.TemporaryDirectory() as out:
+            result = asyncio.run(benchmark(
+                base="http://127.0.0.1:8000", story_id=STORY,
+                character_id=NPC, modes=("chroma_green", "neural_rmbg2"),
+                expressions=("neutral",), seed=4, directory=Path(out),
+                check_only=True, transport=httpx.MockTransport(fake),
+                gpu_probe=lambda i: self.fail("No GPU call in check-only"),
+                progress=lambda _: None))
+            self.assertFalse(result["preflight"]["all_requested_ready"])
+            self.assertEqual(result["preflight"]["requested_modes_ready"], {
+                "chroma_green": True, "neural_rmbg2": False})
+            self.assertEqual(fake.creates, 0)
             self.assertFalse((Path(out) / "review.html").exists())
 
     def test_missing_model_skips_without_creating_draft(self):
