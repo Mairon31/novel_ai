@@ -155,7 +155,7 @@ La clave de caché prevista será `(location_id, time_of_day, weather, camera_sh
 
 ## ADN visual de Creator y hoja de sprites local
 
-`CreatorCharacter.visual_dna` registra etiquetas inmutables de identidad (una vez fijadas), semilla opcional y nombre/intensidad de LoRA. No se inyecta todavía en `images.py`, los workflows ComfyUI ni en el prompt narrativo: separarlo de personalidad evita que la configuración visual aparezca como instrucciones ocultas de narración. Las llamadas de generación y los proveedores existentes no cambian.
+`CreatorCharacter.visual_dna` registra etiquetas inmutables de identidad (una vez fijadas), semilla opcional y nombre/intensidad de LoRA. Las etiquetas se incorporan al prompt visual compuesto solo para NPC seleccionados, sin alterar instrucciones del narrador. Las semillas de NPC y LoRAs continúan como metadatos: no se usan para sustituir la semilla del render ni cargar modelos. Los proveedores existentes conservan sus contratos.
 
 `CreatorMediaService.import_expression_sheet` convierte bajo demanda un PNG/WebP alfa horizontal (1×5) o vertical (5×1) en cinco variantes `neutral/joy/anger/sadness/surprise` de un NPC identificado; cada variante sigue la caché editorial y el lector multicapa existentes. Todas las inserciones son una transacción SQLite con limpieza de archivos si se produce un error. La hoja importada es manual; ControlNet/IPAdapter, generación de hojas por IA, aplicación LoRA a checkpoints y cambios de apariencia versionados siguen pendientes.
 

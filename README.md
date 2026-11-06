@@ -226,7 +226,7 @@ La animación y la elección de expresiones son deterministas; **todavía no hay
 **QA del escenario multicapa:** [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723) (247 Python / 60 Playwright, escritorio y móvil).
 
 ### Identidad visual y hojas de expresiones
-En **Creator Studio → Personajes**, guarda hasta 16 etiquetas canónicas de apariencia, una semilla opcional de 32 bits y un nombre/intensidad de LoRA local. Una vez fijadas, las etiquetas y la semilla no se pueden cambiar mediante la edición ordinaria; un personaje nuevo o una rama propia puede tener otra identidad. Estos datos aún **no se envían a ComfyUI**.
+En **Creator Studio → Personajes**, guarda hasta 16 etiquetas canónicas de apariencia, una semilla opcional de 32 bits y un nombre/intensidad de LoRA local. Una vez fijadas, las etiquetas y la semilla no se pueden cambiar mediante la edición ordinaria; un personaje nuevo o una rama propia puede tener otra identidad. Las etiquetas se incluyen como guía textual únicamente al solicitar ilustraciones para personajes de la escena; la semilla individual y los LoRA siguen siendo metadatos, sin aplicarse automáticamente.
 
 En **Creator Studio → Imágenes → Importar hoja de expresiones**, selecciona un personaje y sube un PNG o WebP con transparencia organizado en cinco celdas iguales, en fila o columna: **neutral, alegría, enojo, tristeza y sorpresa**. Se generan cinco archivos PNG locales y sus registros de galería en una sola operación; el lector los selecciona según la narración guardada, sin inferencia. Ver [medios de autor](docs/CREATOR_MEDIA.md) y [contratos de API](docs/CONTRATOS_API.md).
 
