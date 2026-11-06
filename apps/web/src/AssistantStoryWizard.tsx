@@ -14,11 +14,13 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   const [genre, setGenre] = useState('');
   const [tone, setTone] = useState('');
   const [draft, setDraft] = useState<GeneratedStoryDraft | null>(null);
+  const [tagsText, setTagsText] = useState('');
+  const [loreKeysText, setLoreKeysText] = useState<Record<number, string>>({});
   const [model, setModel] = useState('');
   const [busy, setBusy] = useState<'draft' | 'install' | null>(null);
   const [error, setError] = useState('');
 
-  const reset = () => { setDraft(null); setError(''); };
+  const reset = () => { setDraft(null); setTagsText(''); setLoreKeysText({}); setError(''); };
   function editCharacter(index: number,
                          field: keyof GeneratedStoryDraft['characters'][number], value: string) {
     setDraft(current => current && ({
@@ -52,6 +54,8 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         genre: genre.trim(), tone: tone.trim(),
       });
       setDraft(result.draft);
+      setTagsText(result.draft.tags.join(', '));
+      setLoreKeysText(Object.fromEntries(result.draft.lore.map((entry, index) => [index, entry.keys.join(', ')])));
       setModel(result.model);
     } catch (exc) {
       setError((exc as Error).message);
@@ -148,9 +152,12 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         </label>
         <label>Etiquetas (separadas por coma)
           <input aria-label="Etiquetas generadas editables"
-            value={draft.tags.join(', ')} onChange={e =>
-              setDraft({ ...draft, tags: e.target.value.split(',')
-                .map(tag => tag.trim()).filter(Boolean) })}/>
+            value={tagsText} onChange={e => {
+              const value = e.target.value;
+              setTagsText(value);
+              setDraft({ ...draft, tags: value.split(',')
+                .map(tag => tag.trim()).filter(Boolean) });
+            }}/>
         </label>
       </div>
       <div className="creator-ai-reading">
@@ -220,8 +227,12 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             </label>
             <label>Activadores (por coma)
               <input aria-label={'Activadores Lorebook ' + (index + 1)}
-                value={entry.keys.join(', ')}
-                onChange={e => editLore(index, 'keys', e.target.value)}/>
+                value={loreKeysText[index] ?? entry.keys.join(', ')}
+                onChange={e => {
+                  const value = e.target.value;
+                  setLoreKeysText(previous => ({ ...previous, [index]: value }));
+                  editLore(index, 'keys', value);
+                }}/>
             </label>
           </details>)}
         </div>
