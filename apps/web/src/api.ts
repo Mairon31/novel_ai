@@ -181,6 +181,21 @@ export const api = {
     }
     return response.json() as Promise<CreatorMediaAsset>;
   },
+  async importCreatorExpressionSheet(storyId: string, characterId: string, data: {
+    caption: string; pose: string; layout: 'horizontal' | 'vertical'; file: File;
+  }): Promise<{ assets: CreatorMediaAsset[]; count: number }> {
+    const body = new FormData();
+    body.append('caption', data.caption); body.append('pose', data.pose);
+    body.append('layout', data.layout); body.append('file', data.file);
+    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
+      '/creator/characters/' + encodeURIComponent(characterId) + '/expression-sheet',
+      { method: 'POST', body });
+    if (!response.ok) {
+      const error: { detail?: string } = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'No se pudo importar la hoja de expresiones');
+    }
+    return response.json() as Promise<{ assets: CreatorMediaAsset[]; count: number }>;
+  },
   editCreatorAsset: (storyId: string, assetId: string, label: string, caption: string,
     expression?: SpriteExpression, pose?: string) =>
     request<CreatorMediaAsset>('/stories/' + encodeURIComponent(storyId) +

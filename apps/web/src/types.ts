@@ -292,10 +292,13 @@ export type CreatorBlueprint = {
   genre: string; tags: string[]; language: string; updated_at: number | null;
 };
 export type CreatorBlueprintDraft = Omit<CreatorBlueprint, 'story_id'|'updated_at'>;
+export type VisualDNA = {
+  tags: string[]; seed: number | null; lora_name: string | null; lora_strength: number;
+};
 export type CreatorCharacter = {
   id: string; story_id: string; name: string; description: string;
   personality: string; dialogue_examples: string; visual_character_id: string | null;
-  voice_id: string; updated_at: number;
+  voice_id: string; visual_dna: VisualDNA; updated_at: number;
 };
 export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;
 

@@ -19,6 +19,7 @@ const blankBlueprint: CreatorBlueprintDraft = {
 const blankCharacter: CreatorCharacterDraft = {
   name: '', description: '', personality: '', dialogue_examples: '',
   visual_character_id: null, voice_id: '',
+  visual_dna: { tags: [], seed: null, lora_name: null, lora_strength: 0.8 },
 };
 
 const blankLorebook: LorebookEntryDraft = {
@@ -48,6 +49,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   const [lorePreview, setLorePreview] = useState<LorebookPreview | null>(null);
   const [character, setCharacter] = useState<CreatorCharacterDraft>(blankCharacter);
   const [editingCharacter, setEditingCharacter] = useState<string | null>(null);
+  const [dnaTagsInput, setDnaTagsInput] = useState('');
+  const [sheetCharacter, setSheetCharacter] = useState('');
+  const [sheetCaption, setSheetCaption] = useState('');
+  const [sheetPose, setSheetPose] = useState('standing');
+  const [sheetLayout, setSheetLayout] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [sheetFile, setSheetFile] = useState<File | null>(null);
   const [openingDraft, setOpeningDraft] = useState('');
   const [assets, setAssets] = useState<CreatorMediaAsset[]>([]);
   const [mediaKind, setMediaKind] = useState<CreatorMediaAsset['kind']>('background');
@@ -90,8 +97,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setError(''); setNotice(''); setCharacters([]); setLorebookEntries([]);
     setEditingLorebook(null); setLorebookDraft(blankLorebook);
     setLoreKeysInput(''); setLoreSecondaryInput(''); setLorePreview(null);
-    setEditingCharacter(null); setCharacter(blankCharacter);
-    setAssets([]); setMediaFile(null);
+    setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
+    setAssets([]); setMediaFile(null); setSheetFile(null); setSheetCharacter('');
     Promise.all([api.creatorBlueprint(active.id), api.creatorCharacters(active.id),
                  api.creatorAssets(active.id), api.lorebookEntries(active.id)])
       .then(([data, cast, media, lorebook]) => {
@@ -149,10 +156,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
 
   function editCharacter(value: CreatorCharacter) {
     setEditingCharacter(value.id);
+    setDnaTagsInput(value.visual_dna.tags.join(', '));
     setCharacter({
       name: value.name, description: value.description,
       personality: value.personality, dialogue_examples: value.dialogue_examples,
       visual_character_id: value.visual_character_id, voice_id: value.voice_id,
+      visual_dna: value.visual_dna,
     });
   }
 
@@ -160,10 +169,28 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     if (!active) return;
     setWorking(true); setError(''); setNotice('');
     try {
-      await api.saveCreatorCharacter(active.id, character, editingCharacter || undefined);
+      const tags = dnaTagsInput.split(',').map(tag => tag.trim()).filter(Boolean);
+      await api.saveCreatorCharacter(active.id, {
+        ...character, visual_dna: { ...character.visual_dna, tags,
+          lora_name: character.visual_dna.lora_name?.trim() || null },
+      }, editingCharacter || undefined);
       setCharacters((await api.creatorCharacters(active.id)).characters);
-      setEditingCharacter(null); setCharacter(blankCharacter);
+      setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
       setNotice('Ficha narrativa del personaje guardada.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setWorking(false); }
+  }
+
+  async function importSheet() {
+    if (!active || !sheetCharacter || !sheetFile) return;
+    setWorking(true); setError(''); setNotice('');
+    try {
+      const result = await api.importCreatorExpressionSheet(active.id, sheetCharacter, {
+        caption: sheetCaption.trim(), pose: sheetPose.trim(), layout: sheetLayout, file: sheetFile,
+      });
+      setAssets((await api.creatorAssets(active.id)).assets);
+      setSheetFile(null);
+      setNotice('Se importaron ' + result.count + ' expresiones para el personaje.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -499,6 +526,51 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     onClick={resetMediaEditor}>Cancelar edición</button>}
                 </div>
               </div>
+              <div className="creator-media-form">
+                <h4>Importar hoja de expresiones</h4>
+                <p>Una cuadrícula de cinco celdas transparentes, en orden: neutral,
+                  alegría, enojo, tristeza y sorpresa. El lector reutiliza cada PNG
+                  sin generar imágenes al avanzar.</p>
+                <div className="creator-double">
+                  <label>Personaje de la hoja
+                    <select aria-label="Personaje de hoja de expresiones"
+                      value={sheetCharacter} onChange={e => setSheetCharacter(e.target.value)}>
+                      <option value="">Selecciona un personaje</option>
+                      {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
+                    </select>
+                  </label>
+                  <label>Distribución de celdas
+                    <select aria-label="Distribución de hoja" value={sheetLayout}
+                      onChange={e => setSheetLayout(e.target.value as 'horizontal' | 'vertical')}>
+                      <option value="horizontal">Una fila de cinco</option>
+                      <option value="vertical">Una columna de cinco</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="creator-double">
+                  <label>Contexto de la escena
+                    <input aria-label="Contexto de hoja" maxLength={220}
+                      value={sheetCaption} onChange={e => setSheetCaption(e.target.value)}
+                      placeholder="Aira castillo cristal"/>
+                  </label>
+                  <label>Pose compartida
+                    <input aria-label="Pose de hoja" maxLength={32}
+                      value={sheetPose} onChange={e => setSheetPose(e.target.value)}
+                      placeholder="standing"/>
+                  </label>
+                </div>
+                <label>Hoja PNG o WebP transparente (máximo 12 MiB)
+                  <input type="file" aria-label="Archivo de hoja de expresiones"
+                    accept="image/png,image/webp"
+                    onChange={e => setSheetFile(e.target.files?.[0] || null)}/>
+                </label>
+                <button className="primary-button"
+                  disabled={working || !sheetCharacter || sheetCaption.trim().length < 3 ||
+                    !/^[a-z0-9_-]{1,32}$/.test(sheetPose.trim().toLowerCase()) || !sheetFile}
+                  onClick={() => void importSheet()}><UploadCloud size={16}/>
+                  Importar cinco expresiones
+                </button>
+              </div>
             </div> :
             section === 'lorebook' ? <div className="creator-fields">
               <div className="creator-section-intro">
@@ -746,13 +818,52 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     ...v,dialogue_examples:e.target.value,
                   }))} placeholder="Cómo habla, expresiones habituales y forma de responder."/>
               </label>
+              <div className="creator-media-form">
+                <h4>Identidad visual canónica</h4>
+                <p>Las etiquetas de apariencia y la semilla quedan fijadas al guardarlas.
+                  El LoRA es una referencia opcional a un archivo local; todavía no
+                  activa inferencia ni descarga modelos.</p>
+                <label>Etiquetas de apariencia (separadas por coma)
+                  <input aria-label="Etiquetas visuales" maxLength={1040}
+                    value={dnaTagsInput} disabled={!!editingCharacter &&
+                      characters.some(npc => npc.id === editingCharacter &&
+                        npc.visual_dna.tags.length > 0)}
+                    onChange={e => setDnaTagsInput(e.target.value)}
+                    placeholder="cabello negro, ojos verdes, abrigo azul"/>
+                </label>
+                <div className="creator-double">
+                  <label>Semilla visual
+                    <input type="number" min={0} max={4294967295} step={1}
+                      aria-label="Semilla visual" value={character.visual_dna.seed ?? ''}
+                      disabled={!!editingCharacter && characters.some(npc =>
+                        npc.id === editingCharacter && npc.visual_dna.seed !== null)}
+                      onChange={e => setCharacter(prev => ({...prev, visual_dna: {
+                        ...prev.visual_dna, seed: e.target.value === '' ? null : Number(e.target.value),
+                      }}))}/>
+                  </label>
+                  <label>LoRA local (.safetensors)
+                    <input aria-label="LoRA visual" maxLength={160}
+                      value={character.visual_dna.lora_name || ''}
+                      onChange={e => setCharacter(prev => ({...prev, visual_dna: {
+                        ...prev.visual_dna, lora_name: e.target.value || null,
+                      }}))} placeholder="personaje.safetensors"/>
+                  </label>
+                </div>
+                <label>Intensidad LoRA (0–2)
+                  <input type="number" min={0} max={2} step={0.05}
+                    aria-label="Intensidad LoRA" value={character.visual_dna.lora_strength}
+                    onChange={e => setCharacter(prev => ({...prev, visual_dna: {
+                      ...prev.visual_dna, lora_strength: Number(e.target.value),
+                    }}))}/>
+                </label>
+              </div>
               <div className="creator-actions">
                 <button className="primary-button" disabled={working || !character.name.trim() ||
                     character.description.trim().length < 20} onClick={() => void saveCharacter()}>
                   <Save size={16}/>{editingCharacter ? 'Actualizar personaje' : 'Añadir personaje'}
                 </button>
                 {editingCharacter && <button className="secondary-button" onClick={() => {
-                  setEditingCharacter(null); setCharacter(blankCharacter);
+                  setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
                 }}><X size={15}/> Cancelar edición</button>}
               </div>
             </div> : <div className="creator-fields">

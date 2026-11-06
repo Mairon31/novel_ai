@@ -279,6 +279,95 @@ class CreatorMediaService:
             raise
         return next(row for row in self.list(story_id) if row["id"] == ident)
 
+    def import_expression_sheet(self, story_id: str, character_id: str, data: bytes,
+                                caption: str, pose: str = "standing",
+                                layout: str = "horizontal") -> list[dict]:
+        """Atomically register five transparent sprite cells in canonical order.
+
+        The imported PNG/WebP must be a 1x5 or 5x1 grid ordered as EXPRESSIONS.
+        No model is called and failure never leaves partially registered variants.
+        """
+        self._require_story(story_id)
+        pose = validate_pose(pose)
+        caption = caption.strip()
+        if not 3 <= len(caption) <= 220:
+            raise ValueError("La descripción de la hoja debe tener 3–220 caracteres")
+        if layout not in {"horizontal", "vertical"}:
+            raise ValueError("Distribución de hoja no admitida")
+        if not 0 < len(data) <= MAX_MEDIA_BYTES:
+            raise ValueError("La hoja debe ocupar entre 1 byte y 12 MiB")
+        try:
+            with Image.open(io.BytesIO(data)) as original:
+                if original.format not in {"PNG", "WEBP"}:
+                    raise ValueError("La hoja debe ser PNG o WebP con transparencia")
+                if (original.width * original.height > MAX_MEDIA_PIXELS or
+                        original.width < 8 or original.height < 8):
+                    raise ValueError("Resolución de hoja inválida")
+                original.load()
+                photo = ImageOps.exif_transpose(original).convert("RGBA")
+                width, height = photo.size
+                horizontal = layout == "horizontal"
+                extent = width if horizontal else height
+                if extent % 5:
+                    raise ValueError("La hoja debe dividirse exactamente en cinco celdas")
+                cell = extent // 5
+                if min(cell, height if horizontal else width) < 8:
+                    raise ValueError("Cada expresión necesita al menos 8 píxeles por lado")
+                tiles = []
+                for index in range(5):
+                    bounds = ((index * cell, 0, (index + 1) * cell, height)
+                              if horizontal else
+                              (0, index * cell, width, (index + 1) * cell))
+                    tile = photo.crop(bounds)
+                    minimum, maximum = tile.getchannel("A").getextrema()
+                    if minimum == 255 or maximum == 0:
+                        raise ValueError("Cada celda necesita un personaje visible y fondo transparente")
+                    stream = io.BytesIO()
+                    tile.save(stream, "PNG")
+                    tiles.append(_safe_image(stream.getvalue(), "foreground")[0])
+        except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
+            raise ValueError("La hoja de expresiones no pudo decodificarse") from exc
+
+        with self.store._conn() as db:
+            owner = db.execute(
+                "SELECT config_json FROM creator_characters WHERE story_id=? AND id=?",
+                (story_id, character_id)).fetchone()
+        if not owner:
+            raise ValueError("El personaje no pertenece a esta historia")
+        name = json.loads(owner["config_json"])["name"]
+        entries = []
+        for index, expression in enumerate(EXPRESSIONS):
+            asset_id = str(uuid.uuid4())
+            filename = self._path(story_id, asset_id, "foreground")
+            entries.append((asset_id, filename, expression, tiles[index]))
+        written: list[Path] = []
+        try:
+            for _, filename, _, content in entries:
+                filename.parent.mkdir(parents=True, exist_ok=True)
+                with filename.open("xb") as handle:
+                    written.append(filename)
+                    handle.write(content)
+            with self.store._conn() as db:
+                if not db.execute(
+                    "SELECT 1 FROM creator_characters WHERE story_id=? AND id=?",
+                    (story_id, character_id)).fetchone():
+                    raise ValueError("Personaje eliminado antes de registrar la hoja")
+                for index, (asset_id, filename, expression, _) in enumerate(entries):
+                    db.execute(
+                        "INSERT INTO creator_media_assets "
+                        "(id,story_id,kind,label,caption,character_id,filename,"
+                        "media_type,created_at,expression,pose) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                        (asset_id, story_id, "foreground",
+                         f"{name} · {expression}", caption, character_id,
+                         filename.name, "image/png", time.time() + index * 0.000001,
+                         expression, pose))
+        except Exception:
+            for filename in written:
+                filename.unlink(missing_ok=True)
+            raise
+        ids = {item[0] for item in entries}
+        return [asset for asset in self.list(story_id) if asset["id"] in ids]
+
     def update_caption(self, story_id: str, asset_id: str, form: AssetCaption) -> dict:
         if not form.label.strip() or len(form.caption.strip()) < 3:
             raise ValueError("El nombre y la descripción no pueden estar vacíos")
@@ -570,6 +659,26 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
             return media.add(str(story_id), kind, label, caption, data,
                              str(character_id) if character_id else None,
                              expression=expression, pose=pose)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/v1/stories/{story_id}/creator/characters/{character_id}/expression-sheet",
+              status_code=201)
+    async def upload_expression_sheet(
+        story_id: uuid.UUID, character_id: uuid.UUID,
+        caption: str = Form(...), pose: str = Form("standing"),
+        layout: Literal["horizontal", "vertical"] = Form("horizontal"),
+        file: UploadFile = File(...),
+    ):
+        if file.content_type not in {"image/png", "image/webp"}:
+            raise HTTPException(415, "Solo PNG o WebP para hojas transparentes")
+        data = await file.read(MAX_MEDIA_BYTES + 1)
+        if len(data) > MAX_MEDIA_BYTES:
+            raise HTTPException(413, "Archivo superior a 12 MiB")
+        try:
+            assets = media.import_expression_sheet(
+                str(story_id), str(character_id), data, caption, pose, layout)
+            return {"assets": assets, "count": len(assets)}
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 

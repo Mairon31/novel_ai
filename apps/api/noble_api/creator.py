@@ -7,13 +7,14 @@ Everything is local/private until Noble AI has identity and sharing controls.
 from __future__ import annotations
 
 import json
+import re
 from contextlib import nullcontext
 import sqlite3
 import time
 import uuid
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from .narrative import NarrativeService
 
@@ -31,6 +32,36 @@ class CreatorBlueprint(BaseModel):
     language: str = "es-419"
 
 
+class VisualDNA(BaseModel):
+    """Canonical identity metadata, never mixed with narrator personality."""
+    model_config = ConfigDict(extra="forbid")
+    tags: list[str] = Field(default_factory=list, max_length=16)
+    seed: int | None = Field(default=None, ge=0, le=4294967295)
+    lora_name: str | None = Field(default=None, max_length=160)
+    lora_strength: float = Field(default=0.8, ge=0.0, le=2.0)
+
+    @field_validator("tags")
+    @classmethod
+    def normalize_tags(cls, values: list[str]) -> list[str]:
+        tags = [value.strip() for value in values]
+        if any(not 2 <= len(tag) <= 64 or
+               any(ord(c) < 32 or ord(c) == 127 for c in tag) for tag in tags):
+            raise ValueError("Cada etiqueta visual debe tener 2–64 caracteres visibles")
+        if len({tag.casefold() for tag in tags}) != len(tags):
+            raise ValueError("No repitas etiquetas visuales")
+        return tags
+
+    @field_validator("lora_name")
+    @classmethod
+    def check_lora(cls, name: str | None) -> str | None:
+        if not name:
+            return None
+        # Metadata only. Never accept filesystem paths or download URLs here.
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,146}\\.safetensors", name):
+            raise ValueError("LoRA debe ser un archivo .safetensors sin ruta")
+        return name
+
+
 class CreatorCharacter(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=80)
@@ -39,6 +70,7 @@ class CreatorCharacter(BaseModel):
     dialogue_examples: str = Field(default="", max_length=3000)
     visual_character_id: uuid.UUID | None = None
     voice_id: str = Field(default="", max_length=180)
+    visual_dna: VisualDNA = Field(default_factory=VisualDNA)
 
 
 class OpeningSelection(BaseModel):
@@ -116,7 +148,8 @@ class CreatorService:
             data=db.execute("""SELECT * FROM creator_characters
                 WHERE story_id=? ORDER BY created_at,id""",(story_id,)).fetchall()
         return [{"id":row["id"],"story_id":story_id,
-                 **json.loads(row["config_json"]),"updated_at":row["updated_at"]}
+                 **CreatorCharacter.model_validate_json(row["config_json"]).model_dump(mode="json"),
+                 "updated_at":row["updated_at"]}
                 for row in data]
 
     def put_character(self, story_id: str, body: CreatorCharacter,
@@ -133,10 +166,20 @@ class CreatorService:
         ident=character_id or str(uuid.uuid4())
         with self.store._conn() as db:
             if character_id:
-                existing=db.execute("""SELECT id FROM creator_characters
+                existing=db.execute("""SELECT config_json FROM creator_characters
                     WHERE id=? AND story_id=?""",(ident,story_id)).fetchone()
                 if not existing:
                     raise ValueError("Personaje narrativo inexistente")
+                old = CreatorCharacter.model_validate_json(existing["config_json"])
+                # Older clients can update narrative text without clearing an existing DNA.
+                if "visual_dna" not in body.model_fields_set:
+                    body = body.model_copy(update={"visual_dna": old.visual_dna})
+                if (old.visual_dna.tags and
+                        body.visual_dna.tags != old.visual_dna.tags):
+                    raise ValueError("Las etiquetas de identidad visual ya están fijadas")
+                if (old.visual_dna.seed is not None and
+                        body.visual_dna.seed != old.visual_dna.seed):
+                    raise ValueError("La semilla visual ya está fijada")
                 db.execute("""UPDATE creator_characters SET config_json=?,updated_at=?
                     WHERE id=? AND story_id=?""",
                     (body.model_dump_json(),now,ident,story_id))
