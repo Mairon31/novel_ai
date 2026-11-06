@@ -138,6 +138,17 @@ export const api = {
   controlPiperVoice: (jobId: string, action: 'pause' | 'resume' | 'cancel') =>
     request<PiperVoiceJob>('/tts/downloads/' + encodeURIComponent(jobId) +
       '/' + action, { method: 'POST' }),
+  async previewPiperVoice(voice_id: string, text: string): Promise<Blob> {
+    const response = await fetch('/api/v1/tts/preview', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ voice_id, text, request_source: 'preview_button' }),
+    });
+    if (!response.ok) {
+      const error: { detail?: string } = await response.json().catch(() => ({}));
+      throw new Error(error.detail || 'No se pudo generar la muestra de voz');
+    }
+    return response.blob();
+  },
   speechPreferences: () => request<SpeechPreferences>('/tts/config'),
   saveSpeechPreferences: (default_voice_id: string) =>
     request<SpeechPreferences>('/tts/config', {

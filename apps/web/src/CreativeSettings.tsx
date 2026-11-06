@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
 import type { ImageSettings, ImageStatus, Settings, SpeechVoices, SpeechPreferences, PiperVoiceCatalog, PiperVoiceJob, ResourceConfig, ResourceStatus } from './types';
@@ -17,6 +17,27 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
   const [voiceCatalog, setVoiceCatalog] = useState<PiperVoiceCatalog | null>(null);
   const [voiceJobs, setVoiceJobs] = useState<PiperVoiceJob[]>([]);
   const [voiceAction, setVoiceAction] = useState<string | null>(null);
+  const [previewText, setPreviewText] = useState('Hola. Esta es una prueba de voz de Noble AI.');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  const [previewBusy, setPreviewBusy] = useState(false);
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
+  async function previewPiper() {
+    const voiceId = voicePreferences?.default_voice_id || voices?.voices[0]?.id;
+    if (!voiceId || previewBusy) return;
+    setPreviewBusy(true); setError(''); setMessage('');
+    try {
+      const blob = await api.previewPiperVoice(voiceId, previewText.trim());
+      const nextUrl = URL.createObjectURL(blob);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = nextUrl; setPreviewUrl(nextUrl);
+      setMessage('Muestra generada. Pulsa Reproducir para escucharla.');
+    } catch (exc) {
+      setError((exc as Error).message);
+    } finally { setPreviewBusy(false); }
+  }
   const [resources, setResources] = useState<ResourceConfig | null>(null);
   const [resourceStatus, setResourceStatus] = useState<ResourceStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -325,6 +346,24 @@ export function CreativeSettings({ imageMode, onImageMode }: Props) {
           <Check size={16}/> Guardar voz predeterminada
         </button>
       </div>}
+      <div className="noble-voice-preview">
+        <label className="workspace-pref-field">Texto para probar voz
+          <input aria-label="Texto de muestra de voz" maxLength={400}
+            value={previewText} disabled={previewBusy}
+            onChange={e => setPreviewText(e.target.value)}/>
+        </label>
+        <button type="button" className="secondary-button"
+          disabled={previewBusy || !voices?.available || !voices.voices.length ||
+            previewText.trim().length < 10}
+          onClick={() => void previewPiper()}>
+          {previewBusy ? <LoaderCircle size={16} className="rotating"/> : <Volume2 size={16}/>}
+          {previewBusy ? 'Generando prueba...' : 'Probar voz seleccionada'}
+        </button>
+        {previewUrl && <audio aria-label="Reproducir prueba de voz" controls
+          preload="none" src={previewUrl}/>}
+        <small>Solo genera la muestra al pulsar Probar. Necesita Piper instalado y
+          una voz ONNX/JSON válida; el audio no se añade a ninguna historia.</small>
+      </div>
       <label className="workspace-pref-toggle">
         <span>Activar botones de voz bajo demanda</span>
         <input type="checkbox" checked={setup?.tts_enabled || false} disabled={busy || !setup}

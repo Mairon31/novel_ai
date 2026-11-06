@@ -1425,3 +1425,7 @@
 .noble-voice-main span, .noble-voice-progress small { font-size: .84rem; opacity: .83; }
 .noble-voice-progress { display: grid; gap: .25rem; }
 .noble-voice-progress progress { width: 100%; height: .65rem; }
+
+.noble-voice-preview { display: grid; gap: .6rem; margin: 1rem 0; }
+.noble-voice-preview audio { width: min(100%, 480px); }
+.noble-voice-preview small { opacity: .8; }
