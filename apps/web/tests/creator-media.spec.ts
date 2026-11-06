@@ -36,6 +36,8 @@ test('author art library overlays caption-matched background and transparent spr
   await expect(page.getByText('Castillo soleado')).toBeVisible();
 
   await page.getByLabel('Tipo de recurso visual').selectOption('foreground');
+  await page.getByLabel('Expresión de sprite').selectOption('joy');
+  await page.getByLabel('Pose de sprite').fill('waving');
   await page.getByLabel('Nombre de imagen').fill('Aira feliz');
   await page.getByLabel('Descripción de imagen').fill('Aira sonríe en el castillo');
   await page.getByLabel('Archivo de recurso visual').setInputFiles({
@@ -43,6 +45,7 @@ test('author art library overlays caption-matched background and transparent spr
   });
   await page.getByRole('button', { name: 'Importar imagen' }).click();
   await expect(page.getByRole('button', { name: /Imágenes \(2\)/ })).toBeVisible();
+  await expect(page.getByText('Expresión: joy · Pose: waving')).toBeVisible();
 
   await page.getByRole('button', { name: 'Aperturas' }).click();
   await page.getByLabel('Nueva apertura').fill(
@@ -58,6 +61,8 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByRole('button', { name: 'Continuar historia' }).click();
   const portrait = page.getByRole('img', { name: 'Personaje presente: Aira feliz' });
   await expect(portrait).toBeVisible();
+  await expect(portrait).toHaveAttribute('data-expression', 'joy');
+  await expect(portrait).toHaveAttribute('data-pose', 'waving');
   await expect(page.locator('.noble-scene-background'))
     .toHaveCSS('background-image', /creator\/assets/);
   // On narrow screens the stage footer may intentionally hide captions.
