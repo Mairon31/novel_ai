@@ -26,7 +26,8 @@ from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field
 
 from .comfy_loras import LORA_FILENAME
-from .comfy_runtime import render as render_comfy
+from .comfy_runtime import render as render_comfy, render_outputs
+from .comfy_matting import CHROMA, MODELS, matting_status, inject_matte, require_matting_mode
 from .comfy_identity_adapter import (
     DEFAULT_PRESET, PRESETS, identity_adapter_status, inject_ipadapter,
     require_ipadapter_status,
@@ -35,7 +36,7 @@ from .reference_preparation import identity_reference_png
 from .creator_media import (CreatorMediaService, EXPRESSIONS,
                             MAX_MEDIA_BYTES, validate_pose)
 from .images import SceneImageService, resized_reference_png, workflow
-from .sprite_cutout import transparent_sprite
+from .sprite_cutout import transparent_sprite, transparent_sprite_from_matte
 from .sprite_provenance import normalize_sprite_generation
 from .sprite_alignment import geometry_from_png, silhouette_geometry, alignment_warnings
 
@@ -65,6 +66,9 @@ class NewSpriteDraft(BaseModel):
         "PLUS FACE (portraits)"] = DEFAULT_PRESET
     ipadapter_weight: float = Field(default=0.7, ge=0.1, le=1.5)
     use_lora: bool = False
+    cutout_mode: Literal[
+        "chroma_green", "neural_rmbg2", "neural_birefnet_portrait",
+        "neural_birefnet_matting"] = CHROMA
     denoise: float = Field(default=0.77, ge=0.5, le=0.9)
 
 
@@ -193,6 +197,7 @@ class SpriteDraftService:
             "caption": settings["caption"], "pose": settings["pose"],
             "seed": settings["seed"], "checkpoint": settings["comfy"]["checkpoint"],
             "style": settings["style"], "use_lora": bool(settings["lora"]),
+            "cutout_mode": settings.get("cutout_mode", CHROMA),
             "reference_asset_id": settings["reference_asset_id"],
             "reference_sprite_asset_id": settings.get("reference_sprite_asset_id"),
             "reference_mode": settings.get("reference_mode", "img2img"),
@@ -295,6 +300,7 @@ class SpriteDraftService:
             "ipadapter_preset": body.ipadapter_preset,
             "ipadapter_weight": body.ipadapter_weight,
             "denoise": body.denoise,
+            "cutout_mode": body.cutout_mode,
             "lora": lora, "comfy": config,
         }
         ident = str(uuid.uuid4())
@@ -308,12 +314,19 @@ class SpriteDraftService:
 
     @staticmethod
     def _prompt(settings: dict, expression: str) -> str:
+        neural = settings.get("cutout_mode", CHROMA) != CHROMA
+        background = (
+            "Simple neutral studio backdrop, one clear foreground subject, "
+            "subtle even illumination, clean silhouette, no scenery, "
+            "no other people, no props covering the outline. "
+            if neural else
+            "Completely flat uniform vivid chroma key green (#00FF00) background, "
+            "solid green edge to edge, no room, no scenery, no shadow, no props "
+            "behind figure. Clothing and hair MUST NOT be green. ")
         return (
             "Single character full-body sprite asset, one person only, centered, "
             "entire figure inside canvas with generous margins on all four sides. "
-            "Completely flat uniform vivid chroma key green (#00FF00) background, "
-            "solid green edge to edge, no room, no scenery, no shadow, no props "
-            "behind figure. Clothing and hair MUST NOT be green. "
+            + background +
             "Character: " + settings["character_name"] + ". Identity and features: " +
             settings["appearance"] + ". Pose: " + settings["pose"] + ". "
             "Facial expression: " + EXPRESSION_GUIDES[expression] + ". "
@@ -359,10 +372,16 @@ class SpriteDraftService:
                     comfy["base_url"], self.images.transport)
                 require_ipadapter_status(
                     probe, settings.get("ipadapter_preset", DEFAULT_PRESET))
+            cutout_mode = settings.get("cutout_mode", CHROMA)
+            if cutout_mode != CHROMA:
+                readiness = await matting_status(
+                    comfy["base_url"], self.images.transport)
+                require_matting_mode(readiness, cutout_mode)
             prompt = self._prompt(settings, expression)
             negative = (comfy["negative_prompt"] +
                         ", scenery, complex background, gradient backdrop, "
-                        "multiple characters, duplicate faces, grid, montage, green clothing")
+                        "multiple characters, duplicate faces, grid, montage" +
+                        (", green clothing" if cutout_mode == CHROMA else ""))
             workflow_config = {**comfy, "negative_prompt": negative}
             async with httpx.AsyncClient(transport=self.images.transport,
                     trust_env=False, timeout=httpx.Timeout(25, connect=5)) as client:
@@ -416,9 +435,18 @@ class SpriteDraftService:
                         settings.get("ipadapter_preset", DEFAULT_PRESET),
                         settings.get("ipadapter_weight", 0.7))
                 nodes["7"]["inputs"]["filename_prefix"] = "NobleAI-Expression"
-                raw = await render_comfy(client, comfy["base_url"], nodes)
+                if cutout_mode == CHROMA:
+                    raw = await render_comfy(client, comfy["base_url"], nodes)
+                    raw_mask = None
+                else:
+                    inject_matte(nodes, cutout_mode)
+                    results = await render_outputs(
+                        client, comfy["base_url"], nodes, ("7", "25"))
+                    raw, raw_mask = results["7"], results["25"]
             try:
-                png, quality = transparent_sprite(raw)
+                png, quality = (
+                    transparent_sprite(raw) if raw_mask is None else
+                    transparent_sprite_from_matte(raw, raw_mask, cutout_mode))
             except ValueError as exc:
                 raise HTTPException(422, "Recorte no aceptado: " + str(exc)) from exc
             geometry = geometry_from_png(png)
@@ -527,14 +555,24 @@ class SpriteDraftService:
         settings = json.loads(row["settings_json"])
         generation = {
             name: normalize_sprite_generation({
-                "workflow_version": ("comfy-sprite-v2-ipadapter"
-                                     if settings.get("reference_mode") == "ipadapter"
-                                     else "comfy-sprite-v1"),
+                "workflow_version": (
+                    "comfy-sprite-v4-matting-ipadapter"
+                    if (settings.get("cutout_mode", CHROMA) != CHROMA
+                        and settings.get("reference_mode") == "ipadapter")
+                    else "comfy-sprite-v3-matting"
+                    if settings.get("cutout_mode", CHROMA) != CHROMA
+                    else "comfy-sprite-v2-ipadapter"
+                    if settings.get("reference_mode") == "ipadapter"
+                    else "comfy-sprite-v1"),
                 "checkpoint": settings["comfy"]["checkpoint"],
                 "seed": settings["seed"],
                 "prompt_sha256": entries[name]["prompt_sha256"],
                 "lora": settings["lora"],
                 "quality": {**entries[name]["quality"], "author_approved": True},
+                **({"matting": {
+                    "mode": settings.get("cutout_mode", CHROMA),
+                    "model": MODELS[settings["cutout_mode"]]["model"],
+                }} if settings.get("cutout_mode", CHROMA) != CHROMA else {}),
                 **({"adapter": {
                     "preset": settings.get("ipadapter_preset", DEFAULT_PRESET),
                     "weight": settings.get("ipadapter_weight", 0.7),
@@ -560,6 +598,11 @@ class SpriteDraftService:
 
 
 def mount_sprite_draft_routes(app, sprites: SpriteDraftService) -> None:
+    @app.get("/api/v1/images/matting/status")
+    async def get_matting_status():
+        config = sprites.images.config()
+        return await matting_status(config["base_url"], sprites.images.transport)
+
     @app.get("/api/v1/images/identity-adapter/status")
     async def get_identity_adapter_status():
         config = sprites.images.config()
