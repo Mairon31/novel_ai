@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  ArrowUpRight, ArrowRight, Check, Cpu, Download, ExternalLink, Globe2,
+  ArrowUpRight, ArrowRight, Check, Cpu, Download, ExternalLink, Globe2, Image,
   KeyRound, Keyboard, Languages, LoaderCircle, LockKeyhole, MonitorCog,
   MoonStar, Palette, RefreshCcw, Server, Settings2, ShieldCheck,
   SlidersHorizontal, Trash2, Volume2,
@@ -13,22 +13,35 @@ import type {
 import { NarrativeSettings } from './NarrativeSettings';
 import { RuntimeManager } from './RuntimeManager';
 import { RemoteWorkers } from './RemoteWorkers';
-import { CreativeSettings } from './CreativeSettings';
+import { ImageSettingsPanel } from './ImageSettingsPanel';
+import { VoiceSettingsPanel } from './VoiceSettingsPanel';
 
-type Tab = 'overview' | 'narration' | 'multimedia' | 'languages' | 'providers' | 'appearance' |
-  'runtimes' | 'shortcuts' | 'network' | 'about';
+type Tab = 'overview' | 'narration' | 'images' | 'voice' | 'languages' | 'providers' |
+  'appearance' | 'runtimes' | 'shortcuts' | 'network' | 'about' | 'updates';
+
+const SETTINGS_TABS: readonly Tab[] = ['overview', 'narration', 'images', 'voice',
+  'languages', 'providers', 'appearance', 'runtimes', 'shortcuts', 'network',
+  'about', 'updates'];
+
+function tabFromHash(): Tab {
+  const segment = window.location.hash.replace(/^#\/configuracion\/?/, '').replace(/\/$/, '');
+  if (segment === 'multimedia') return 'images'; // legacy link before N-25
+  return SETTINGS_TABS.includes(segment as Tab) ? segment as Tab : 'overview';
+}
 
 const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'overview', label: 'Panel general', icon: Settings2 },
   { id: 'narration', label: 'Narración', icon: SlidersHorizontal },
-  { id: 'multimedia', label: 'Imágenes y voz', icon: Volume2 },
+  { id: 'images', label: 'Imágenes', icon: Image },
+  { id: 'voice', label: 'Voz / TTS', icon: Volume2 },
   { id: 'languages', label: 'Idiomas y traducción', icon: Languages },
   { id: 'providers', label: 'Proveedores', icon: Globe2 },
   { id: 'appearance', label: 'Apariencia', icon: Palette },
   { id: 'runtimes', label: 'Runtimes', icon: Cpu },
   { id: 'shortcuts', label: 'Atajos', icon: Keyboard },
   { id: 'network', label: 'Red y workers', icon: Server },
-  { id: 'about', label: 'Sobre y actualizaciones', icon: MonitorCog },
+  { id: 'about', label: 'Acerca de Noble AI', icon: MonitorCog },
+  { id: 'updates', label: 'Actualizaciones', icon: Download },
 ];
 
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
@@ -37,11 +50,11 @@ const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
   {title:'INTELIGENCIA',description:'Narrador y proveedores',
     sections:['narration','providers','languages']},
   {title:'CREACIÓN MULTIMEDIA',description:'Generación visual y voces',
-    sections:['multimedia']},
+    sections:['images','voice']},
   {title:'APLICACIÓN',description:'Preferencias y herramientas',
     sections:['appearance','shortcuts','runtimes']},
   {title:'CONEXIONES Y SISTEMA',description:'Red, dispositivos y versión',
-    sections:['network','about']},
+    sections:['network','about','updates']},
 ];
 
 function applyAppearance(p: WorkspacePreferences) {
@@ -59,7 +72,24 @@ interface Props {
 }
 
 export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrativeRevision, onNarratorActivated }: Props) {
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTab] = useState<Tab>(tabFromHash);
+  // Each settings tab has its own reloadable hash route. Browser Back/Forward
+  // and direct links update the selected tab without remounting the workspace.
+  useEffect(() => {
+    const sync = () => setTab(tabFromHash());
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('popstate', sync);
+    return () => {
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('popstate', sync);
+    };
+  }, []);
+  function selectTab(id: Tab) {
+    setTab(id);
+    setFeedback(''); setError('');
+    const nextHash = '#/configuracion' + (id === 'overview' ? '' : '/' + id);
+    if (window.location.hash !== nextHash) window.location.hash = nextHash;
+  }
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const [about, setAbout] = useState<About | null>(null);
   const [release, setRelease] = useState<Updates | null>(null);
@@ -79,7 +109,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    if (tab === 'about' && !release) {
+    if (tab === 'updates' && !release) {
       void api.updates().then(setRelease).catch((e: Error) => setError(e.message));
     }
     if (tab === 'runtimes' && !diagnostics) {
@@ -152,7 +182,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             const item = tabs.find(candidate => candidate.id === id)!;
             return <button key={item.id} className={tab === item.id ? 'selected' : ''}
               aria-current={tab === item.id ? 'page' : undefined}
-              onClick={() => { setTab(item.id); setFeedback(''); setError(''); }}>
+              onClick={() => selectTab(item.id)}>
               <item.icon size={17}/>{item.label}</button>;
           })}
         </div>)}
@@ -184,17 +214,20 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-settings-overview-grid">
             {[
               {id:'narration',title:'Motor narrativo',summary:'Conectar tu LLM, contexto, parámetros y modelo.'},
-              {id:'multimedia',title:'Imágenes y voces',summary:'ComfyUI, Piper, generación y controles de VRAM.'},
+              {id:'images',title:'Imágenes',summary:'ComfyUI, ilustraciones, checkpoints y GPU.'},
+              {id:'voice',title:'Voz / TTS',summary:'Piper, modelos de voz y prueba de audio.'},
               {id:'providers',title:'Servicios y claves',summary:'Accesos, proveedores y credenciales externas.'},
               {id:'languages',title:'Idiomas y estilo',summary:'Español latinoamericano, traducción y narración.'},
               {id:'appearance',title:'Interfaz de lectura',summary:'Tema, presentación de novela visual y tipografía.'},
               {id:'runtimes',title:'Modelos y ejecutables',summary:'Paquetes locales detectados y diagnóstico de motores.'},
               {id:'network',title:'GPU remotas y red',summary:'Workers, conexiones seguras y red local.'},
               {id:'shortcuts',title:'Atajos de teclado',summary:'Combinaciones para navegar y jugar.'},
+              {id:'about',title:'Acerca de Noble AI',summary:'Versión, compilación y datos del programa.'},
+              {id:'updates',title:'Actualizaciones',summary:'Canal y comprobación de nuevas versiones.'},
             ].map(item => {
               const section = tabs.find(candidate => candidate.id === item.id)!;
               return <button className="workspace-overview-card" key={item.id}
-                onClick={() => { setTab(section.id); setError(''); setFeedback(''); }}>
+                onClick={() => selectTab(section.id)}>
                 <span className="workspace-overview-icon"><section.icon size={22}/></span>
                 <span><strong>{item.title}</strong><small>{item.summary}</small></span>
                 <ArrowRight size={17}/>
@@ -215,7 +248,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <RuntimeManager onActivated={onNarratorActivated}/>
         </>}
 
-        {tab === 'multimedia' && <CreativeSettings imageMode={imageMode} onImageMode={onImageMode}/>}
+        {tab === 'images' && <ImageSettingsPanel imageMode={imageMode} onImageMode={onImageMode}/>}
+        {tab === 'voice' && <VoiceSettingsPanel/>}
 
         {tab === 'languages' && prefs && <>
           <div className="setting-section-intro"><h2>Idioma y traducción</h2>
@@ -242,7 +276,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
         {tab === 'providers' && <>
           <div className="setting-section-intro"><h2>Proveedores y servicios</h2>
-            <p>Conecta modelos externos para narrar sin consumir tu GPU. ComfyUI y Piper se configuran en «Imágenes y voz»; los proveedores de pago para estas tareas siguen pendientes.</p></div>
+            <p>Conecta modelos externos para narrar sin consumir tu GPU. ComfyUI se configura en «Imágenes» y Piper en «Voz / TTS»; los proveedores de pago para estas tareas siguen pendientes.</p></div>
           <div className="workspace-panel">
             <div className="workspace-provider-head"><span className="provider-icon">OR</span><div>
               <h3>OpenRouter</h3><p>Modelos de lenguaje en la nube, con consumo según el proveedor.</p></div>
@@ -343,8 +377,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         </>}
 
         {tab === 'about' && prefs && <>
-          <div className="setting-section-intro"><h2>Sobre Noble AI</h2>
-            <p>Identidad de build, archivos de usuario y canales de publicación.</p></div>
+          <div className="setting-section-intro"><h2>Acerca de Noble AI</h2>
+            <p>Versión, compilación y ubicación de los archivos de usuario.</p></div>
           <div className="workspace-panel">
             <div className="workspace-about-title"><MoonStar size={27}/><div><strong>Noble AI</strong><span>Local Story Studio</span></div></div>
             {about && <div className="workspace-diagnostics-list">
@@ -356,6 +390,11 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               <div><span>Python</span><code>{about.python}</code></div>
             </div>}
           </div>
+        </>}
+
+        {tab === 'updates' && prefs && <>
+          <div className="setting-section-intro"><h2>Actualizaciones</h2>
+            <p>Consulta publicaciones y decide qué canal de versiones quieres recibir.</p></div>
           <div className="workspace-panel">
             <h3><Download size={17}/> Actualizaciones</h3>
             <div className="workspace-field-grid">
