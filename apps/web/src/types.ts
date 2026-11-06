@@ -7,7 +7,7 @@ export type StoryHubPack = {
   character_count: number; lore_count: number; has_images: boolean;
 };
 
-export type Page = 'inicio' | 'crear' | 'modelos' | 'descargas' | 'ajustes' | 'diagnostico';
+export type Page = 'inicio' | 'descubrir' | 'crear' | 'modelos' | 'descargas' | 'ajustes' | 'diagnostico';
 export type CatalogEntry = {
   repo_id: string; revision: string | null; description: string;
   downloads: number; likes: number; gated: boolean; license: string;

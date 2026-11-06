@@ -12,6 +12,7 @@ const CREATOR = new RegExp('^/creator/(' + UUID + ')$', 'i');
 
 const STATIC: Record<string, Page> = {
   '/biblioteca': 'inicio',
+  '/descubrir': 'descubrir',
   '/creator': 'crear',
   '/modelos': 'modelos',
   '/descargas': 'descargas',
@@ -22,6 +23,7 @@ const STATIC: Record<string, Page> = {
 
 const URLS: Record<Page, string> = {
   inicio: '/biblioteca',
+  descubrir: '/descubrir',
   crear: '/creator',
   modelos: '/modelos',
   descargas: '/descargas',

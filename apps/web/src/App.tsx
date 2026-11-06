@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2,
+  ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2, Compass,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
   HardDrive, Headphones, Image, Info, Layers3, LoaderCircle, Menu, Feather,
   Pause, Play, RefreshCw, Search, Settings2,
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api, downloads as compactCount, size } from './api';
 import { StoryStudio } from './StoryStudio';
+import { StoryHub } from './StoryHub';
 import { parseWorkspaceHash, hashForWorkspaceRoute } from './workspaceRoute';
 import type { WorkspaceRoute } from './workspaceRoute';
 import { CreatorStudio } from './CreatorStudio';
@@ -26,6 +27,7 @@ const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
 ];
 const menu: Array<{ id: Page; label: string; icon: typeof BookOpen }> = [
   { id: 'inicio', label: 'Biblioteca', icon: BookOpen },
+  { id: 'descubrir', label: 'Descubrir historias', icon: Compass },
   { id: 'crear', label: 'Creator Studio', icon: Feather },
   { id: 'modelos', label: 'Model Hub', icon: Layers3 },
   { id: 'descargas', label: 'Descargas', icon: ArrowDownToLine },
@@ -694,6 +696,18 @@ export default function App() {
             <p>Los modelos que instales desde Model Hub aparecerán aquí.</p>
             <button className="secondary-button" onClick={() => changePage('modelos')}>Abrir Model Hub</button></div>}
           </div>
+        </section>}
+
+        {page === 'descubrir' && <section className="noble-discover-page" aria-label="Catálogo de historias">
+          <div className="page-heading">
+            <div className="eyebrow"><Compass size={14}/> DESCUBRIR</div>
+            <h1>Historias para jugar<span className="title-dot">.</span></h1>
+            <p>Explora historias incluidas y añádelas a tu biblioteca como proyectos independientes.
+              Las historias de la comunidad serán una función posterior.</p>
+          </div>
+          <StoryHub onInstall={story => navigateRoute({
+            page: 'inicio', storyId: story.id, reading: false,
+          })}/>
         </section>}
 
         {page === 'inicio' && <StoryStudio onOpenSettings={() => changePage('ajustes')}
