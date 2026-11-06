@@ -375,9 +375,23 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                 "available": bool(adapter.get("available")),
                 "preset_ready": ipadapter_preset in adapter.get("presets", []),
             }
+        readiness = {
+            mode: (mode == "chroma_green" or bool(
+                report["preflight"]["matting_modes"].get(mode, {}).get("ready")))
+            for mode in modes
+        }
+        if reference_mode == "ipadapter" and not (
+                report["preflight"]["ipadapter"]["available"] and
+                report["preflight"]["ipadapter"]["preset_ready"]):
+            readiness = {mode: False for mode in modes}
+        report["preflight"]["requested_modes_ready"] = readiness
+        report["preflight"]["all_requested_ready"] = all(readiness.values())
         store_json(report, directory)
         if check_only:
-            progress("Preflight completado: modo consulta, no se generó ninguna imagen.")
+            progress("Preflight completado: sin inferencia. Modelos listos: " +
+                     ", ".join(mode for mode, ready in readiness.items() if ready) +
+                     "; pendientes: " +
+                     ", ".join(mode for mode, ready in readiness.items() if not ready))
             return report
         for mode in modes:
             mode_record = {"mode": mode, "status": "pending",
@@ -485,6 +499,16 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                                      else "partial" if count else "failed")
             mode_record["latency_p50_ms"] = quantile(valid, .5)
             mode_record["latency_p95_ms"] = quantile(valid, .95)
+            mode_record["total_duration_ms"] = round(sum(
+                item["duration_ms"] for item in mode_record["expressions"]), 2)
+            readings = [item["gpu"] for item in mode_record["expressions"]
+                        if item["gpu"]["samples"] > 0]
+            mode_record["gpu_peak_used_mb"] = max(
+                (item["peak_used_mb"] for item in readings), default=None)
+            mode_record["gpu_peak_util_percent"] = max(
+                (item["peak_util_percent"] for item in readings), default=None)
+            mode_record["gpu_device"] = (
+                readings[0]["device"] if readings else None)
             if discard_after:
                 # Delete only the draft created by this benchmark, explicitly.
                 try:
@@ -569,9 +593,10 @@ def main(argv: list[str] | None = None) -> int:
               file=sys.stderr)
         return 2
     print("Informe JSON: " + str(args.out / "report.json"))
-    if not args.check_only:
-        print("Revisión HTML: " + str(args.out / "review.html"))
-        print("Planilla de revisión: " + str(args.out / "review.csv"))
+    if args.check_only:
+        return 0 if result["preflight"]["all_requested_ready"] else 1
+    print("Revisión HTML: " + str(args.out / "review.html"))
+    print("Planilla de revisión: " + str(args.out / "review.csv"))
     return 1 if any(x["status"] not in ("success",) for x in result["modes"]) else 0
 
 
