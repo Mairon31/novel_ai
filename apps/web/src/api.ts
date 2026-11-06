@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, LoraStatus, IllustrationResult, SpeechVoices, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, ScenePresentation, ModelStorage, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -120,14 +120,15 @@ export const api = {
   saveImageConfig: (config: ImageSettings) => request<ImageSettings>(
     '/images/config', { method: 'PUT', body: JSON.stringify(config) }),
   imageStatus: () => request<ImageStatus>('/images/status'),
+  imageLoras: () => request<LoraStatus>('/images/loras'),
   illustrate: (storyId: string, prompt: string, seed?: number,
                reference_asset_id?: string, denoise?: number,
-               allow_low_vram = false) => request<IllustrationResult>(
+               allow_low_vram = false, apply_character_loras = false) => request<IllustrationResult>(
     '/stories/' + encodeURIComponent(storyId) + '/illustrate',
     { method: 'POST', body: JSON.stringify({
       prompt, ...(seed === undefined ? {} : { seed }),
       ...(reference_asset_id ? { reference_asset_id, denoise: denoise ?? 0.62 } : {}),
-      allow_low_vram,
+      allow_low_vram, apply_character_loras,
     }) }),
   speechVoices: () => request<SpeechVoices>('/tts/voices'),
   async requestSpeech(storyId: string, turnId: string, voice_id: string): Promise<Blob> {

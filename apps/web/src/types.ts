@@ -205,8 +205,13 @@ export type ImageSettings = {
 export type ImageStatus = {
   online: boolean; provider: string; checkpoints: string[]; error: string | null;
 };
+export type AppliedCharacterLora = {
+  character_name: string; lora_name: string; strength: number;
+};
+export type LoraStatus = { online: boolean; loras: string[]; error: string | null };
 export type IllustrationResult = {
-  story: Story; asset_id?: string; seed: number; checkpoint: string; duration_ms: number; cached: boolean;
+  story: Story; asset_id?: string; seed: number; checkpoint: string;
+  duration_ms: number; cached: boolean; applied_loras: AppliedCharacterLora[];
 };
 export type SpeechVoices = {
   engine: 'piper'; available: boolean; device: string; on_demand_only: boolean;

@@ -111,6 +111,11 @@ export function VisualReader({
   const [referenceAssetId, setReferenceAssetId] = useState('');
   const [denoise, setDenoise] = useState(0.62);
   const [allowLowVram, setAllowLowVram] = useState(false);
+  const [applyCharacterLoras, setApplyCharacterLoras] = useState(false);
+  const [loraStatus, setLoraStatus] = useState<{
+    online: boolean; loras: string[]; error: string | null;
+  } | null>(null);
+  const [checkingLoras, setCheckingLoras] = useState(false);
   const [illustrationNotice, setIllustrationNotice] = useState('');
   const [illustrating, setIllustrating] = useState(false);
   const [imageMode, setImageMode] = useState<'scene' | 'manual' | 'off'>('manual');
@@ -176,6 +181,8 @@ export function VisualReader({
   useEffect(() => {
     setImagePrompt(active?.premise || '');
     setReferenceAssetId('');
+    setApplyCharacterLoras(false);
+    setLoraStatus(null);
     setIllustrationNotice('');
     directorRequest.current += 1;
     setDirectorPreview(null);
@@ -428,6 +435,14 @@ export function VisualReader({
     finally { setVisualBusy(false); }
   }
 
+  async function checkInstalledLoras() {
+    setCheckingLoras(true); setReaderError('');
+    try {
+      setLoraStatus(await api.imageLoras());
+    } catch (e) { setReaderError((e as Error).message); setLoraStatus(null); }
+    finally { setCheckingLoras(false); }
+  }
+
   async function illustrateScene() {
     if (!active || !imagePrompt.trim() || illustrating) return;
     setIllustrating(true); setReaderError(''); setIllustrationNotice('');
@@ -439,9 +454,12 @@ export function VisualReader({
         throw new Error('La semilla debe ser un número entero positivo.');
       const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed,
         referenceAssetId || undefined, referenceAssetId ? denoise : undefined,
-        allowLowVram);
-      setIllustrationNotice(result.cached ? 'Ilustración recuperada de la caché.' :
-        'Ilustración nueva guardada como versión independiente.');
+        allowLowVram, applyCharacterLoras);
+      const loraInfo = result.applied_loras?.length
+        ? ' LoRAs aplicados: ' + result.applied_loras.map(lora => lora.lora_name).join(', ') + '.'
+        : '';
+      setIllustrationNotice((result.cached ? 'Ilustración recuperada de la caché.' :
+        'Ilustración nueva guardada como versión independiente.') + loraInfo);
       // Force refreshing a previous scene despite using a stable asset path.
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
@@ -971,6 +989,32 @@ export function VisualReader({
             {previewPrompt && <div className="noble-prompt-preview">
               <strong>Prompt que recibirá ComfyUI</strong><p>{previewPrompt}</p>
             </div>}
+            <div className="noble-inspector-field">
+              <label>
+                <input type="checkbox" aria-label="Aplicar LoRAs de personajes"
+                  checked={applyCharacterLoras}
+                  onChange={e => setApplyCharacterLoras(e.target.checked)}/>
+                {' '}Aplicar LoRAs de los personajes presentes (opcional)
+              </label>
+              <p className="noble-inspector-hint">
+                Solo se usarán LoRAs configurados en Creator Studio e instalados en
+                ComfyUI, con un máximo de tres. Se aplican al modelo completo,
+                no a regiones separadas de cada personaje. No se descargan modelos.
+              </p>
+              <button className="secondary-button" disabled={checkingLoras || illustrating}
+                onClick={() => void checkInstalledLoras()}>
+                {checkingLoras ? 'Consultando ComfyUI...' : 'Ver LoRAs instalados'}
+              </button>
+              {loraStatus && <p className="noble-inspector-hint" role="status">
+                {loraStatus.online
+                  ? loraStatus.loras.length + ' LoRAs disponibles en ComfyUI' +
+                    (loraStatus.loras.length
+                      ? ': ' + loraStatus.loras.slice(0, 6).join(', ') +
+                        (loraStatus.loras.length > 6 ? '…' : '')
+                      : '.')
+                  : 'No se pudo consultar ComfyUI: ' + (loraStatus.error || 'sin conexión')}
+              </p>}
+            </div>
             <label className="noble-inspector-field">
               <span>Ignorar la reserva mínima de VRAM solo para esta solicitud</span>
               <input type="checkbox" checked={allowLowVram}

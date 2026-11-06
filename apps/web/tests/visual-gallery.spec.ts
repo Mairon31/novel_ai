@@ -78,17 +78,28 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await expect(page.getByText(/Plano: primer plano/)).toBeVisible();
   await expect(page.getByText(/luz cálida del atardecer/)).toBeVisible();
   await page.getByLabel('Semilla de imagen').fill('1739');
+  await expect(page.getByRole('checkbox', { name: 'Aplicar LoRAs de personajes' }))
+    .not.toBeChecked();
+  await page.route('**/api/v1/images/loras', async route => {
+    await route.fulfill({
+      status: 200, json: { online: true, loras: ['aira.safetensors'], error: null },
+    });
+  });
+  await page.getByRole('button', { name: 'Ver LoRAs instalados' }).click();
+  await expect(page.getByText(/1 LoRAs disponibles en ComfyUI/)).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Aplicar LoRAs de personajes' }).check();
   let observedReference = false;
   await page.route('**/api/v1/stories/*/illustrate', async route => {
     const payload = route.request().postDataJSON() as {
       reference_asset_id?: string; denoise?: number; seed?: number;
-      allow_low_vram?: boolean;
+      allow_low_vram?: boolean; apply_character_loras?: boolean;
     };
     expect(payload.reference_asset_id).toBe(referenceId);
     expect(payload.denoise).toBeGreaterThanOrEqual(0.2);
     expect(payload.denoise).toBeLessThanOrEqual(0.95);
     expect(payload.seed).toBe(1739);
     expect(payload.allow_low_vram).toBe(false);
+    expect(payload.apply_character_loras).toBe(true);
     observedReference = true;
     await route.fulfill({ status: 503, json: { detail: 'Motor ComfyUI no disponible en la prueba' } });
   });
