@@ -162,7 +162,7 @@ class SpriteProvenanceTests(unittest.TestCase):
     def test_regular_manual_assets_remain_manual_with_empty_generation(self):
         asset = self.source.state.creator_media.add(
             self.story, "foreground", "Aira", "Aira recorre el bosque",
-            sheet()[:0] if False else single(), character_id=self.npc)
+            single(), character_id=self.npc)
         self.assertEqual(asset["source"], "manual")
         self.assertEqual(asset["generation_details"], {})
 
