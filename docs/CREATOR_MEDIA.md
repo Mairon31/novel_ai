@@ -56,3 +56,7 @@ Ruta: `POST /api/v1/stories/{id}/creator/characters/{character_id}/expression-sh
 ### Vinculación de NPC a fichas visuales
 
 La sección **Personajes** ofrece el selector **Ficha visual vinculada**. Esta ficha pertenece a la Galería de la misma historia; su UUID une el NPC narrativo con el personaje del plan de escena. Cuando un autor utiliza un elenco explícito, la guía textual de ADN solo se añade a esos UUID vinculados y presentes; una coincidencia del nombre por sí sola no introduce otro personaje. El enlace no genera arte ni instala LoRA.
+
+## LoRAs de NPC para nuevas ilustraciones
+
+Desde Personajes, especifica un nombre de LoRA simple (`.safetensors`) y su intensidad; enlaza la ficha visual cuando el reparto de escena use UUID. El lector puede consultar los archivos que ComfyUI reconoce y activar manualmente la carga de hasta tres LoRAs por ilustración. Al avanzar turnos o cambiar de historia no se ejecuta difusión. Los resultados conservan sus LoRAs/intensidades en la galería. [Detalles](COMFY_LORAS.md).

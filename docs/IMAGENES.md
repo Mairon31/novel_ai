@@ -1,6 +1,6 @@
 # Diseño de generación progresiva de ilustraciones
 
-Estado: **P1.4 — adaptador ComfyUI local bajo demanda implementado**, workflow estándar integrado y almacenamiento WebP. Detección semántica avanzada de escenas, planner inteligente, LoRAs/ControlNet, workers remotos de imagen y scheduler multi-GPU siguen pendientes. **P1.5** agrega detección heurística de localizaciones, galería versionada y fichas visuales.
+Estado: **P1.4 — adaptador ComfyUI local bajo demanda implementado**, workflow estándar integrado y almacenamiento WebP. Detección semántica avanzada de escenas, planner inteligente, validación GPU de LoRAs, ControlNet, workers remotos de imagen y scheduler multi-GPU siguen pendientes. **P1.5** agrega detección heurística de localizaciones, galería versionada y fichas visuales.
 
 ## Contrato de producto
 
@@ -155,10 +155,16 @@ La clave de caché prevista será `(location_id, time_of_day, weather, camera_sh
 
 ## ADN visual de Creator y hoja de sprites local
 
-`CreatorCharacter.visual_dna` registra etiquetas inmutables de identidad (una vez fijadas), semilla opcional y nombre/intensidad de LoRA. Las etiquetas se incorporan al prompt visual compuesto solo para NPC seleccionados, sin alterar instrucciones del narrador. Las semillas de NPC y LoRAs continúan como metadatos: no se usan para sustituir la semilla del render ni cargar modelos. Los proveedores existentes conservan sus contratos.
+`CreatorCharacter.visual_dna` registra etiquetas inmutables de identidad (una vez fijadas), semilla opcional y nombre/intensidad de LoRA. Las etiquetas se incorporan al prompt visual compuesto solo para NPC seleccionados, sin alterar instrucciones del narrador. Las semillas de NPC permanecen como metadatos y no reemplazan la semilla del render. Los LoRAs se cargan en el workflow únicamente mediante activación explícita de la opción al ilustrar. Los proveedores existentes conservan sus contratos.
 
-`CreatorMediaService.import_expression_sheet` convierte bajo demanda un PNG/WebP alfa horizontal (1×5) o vertical (5×1) en cinco variantes `neutral/joy/anger/sadness/surprise` de un NPC identificado; cada variante sigue la caché editorial y el lector multicapa existentes. Todas las inserciones son una transacción SQLite con limpieza de archivos si se produce un error. La hoja importada es manual; ControlNet/IPAdapter, generación de hojas por IA, aplicación LoRA a checkpoints y cambios de apariencia versionados siguen pendientes.
+`CreatorMediaService.import_expression_sheet` convierte bajo demanda un PNG/WebP alfa horizontal (1×5) o vertical (5×1) en cinco variantes `neutral/joy/anger/sadness/surprise` de un NPC identificado; cada variante sigue la caché editorial y el lector multicapa existentes. Todas las inserciones son una transacción SQLite con limpieza de archivos si se produce un error. La hoja importada es manual. IPAdapter/ControlNet, generación de hojas por IA, condicionamiento regional y pruebas de calidad GPU siguen pendientes; la aplicación LoRA opcional ya existe.
 
 ### Inclusión selectiva de ADN en ilustraciones
 
 Las etiquetas de apariencia de `CreatorCharacter.visual_dna` ahora participan como **texto** en el prompt positivo de ComfyUI cuando el autor pide ilustrar una escena. En modo libre se seleccionan únicamente NPC cuyo nombre aparece como palabra completa en la solicitud. En modo de plan de escena guardado solo se incluyen NPC enlazados por ID a fichas visuales explícitamente presentes. Ambos modos conservan los prompts base de Galería y ofrecen vista previa sin GPU. La firma de caché incorpora el texto resultante; no altera semilla, LoRA ni el grafo de difusión. Un cambio de identidad visual no reescribe imágenes existentes.
+
+## LoRAs reales, opt-in, y procedencia por versión
+
+La solicitud `POST /illustrate` permite activar `apply_character_loras=true`. Las fichas Creator proporcionan nombre de archivo/intensidad, y solo se toman NPC de la historia que estén seleccionados por plan visual o mencionados en el prompt libre. Se consulta el catálogo instalado de ComfyUI y `LoraLoader`, se conectan los nodos de modelo y CLIP y se mantiene intacto el flujo de imágenes cuando el checkbox está apagado. Los renders guardan sus LoRAs y peso en `visual_assets.render_details_json`, visibles desde Galería y conservados en respaldos/bifurcaciones.
+
+La opción es manual. Aplicar varios LoRAs afecta el modelo completo, no regiones separadas del lienzo, y no hay comprobación SHA256 de los pesos instalados. Si un archivo cambia bajo el mismo nombre, la caché no puede detectarlo. Para instalación, limitaciones y pruebas ver [Diseño de integración y límites](COMFY_LORAS.md).
