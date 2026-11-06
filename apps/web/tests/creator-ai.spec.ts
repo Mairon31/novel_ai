@@ -36,7 +36,13 @@ test('AI Creator previews a whole world before an explicit local install', async
   });
   await page.route('**/api/v1/creator/assistant/regenerate', async route => {
     const request = route.request().postDataJSON();
-    const updated = { ...request.draft,
+    const updated = request.section === 'plot' ? { ...request.draft,
+      synopsis: 'Los guardianes de la bahía empiezan a revelar una conspiración que amenaza sus recuerdos.',
+      player_plot: 'El muelle ha sido cerrado tras un nuevo encendido del faro, mientras los ciudadanos recuerdan hechos contradictorios.',
+      ai_plot: 'La guardiana ha ocultado que los sellos contienen las promesas de los fundadores. El último encendido quebrará el pacto. Sara conoce el ritual de cierre, pero Elio está decidido a sabotearlo y nadie puede adivinar el resultado.',
+      guidelines: 'Mantén consecuencias verosímiles y continuidad entre escenas. No decidas por {{user}} ni cambies el pasado establecido.',
+      reminder: 'Las promesas de los fundadores están unidas a los tres faros.',
+    } : { ...request.draft,
       openings: [
         '{{user}} encuentra una llave brillante junto al faro y escucha pasos detrás de la puerta de la torre abandonada.',
         '{{user}} ve una sombra pasar sobre el muelle y recibe un mensaje urgente de alguien que ya no recuerda su nombre.',
@@ -90,6 +96,16 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
   await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/llave brillante/);
   await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
+  await expect(page.getByRole('button', { name: 'Restaurar versión anterior' })).toBeVisible();
+  await page.getByRole('button', { name: 'Restaurar versión anterior' }).click();
+  await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/carta del farero/);
+  await page.getByLabel('Sección para regenerar').selectOption('plot');
+  await page.getByRole('button', { name: 'Regenerar sección' }).click();
+  await expect(page.getByLabel('Trama pública generada editable')).toHaveValue(/muelle ha sido cerrado/);
+  await expect(page.getByLabel('Sinopsis generada editable')).toHaveValue(/conspiración/);
+  await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
+  await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/carta del farero/);
+  await expect(page.getByLabel('Estimación de presupuesto de generación')).toBeVisible();
   await page.getByRole('button', { name: 'Crear historia con esta propuesta' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Personajes \(4\)/ })).toBeVisible();
