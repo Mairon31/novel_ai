@@ -658,9 +658,33 @@ def launch(args) -> dict:
             urllib.error.URLError) as exc:
         say("NARRADOR", "No se pudo configurar Ollama: " + str(exc)[:250])
         say("NARRADOR", "La interfaz sigue accesible; revisa logs/ollama*.log")
+    # Make the playable story and narrator available BEFORE the optional 2GB+
+    # ComfyUI install, so image downloads never block opening the reader.
+    try:
+        ensure_demo_story()
+    except (OSError, ValueError, urllib.error.URLError) as exc:
+        say("BIBLIOTECA", "No se pudo preparar la historia inicial: " +
+            type(exc).__name__)
+    infer_ready = verify_narrator() if model else False
+    state = {
+        "source_revision": sha, "model": model,
+        "image_checkpoint": None,
+        "data_dir": str(DATA_DIR), "logs_dir": str(LOG_DIR),
+        "gpu_name": gpu, "gpu_total_mb": vram,
+        "narrator_smoke_ok": infer_ready,
+        "backend": "http://127.0.0.1:8000",
+        "browser_access": "colab_kernel_proxy",
+    }
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    (LOG_DIR / "launch_state.json").write_text(
+        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    say("LISTO", "El lector y el narrador ya pueden utilizarse.")
+    display_colab_ui()
+    # Image provider is a best-effort extra, not a prerequisite for reading.
     image_checkpoint = None
     if args.images == "on" or args.images == "auto" and vram is not None:
         try:
+            say("IMÁGENES", "Preparando ComfyUI; la interfaz ya está abierta.")
             image_checkpoint = ensure_comfy()
         except (RuntimeError, TimeoutError, OSError, ValueError,
                 urllib.error.URLError, ImportError) as exc:
@@ -668,24 +692,7 @@ def launch(args) -> dict:
             say("IMÁGENES", "El lector y el narrador siguen disponibles.")
     else:
         say("IMÁGENES", "ComfyUI desactivado para esta sesión.")
-    state = {
-        "source_revision": sha, "model": model,
-        "image_checkpoint": image_checkpoint,
-        "data_dir": str(DATA_DIR), "logs_dir": str(LOG_DIR),
-        "gpu_name": gpu, "gpu_total_mb": vram,
-        "backend": "http://127.0.0.1:8000",
-        "browser_access": "colab_kernel_proxy",
-    }
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    (LOG_DIR / "launch_state.json").write_text(
-        json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    try:
-        ensure_demo_story()
-    except (OSError, ValueError, urllib.error.URLError) as exc:
-        say("BIBLIOTECA", "No se pudo preparar la historia inicial: " +
-            type(exc).__name__)
-    infer_ready = verify_narrator() if model else False
-    state["narrator_smoke_ok"] = infer_ready
+    state["image_checkpoint"] = image_checkpoint
     (LOG_DIR / "launch_state.json").write_text(
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     if args.drive_backup:
@@ -694,12 +701,10 @@ def launch(args) -> dict:
                                  Path("/content/drive/MyDrive/NobleAI-Colab"))
         except (OSError, sqlite3.Error) as exc:
             say("DRIVE", "Respaldo inicial pendiente: " + type(exc).__name__)
-    say("LISTO", "Noble AI commit " + sha[:10])
-    say("LISTO", "Narración: " + (model or "requiere configuración"))
-    say("LISTO", "Imágenes: " + (image_checkpoint or "sin checkpoint autoinstalado"))
-    display_colab_ui()
+    say("TERMINADO", "Noble AI commit " + sha[:10])
+    say("TERMINADO", "Narración: " + (model or "requiere configuración"))
+    say("TERMINADO", "Imágenes: " + (image_checkpoint or "sin checkpoint autoinstalado"))
     return state
-
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Noble AI · todo en uno Google Colab")
