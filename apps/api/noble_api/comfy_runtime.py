@@ -6,6 +6,7 @@ filenames are never used as filesystem paths.
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 
 import httpx
@@ -18,7 +19,8 @@ async def render(client: httpx.AsyncClient, base_url: str, nodes: dict) -> bytes
     response.raise_for_status()
     result = response.json()
     ident = result.get("prompt_id") if isinstance(result, dict) else None
-    if not isinstance(ident, str) or not 1 <= len(ident) <= 100:
+    if not isinstance(ident, str) or not re.fullmatch(
+            r"[A-Za-z0-9_-]{1,100}", ident):
         raise HTTPException(502, "ComfyUI no devolvió el ID de generación")
     image_ref = None
     for _ in range(180):
@@ -44,10 +46,13 @@ async def render(client: httpx.AsyncClient, base_url: str, nodes: dict) -> bytes
     name, subfolder, kind = (
         image_ref.get("filename"), image_ref.get("subfolder", ""),
         image_ref.get("type", "output"))
-    if not isinstance(name, str) or not 1 <= len(name) <= 255:
+    if not isinstance(name, str) or not re.fullmatch(
+            r"[A-Za-z0-9_][A-Za-z0-9_. -]{0,254}", name) or ".." in name:
         raise HTTPException(502, "ComfyUI no devolvió un archivo válido")
-    if not isinstance(subfolder, str) or len(subfolder) > 255:
-        raise HTTPException(502, "Subcarpeta ComfyUI inválida")
+    # Noble's fixed SaveImage filename_prefix creates no nested subfolders.
+    # Do not follow arbitrary provider-supplied paths when requesting /view.
+    if subfolder != "":
+        raise HTTPException(502, "Subcarpeta ComfyUI no autorizada")
     if kind != "output":
         raise HTTPException(502, "ComfyUI devolvió una imagen fuera de salida")
     # /view is a provider endpoint, never a local file read.
