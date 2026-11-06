@@ -183,6 +183,34 @@ def sample_summary(samples: list[dict]) -> dict:
     }
 
 
+async def list_resources(base: str, story_id: str | None = None,
+                         transport: httpx.AsyncBaseTransport | None = None) -> list[dict]:
+    """Human-only UUID discovery; prints titles/names, never exported to QA reports."""
+    base = loopback_base(base)
+    if story_id is not None:
+        story_id = canonical_uuid(story_id)
+    route = ("/api/v1/stories" if story_id is None else
+             f"/api/v1/stories/{story_id}/creator/characters")
+    async with httpx.AsyncClient(trust_env=False, transport=transport,
+                                 timeout=15) as client:
+        response = await get_json(client, base + route)
+    key = "stories" if story_id is None else "characters"
+    values = response.get(key)
+    if not isinstance(values, list):
+        raise ValueError("La API devolvió una lista de recursos inválida")
+    result = []
+    for value in values:
+        if isinstance(value, dict) and isinstance(value.get("id"), str):
+            try:
+                ident = canonical_uuid(value["id"])
+            except ValueError:
+                continue
+            label = value.get("title") if story_id is None else value.get("name")
+            result.append({"id": ident,
+                           "label": str(label)[:100] if label else "(sin nombre)"})
+    return result
+
+
 async def get_json(client: httpx.AsyncClient, url: str) -> dict:
     response = await client.get(url, follow_redirects=False)
     response.raise_for_status()
@@ -276,6 +304,7 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                     ipadapter_preset: str = "PLUS FACE (portraits)",
                     ipadapter_weight: float = 0.7,
                     allow_low_vram: bool = False,
+                    discard_after: bool = False,
                     transport: httpx.AsyncBaseTransport | None = None,
                     gpu_probe=None, progress=print) -> dict:
     """Run explicit real API operations, never approve/publish generated sprites."""
@@ -283,6 +312,10 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
     story_id, character_id = canonical_uuid(story_id), canonical_uuid(character_id)
     if not modes or any(x not in MODES for x in modes) or len(set(modes)) != len(modes):
         raise ValueError("Modos de benchmark inválidos")
+    if not discard_after and not check_only and len(modes) > 3:
+        raise ValueError(
+            "Noble admite tres borradores por historia: usa máximo tres modos "
+            "o --discard-after para guardar previews y liberar los borradores")
     if not expressions or any(x not in EXPRESSIONS for x in expressions) or (
             len(set(expressions)) != len(expressions)):
         raise ValueError("Expresiones de benchmark inválidas")
@@ -452,6 +485,20 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                                      else "partial" if count else "failed")
             mode_record["latency_p50_ms"] = quantile(valid, .5)
             mode_record["latency_p95_ms"] = quantile(valid, .95)
+            if discard_after:
+                # Delete only the draft created by this benchmark, explicitly.
+                try:
+                    cleanup = await client.delete(
+                        base + f"/api/v1/stories/{story_id}/creator/sprite-drafts/{draft_id}",
+                        follow_redirects=False)
+                    cleanup.raise_for_status()
+                    mode_record["draft_cleanup"] = "discarded"
+                except httpx.HTTPError as exc:
+                    mode_record["draft_cleanup"] = "failed"
+                    mode_record["cleanup_error"] = safe_error(exc)
+                    progress("No se pudo descartar el borrador de " + mode)
+            else:
+                mode_record["draft_cleanup"] = "retained_for_manual_review"
             store_json(report, directory)
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
     report["review_required"] = True
@@ -464,8 +511,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Benchmark GPU local de sprites IA sin aprobar ni publicar arte")
     parser.add_argument("--api", default=DEFAULT_API)
-    parser.add_argument("--story-id", required=True)
-    parser.add_argument("--character-id", required=True)
+    parser.add_argument("--story-id", help="UUID de historia existente")
+    parser.add_argument("--character-id", help="UUID de NPC existente")
+    parser.add_argument("--list-stories", action="store_true",
+                        help="Listar títulos/UUID de historias locales, sin inferencia")
+    parser.add_argument("--list-characters", metavar="STORY_UUID",
+                        help="Listar NPC de una historia local, sin inferencia")
     parser.add_argument("--modes", default="chroma_green,neural_birefnet_portrait")
     parser.add_argument("--expressions", default=",".join(EXPRESSIONS))
     parser.add_argument("--seed", type=int, default=1407)
@@ -473,6 +524,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=360)
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument("--check-only", action="store_true")
+    parser.add_argument("--discard-after", action="store_true",
+                        help="Conservar PNG/reportes, descartar solo el borrador recién creado")
     parser.add_argument("--use-lora", action="store_true")
     parser.add_argument("--reference-asset-id")
     parser.add_argument("--reference-sprite-asset-id")
@@ -483,6 +536,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-low-vram", action="store_true")
     args = parser.parse_args(argv)
     try:
+        if args.list_stories or args.list_characters:
+            if args.list_stories and args.list_characters:
+                parser.error("Selecciona una única opción para listar")
+            resources = asyncio.run(list_resources(
+                args.api, args.list_characters))
+            for entry in resources:
+                print(entry["id"] + "  " + entry["label"])
+            if not resources:
+                print("No se encontraron recursos")
+            return 0
+        if not args.story_id or not args.character_id:
+            parser.error("Se requieren --story-id y --character-id (usa --list-stories)")
         result = asyncio.run(benchmark(
             base=args.api, story_id=args.story_id,
             character_id=args.character_id,
@@ -497,6 +562,7 @@ def main(argv: list[str] | None = None) -> int:
             ipadapter_preset=args.ipadapter_preset,
             ipadapter_weight=args.ipadapter_weight,
             allow_low_vram=args.allow_low_vram,
+            discard_after=args.discard_after,
         ))
     except (ValueError, httpx.HTTPError, OSError) as exc:
         print("No se pudo ejecutar el benchmark: " + safe_error(exc),
