@@ -178,10 +178,10 @@ class BenchmarkScriptTests(unittest.TestCase):
             saved = (directory / "report.json").read_text(encoding="utf-8")
             self.assertNotIn(STORY, saved)
             self.assertNotIn(NPC, saved)
-            self.assertNotIn("Benchmark técnico de sprites", saved)
+            self.assertNotIn("Technical unpublished sprite benchmark", saved)
             self.assertFalse(any("/approve" in path for _, path in fake.requests))
             self.assertFalse(any(method == "DELETE" for method, _ in fake.requests))
-            self.assertTrue(any("GENERANDO" in line for line in messages))
+            self.assertTrue(any("GENERATING" in line for line in messages))
 
     def test_check_only_does_not_touch_story_or_launch_gpu(self):
         fake = FakeNoble()

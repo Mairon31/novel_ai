@@ -694,7 +694,7 @@ export default function App() {
           })}
           {jobs.length === 0 && <div className="empty-state"><ArrowDownToLine size={30}/><strong>No downloads yet</strong>
             <p>Models installed from Model Hub appear here.</p>
-            <button className="secondary-button" onClick={() => changePage('modelos')}>Abrir Model Hub</button></div>}
+            <button className="secondary-button" onClick={() => changePage('modelos')}>Open Model Hub</button></div>}
           </div>
         </section>}
 

@@ -145,7 +145,7 @@ class ColabPlayTests(unittest.TestCase):
         ):
             with patch.object(launcher.request, "urlopen",
                               return_value=response):
-                with self.assertRaisesRegex(RuntimeError, "React built"):
+                with self.assertRaisesRegex(RuntimeError, "did not serve the built React app"):
                     launcher.verify_web_bundle()
 
     def test_drive_backup_uses_online_sqlite_backup_and_restores_media(self):

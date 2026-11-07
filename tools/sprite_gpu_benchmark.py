@@ -207,7 +207,7 @@ async def list_resources(base: str, story_id: str | None = None,
                 continue
             label = value.get("title") if story_id is None else value.get("name")
             result.append({"id": ident,
-                           "label": str(label)[:100] if label else "(sin nombre)"})
+                           "label": str(label)[:100] if label else "(unnamed)"})
     return result
 
 
@@ -386,7 +386,7 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
         matte = await get_json(client, base + "/api/v1/images/matting/status")
         checkpoint = config.get("checkpoint")
         if not isinstance(checkpoint, str) or not checkpoint:
-            raise ValueError("Configura primero un checkpoint en Noble AI")
+            raise ValueError("Configure a checkpoint in Noble AI first")
         if not status.get("online") or checkpoint not in status.get("checkpoints", []):
             raise ValueError("Selected checkpoint is unavailable in ComfyUI")
         report["preflight"] = {
