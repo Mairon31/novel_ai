@@ -145,13 +145,16 @@ class ComfyProcessManager:
                 return None
             # Do not expose ComfyUI sys.argv: it may contain private local paths.
             info = value["system"]
+            devices = value.get("devices")
+            if not isinstance(devices, list):
+                devices = []
             return {
                 "comfyui_version": str(info.get("comfyui_version") or "")[:64],
                 "python_version": str(info.get("python_version") or "")[:90],
                 "devices": [
                     {"name": str(device.get("name") or "")[:120],
                      "type": str(device.get("type") or "")[:40]}
-                    for device in (value.get("devices") or [])[:8]
+                    for device in devices[:8]
                     if isinstance(device, dict)
                 ],
             }
@@ -194,8 +197,21 @@ class ComfyProcessManager:
             if config.memory_mode != "auto":
                 argv.append("--" + config.memory_mode)
             logs = self.store.root / "logs"
+            if logs.is_symlink():
+                raise HTTPException(409, "Ruta de registros no confiable")
             logs.mkdir(exist_ok=True)
-            self.log_stream = (logs / "comfyui.log").open("ab", buffering=0)
+            logfile = logs / "comfyui.log"
+            if logfile.is_symlink():
+                raise HTTPException(409, "No se escribirá en registros simbólicos")
+            if self.proc is not None:
+                # The previous process exited naturally; release its log handle
+                # before starting the next one.
+                self.proc = None
+                if self.log_stream is not None:
+                    self.log_stream.close()
+                    self.log_stream = None
+                self.launched_config = None
+            self.log_stream = logfile.open("ab", buffering=0)
             try:
                 self.proc = subprocess.Popen(
                     argv, shell=False, cwd=values["install_dir"],
