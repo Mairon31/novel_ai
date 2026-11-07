@@ -31,7 +31,7 @@ async function openIllustratedReader(page: import('@playwright/test').Page, proj
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
   await expect(page.locator('.noble-reader-chapter')).toContainText(title);
   await expect(page.locator('.noble-reading-turn')).toHaveCount(1);
   return { title, id: story.id };

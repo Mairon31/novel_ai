@@ -8,7 +8,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible()) {
-    await wizard.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await wizard.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   const title = 'La biblioteca de las constelaciones ' + test.info().project.name;
   const created = await page.request.post('/api/v1/stories', {

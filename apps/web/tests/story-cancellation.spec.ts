@@ -5,7 +5,7 @@ test('Stop signals the backend for the exact story and request without committin
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();

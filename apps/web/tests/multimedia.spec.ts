@@ -50,7 +50,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
@@ -62,7 +62,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByLabel('Checkpoint').fill('story-model.safetensors');
   await page.getByRole('button', { name: 'Check ComfyUI sampling' }).click();
   expect(samplingChecks).toBe(1);
-  await expect(page.getByText('Compatibilidad KSampler: selección compatible.')).toBeVisible();
+  await expect(page.getByText('KSampler compatibility: compatible selection.')).toBeVisible();
   await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_sde');
   await expect(page.getByRole('button', { name: 'Guardar ajustes de imagen' })).toBeDisabled();
   await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_2m');
@@ -70,14 +70,14 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByLabel('Illustration style').selectOption('anime_cinematic');
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
   // Wait for the actual PUT response and saved UI state before reading SQLite.
-  await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
+  await expect(page.getByText('ComfyUI settings saved.')).toBeVisible();
   const configured = await page.request.get('/api/v1/images/config');
   expect(configured.ok()).toBeTruthy();
   const params = await configured.json();
   expect(params.sampler_name).toBe('dpmpp_2m');
   expect(params.scheduler).toBe('karras');
   expect(params.style_preset).toBe('anime_cinematic');
-  await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
+  await expect(page.getByText('ComfyUI settings saved.')).toBeVisible();
   await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();
   await page.getByRole('button', { name: 'Images', exact: true }).click();

@@ -20,7 +20,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   const nav = page.getByRole('navigation', { name: 'Settings sections' });
   await expect(nav.getByRole('button', { name: 'Images', exact: true })).toBeVisible();
@@ -88,7 +88,7 @@ test('legacy combined multimedia deep link opens images without displaying TTS',
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toBeVisible();

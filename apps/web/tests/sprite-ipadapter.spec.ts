@@ -60,7 +60,7 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
-      await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+      await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
 
     await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('NPC para generar expresiones').selectOption(npc);

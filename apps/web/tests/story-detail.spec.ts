@@ -4,7 +4,7 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
-  if (await wizard.isVisible()) await wizard.getByRole('button', { name: /Continue al Model Hub/ }).click();
+  if (await wizard.isVisible()) await wizard.getByRole('button', { name: /Continue to Model Hub/ }).click();
 
   const title = 'El faro de las estrellas ' + test.info().project.name;
   const created = await page.request.post('/api/v1/stories', {

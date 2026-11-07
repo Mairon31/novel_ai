@@ -51,7 +51,7 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
