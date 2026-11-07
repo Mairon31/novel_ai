@@ -75,7 +75,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   const dialog = page.getByRole('dialog', { name: 'Confirm rewind' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Lorebook histórico: 1 entrada(s)');
-  await expect(dialog).toContainText('Estado del mundo: Puerto antiguo');
+  await expect(dialog).toContainText('World state: Puerto antiguo');
   await expect(dialog).toContainText('historia original');
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-rewind-dialog.png',
@@ -91,7 +91,7 @@ test('safe rewind previews historical facts and creates an independent route', a
 
   await page.getByRole('button', { name: 'Rewind here' }).click();
   await expect(dialog).toContainText('Lorebook histórico: 1 entrada(s)');
-  await dialog.getByRole('button', { name: 'Crear ruta desde este turno' }).click();
+  await dialog.getByRole('button', { name: 'Create branch from this turn' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator('.noble-reader-chapter')).toContainText('(rama)');
 

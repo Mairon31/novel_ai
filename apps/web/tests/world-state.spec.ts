@@ -13,7 +13,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByRole('button', { name: 'Create project', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'El mapa y los testigos ' + test.info().project.name;
-  await dialog.getByLabel('Título').fill(title);
+  await dialog.getByLabel('Title').fill(title);
   await dialog.getByLabel('World premise').fill(
     'Una exploradora descubre un secreto antiguo oculto bajo el puerto de la ciudad.');
   await dialog.getByLabel('Protagonist').fill('Luna');
@@ -21,18 +21,18 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await expect(dialog).toBeHidden();
 
   await page.getByRole('button', { name: /Characters \(0\)/ }).click();
-  await page.getByLabel('Nombre de NPC').fill('Aira');
+  await page.getByLabel('Name de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Aira es la protectora del faro que conoce los secretos de la ciudad.');
   await page.getByRole('button', { name: 'Add character' }).click();
   await expect(page.getByRole('button', { name: /Characters \(1\)/ })).toBeVisible();
-  await page.getByLabel('Nombre de NPC').fill('Beto');
+  await page.getByLabel('Name de NPC').fill('Beto');
   await page.getByLabel('Descripción de NPC').fill(
     'Beto es un viajero que se encuentra por primera vez con la guardiana.');
   await page.getByRole('button', { name: 'Add character' }).click();
   await expect(page.getByRole('button', { name: /Characters \(2\)/ })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Estado del mundo' }).click();
+  await page.getByRole('button', { name: 'World state' }).click();
   await page.getByLabel('Lugar del mundo').fill('Puerto de niebla');
   await page.getByLabel('Momento del mundo').fill('Anochecer');
   await page.getByLabel('Clima del mundo').fill('Lluvia intensa');
@@ -40,7 +40,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByRole('checkbox', { name: 'Presente Aira' }).check();
   await page.getByLabel('Relación con Aira').fill('Aliada de Luna');
 
-  await page.getByLabel('Nombre de indicador nuevo').fill('faro_encendido');
+  await page.getByLabel('New flag name').fill('faro_encendido');
   await page.getByRole('button', { name: 'Añadir indicador' }).click();
   await page.getByRole('checkbox', { name: 'Indicador faro_encendido' }).check();
 
@@ -95,7 +95,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.locator('.creator-project').filter({ hasText: title }).first().click();
-  await page.getByRole('button', { name: 'Estado del mundo' }).click();
+  await page.getByRole('button', { name: 'World state' }).click();
   await expect(page.getByLabel('Lugar del mundo')).toHaveValue('Bosque del futuro');
   await page.getByText('History de instantáneas por turno').click();
   await page.getByLabel('Historical world turn').selectOption(turnId);

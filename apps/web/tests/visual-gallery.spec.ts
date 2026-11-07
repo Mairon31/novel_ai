@@ -16,7 +16,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.getByRole('button', { name: 'New story' }).click();
   const creation = page.getByRole('dialog', { name: 'Create a new story' });
-  await creation.getByLabel('Título').fill('Gallery y personajes');
+  await creation.getByLabel('Title').fill('Gallery y personajes');
   await creation.getByLabel('World premise').fill(
     'Una hechicera visita un pueblo escondido entre montañas y ríos.');
   await creation.getByRole('button', { name: 'Choose protagonist' }).click();
@@ -41,7 +41,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByRole('button', { name: 'View complete prompt and profiles' }).click();
   await expect(page.getByText(/Cabello plateado largo, ojos verdes intensos/)).toBeVisible();
 
-  const upload = page.getByLabel('Subir ilustración de escena');
+  const upload = page.getByLabel('Upload scene illustration');
   await upload.setInputFiles({ name: 'primera.png', mimeType: 'image/png', buffer: first });
   await expect(page.getByText('Versioned gallery (1)')).toBeVisible();
   await upload.setInputFiles({ name: 'segunda.png', mimeType: 'image/png', buffer: second });
@@ -64,8 +64,8 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await expect(page.getByRole('button', { name: /Aira.*Revision 2/ })).toBeVisible();
   await page.getByRole('button', { name: 'Gallery', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Personaje visible Aira' }).check();
-  await page.getByRole('combobox', { name: 'Plano de escena' }).selectOption('closeup');
-  await page.getByRole('combobox', { name: 'Luz de escena' }).selectOption('sunset');
+  await page.getByRole('combobox', { name: 'Scene shot' }).selectOption('closeup');
+  await page.getByRole('combobox', { name: 'Scene lighting' }).selectOption('sunset');
   await page.getByLabel('Atmósfera visual').fill('misterio y esperanza');
   await page.getByLabel('Dirección de escena').fill('Aira levanta el medallón.');
   const focus = page.getByRole('combobox', { name: 'Foco visual' });

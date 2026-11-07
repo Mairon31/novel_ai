@@ -16,7 +16,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await page.getByRole('button', { name: 'New story' }).click();
   const creator = page.getByRole('dialog', { name: 'Create a new story' });
   const title = 'Prueba visual de la torre '+test.info().project.name;
-  await creator.getByLabel('Título').fill(title);
+  await creator.getByLabel('Title').fill(title);
   await creator.getByLabel('World premise').fill(
     'En una biblioteca encantada, una hechicera protege el mapa perdido de los reinos.'
   );

@@ -12,7 +12,7 @@ test('history inspector searches local story memory without model or GPU', async
   await page.getByRole('button', { name: 'New story' }).click();
   const creator = page.getByRole('dialog', { name: 'Create a new story' });
   const title = 'Índice de memoria ' + test.info().project.name;
-  await creator.getByLabel('Título').fill(title);
+  await creator.getByLabel('Title').fill(title);
   await creator.getByLabel('World premise').fill(
     'Una exploradora investiga leyendas de una ciudad antigua y olvidada.');
   await creator.getByRole('button', { name: 'Choose protagonist' }).click();

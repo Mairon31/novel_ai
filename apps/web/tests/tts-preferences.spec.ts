@@ -51,7 +51,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
       await page.getByRole('button', { name: 'Open menu' }).click();
     }
     await page.getByRole('button', { name: 'Settings' }).click();
-    await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
+    await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
     await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   };
   await page.goto('/');
@@ -68,22 +68,22 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   expect(previewCalls).toBe(0);
   await expect(page.getByLabel('Velocidad Piper')).toHaveValue('1');
   await page.getByLabel('Velocidad Piper').fill('0.85');
-  await page.getByLabel('Ruido de voz Piper').fill('0.75');
+  await page.getByLabel('Piper voice noise').fill('0.75');
   await page.getByLabel('Ruido de fonemas Piper').fill('0.95');
-  await expect(page.getByRole('button', { name: 'Probar voz seleccionada' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Preview selected voice' })).toBeDisabled();
   await expect(page.getByText('Guarda los parámetros nuevos antes de probar la voz.')).toBeVisible();
   await page.getByRole('button', { name: 'Save Piper settings' }).click();
   await expect(page.getByText('Parámetros Piper guardados para las próximas síntesis.')).toBeVisible();
   expect(parameterWrites).toBe(1);
   expect(synthesis).toEqual({ length_scale: 0.85, noise_scale: 0.75, noise_w: 0.95 });
-  await page.getByRole('button', { name: 'Probar voz seleccionada' }).click();
-  await expect(page.getByLabel('Reproducir prueba de voz')).toBeVisible();
+  await page.getByRole('button', { name: 'Preview selected voice' }).click();
+  await expect(page.getByLabel('Play voice preview')).toBeVisible();
   await expect(page.getByText('Muestra generada. Pulsa Reproducir para escucharla.')).toBeVisible();
   expect(previewCalls).toBe(1);
   await page.reload();
   await openSettings();
   await expect(page.getByLabel('Velocidad Piper')).toHaveValue('0.85');
-  await expect(page.getByLabel('Ruido de voz Piper')).toHaveValue('0.75');
+  await expect(page.getByLabel('Piper voice noise')).toHaveValue('0.75');
   await expect(page.getByLabel('Ruido de fonemas Piper')).toHaveValue('0.95');
   expect(parameterWrites).toBe(1);
   expect(previewCalls).toBe(1);

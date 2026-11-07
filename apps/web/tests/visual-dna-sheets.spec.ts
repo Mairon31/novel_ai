@@ -26,7 +26,7 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
     await page.getByRole('button', { name: /Characters \(0\)/ }).click();
-    await page.getByLabel('Nombre de NPC').fill('Aira');
+    await page.getByLabel('Name de NPC').fill('Aira');
     await page.getByLabel('Ficha visual del NPC').selectOption(visual.id);
     await page.getByLabel('Descripción de NPC').fill(
       'Aira protege las llaves del castillo antiguo de cristal.');
@@ -44,7 +44,7 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     expect(cast.status()).toBe(200);
     expect((await cast.json()).characters[0].visual_character_id).toBe(visual.id);
     await page.getByRole('button', { name: /Images/ }).click();
-    await page.getByLabel('Personaje de hoja de expresiones').selectOption({ label: 'Aira' });
+    await page.getByLabel('Expression-sheet character').selectOption({ label: 'Aira' });
     await page.getByLabel('Contexto de hoja').fill('Aira castillo cristal');
     await page.getByLabel('Archivo de hoja de expresiones').setInputFiles({
       name: 'expressions.png', mimeType: 'image/png', buffer: spriteSheet,

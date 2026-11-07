@@ -24,7 +24,7 @@ test('shareable story URLs survive reload and browser Back/Forward', async ({ pa
   await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
     .toBeVisible();
 
-  await page.getByRole('button', { name: /Comenzar historia|Continue historia/ }).click();
+  await page.getByRole('button', { name: /Start story|Continue historia/ }).click();
   await expect(page).toHaveURL(new RegExp('#/historia/' + story.id + '/leer$'));
   await expect(page.locator('.noble-reader-chapter')).toContainText(story.title);
   const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });
@@ -66,7 +66,7 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await expect(page).toHaveURL(/#\/creator$/);
-  await expect(page.getByText('Selecciona una historia para editarla')).toBeVisible();
+  await expect(page.getByText('Select a story to edit')).toBeVisible();
 
   await page.goto('/#/infraestructura');
   await expect(page.getByRole('heading', { name: /Diagnostics/ })).toBeVisible();
