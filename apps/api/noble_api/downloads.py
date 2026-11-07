@@ -143,7 +143,7 @@ class DownloadManager:
             actual = self.store.download(job_id)
             raise CatalogError(409,
                 "Cannot " + action + " from state " +
-                (actual["status"] if actual else "inexistente"))
+                (actual["status"] if actual else "missing"))
         if action == "resume":
             self._start(job_id)
         return self.store.download(job_id)

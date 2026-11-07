@@ -67,8 +67,8 @@ def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
             for index, fragment in enumerate(fragments):
                 if not fragment:
                     continue
-                name = ("Premise and protagonist" if fragment.startswith("\nPremisa:")
-                        else "Fixed canon" if fragment.startswith("\nCanon persistente")
+                name = ("Premise and protagonist" if fragment.startswith("\nPremise:")
+                        else "Fixed canon" if fragment.startswith("\nConfirmed persistent story canon:")
                         else "System and preferences")
                 add(name, prefix + fragment if index == 0 else fragment)
         else:

@@ -138,7 +138,7 @@ def mount_visual_director_routes(app, director: VisualDirector) -> None:
         try:
             return director.preview(str(story_id), body.intent)
         except ValueError as exc:
-            raise HTTPException(404 if "inexistente" in str(exc) else 422,
+            raise HTTPException(404 if "Story not found" in str(exc) else 422,
                                 str(exc)) from exc
 
     @app.post("/api/v1/stories/{story_id}/visual-director/backgrounds/{asset_id}")

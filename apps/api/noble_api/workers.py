@@ -123,7 +123,7 @@ class WorkerRegistry:
     async def probe(self, worker_id: str) -> dict:
         record = self.info(worker_id)
         if not record:
-            raise ValueError("Worker inexistente")
+            raise ValueError("Worker not found")
         started = time.perf_counter()
         try:
             endpoint, token = self.endpoint(worker_id)
