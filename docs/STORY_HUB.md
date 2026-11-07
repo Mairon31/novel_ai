@@ -1,77 +1,76 @@
-# Story Hub local — tres mundos originales listos para jugar
+# Noble AI Story Hub — bundled original worlds
 
-**Estado:** catálogo local incluido en Noble AI, instalable desde Biblioteca. **No es un marketplace comunitario remoto.** Las tres historias contienen texto estructurado, pero no portadas/sprites generados ni imágenes instaladas.
+**Status:** a local story catalog included with Noble AI. It is **not** a hosted community marketplace. Bundled packs contain structured story text and metadata, not generated covers or installed sprites/backgrounds.
 
-## Uso
+## Explore and install
 
-Entra a **Biblioteca → Descubre un mundo para jugar**, selecciona un mundo, revisa personajes y tres aperturas, cambia si quieres el protagonista y pulsa **Añadir a mi biblioteca**. Se crea una nueva historia editable en Creator Studio y se abre su detalle. Elige un inicio: el primer turno se guarda sin llamar a un LLM. Seguir jugando requiere un narrador configurado. Repetir una instalación crea una copia distinta; no reemplaza tu progreso.
+Open **Library → Discover Stories** (or the independent `#/descubrir` route). Select a world, inspect its characters and three opening options, optionally edit the protagonist's name, and explicitly add it to your library.
 
-| Paquete v1.0.0 | Género | NPC | Lorebook | Aperturas |
+The result is a new editable story that can be opened in Creator Studio. Choosing an opening saves an initial narrative turn **without calling an LLM**; continuing from there requires a configured narrator. Installing the same pack again creates an independent copy and does not overwrite progress.
+
+| Bundled pack v1.0.0 | Genre | NPCs | Lorebook entries | Openings |
 |---|---|---:|---:|---:|
-| `ultima-luna` — La estación de la última luna | Misterio sobrenatural | 4 | 3 | 3 |
-| `mareas-de-vidrio` — Las mareas de vidrio | Ciencia ficción costera | 4 | 3 | 3 |
-| `jardin-mecanico` — El jardín de las horas rotas | Fantasía de relojería | 4 | 3 | 3 |
+| `ultima-luna` — La estación de la última luna | Supernatural mystery | 4 | 3 | 3 |
+| `mareas-de-vidrio` — Las mareas de vidrio | Coastal science fiction | 4 | 3 | 3 |
+| `jardin-mecanico` — El jardín de las horas rotas | Clockwork fantasy | 4 | 3 | 3 |
 
-Incluyen sinopsis, trama pública, **trama secreta para el narrador**, directrices, personajes con personalidad/diálogos, Lorebooks activados por palabras clave y tres aperturas diferentes. El catálogo público nunca incluye secretos, directrices privadas ni contenido del Lorebook. El atributo `has_images=false` aclara la ausencia de imágenes. Las fichas muestran autoría y versión, pero **no afirman una licencia CC0 de redistribución**.
+Pack IDs and original story titles remain unchanged for compatibility with saved data and fixture assertions. Story content may be multilingual even when product documentation and controls are English.
 
-## Contratos
+Each pack includes synopsis, player-visible plot, **private narrator plot**, creator directives, NPC profiles/dialogue, triggerable Lorebook entries, and three opening scenes. The public catalog strips private instructions and secrets. `has_images=false` accurately indicates there are no bundled illustrations. Credit/version labels do **not** imply an unverified CC0 redistribution license.
 
-- `GET /api/v1/story-hub` → `{packs,source:"bundled-original",community_online:false}`, solo campos públicos.
-- `GET /api/v1/story-hub/{pack_id}` → ficha pública o 404.
-- `POST /api/v1/story-hub/{pack_id}/install` con `{"protagonist_name":"Alex"}` opcional (1–60 caracteres) → 201 `{story,package_id,version,characters_installed,lore_installed,openings_installed}`. Rechaza pack desconocido, nombres inválidos y campos extra. La instalación usa `BEGIN IMMEDIATE` y crea historia, blueprint, NPC y Lorebooks con **UUID nuevos en una transacción única**. Si algún insert falla, se revierte todo.
-- `POST /api/v1/stories/{story_id}/creator/opening` con `{index:0|1|2}` crea el primer turno narrativo y bloquea escoger otro cuando ya empezó.
+## API contracts
 
-No hay inferencia, descargas, ZIPs ajenos, ejecución de plugins ni red externa al instalar estos paquetes integrados. La historia se puede exportar usando el respaldo `.noble.zip` existente.
+- `GET /api/v1/story-hub` → `{packs, source:"bundled-original", community_online:false}`, public metadata only.
+- `GET /api/v1/story-hub/{pack_id}` → public details or 404.
+- `POST /api/v1/story-hub/{pack_id}/install` → optional `{"protagonist_name":"Alex"}` with 1–60 characters; response status 201 with story/package ID/version and installed character/lore/opening counts.
+- `POST /api/v1/stories/{story_id}/creator/opening` → `{"index":0}`, `1`, or `2` to save the initial turn. A story that has already started cannot select a second opening.
 
-## Historia inicial de Colab
+The installer rejects unknown packs, invalid names, and extra fields. A single `BEGIN IMMEDIATE` transaction creates the story, blueprint, NPCs, and Lorebooks with fresh UUIDs. A failed insert rolls the entire installation back.
 
-Cuando la Biblioteca está **vacía**, `tools/colab_launch.py` instala `ultima-luna` con 4 NPC, 3 Lorebooks y 3 aperturas, comprobando recuentos antes de declarar éxito. No toca bibliotecas que ya contienen historias ni reescribe una demo antigua. Si ya tienes el ejemplo simple, instala la versión enriquecida manualmente desde Biblioteca.
+These local packs involve no model inference, remote downloads, third-party ZIP imports, plugin execution, or network access. Installed stories can be exported using the established `.noble.zip` archive format.
 
-## Evidencia y límites
+## Colab sample world
 
-- `tests/test_story_hub.py`: 3 mundos, filtrado de secretos, 4 NPC, 3 Lorebooks y 3 aperturas; dos copias aisladas, nombre de protagonista, primer turno, rechazo de segundo inicio y rollback con trigger SQLite que aborta insert.
-- `apps/web/tests/story-hub.spec.ts`: recorrido real Biblioteca → seleccionar → instalar → detalle → comenzar historia, en desktop y móvil.
-- `tests/test_colab_play.py`: demo enriquecida solo en biblioteca vacía y guardas de recuentos.
-- [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781), commit `a35e13b5`: **358 Python / 68 Playwright / build Vite PASS**. Solo se probaron contratos HTTP y UI; no generación real de imágenes, narración prolongada ni GPU.
+If the story library is **empty**, `tools/colab_launch.py` installs the enriched `ultima-luna` pack with its four NPCs, three Lorebook entries, and three openings, verifying counts before reporting success. It does not rewrite a non-empty library or overwrite an older demo story.
 
-**N-08 y N-09 siguen abiertos**: faltan arte de portada/fondos/sprites, manifiesto de paquetes externo versionado, actualización de fuentes sin perder ediciones, prueba real de 10–20 turnos, identidad/firmas/licencias de assets y compatibilidad de versiones. **N-10 (comunidad/Creators en línea)** continúa pendiente: requiere backend de publicación, permisos, moderación y distribución segura, no solo tres ejemplos locales.
+## Independent Discover Stories page
 
+The `#/descubrir` route opens a dedicated catalog accessible on desktop/mobile, separate from the library and Creator Studio. Library can continue showing featured packs. Installing from Discover returns to `#/historia/{uuid}`, where the player chooses an opening. Existing legacy routes remain valid.
 
-## Descubrir como espacio independiente
+## AI-assisted story drafting
 
-Se añadió la página `#/descubrir` con un destino **Descubrir historias** propio del menú, accesible en desktop y móvil. La Biblioteca conserva una selección destacada, pero `#/descubrir` constituye una ruta compartible que no necesita abrir historias existentes ni Creator Studio. Instalar allí vuelve a `#/historia/{uuid}`, abre el detalle del nuevo proyecto y permite escoger apertura.
+Creator Studio also includes a separate **Create with AI** flow for a story idea, protagonist, genre, and tone. It calls the currently configured narrator in three sequential stages:
 
-`apps/web/tests/story-hub.spec.ts` incluye pruebas adicionales de deep link, recarga y posterior navegación desde el catálogo al detalle de historia; no altera los enlaces previos de Biblioteca, Lector ni Creator.
+1. World, public/private plot, and three openings.
+2. Four NPCs, personalities, and dialogue guidance.
+3. Three triggerable Lorebook entries.
 
-- [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099): **358 Python y 70 Playwright**, compilación Vite PASS, incluido `#/descubrir` y navegación/recarga.
-- [CI #42170420070](https://github.com/Mairon31/novel_ai/actions/runs/42170420070): test Python de roundtrip exportar/importar mundo con personajes/Lorebook/inicios aprobado (359 tests Python totales); frontend en validación al registrar.
+The model must return validated JSON for the relevant typed schema. There is no placeholder generation falsely presented as an AI output. **Draft generation does not write to SQLite.** The user can review and edit all public/private story elements, character profiles, lore, and openings before explicitly installing the proposal as a new story.
 
+- `POST /api/v1/creator/assistant/draft`: idea of 30–2,500 characters plus optional protagonist/genre/tone; returns a draft, model and stage count, `saved=false`. An unconfigured narrator yields 409, schema errors 422, and upstream/timeouts 502 as applicable.
+- `POST /api/v1/creator/assistant/install`: accepts a validated `StoryDraft`, creates the world transactionally, and returns installed counts with `generated_media=0`. It does not call the LLM.
+- The implementation uses the existing local inference arbitration for relevant providers. It has an approximate generation budget, not a real measured model-cost guarantee.
 
-## Creator Studio — propuesta completa con narrador configurado
+This is not the full AI-driven illustrated novel creator: images, voice casting, editorial scene plans, and long-run story consistency remain separate tasks.
 
-Se incorporó **Crear con IA** como entrada independiente de Creator Studio. El usuario escribe una idea, protagonista, género y tono. El backend ejecuta tres generaciones en secuencia: (1) mundo con trama pública/privada y tres aperturas, (2) cuatro NPC con carácter y diálogo, (3) tres entradas activables del Lorebook. Se utiliza el proveedor/modelo del narrador configurado; no hay respuestas de relleno, catálogo remoto ni historia preescrita que se haga pasar por generada.
+## Regenerate selected draft sections
 
-El servidor valida el JSON y los modelos tipados en cada etapa y aplica las mismas restricciones del instalador del Story Hub. **La generación no escribe SQLite.** La interfaz presenta un borrador, permite editar título, sinopsis, protagonista, género, etiquetas, trama pública/privada, directrices, recordatorio, fichas completas de NPC, entradas del Lorebook y las tres aperturas y requiere **Crear historia con esta propuesta** para instalarlo como una historia separada. Los datos anteriores permanecen intactos, y los nuevos campos se pueden modificar después en Creator Studio. El instalador usa una transacción para historia, blueprint, NPC y Lorebooks; un error en cualquier escritura revierte el mundo completo.
+The assistant supports `POST /api/v1/creator/assistant/regenerate` with `{draft, section, instruction}`, where `section` is `plot`, `openings`, `characters`, or `lore`.
 
-Contratos:
-- POST /api/v1/creator/assistant/draft: idea (30–2500 caracteres), protagonist_name, genre y tone opcionales; devuelve draft, model, stages_completed=3 y saved=false; exige narrador configurado (409); valida cada respuesta (422) y error de proveedor/timeout (502).
-- POST /api/v1/creator/assistant/install: recibe StoryDraft tipado, confirma creando la historia en SQLite y devuelve story, recuentos de NPC/lore/aperturas y generated_media=0. No consulta el modelo en esta fase.
-- El API comparte la exclusión local GPU con la narración cuando se usa Ollama/KoboldCpp sin forzar CPU. Máximo 2048 tokens por etapa, hasta 180 s de lectura por etapa; esto no prueba capacidad de modelos concretos.
-- Pruebas: `tests/test_story_generator.py` (generación simulada, fallo a mitad, esquema, rechazo de campos extras, rollback) y `apps/web/tests/creator-ai.spec.ts` (formulario, previsualización, edición de componentes, instalación y QA móvil/escritorio con propuesta mock). [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437): **365 Python / 72 Playwright / Vite PASS**.
+Other sections are carried as canonical reference context. The server validates the regenerated section and the complete result before replacing anything. If an upstream call fails or JSON validation rejects it, the UI keeps the original draft and SQLite remains unchanged.
 
-**No equivale a N-07 completo:** aún no genera imágenes, voces ni plan editorial por escenas; la coherencia creativa de 10–20 turnos necesita ensayo con modelo y GPU reales.
+Prompt context is compacted to approximate character budgets: 14,000 characters for NPC/lore/opening context in relevant revisions; plot rewriting allows a 9,000-character stable context plus up to 3,500 characters of previous plot. These are character estimates, not tokenizer-aware context guarantees.
 
+Plot rewriting requires `synopsis`, `player_plot`, `ai_plot`, `guidelines`, and `reminder`, preserves unrelated fields, and allows a local one-step draft undo. Revision checks prevent a late model response from silently replacing a draft edited while the request was running. The returned `generation_budget` reports approximated prompt characters, input estimate based on characters/4, and the output token cap—not observed cost or VRAM. Plot rewrites may request up to 3,072 output tokens; other sections up to 2,048.
 
-## Regeneración selectiva de borradores (2026-11-06)
+## Tests and remaining work
 
-El asistente admite regenerar `plot`, `openings`, `characters` o `lore` mediante `POST /api/v1/creator/assistant/regenerate` con `{draft, section, instruction}`. La llamada utiliza el narrador configurado y el bloqueo GPU local existente. El canon y las secciones ajenas a la seleccionada se envían como contexto de referencia; el servidor solo sustituye la sección elegida tras validar esquema y paquete completo. Si el modelo devuelve JSON inválido, una cantidad incorrecta de elementos o falla la generación, el borrador anterior permanece intacto en la interfaz y no se escribe SQLite. No implica regeneración de imágenes, TTS ni control de costo/cancelación upstream. Estado de CI por verificar.
+- `tests/test_story_hub.py`: three packs, secret stripping, isolation, count checks, opening selection, and forced-SQLite rollback.
+- `apps/web/tests/story-hub.spec.ts`: desktop/mobile browse → install → detail → start, plus deep links and reload.
+- `tests/test_colab_play.py`: enrich only an empty library.
+- `tests/test_story_generator.py`: simulated three-stage generation, validation, provider errors, section rewrite behavior, and rollback.
+- `apps/web/tests/creator-ai.spec.ts`: review/edit/install workflow and section controls with simulated model responses.
 
-El contexto canónico se limita a 14 000 caracteres JSON para NPC/Lorebook/aperturas; al reescribir `plot`, el contexto fijo dispone de hasta 9 000 caracteres JSON y la trama anterior de otros 3 500, con compactación independiente. El backend compacta texto extenso y detalles secundarios de NPC, Lorebook y aperturas, sin mutar el borrador; rechaza canon que no pueda ajustarse. Es un presupuesto aproximado en caracteres, no un conteo real de tokens ni garantía de ventana de contexto del modelo.
+Past verified runs: [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) (358 Python / 68 Playwright), [CI #42170140099](https://github.com/Mairon31/novel_ai/actions/runs/42170140099) (358 / 70), [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437) (365 / 72), and [CI #42256256693](https://github.com/Mairon31/novel_ai/actions/runs/42256256693) (372 / 72), all with successful Vite builds. Tests simulate model outputs; they do not establish long-run narrative or GPU image quality.
 
-### Reescritura de trama principal y reversión (2026-11-06)
-
-La sección `plot` acepta una revisión estructurada de `synopsis`, `player_plot`, `ai_plot`, `guidelines` y `reminder`. El servidor exige todos los campos, valida longitudes y verifica el borrador entero antes de devolverlo; preserva título, género, tags, protagonista, cuatro NPC, tres entradas de Lorebook y las tres aperturas. La trama anterior se envía como texto revisable, separado del canon fijo. Para esta sección, el máximo de salida configurado es 3 072 tokens; para las otras secciones, 2 048. No se escribe SQLite hasta instalar.
-
-La UI ofrece restaurar **una versión anterior** del borrador después de cada regeneración. La comprobación de revisión local evita aplicar respuestas tardías si hubo una edición durante la espera. El resultado incluye `generation_budget`: tamaño del prompt en caracteres, estimación de entrada por caracteres/4 y máximo configurado de salida. No mide consumo real, costo ni VRAM, y puede ser impreciso según el tokenizer.
-
-Pruebas nuevas: rechazo de trama incompleta, preservación de NPC/Lorebook/aperturas y propiedades, rollback UI de aperturas y posterior reescritura de trama. Validado en [CI #42256256693](https://github.com/Mairon31/novel_ai/actions/runs/42256256693): 372 tests Python / 72 Playwright en escritorio y móvil, Vite PASS. La generación del modelo es simulada; no valida GPU o calidad narrativa real.
+N-07, N-08, N-09, and N-10 still have open scope: bundled visual assets, versioned external manifests, safe pack upgrades, creator/community publishing, moderation, distribution, provenance/signatures/licenses, 10–20-turn real-model evaluation, and optional image/speech generation.

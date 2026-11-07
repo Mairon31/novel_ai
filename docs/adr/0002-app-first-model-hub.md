@@ -1,38 +1,39 @@
-# ADR-0002 — App-first, Model Hub integrado y selección de proveedores por usuario
+# ADR-0002 — App-first product, integrated Model Hub, and user-selected providers
 
-Fecha: 2026-11-04 · Estado: **Aceptada como nueva prioridad de producto** · Actualiza ADR-0001 donde se describía "Colab primero".
+**Date:** 2026-11-04  
+**Status:** accepted as the product direction. Supersedes the Colab-first priority in [ADR-0001](0001-stack-modular.md).
 
-## Contexto
+## Context
 
-El proyecto original proponía Colab como primera interfaz de pruebas. El objetivo real es una app web que evolucionará a `.exe`, con wizard, búsqueda/descarga/instalación de modelos, selección de proveedores y parámetros, similar a los patrones encontrados en Urakatsu y Koharu. El usuario no quiere configurar pesos o instalaciones ejecutando manualmente celdas antes de poder utilizar el producto.
+The initial concept treated Colab as the main testing interface. The actual product goal is a local web application that can later become a Windows executable, offering in-app setup, model lookup/download/installation, provider selection, and runtime settings. Users should not need to run notebook cells or manually download weights before opening the application.
 
-Fuentes estudiadas:
-- Urakatsu MIT, commit `fed313c70cf11afdba85ae2314c1a4a5b21f6bf7`: ModelsPage + catalog + downloads + runtime management.
-- Koharu MIT OR Apache 2.0, commit `cd31ad2c7016b64d0ff0400a09e86cd13fb5df13`: providers/settings, descarga, Tauri.
+Research sources at the time:
+- Urakatsu (MIT), revision `fed313c70cf11afdba85ae2314c1a4a5b21f6bf7`: model catalog, downloads, and runtime management.
+- Koharu (MIT/Apache-2.0 components), revision `cd31ad2c7016b64d0ff0400a09e86cd13fb5df13`: provider settings, downloads, and desktop-shell patterns.
 
-## Decisión
+## Decision
 
-1. **Producto APP-FIRST**: UI React/Vite/TS + API FastAPI; setup visual y Model Hub son prerequisitos de UX. Colab pasa a **entorno de pruebas opcional** (benchmarks/diagnóstico, no app principal).
-2. El núcleo propio administra **model roles** independientes: narration, image, tts; proveedor, modelo, device, settings y perfil son objetos separados.
-3. **Descubrimiento HF + instalaciones** desde UI con metadatos/licencias/quant, hardware fit estimado y descarga segura/resumible, registro duradero y reuso offline.
-4. **Proveedores locales/remotos** compatibles cuando se implementen; opciones se basan en capacidades declaradas por cada adapter, no toggles ficticios.
-5. **Ejecución diferida**: UI y API ligeras al arrancar; LLM elegido se inicia para jugar, imágenes según escenas/solicitud, voz solo si el usuario la activa explícitamente.
-6. **Tauri 2 candidato desktop** con sidecar FastAPI y motores como procesos externos/administrados. Continuar soportando navegador local.
-7. Presets editables por rol, override por historia, prioridad narrativa y elegibilidad hardware 12/16GB.
-8. Reutilizar con atribución, sin incorporar todavía código de Urakatsu/Koharu hasta spike y revisión de dependencias.
+1. **APP-FIRST:** React/Vite/TypeScript UI and FastAPI backend, with an integrated setup flow and Model Hub. Colab becomes an **optional test/benchmark environment**.
+2. Keep **model roles** (narration/image/speech), providers, installed files, devices, profiles, and settings as distinct concepts.
+3. Support Hugging Face discovery with metadata/licenses/quantizations, cautious fit estimates, resumable verified downloads, durable records, and offline reuse when available.
+4. Enable local and remote providers only when adapters actually support the requested features. Do not display misleading controls.
+5. Start light: load a selected LLM when needed for play, images only on request or eligible scene changes, and audio only with explicit user action or preference.
+6. Consider **Tauri 2** for future desktop packaging, with FastAPI as a sidecar and other engines as managed/external processes. Preserve local browser mode.
+7. Support role presets, per-story overrides, narrative-first priorities, and real measurements on 12/16 GB GPU profiles.
+8. Reuse compatible upstream modules with required attribution and license review, not on the assumption that all reference code can be copied unchanged.
 
 ## Trade-offs
 
-**Ventajas:** cero necesidad de editar config manual en producto; la app escala a nuevos motores, control real de GPU, experiencia coherente Colab/local y facilidad futura de distribución.
+Advantages: a coherent user workflow, easier provider evolution, guided model management, and a clearer path to desktop distribution.
 
-**Costes:** gestor de descargas + verificación + runtime supervisor + interfaces/persistencia complejos; mayor esfuerzo de inicio. Reducir mediante módulos MIT y `huggingface_hub`; no escribir un framework entero de ML.
+Costs: download validation, process supervision, settings persistence, hardware assessment, and more complicated UX. Reduce unnecessary scope by reusing suitable libraries such as `huggingface_hub`, not by implementing a new ML framework.
 
-## Implicaciones
+## Implications
 
-**Prioridad cambia:** primero wizard y Model Hub funcionales, luego narrativa P1, después imagen/TTS. El notebook P0 previo se conserva como diagnóstico **no obligatorio** y se actualizan README/GDD/roadmap/AGENTS.
+Prioritize a real setup and model catalog, then persistent narrative play, then image and optional speech enhancements. Preserve the early Colab notebook as an optional diagnostic artifact. Keep README, design documents, roadmap, and engineering guidance aligned.
 
-## Verificación
+## Acceptance evidence
 
-No basta con documentación: requiere prueba de búsqueda HF real, instalación de variante GGUF pequeña, selección/arranque del runtime, guardado de settings, y un turno narrativo jugable **sin tocar consola/Colab**.
+Documentation alone is insufficient. Verify real Hugging Face lookup, installation of a small supported GGUF, provider start/assignment, settings persistence, and at least one playable narrative turn without requiring the end user to run Colab or the terminal.
 
-Referencia [#9](https://github.com/Mairon31/novel_ai/issues/9), [#10](https://github.com/Mairon31/novel_ai/issues/10), [#11](https://github.com/Mairon31/novel_ai/issues/11), [#12](https://github.com/Mairon31/novel_ai/issues/12).
+Related issues: [#9](https://github.com/Mairon31/novel_ai/issues/9), [#10](https://github.com/Mairon31/novel_ai/issues/10), [#11](https://github.com/Mairon31/novel_ai/issues/11), [#12](https://github.com/Mairon31/novel_ai/issues/12).

@@ -1,74 +1,84 @@
-# Diseño TTS opt-in
+# Noble AI — opt-in speech synthesis
 
-Estado: **P1.4 — Piper local CPU implementado con reproducción explícita**; Chatterbox Multilingual, Qwen3-TTS y modos GPU/API son siguientes adaptadores, no implementados.
+**Current status:** the first Piper CPU adapter with explicit playback is implemented. Chatterbox Multilingual, Pocket TTS, OmniVoice, Kokoro TTS, Qwen3-TTS, and other GPU/API engines remain research or integration backlog items unless their adapters are separately verified.
 
-## Invariantes
+## Invariants
 
-**El TTS solo se ejecuta cuando el usuario lo solicita**. Por defecto `tts_enabled=false`, `auto_read=false`. Navegar, escribir, continuar, guardar o producir imágenes **no** puede cargar el modelo TTS ni encolar audio. Autolectura solo tras activación explícita de la preferencia; puede desactivarse instantáneamente.
+Speech is **opt-in**. The default state is `tts_enabled=false` and `auto_read=false`. Opening a story, editing text, continuing narration, loading settings, or generating an image must not automatically load a speech engine or enqueue audio.
 
-## UX
+Automatic reading is a separate prospective user-enabled feature, not active in the first Piper flow. A provider being installed does not imply permission to play or generate audio.
 
-- Botón **Escuchar** por intervención o por bloque; indicador de preparando / reproduciendo / pausa.
-- Selector de voz por personaje, idioma (inicial `es-419`), velocidad y estilo; narrador puede tener voz propia.
-- Botón **Detener** cancela reproducción y, si soporta, job aún no iniciado.
-- Si cambia de rama, audio anterior deja de reproducirse aunque termine tarde.
-- Lectura de diálogos largos por fragmentos oracionales para permitir streaming, pero **sin activar síntesis antes de que haya una petición**.
-- Pronunciación de nombres y topónimos configurable por historia; evaluación para español latinoamericano natural.
+## Reader experience
 
-## Tecnología y caché
+- **Listen** on a saved turn explicitly requests a recording; playback can be stopped in the browser.
+- Future goals include distinct narrator and character voices, language and pronunciation preferences, emotional delivery, pacing, and chunked long dialogue.
+- Changing branches should stop old audio from a different story state.
+- Any future automatic speech segmentation must respect the explicit user activation boundary.
+- Natural Latin American Spanish (`es-419`) is a target **story and speech language**, not the language of application controls. English is the default product UI language.
 
-- Chatterbox repo: https://github.com/resemble-ai/chatterbox
-- Variante LatAm: https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam
-- Alternativa Qwen3-TTS: https://github.com/QwenLM/Qwen3-TTS
-- Caché por `SHA256(texto_normalizado + character_voice_revision + model_hash + locale + options)`. Guardar audio como recurso de escena o diálogo, no directamente en mensajes.
-- TTL/GC por referencias; WAV original opcional, formato de distribución comprimido según licencia y calidad requerida.
-- Voz de un usuario real: solo con consentimiento explícito del titular y procedencia registrada; sin extraer audios de terceros.
-- TTS worker separado con lazy initialization, configurable para CPU/GPU y capaz de liberar VRAM al terminar.
+## Implemented Piper flow
 
-## API
+1. Install the Piper CLI so `piper` is available in the backend's `PATH`.
+2. Place an ONNX file and matching `.onnx.json` under `<NOBLE_DATA_DIR>/models/voices/` or install a supported catalog voice through the app.
+3. Enable on-demand speech controls under **Settings → Voice / TTS** and select a voice.
+4. Click **Listen** on a saved turn. The backend uses Piper on CPU and stores/reuses a WAV under `story-assets/{story_id}/speech/` for compatible text/voice/settings.
+5. If the executable or voice is missing, return an error without blocking narrative play.
 
-`POST /api/v1/stories/{story_id}/turns/{turn_id}/speech`: solo acepta `{"voice_id":"archivo.onnx","request_source":"listen_button"}` en esta primera versión. `GET /api/v1/tts/voices` detecta voces locales. Se requiere activar `tts_enabled`. No está disponible la autolectura.
+Only one synthesis runs at a time in the initial adapter. Requests are limited to 3,500 characters and 120 seconds. The first API contract is:
 
-## Tests obligatorios
+`POST /api/v1/stories/{story_id}/turns/{turn_id}/speech`
 
-- 50 turnos con audio desactivado → 0 llamadas TTS, 0 modelos TTS cargados.
-- Pulsar Escuchar dos veces mismo texto/voz → audio cache hit, 1 síntesis.
-- Cambiar voz invalida caché de voz, **no** imágenes ni canon.
-- Cambiar/editar rama evita audios huérfanos que suenan en escena distinta.
-- Proveedor TTS desconectado no afecta LLM/ComfyUI.
-- Prueba subjetiva de 10 frases ES-LA (entonación, nombres, diálogos, pronombres), con logs de modelo/VRAM/latencia.
+```json
+{"voice_id":"voice.onnx","request_source":"listen_button"}
+```
 
+`GET /api/v1/tts/voices` lists installed compatible voices without triggering synthesis.
 
-## P1.4 — Configuración real de Piper
+## Piper-specific synthesis settings (N-21)
 
-- Instala el ejecutable `piper` en `PATH`. El backend no instala runtimes ni lo arranca al abrir Noble AI.
-- Coloca cada voz ONNX y su archivo `.onnx.json` en `<NOBLE_DATA_DIR>/models/voices/`. La UI lista los archivos válidos del directorio, con protección contra nombres de voz que salgan de él.
-- Activa **Ajustes → Imágenes y voz → Activar botones de voz bajo demanda** y selecciona una voz en **Lector → UI/UX**.
-- Pulsa **Escuchar** en un turno guardado: Piper ejecuta la síntesis CPU de ese texto. Los WAV se guardan en `story-assets/{story_id}/speech/` y se reutilizan para la misma intervención/voz.
-- No se ejecuta al continuar una historia ni cuando `tts_enabled=false`; tampoco se habilita `tts_autoread`. Si falta Piper o la voz, se devuelve un error y la historia permanece disponible.
-- Solo una síntesis activa a la vez; límite de 3500 caracteres y 120 s por llamada; futuros adaptadores podrán chunkear frases y usar GPU.
+The separate Voice/TTS panel exposes:
 
+| Setting | Range | Default | Purpose |
+|---|---:|---:|---|
+| `length_scale` | 0.5–2 | 1.0 | Phoneme duration / speaking pace |
+| `noise_scale` | 0–1.5 | 0.667 | Generator variation |
+| `noise_w` | 0–1.5 | 0.8 | Phoneme-duration variation |
 
-## Backlog TTS multi-motor y voz por personaje — 2026-11-06 (PENDIENTE)
+`GET/PUT /api/v1/tts/synthesis-config` stores these settings in SQLite. They affect both an explicitly requested preview and a saved-turn Listen operation. Changes must be saved before requesting a new sample. Different settings produce distinct WAV cache keys; already generated audio is not arbitrarily deleted. Invalid, unknown, or non-finite values are rejected.
 
-Noble AI debe operar como un producto integral con selección, descarga, configuración y pruebas de modelos TTS desde su propia interfaz. Los motores **Pocket TTS, OmniVoice, Kokoro TTS y Qwen3 TTS** se añaden como **candidatos de integración**, no como motores ya implementados ni como garantía de compatibilidad en español latinoamericano. Mantener Piper. Para cada uno verificar repositorio de origen, licencia de código/pesos, formato, instalación/runtime, voz/es-419, requisitos reales CPU/GPU, dependencias y compatibilidad Colab/Windows.
+References: [Piper Python CLI](https://github.com/rhasspy/piper/blob/master/src/python_run/piper/__main__.py), [Piper C++ CLI](https://github.com/rhasspy/piper/blob/master/src/cpp/main.cpp).
 
-- **Contrato común de proveedor:** `discover/capabilities/install/voices/configure/preview/synthesize/cancel/unload/health`; mapear y validar únicamente parámetros que el motor realmente acepte (velocidad, tono, expresividad, idioma, temperatura, tipo de voz, etc.). Parámetros no soportados deben deshabilitarse o rechazarse, no ignorarse silenciosamente.
-- **Voces diferenciadas por reparto:** narrador independiente, cada NPC con `provider_id + model_id + voice_id + options`, overrides por historia, persistencia y remapeo de ramas. Si falta la voz, fallback declarado por la UI; si no se puede atribuir el hablante, no inventar personaje.
-- **Montaje de audio:** segmentar narración y líneas atribuidas a NPC, mantener orden/pausas y niveles consistentes; caché invalidada por cambios de texto, voz, proveedor y configuración. Probar reparto completo sin disparar síntesis al abrir historias.
-- **UX interna:** catálogo/instalación/progreso, parámetros avanzados del motor seleccionado, voz por personaje, escucha de muestras, dispositivos, colas, fallos y métricas en un único apartado multimedia de Noble AI. No asumir que una UI externa del runtime es el panel de configuración del usuario.
-- **Evidencia requerida:** 10 frases con pronunciación ES-LA, turno con narrador y 3+ NPC, cambio y ausencia de voz, sincronización, cancelación, memoria y latencia en Colab/Windows, y pruebas unitarias de los adaptadores.
+These controls are not equalization, voice cloning, automatic character attribution, or a new neural model. [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) reported 387 Python and 80 Playwright tests passing, plus Vite; the CLI was simulated rather than assessed acoustically on physical hardware.
 
-Ver [plan detallado N-16/N-17/N-21](PLAN_HISTORIAS_ANIME_2026_11_06.md) y [tareas maestras](../TODO.md). Estas tareas no sustituyen ni marcan terminado el instalador parcial de voces Piper descrito en [PIPER_VOICES.md](PIPER_VOICES.md).
+## Planned multi-engine architecture
 
+Investigate each provider independently, checking code and weight licenses, CPU/GPU requirements, model format, Windows/Colab compatibility, voices, languages, dependency isolation, and expected VRAM:
 
-## N-21, controles de síntesis Piper dentro de Voz/TTS (2026-11-06)
+- [Chatterbox](https://github.com/resemble-ai/chatterbox) and its [Latin American Spanish variant](https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam)
+- [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)
+- Pocket TTS
+- OmniVoice
+- Kokoro TTS
 
-Se implementaron tres parámetros específicos de Piper en **Configuración → Voz / TTS**, separados de los ajustes de Imágenes. El nuevo endpoint `GET/PUT /api/v1/tts/synthesis-config` guarda `length_scale` (0.5 a 2, predeterminado 1.0), `noise_scale` (0 a 1.5, predeterminado 0.667) y `noise_w` (0 a 1.5, predeterminado 0.8) en la configuración local SQLite. Esta selección se aplica tanto al botón **Probar voz seleccionada** como a **Escuchar** en las historias. Los valores corresponden a los argumentos oficiales de Piper: [CLI Python](https://github.com/rhasspy/piper/blob/master/src/python_run/piper/__main__.py) y [CLI C++](https://github.com/rhasspy/piper/blob/master/src/cpp/main.cpp).
+A future shared provider contract should expose `discover / capabilities / install / voices / configure / preview / synthesize / cancel / unload / health`. Only genuine provider-supported parameters should appear in the UI; unsupported parameters must not be ignored silently.
 
-Un `length_scale` menor reproduce fonemas más rápido; los otros dos parámetros modulan el ruido del generador y la variación de longitudes fonéticas. La UI obliga a guardar los cambios antes de generar una nueva muestra. Cambiar parámetros invalida la coincidencia de caché del WAV de los turnos: no se devuelve una grabación producida con otra velocidad/variación, ni se borran las versiones de audio ya creadas. Las APIs rechazan parámetros fuera de límites, campos desconocidos y valores no finitos.
+### Distinct voices for narrator and characters
 
-**No equivale a un ecualizador de voz, asignación de voz por personaje, motor neural distinto ni clonación.** Requiere un Piper instalado para comprobar físicamente los cambios; pruebas automatizadas de CLI y WAV usan un ejecutable ficticio. La verificación CI de esta nueva parte se actualizará en `docs/PROGRESO.md`.
+Each NPC and the narrator should eventually store a `provider_id + model_id + voice_id + options` mapping with per-story overrides and branch-safe persistence. Unknown speakers must not be assigned an invented identity. Missing voices need a visible, predictable fallback.
 
+Dialogue assembly should preserve text order, pauses, consistent levels, and cache invalidation when text, model, voice, or options change. An upcoming implementation must never trigger synthesis just because a story opened.
 
-**Validación de parámetros Piper:** [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS: 387 pruebas Python, 80 de navegador y build frontend. La suite comprueba el argumento enviado al ejecutable simulado y la regeneración de audio cuando cambia la configuración, no evaluación de calidad de voz con motor real.
+### Privacy and caching
+
+Use a content key derived from normalized text, model/voice revision, locale, and synthesis parameters. Store recordings as controlled story assets; garbage collect by references. Voice cloning or recordings of a real person require the person's explicit consent and recorded provenance. Consider separate lazy-loaded CPU/GPU workers that can release VRAM when idle.
+
+## Acceptance tests
+
+- Fifty story turns with TTS disabled must produce zero speech calls.
+- Two identical explicit Listen requests should reuse a cached recording where applicable.
+- Changing voices must invalidate the appropriate speech cache without altering canon or illustrations.
+- Changing stories or branches must prevent stale playback in the new context.
+- A disconnected speech provider must not block LLM or ComfyUI operations.
+- Before claiming production readiness, test at least ten target-language sentences and one mixed narrator/3+ NPC turn on actual Windows/Colab hardware. Measure pronunciation, latency, memory, cancellation, and output levels.
+
+See the [Piper voice installer](PIPER_VOICES.md), [narrative backlog](PLAN_HISTORIAS_ANIME_2026_11_06.md), and [master TODO](../TODO.md).

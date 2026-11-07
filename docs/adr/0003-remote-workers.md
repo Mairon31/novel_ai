@@ -1,24 +1,28 @@
-# ADR-003 — Workers GPU separados del workspace principal
+# ADR-0003 — Separate GPU workers from the primary workspace
 
-**Fecha:** 2026-11-04
-**Estado:** aceptada como arquitectura experimental P1.1
+**Date:** 2026-11-04  
+**Status:** accepted as an experimental P1.1 architecture.
 
-## Problema
-Noble AI debe ejecutar inferencia en una segunda PC o una sesión de Google Colab, sin trasladar al remoto la biblioteca de historias ni las credenciales de otros servicios.
+## Problem
 
-## Decisión
-1. El backend principal permanece en 127.0.0.1.
-2. La máquina GPU inicia su servidor OpenAI-compatible local y un proxy Noble Worker, independiente del workspace.
-3. Cloudflare Quick Tunnel publica únicamente ese proxy, con autenticación Bearer obligatoria. El registro principal guarda nombre, URL y rol en SQLite; el token vive en keyring del sistema operativo.
-4. El backend valida HTTPS *.trycloudflare.com y prueba el rechazo de credenciales inválidas antes de activar un worker.
-5. La narración usa streaming remoto sin modificar el almacenamiento de turnos en SQLite.
-6. Imagen y voz necesitan protocolos distintos y colas de GPU; no se afirma que estén implementados.
-7. No se habilita acceso LAN o WAN al servidor principal sin implementar autenticación de sesiones y permisos.
+Noble AI should be able to run supported inference on a second computer or suitable remote runtime without transferring the entire story library or unrelated service credentials to that machine.
 
-## Consecuencias y límites
-Un worker recibe el contenido del prompt, pero no la DB ni los archivos. El túnel es temporal y puede desconectarse. No se ha probado inferencia real en Colab ni rendimiento con NVIDIA de 12/16 GB. Se inspira en el diseño por componentes de Urakatsu sin copiar su código ni su protocolo interno.
+## Decision
 
-## Próximos gates
-Benchmarks de GPU remota real, health/capabilities de workers por rol, reconexión, actualización de runtimes con hashes y rollback, acceso LAN autenticado y adapters de imagen/TTS.
+1. The primary API remains bound to `127.0.0.1` by default.
+2. The GPU machine runs its own OpenAI-compatible inference service and an independent Noble Worker proxy.
+3. The experimental design uses a temporary Cloudflare Quick Tunnel to expose **only** that worker proxy, requiring bearer authentication. The main SQLite database stores worker name, URL, and role; credentials belong in the operating-system keyring.
+4. The primary service checks the permitted HTTPS endpoint form and rejects invalid credentials before activating a worker.
+5. Remote narrative streaming does not relocate local SQLite story persistence.
+6. Images and speech require additional protocols and GPU queues; do not infer that they are implemented merely because narrative workers exist.
+7. Do not open the main application directly to LAN/WAN without dedicated session authentication and authorization.
 
-[Guía de workers](../WORKERS.md)
+## Consequences and limits
+
+Workers may receive the current inference prompt but must not receive the whole story database or unrelated local files. Temporary tunnels can disconnect. Real Colab inference and 12/16 GB NVIDIA performance still require measured evidence. This structure follows modular design concepts studied in Urakatsu; it does not copy its private worker protocol.
+
+## Next gates
+
+Real remote-GPU benchmarks, role-specific health/capability discovery, reconnect behavior, integrity-checked runtime upgrades with rollback, authenticated LAN access, and image/speech worker adapters.
+
+See the [worker guide](../WORKERS.md).

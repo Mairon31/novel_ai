@@ -1,40 +1,42 @@
-# ADR-0001 — Ensamblar motores existentes con orquestador propio
+# ADR-0001 — Assemble existing engines behind a Noble AI orchestrator
 
-Fecha: 2026-11-04 · Estado: **parcialmente sustituida por ADR-002** para prioridad y UX inicial: **app-first** (Model Hub/wizard) en lugar de Colab como entrada obligatoria. Se conserva elección de motores/adaptadores como decisión técnica.
+**Date:** 2026-11-04  
+**Status:** partially superseded by [ADR-0002](0002-app-first-model-hub.md) for product priorities and first-run UX. Keep the adapter/engine selection as an architectural decision; Colab is no longer the mandatory entry point.
 
-## Contexto
+## Context
 
-Queremos Isekai-like local: historias persistentes, arte anime progresivo, voz bajo solicitud, escritorio/móvil, Google Colab primero y GPU NVIDIA de 12 GB mínimo recomendado. No compensa reimplementar inferencia LLM, difusión o síntesis de voz. Tampoco conviene copiar una aplicación AGPL completa dentro de un producto propio sin diseño previo de licencias.
+Noble AI aims to provide persistent interactive stories, progressive anime-style illustration, optional speech, responsive desktop/mobile UI, and local inference on available hardware. Reimplementing LLM inference, diffusion, or speech synthesis would add unnecessary complexity. Copying an entire AGPL application into an independently licensed project would also require a separate licensing review.
 
-## Decisión
+The original research proposed Colab-first testing and a 12 GB NVIDIA minimum target; later decisions prioritize an app-first workflow. Hardware targets are not performance guarantees.
 
-- Frontend **React + Vite + TypeScript** específico para experiencia VN; patrón UX inspirado en Open Dungeon/SillyTavern, sin copiar sus assets.
-- Backend/orquestación **Python FastAPI + Pydantic + SQLAlchemy/Alembic + SQLite**: encaja con integración Python de modelos, portable Linux/Colab y Windows.
-- Proveedor LLM primario **KoboldCpp** por su facilidad con GGUF, contexto/streaming y API `/v1`. **Ollama** fallback.
-- Proveedor de ilustración primario **ComfyUI HTTP/WS** con workflows guardados y validados. No intentar implementar difusión dentro del backend.
-- TTS primario **Chatterbox Multilingual** (evaluar variante LatAm) **carga diferida**; **Qwen3-TTS** alternativa.
-- **Open Dungeon (MIT)** es primer candidato para estudiar/reutilizar módulos de UX y ciclo narrativo según coste de adaptación. No asumir API estable ni que se pueda conectar directamente sin un spike.
-- **Talemate (AGPL-3.0)** se evalúa como aplicación íntegra o fuente de patrones de estado/agentes; evitar copiar partes a Noble sin resolver obligaciones de AGPL.
-- El scheduler controla memoria GPU y trabajos; narración primero, imágenes/TTS opt-in o progresivas.
+## Decision
 
-## Alternativas consideradas
+- **Frontend:** React + Vite + TypeScript, with a dedicated visual-novel experience informed by relevant open-source UX patterns.
+- **Backend/orchestration:** Python FastAPI, typed models, migrations, and SQLite, chosen for portability and access to existing ML tools.
+- **LLM adapters:** KoboldCpp for GGUF and streaming/OpenAI-compatible APIs, with Ollama and other providers as supported alternatives.
+- **Image adapter:** ComfyUI over local HTTP and validated saved workflows, rather than embedding the entire diffusion engine.
+- **Speech candidates:** Chatterbox Multilingual and Qwen3-TTS were initial research targets; the first implemented opt-in CPU adapter is Piper. Other providers require individual integration.
+- **Research sources:** evaluate MIT-licensed Open Dungeon patterns; assess Talemate (AGPL-3.0) separately instead of copying its code without satisfying license obligations.
+- **Resources:** narrate first, schedule images/speech on demand, and measure the real memory budget before concurrent GPU use.
 
-1. **Fork completo de Talemate**: fuerte en memoria pero licencia y estructura de agentes más intrusivas; candidato para experimento, no núcleo fijado.
-2. **Fork completo de Open Dungeon**: MIT y buen ciclo narrativo; es Next.js/Node, modificarlo para un backend Python separado puede superar el coste de adaptar solo su UX. Spike medirá.
-3. **SillyTavern como frontend final**: potente pero orientado a chat y AGPL; útil como referencia, no ideal para UX propia.
-4. **Ollama como único proveedor**: fácil Colab/local, pero política explícita de carga y GGUF personalizado puede variar; conservar adapter.
-5. **Monolito de IA con LLM+SDXL+TTS cargados**: falla en 12/16GB; rechazado.
+## Alternatives considered
 
-## Consecuencias
+1. Forking **Talemate**: useful narrative memory concepts, but higher adaptation and licensing cost.
+2. Forking **Open Dungeon**: permissive license but a different Next.js/Node stack; a focused UX adaptation may be cheaper.
+3. Using **SillyTavern** as the final UI: capable, but chat-centric and subject to its own licensing obligations.
+4. Using **Ollama only**: simpler initially, but less explicit control over particular GGUF and runtime policies.
+5. Loading LLM, diffusion, and TTS into one monolith: unsuitable for modest VRAM targets without robust resource scheduling.
 
-Positivas: independencia del proveedor, fácil experimentación, menor bloqueo entre imagen/voz/texto, recursos reutilizables. Costes: integrar múltiples procesos y mantener contratos, métricas, seguridad, licencias. El backend propio sí contiene lógica nueva no trivial: estado/ramas, memoria, asset planner y scheduler.
+## Consequences
 
-## Evidencia necesaria para confirmar ADR
+Benefits: provider independence, incremental integration, reusable assets, and separately testable narrative/image/speech systems. Costs: orchestrating multiple processes, contracts, telemetry, permissions, upgrades, and licenses. Noble AI still needs substantial original logic for world state, branches, memory, planning, and resource management.
 
-- Spike Open Dungeon: medir esfuerzo de extraer/reusar controles VN legalmente y sin ruptura.
-- Spike API KoboldCpp: streaming real, cancelación, rendimiento en 12/16GB.
-- Spike ComfyUI: manifest/cola y coherencia de personaje.
-- Spike Chatterbox: calidad ES-LA, latencia y consumo de VRAM.
-- Colab: tests sin UI externa en runtime gratuito y pruebas GPU solo cuando sea asignada.
+## Evidence required
 
-Modificar la ADR y crear una nueva ADR si cambia el stack.
+- Evaluate reusable VN controls and compliance with upstream licenses.
+- Measure real KoboldCpp streaming, cancellation, and 12/16 GB behavior.
+- Validate ComfyUI model inventory, job flow, and character-consistency behavior.
+- Assess real speech pronunciation, latency, and VRAM use for target languages.
+- Run reproducible Colab experiments when resources are assigned, without making Colab the required UI.
+
+Update this ADR or add a successor when major stack decisions change.
