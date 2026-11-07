@@ -1,184 +1,191 @@
-# Diseño de generación progresiva de ilustraciones
+# Progressive illustration generation — Noble AI
 
-Estado: **P1.4 — adaptador ComfyUI local bajo demanda implementado**, workflow estándar integrado y almacenamiento WebP. Detección semántica avanzada de escenas, planner inteligente, validación GPU de LoRAs, ControlNet, workers remotos de imagen y scheduler multi-GPU siguen pendientes. **P1.5** agrega detección heurística de localizaciones, galería versionada y fichas visuales.
+**Status:** the P1.4 on-demand local ComfyUI adapter and WebP storage are implemented; P1.5 added heuristic location detection, a versioned gallery, and visual-character profiles. Advanced semantic scene detection, proactive planning, physical GPU validation, ControlNet, remote image workers, and a full multi-GPU scheduler remain open.
 
-## Contrato de producto
+## Product contract
 
-**No se generarán todos los assets de una historia al crearla.** Las escenas se desarrollan con generación bajo demanda, reutilización de fondos/sprites y capacidad de continuar solo con texto. Una generación fallida nunca detiene el motor narrativo.
+**Do not generate every asset when a story is created.** In the current implementation, images are generated **on request**, with reusable backgrounds/sprites and fully functional text-only play. A failed image request must never block the narrative engine. The separately specified illustrated-story preparation wizard is future work; it must not be confused with existing on-demand behavior.
 
-## Activos visuales
+## Visual asset types
 
-- **background**: lugar + clima + hora + estilo, reutilizable entre escenas.
-- **portrait**: apariencia canónica de un personaje, con asset original de referencia.
-- **sprite**: personaje separado/fondo transparente, pose y expresión; deriva de identidad.
-- **cg**: ilustración de una escena extraordinaria, opcional y más costosa.
-- **thumbnail**: miniatura de historia, generada una vez o por petición.
-- **expression variant**: variación rápida de un sprite existente cuando es viable.
+- **background:** reusable location + weather + time + art style.
+- **portrait:** canonical character appearance with source reference.
+- **sprite:** transparent-background character with pose/expression tied to identity.
+- **cg:** special event illustration, optional and more expensive.
+- **thumbnail/cover:** editorial image for a story, once or on request.
+- **expression variant:** alternate expression derived from an existing sprite where feasible.
 
-Cada recurso tiene `asset_id`, hash SHA-256, `story_id`, `character_id` si aplica, `appearance_revision`, `scene_revision`, modelo/hash, seed, prompt, negative prompt, LoRAs, dimensiones, workflow_hash, timestamp y licencia de modelo si corresponde.
+Asset provenance should include `asset_id`, SHA-256, `story_id`, optional `character_id`, appearance/scene revisions, model/hash, seed, prompts, negatives, LoRA settings, dimensions, workflow hash, timestamp, and model license where relevant.
 
-## Reglas de planificación
+## Planning policy
 
-| Evento | Acción por defecto |
+| Story event | Intended default |
 |---|---|
-| Primer acceso a historia sin ilustración | Mostrar fondo neutro; **no generar automáticamente en P1.4** |
-| Llega un nuevo personaje nunca visto | Reutilizar retrato si existe; sino planificar sprite al revelarse visualmente |
-| Personaje cambia solo de emoción | Usar variante existente; generar solo si se pidió expresamente o falta una variante importante |
-| Se cambia de localización | Pendiente: detector de escena. **No genera automáticamente todavía** |
-| Se avanza un diálogo sin cambios visuales | **No generar imagen** |
-| Jugador pulsa "Ilustrar esta escena" | Crear/reusar imagen por revisión con prioridad explícita |
-| Cambio de vestuario/forma | Incrementar `appearance_revision` y crear variante nueva si es visible |
-| TTS pedido | No afecta al planner de imágenes |
-| Reintentar turno | Nueva rama; no sobrescribir assets de rama antigua |
+| Open story without art | Display neutral background; **no automatic render in P1.4** |
+| Introduce a new character | Reuse an existing portrait/sprite; plan new art only when visually revealed |
+| Change only an emotion | Switch an existing expression; generate only on explicit request or later approved policy |
+| Change location | Heuristic detector records a scene; **does not automatically generate art yet** |
+| Advance dialogue without a visual change | **Do not generate an image** |
+| Player clicks **Illustrate scene** | Generate or reuse versioned art with explicit priority |
+| Outfit/appearance changes | Increase `appearance_revision`; produce a new version when appropriate |
+| Player requests TTS | Does not affect the image planner |
+| Retry a turn | Fork branch; preserve assets from the previous branch |
 
-**Firma de caché**: hash normalizado de `art_style_version + location_id + lighting/weather + appearance_revision(s) + pose/expression + camera + image_kind + workflow_version`; se debe impedir que cambios irrelevantes (por ejemplo un simple adverbio de narración) disparen imagen.
+An intended cache signature covers `art_style_version + location_id + lighting/weather + appearance_revision(s) + pose/expression + camera + image_kind + workflow_version`. Irrelevant wording changes in narration must not trigger a new illustration.
 
-La nueva generación tiene estados `missing / queued / running / ready / failed / cancelled`. UI conserva asset anterior hasta que se valide el nuevo. Si ya hay trabajo equivalente, reusar `job_id` y nunca encolar duplicado.
+Desired job states: `missing / queued / running / ready / failed / cancelled`. Keep the previous image visible until the new result is validated. Deduplicate equivalent jobs by stable IDs and signatures.
 
-## Identidad consistente
+## Character consistency
 
-Ficha visual canónica en lenguaje natural y atributos estructurados: color de cabello, ojos, accesorios, orejas/cuernos si aplican, atuendo, paleta y proporciones. Mantener referencia visual `portrait`, LoRA autorizado o workflow IPAdapter/ControlNet **solo cuando los nodos y checkpoints estén instalados**. No dar por hecho que un prompt solo logra consistencia perfecta. Las diferencias entre imágenes se auditan visualmente.
+Canonical visual DNA describes hair/eye colors, accessories, ears/horns, clothing, proportions, and palette. Use approved reference portraits, compatible LoRA, and IPAdapter/ControlNet **only if the actual nodes/models exist and the relevant request enables them**. Prompt-only conditioning cannot guarantee facial/outfit consistency; review generated scenes.
 
-Para escenas con varios personajes: primero composición, reglas de identidad por personaje, guía de posiciones; si falla la asignación, preferir capas independientes o ilustración simplificada antes que presentar identidades intercambiadas.
+For multi-character compositions, plan cast/positions before rendering. If identity mapping fails, prefer independently layered sprites or simplified art over swapped identities.
 
-## ComfyUI: contrato mínimo
+## Minimum ComfyUI protocol
 
-- Exportar workflow en **formato API**, comprobar `object_info` y nodos disponibles; versionar JSON de workflow.
-- Encolar vía `POST /prompt`, seguir `/ws` o polling, revisar `/history/{prompt_id}`, recuperar mediante `/view`.
-- Guardar bytes con nombre determinado por hash, validar extensión/MIME, dimensiones, tamaño, integridad y hash.
-- Configuración de workers independiente: modelo, LoRA, resolución, pasos, VAE, batch, backend y límite de RAM/VRAM.
-- Imágenes en baja resolución para preview opcional; upscale diferido únicamente a pedido o criterio de calidad explícito.
-- Retries 1–2 con backoff; OOM → marcar `failed:gpu_oom` y sugerir perfil; no bucle infinito.
+- Export workflows in **API format**, verify available `object_info` nodes, and version workflow JSON.
+- Submit with `POST /prompt`, monitor via `/ws` or polling, inspect `/history/{prompt_id}`, and fetch `/view`.
+- Validate bytes, expected MIME, image dimensions, size, integrity, and hash before storing assets.
+- Keep runtime-specific checkpoint, LoRA, resolution, steps, VAE, batch, backend, and RAM/VRAM policies separate.
+- Prefer low-res previews when appropriate; upscale only on explicit request or confirmed quality criteria.
+- Bound retries and backoff; on OOM record `failed:gpu_oom` with actionable profile suggestions rather than looping indefinitely.
 
-## Control de VRAM
+## GPU resource targets
 
-Perfiles 12/16GB con un worker de difusión como máximo; mantener LLM atendible (puede estar parcialmente en CPU). GPU scheduler impide carga simultánea no presupuestada. Si hay poco espacio, el image worker libera memoria tras completar y deja a la escena actual usando assets en RAM del navegador/disco.
+Design 12/16 GB profiles with at most one heavy diffusion job at a time and a narrator that can remain usable (with CPU offload where supported). A future scheduler should avoid unbudgeted simultaneous GPU loads. When appropriate, an owned image worker may release weights after work; browser/disk assets remain available. **This full unload/reallocation policy is not yet implemented.**
 
-## Pruebas
+## Key regression scenarios
 
-- 10 turnos en la misma taberna → **0 imágenes adicionales**, salvo solicitud del usuario.
-- Cambio taberna → bosque → 1 fondo si no existe, 0 si cache hit.
-- Dos solicitudes simultáneas de la misma escena → mismo trabajo y mismo hash.
-- Una imagen que llega tarde a una rama descartada → se archiva, **no se muestra como actual**.
-- ComfyUI offline → historia jugable con fallback visual, job recuperable.
-- Consistencia: prueba de 10 escenas con mismo personaje, evaluación manual de identidad/ropa y metadatos.
+- Ten consecutive turns in the same tavern → **zero extra images** unless explicitly requested.
+- Moving tavern → forest → one background if uncached, otherwise zero new renders.
+- Two requests for an identical scene → one deduplicated job and stable signature.
+- A late image from an abandoned branch → archived, **never displayed as the current scene**.
+- ComfyUI offline → story remains playable and the image error is retryable.
+- Ten scenes with the same character → human review of facial/outfit continuity plus metadata inspection.
 
+## P1.4 — implemented on-demand local API
 
-## P1.4 — API implementada (local, solo bajo demanda)
+- `GET /api/v1/images/config`: read persisted ComfyUI preferences.
+- `PUT /api/v1/images/config`: validate loopback URL, checkpoint, dimensions, steps, CFG, negative prompt, and related settings.
+- `GET /api/v1/images/status`: check local ComfyUI via `GET /models/checkpoints` when inventory is refreshed.
+- `POST /api/v1/stories/{uuid}/illustrate`: request `{"prompt":"...","seed":123}` with optional seed, using standard `CheckpointLoaderSimple → CLIPTextEncode → EmptyLatentImage → KSampler → VAEDecode → SaveImage`.
+- Fetch output with `/view`, validate using Pillow, and save a WebP under `story-assets/{uuid}/scene.webp` only after success.
+- Initial admission policy allows **one simultaneous image request**; otherwise returns 409 to avoid flooding the GPU.
+- Creating, opening, and continuing narrative turns **never automatically calls ComfyUI** in this release. The user explicitly chooses **Illustrate** and a prompt.
+- A failed render never deletes or overwrites the previously valid illustration.
+- Standard nodes cover compatible checkpoint families; Flux/SD3 and customized graphs need appropriate templates. Do not claim universal checkpoint compatibility.
+- Automated ComfyUI-mocked tests validate HTTP flow and actual Pillow image decoding; physical GPU generation still needs its own test.
 
-- `GET /api/v1/images/config`: consulta configuración ComfyUI persistida.
-- `PUT /api/v1/images/config`: valida endpoint HTTP loopback y parámetros, incluido checkpoint, tamaño, pasos, CFG y prompt negativo.
-- `GET /api/v1/images/status`: consulta `GET /models/checkpoints` del ComfyUI local al pulsar «Buscar checkpoints».
-- `POST /api/v1/stories/{uuid}/illustrate`: acepta `{"prompt":"...","seed":123}` (seed opcional), ejecuta el workflow estándar `CheckpointLoaderSimple` → `CLIPTextEncode` → `EmptyLatentImage` → `KSampler` → `VAEDecode` → `SaveImage`.
-- Descarga del resultado mediante `/view`, validación Pillow y guardado WebP en `story-assets/{uuid}/scene.webp`, únicamente cuando el resultado es válido.
-- Cola simple de **una solicitud simultánea**; si está ocupado devuelve 409 en lugar de sobrecargar GPU.
-- El narrador nunca llama a ComfyUI al crear, abrir o continuar historias. El usuario debe pulsar «Ilustrar» y escribir el prompt.
-- La generación que falla no elimina ni sobrescribe una ilustración previa.
-- Workflow compatible principalmente con checkpoints que soportan los nodos estándar. Flux/SD3 y pipelines personalizados requieren plantillas específicas; no se afirma soporte universal.
-- Los tests con ComfyUI simulado validan flujo HTTP y una imagen real decodificada mediante Pillow; falta probar un motor ComfyUI con GPU física.
+## P1.5 — persisted scenes and versioned gallery
 
+**Scene records:** SQLite `visual_scenes` includes `id`, `story_id`, `location`, `source_turn_id`, detection source (`initial`, `heuristic`, `confirmed`), and timestamp. After committing each narrative turn, heuristics inspect place names and past-tense movement/entry verbs for a scene transition. Obvious quoted dialogue and negation are excluded. The user can confirm/correct the location in Gallery. This is regex-based, **not a semantic LLM detector**.
 
-## P1.5 — modelo de datos y cambios entregados
+**Immutable illustrations:** SQLite `visual_assets` includes UUID, associated scene, source, final prompt, checkpoint, seed, SHA-256, and deterministic render settings signature. Files are stored under `story-assets/<story_id>/images/<asset_uuid>.webp`; `scene.webp` remains a compatibility pointer. `visual_current` chooses what the reader displays. Changing the active version does not delete earlier files. Legacy stories with only `scene.webp` migrate when `visual-state` is accessed.
 
-**Registro de escenas:** SQLite `visual_scenes` almacena `id`, `story_id`, `location`, `source_turn_id`, `detection` (`initial`, `heuristic`, `confirmed`) y fecha. Cada turno guardado se inspecciona **después** de producir narración: solo viajes/entradas con verbos en pasado y nombres de lugares conocidos disparan una nueva escena. No se consulta otro LLM ni se encola una imagen. Diálogos citados y negaciones evidentes se excluyen. El usuario puede confirmar o corregir el lugar en la galería. Como clasificador basado en expresiones regulares, todavía puede perder o interpretar mal cambios sutiles.
+**Exact render cache:** SHA-256 over scene ID, enriched prompt, checkpoint, diffusion configuration, seed, and workflow version. Cache lookup applies when the user specifies a seed; random seeds create fresh versions. A valid matching result can be reused offline. Scene and explicitly named character changes affect the signature.
 
-**Ilustraciones inmutables:** SQLite `visual_assets` incluye UUID, escena asociada, origen, prompt final, checkpoint, seed, SHA256 y firma determinista de configuración. Los archivos se conservan en `story-assets/<story_id>/images/<asset_uuid>.webp`; `scene.webp` funciona como puntero de compatibilidad al asset activo. `visual_current` determina qué imagen ve el lector. Cambiar la imagen activa no borra versiones anteriores. Las historias que solo tengan `scene.webp` migran al acceder a `visual-state`.
+**Textual visual identity:** `visual_characters` stores name, appearance, clothing, traits, and revision. Only characters explicitly mentioned by name in the prompt are included in free-form illustration context. This original layer alone has no visual embeddings, FaceID, ControlNet, or guarantees of matching clothing or faces.
 
-**Firma exacta de caché:** SHA256 de `scene_id + prompt enriquecido + checkpoint + configuración de difusión + seed + workflow_version`. Solo se busca la caché cuando el usuario proporciona una semilla; con semilla aleatoria se genera una versión nueva. Si el motor no está disponible y hay un recurso válido idéntico, se reutiliza sin conexión. Cambiar escenario o atributos de personaje nombrado invalida la firma.
+**Forks:** cloning a story copies relevant scenes/media/profiles into an independent namespace. A branch started at an earlier turn cannot show images belonging only to later events on the original branch.
 
-**Identidad textual:** SQLite `visual_characters` almacena nombre, apariencia, vestuario, rasgos, revisión. Solo las fichas cuyos nombres aparecen en el prompt se incorporan a la escena. No hay embeddings visuales, IPAdapter, referencias de imagen, ControlNet ni garantías de rostro/ropa; las fotos consistentes deberán comprobarse con GPU real.
+### P1.5 API
 
-**Ramas de historia:** al bifurcar se clonan los recursos aplicables, escenas anteriores y fichas en espacio independiente. Una rama iniciada en un turno antiguo no muestra imágenes de escenarios posteriores. El canon y los perfiles son editables por rama.
+- `GET /api/v1/stories/{id}/visual-state`: scenes, current scene, gallery, visual-character profiles.
+- `PUT /api/v1/stories/{id}/scene`: confirm location without image generation.
+- `POST /api/v1/stories/{id}/visual-characters`; `PUT /.../visual-characters/{character_id}`: manage appearances.
+- `POST /api/v1/stories/{id}/illustration-prompt`: preview enriched prompt with **no inference**.
+- `GET /api/v1/stories/{id}/gallery/{asset_id}`: fetch story-owned WebP.
+- `POST /api/v1/stories/{id}/gallery/{asset_id}/select`: activate a saved version.
+- `POST /api/v1/stories/{id}/illustrate`: return `asset_id` and `cached` while retaining version history.
 
-### Rutas de la API P1.5
+Tests use real SQLite/Pillow for migration, restoration, versioning, branch isolation, and story ownership, with simulated ComfyUI transport and desktop/mobile Playwright. **These are not physical GPU benchmarks.**
 
-- `GET /api/v1/stories/{id}/visual-state`: devuelve escenas, escena actual, galería y fichas.
-- `PUT /api/v1/stories/{id}/scene`: confirma una ubicación, sin generar imagen.
-- `POST /api/v1/stories/{id}/visual-characters` y `PUT /.../visual-characters/{character_id}`: crea/actualiza rasgos.
-- `POST /api/v1/stories/{id}/illustration-prompt`: muestra el prompt enriquecido, sin inferencia.
-- `GET /api/v1/stories/{id}/gallery/{asset_id}`: entrega una versión WebP perteneciente a esa historia.
-- `POST /api/v1/stories/{id}/gallery/{asset_id}/select`: selecciona una versión guardada.
-- `POST /api/v1/stories/{id}/illustrate`: devuelve además `asset_id` y `cached`; cada respuesta nueva conserva su propia versión.
+## ComfyUI img2img with stored gallery art
 
-**Pruebas:** SQLite y Pillow reales para versión, sustitución, restauración, aislamiento entre historias, migración y bifurcación; transporte ComfyUI simulado para difusión/retorno y reutilización; Playwright desktop/móvil para la interfaz. **No son benchmarks de GPU.**
+An existing WebP asset **from the same story** may become the reference for a new illustration. Standard graph:
 
+```text
+LoadImage → VAEEncode → KSampler (configurable denoise) → VAEDecode → SaveImage
+```
 
-## ComfyUI img2img con una imagen guardada
+- In **Library → Gallery**, import/select a previously saved illustration. Under **Illustrate**, pick a **Reference image** and choose transformation strength between **20% and 95%**. Lower denoise generally preserves more composition.
+- Verify story ownership and stored SHA-256 before uploading a checkpoint-sized PNG through ComfyUI `POST /upload/image`; validate returned filename, then submit the img2img graph to `POST /prompt`.
+- Results receive independent version IDs and never overwrite the source. The cache signature includes reference SHA-256 and denoise.
+- This is **classic img2img**, not IPAdapter, InstantID, FaceID, or LoRA training. Facial identity is not guaranteed. The chosen checkpoint still must support the standard VAE nodes.
 
-Se puede usar cualquier imagen WebP de la galería de **la misma historia** como referencia visual de una nueva ilustración. Esta función utiliza únicamente nodos estándar: `LoadImage` → `VAEEncode` → `KSampler` (denoise configurable) → `VAEDecode` → `SaveImage`.
+### NVIDIA free-VRAM monitoring
 
-- En **Biblioteca → Galería**, importa una ilustración o selecciona una versión archivada. En el formulario «Ilustrar» selecciona «Imagen de referencia» y ajusta **Transformación de la referencia** entre 20% y 95%. Un valor bajo busca conservar más su composición.
-- El backend verifica que la imagen pertenece a la misma historia y que el SHA256 almacenado coincide con sus bytes actuales. Después prepara un PNG al tamaño del checkpoint, lo sube al ComfyUI local mediante `POST /upload/image`, comprueba el nombre devuelto y envía el grafo img2img a `POST /prompt`.
-- Las imágenes resultantes conservan su propia versión independiente; la fotografía de referencia nunca se sobrescribe. El cache de inferencia incorpora el SHA256 de referencia y el nivel de denoise.
-- La identidad visual aproximada deriva del contenido de la referencia y las instrucciones del prompt. Esto es **img2img clásico, no IPAdapter, InstantID, FaceID ni entrenamiento LoRA**. No se promete preservación exacta del rostro.
-- No se exige realizar nuevas instalaciones de nodos personalizados, pero el checkpoint seleccionado sí debe ser compatible con los nodos estándar y VAEEncode.
+With `nvidia-smi`, Noble AI can report system-level free MiB. **Settings → Images → GPU memory and admission** exposes `Monitor only` or `Block when free VRAM falls below reserve`, GPU index, and a minimum-free threshold. The reserve is a user-defined bound, **not** model consumption prediction.
 
-### Supervisión de VRAM por GPU
+- `monitor` (default): observe without blocking.
+- `guard`: return HTTP 409 before contacting ComfyUI when observed VRAM is below threshold.
+- A per-request **Ignore reserve only this time** option can bypass the policy without persisting a new preference.
+- Missing `nvidia-smi`: return `unknown`, rather than blocking CPU or non-NVIDIA providers.
+- Monitoring does not unload models, allocate GPU memory, terminate processes, forecast checkpoint consumption, or coordinate unrelated software. See [resource policy](RECURSOS_GPU.md).
 
-Con `nvidia-smi` disponible, Noble AI puede leer la VRAM global libre en MiB. **Configuración → Imágenes y voz → Memoria GPU y admisión** permite elegir `Solo supervisar` o `Bloquear si hay menos VRAM que la reserva`, además del índice de GPU y el mínimo libre. La reserva es un umbral definido por el usuario, no una estimación del consumo de un modelo.
+## Per-scene persistent visual plan
 
-- En `monitor` (predeterminado) muestra los valores y no bloquea.
-- En `guard` devuelve HTTP 409 antes de contactar ComfyUI si la VRAM observada es inferior al mínimo.
-- La opción «Ignorar la reserva mínima de VRAM solo para esta solicitud» permite intentar una generación específica. La opción no altera los valores persistidos.
-- Si `nvidia-smi` no está disponible, el estado es `unknown` y no se bloquea a los proveedores CPU o no NVIDIA.
-- La supervisión NO descarga modelos, libera la VRAM, detiene procesos, predice consumo de un checkpoint ni coordina VRAM con otro programa. Un scheduler multiproceso con offload seguirá requiriendo una implementación independiente.
+The Gallery contains explicit editable scene **composition/action**, shot (wide/medium/close-up), lighting, atmosphere, up to six visible cast members, and an optional protagonist reference. This is manually curated, not background LLM semantic classification.
 
+- `scene_plans` uses scene UUID; changing location opens its own plan.
+- `GET /api/v1/stories/{id}/scene-plan` returns a plan or empty defaults without generating.
+- `PUT /api/v1/stories/{id}/scene-plan` validates story-owned character IDs, presence constraints, and duplicate rejection.
+- `POST /api/v1/stories/{id}/scene-plan/preview` builds a prompt **without inference**. Include names/traits only for explicitly selected cast.
+- `PUT /visual-characters/{id}/reference` sets/clears an owned gallery asset with `{"asset_id":"uuid"}` or `null`; verifies ownership/SHA-256.
+- A saved plan can use a character's registered reference through img2img unless an explicit request specifies a different image. The response reports the actual `reference_asset_id`.
+- Forks copy eligible plans with remapped scene, cast, and asset IDs; excluded future scenes remain isolated.
 
-## Plan visual persistente por escenario
+The basic reference mechanism supplies spatial conditioning, not true multi-character region control or biometric identity.
 
-La galería incluye ahora un editor para **composición y acción**, plano (general, medio o primer plano), iluminación, atmósfera, un reparto visible de hasta seis personajes y un protagonista de referencia. El plan es explícito y editable; no es una detección semántica de IA ni se ejecuta otro LLM en segundo plano.
+## Multi-layer stage director — Argon requirements (November 5, 2026)
 
-- Cada plan está asociado al UUID de una escena en la tabla `scene_plans`; cambiar de ubicación abre un plan propio en blanco.
-- `GET /api/v1/stories/{id}/scene-plan` devuelve un plan existente o valores iniciales sin crear imágenes.
-- `PUT /api/v1/stories/{id}/scene-plan` actualiza el plan, valida que cada ID de personaje pertenezca a esa historia y que la referencia esté entre los personajes visibles. No se admiten duplicados.
-- `POST /api/v1/stories/{id}/scene-plan/preview` compone un prompt sin inferencia. Los nombres y atributos de los integrantes del reparto se incorporan al prompt únicamente cuando los selecciona el usuario.
-- Cada personaje puede asociar una versión visual canónica de la galería mediante `PUT /visual-characters/{id}/reference` con `{"asset_id":"uuid"}` o `{"asset_id":null}`. Se valida propiedad y SHA256 del archivo.
-- Cuando un plan referencia a un personaje con una imagen asignada, ComfyUI puede utilizar automáticamente esa referencia mediante img2img, salvo que la solicitud indique otra imagen explícita. La respuesta informa `reference_asset_id` que realmente se utilizó.
-- La clonación de una historia copia los planes de las escenas conservadas y remapea todos los IDs de personajes y arte. Los planes de escenas que quedaron fuera de una rama no se copian.
+**Decision:** prefer background/sprite reuse over a new full-frame render on every turn. Existing Gallery, Creator foreground, and scene-plan features are a foundation—not a finished emotional stage director.
 
-La referencia sigue utilizando el img2img básico de ComfyUI: una fotografía de referencia es condicionamiento espacial, pero no un identificador de rostro ni un control multi-personaje como IPAdapter. La vinculación sirve para continuidad explícita, no para prometer identidad perfecta.
+Target `VisualStageState`: `location_id`, `time_of_day`, `weather`, `lighting`, `camera_shot`, `visible_characters[]` (ID, position, expression, voice), and `is_climactic_cg`. The director should choose deterministically between:
 
-## Director escénico multicapa — requisitos de Argon (2026-11-05)
+- `REUSE_BACKGROUND`: use matching background; no ComfyUI call.
+- `UPDATE_SPRITE_EMOTION`: change only the relevant sprite/expression, not the background.
+- `GENERATE_NEW_BACKGROUND`: queue missing background while retaining the old scene, then crossfade when ready.
+- `GENERATE_EVENT_CG`: render exceptional art only on narrative triggers or explicit request.
 
-**Decisión de producto:** priorizar reutilización de fondo y sprites sobre generar una imagen completa por cada turno. Las capacidades actuales de galería, fondo/primer plano del creador y plan escénico son una base, **no** un director emocional con caché por ubicación ni una hoja de sprites por NPC.
+Proposed background signature: `(location_id, time_of_day, weather, camera_shot)` plus asset revision. Expression sets `neutral/joy/anger/sadness/surprise` must tie to visual DNA, shared seed, optional LoRA, and character identity. `images.py` should accept validated family-specific ComfyUI templates, applying references only with consent. Do not promise perfect face consistency.
 
-El contrato objetivo será un `VisualStageState` con `location_id`, `time_of_day`, `weather`, `lighting`, `camera_shot`, `visible_characters[]` (ID, posición, expresión, voz) y `is_climactic_cg`. El planificador deberá emitir una de estas decisiones deterministas:
+**Acceptance:** ten turns in one place trigger no new background; emotion change switches sprite without diffusion; location change transitions without blocking text; desktop/mobile tests; GPU work is serialized without leaving unnecessary owned weights resident. See [TODO](../TODO.md) and [Argon audit §§12, 19](ARGON_AUDITORIA.md).
 
-- `REUSE_BACKGROUND`: mismo escenario/iluminación y recurso existente; no invocar ComfyUI.
-- `UPDATE_SPRITE_EMOTION`: cambiar solo sprite del personaje y énfasis visual, sin tocar el fondo.
-- `GENERATE_NEW_BACKGROUND`: no existe fondo compatible; conservar el anterior durante cola y fundir al concluir.
-- `GENERATE_EVENT_CG`: imagen extraordinaria únicamente por evento narrativo o petición explícita.
+## Creator visual DNA and expression sheets
 
-La clave de caché prevista será `(location_id, time_of_day, weather, camera_shot)` con revisión del activo. Los sprites por expresión `neutral/joy/anger/sadness/surprise` se vincularán a identidad y apariencia inmutable (`visual_dna`, seed, LoRA opcional). `images.py` aceptará plantillas validadas para diferentes familias de ComfyUI y cargará referencias únicamente con consentimiento del usuario; no prometer consistencia facial perfecta.
+`CreatorCharacter.visual_dna` stores identity tags, optional seed, LoRA filename/strength. Identity tags enter image prompt composition **only** for selected NPCs; they do not modify the narrator's story instructions. NPC seed metadata does not replace the render seed. LoRAs affect graph loading only with explicit activation.
 
-**Criterio de aceptación:** 10 turnos sucesivos en una misma ubicación no invocan regeneración de fondo; un cambio de emoción actualiza el sprite sin llamada a ComfyUI; al cambiar de lugar, transición visible sin bloquear narración; completar QA desktop y mobile. Control de GPU serializado, sin dejar pesos innecesarios residentes. Ver [TODO](../TODO.md) y [auditoría §§12, 19](ARGON_AUDITORIA.md).
+`CreatorMediaService.import_expression_sheet` transforms a transparent horizontal (1×5) or vertical (5×1) PNG/WebP into `neutral/joy/anger/sadness/surprise` variants associated with a specific NPC. It uses transactional SQLite and cleans newly written files on failure. Manually imported sheets remain supported; there is also an optional reviewed/approved AI draft workflow. Actual region conditioning, perfect facial identity, and physical GPU continuity validation remain open.
 
-## ADN visual de Creator y hoja de sprites local
+### Selective visual DNA in prompts
 
-`CreatorCharacter.visual_dna` registra etiquetas inmutables de identidad (una vez fijadas), semilla opcional y nombre/intensidad de LoRA. Las etiquetas se incorporan al prompt visual compuesto solo para NPC seleccionados, sin alterar instrucciones del narrador. Las semillas de NPC permanecen como metadatos y no reemplazan la semilla del render. Los LoRAs se cargan en el workflow únicamente mediante activación explícita de la opción al ilustrar. Los proveedores existentes conservan sus contratos.
+Visual DNA contributes textual cues to the positive prompt only when a creator explicitly illustrates a scene. In free-form mode, detect whole-word NPC names in the request; in a saved scene plan, include only cast members linked by UUID and currently selected. Both modes preserve base gallery prompts and offer no-GPU previews. The text affects the cache signature but does not silently change seed, LoRA, or the diffusion graph. Editing identity metadata never rewrites past illustrations.
 
-`CreatorMediaService.import_expression_sheet` convierte bajo demanda un PNG/WebP alfa horizontal (1×5) o vertical (5×1) en cinco variantes `neutral/joy/anger/sadness/surprise` de un NPC identificado; cada variante sigue la caché editorial y el lector multicapa existentes. Todas las inserciones son una transacción SQLite con limpieza de archivos si se produce un error. La hoja importada manual continúa disponible; ahora también existe generación individual de cinco expresiones IA en borradores que requieren revisión y aprobación explícitas. IPAdapter/ControlNet, condicionamiento regional, segmentación semántica de calidad y pruebas de continuidad de identidad en GPU real siguen pendientes.
+## Real opt-in LoRAs with versioned provenance
 
-### Inclusión selectiva de ADN en ilustraciones
+`POST /illustrate` optionally accepts `apply_character_loras=true`. LoRAs derive from story-owned NPC records present in the plan or free-form request. Noble AI queries ComfyUI's LoRA inventory and `LoraLoader`, chains MODEL/CLIP, and uses the standard graph when disabled.
 
-Las etiquetas de apariencia de `CreatorCharacter.visual_dna` ahora participan como **texto** en el prompt positivo de ComfyUI cuando el autor pide ilustrar una escena. En modo libre se seleccionan únicamente NPC cuyo nombre aparece como palabra completa en la solicitud. En modo de plan de escena guardado solo se incluyen NPC enlazados por ID a fichas visuales explícitamente presentes. Ambos modos conservan los prompts base de Galería y ofrecen vista previa sin GPU. La firma de caché incorpora el texto resultante; no altera semilla, LoRA ni el grafo de difusión. Un cambio de identidad visual no reescribe imágenes existentes.
+Renders persist LoRA names and strengths in `visual_assets.render_details_json`, exposed in Gallery and retained through forks/backups. Multi-LoRA loading affects the **whole** model, not separate canvas regions. ComfyUI inventory does not provide file SHA-256; replacing weights while keeping a filename can defeat the cache. See [LoRA limitations](COMFY_LORAS.md).
 
-## LoRAs reales, opt-in, y procedencia por versión
+## AI expression drafts with transparency and approval
 
-La solicitud `POST /illustrate` permite activar `apply_character_loras=true`. Las fichas Creator proporcionan nombre de archivo/intensidad, y solo se toman NPC de la historia que estén seleccionados por plan visual o mencionados en el prompt libre. Se consulta el catálogo instalado de ComfyUI y `LoraLoader`, se conectan los nodos de modelo y CLIP y se mantiene intacto el flujo de imágenes cuando el checkbox está apagado. Los renders guardan sus LoRAs y peso en `visual_assets.render_details_json`, visibles desde Galería y conservados en respaldos/bifurcaciones.
+Creator-requested expression generation renders five separate portraits through ComfyUI with shared checkpoint/base seed/style/visual DNA and optional reference via img2img and an NPC-owned installed LoRA. `comfy_runtime.py` supplies the protocol and `images.lock` + VRAM reserve serialize GPU operations.
 
-La opción es manual. Aplicar varios LoRAs afecta el modelo completo, no regiones separadas del lienzo, y no hay comprobación SHA256 de los pesos instalados. Si un archivo cambia bajo el mismo nombre, la caché no puede detectarlo. Para instalación, limitaciones y pruebas ver [Diseño de integración y límites](COMFY_LORAS.md).
+Default `sprite_cutout.py` uses **local chroma-green extraction**, not a neural segmentation model; it demands a predominantly green border-connected background, fully visible subject, plausible coverage, and actual alpha output. Poor candidates are rejected.
 
-## Borradores de sprites IA con transparencia y revisión
+Saved previews **never become reader assets without creator approval**. The transactional expression importer publishes five foreground variants, with `source=ai_reviewed` and per-expression provenance in exports/forks. See [sprite drafts](COMFY_SPRITE_DRAFTS.md).
 
-Se añade un flujo independiente de ilustrar fondos: por solicitud del creador, cinco expresiones se renderizan en ComfyUI como retratos individuales, usando el mismo checkpoint, semilla base, estilo y ADN visual. Soporta referencia del catálogo de la historia (img2img) y un LoRA propio del NPC tras verificar catálogo/nodo. El protocolo de ComfyUI es compartido por `comfy_runtime.py`; la política de reserva VRAM y el candado global `images.lock` impiden ejecuciones concurrentes con ilustraciones normales.
+## Optional IPAdapter identity guidance
 
-La transparencia es una **extracción local de croma verde** (`sprite_cutout.py`) y no una red segmentadora: se exige fondo mayoritariamente verde conectado con el borde, personaje completo dentro del lienzo, cobertura visible moderada y transparencia real. Se rechazan fondos complejos, personas cortadas o vacíos en lugar de importarlos sin revisión. Los cinco previews guardados no afectan al lector hasta recibir aprobación editorial; `CreatorMediaService.import_expression_sheet` publica las cinco variantes como una transacción SQLite. Se almacena `source=ai_reviewed` y procedencia normalizada por expresión, preservada en backups/forks y mostrada en la biblioteca. Ver [guía de generación](COMFY_SPRITE_DRAFTS.md).
+For draft sprites, `reference_mode=ipadapter` uses installed `IPAdapterUnifiedLoader + IPAdapter` with an owned gallery image or approved sprite for the same NPC. It conditions a new composition rather than reusing the reference as img2img latent input. Optional LoRA is supported with node/model preflight; nothing runs automatically on story turns.
 
-## Consistencia de NPC mediante referencia IPAdapter (opt-in)
+Published provenance records preset, strength, and reference digest in `generation_json`. Five variants are compared for silhouette scale/position before approval; significant differences require explicit human acceptance. **This is not facial identity verification or neural matting.**
 
-Para sprites IA, `reference_mode=ipadapter` soporta la cadena del plugin local `IPAdapterUnifiedLoader + IPAdapter`, con referencia de Galería o sprite propio del mismo NPC, sin usar la misma imagen como latent img2img. Disponible con LoRA complementario y preflight de nodos/modelos instalados, nunca automático al jugar. Los activos aprobados guardan el preset, fuerza y digest de referencia en `generation_json`. Las cinco variantes se contrastan por geometría de silueta (desplazamiento y tamaño) antes de aprobar, con aceptación humana explícita de diferencias; no es comparación de rostros ni IA de segmentación.
+## Optional neural sprite matting (RMBG/BiRefNet)
 
-## Matting neuronal de sprites (RMBG/BiRefNet)
+Besides default green-screen extraction, drafts support `neural_rmbg2`, `neural_birefnet_portrait`, and `neural_birefnet_matting` when ComfyUI-RMBG nodes/weights are installed and discoverable.
 
-Además del recorte verde predeterminado, los borradores admiten `neural_rmbg2`, `neural_birefnet_portrait` y `neural_birefnet_matting`. Se prueba primero el inventario de archivos y los nodos ComfyUI-RMBG. El grafo exporta IMAGE y MASK mediante dos `SaveImage` de una única generación. Noble compone el alfa con la máscara original de grises y aplica criterios de cobertura, borde y tamaño; no asume que ComfyUI conserve los cuatro canales. El sistema guarda método y modelo en procedencia `comfy-sprite-v3/v4`, respeta las aprobaciones editoriales y no se ejecuta al avanzar turnos. No se ha medido rendimiento ni precisión de segmentación con GPU.
+The graph exports **IMAGE and MASK as separate SaveImage outputs from one job**; Noble AI creates a soft-alpha PNG from the processed image and original grayscale mask, validating bytes, bounds, edges, and coverage instead of assuming ComfyUI preserves four channels.
+
+Provenance `comfy-sprite-v3/v4` records the matting method/model, preserves approval requirements, and survives exports/forks. These operations do not run during ordinary narration. Physical GPU latency and real segmentation accuracy have **not** been measured.
