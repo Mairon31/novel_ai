@@ -4,6 +4,16 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   let selected = '';
   let writes = 0;
   let previewCalls = 0;
+  let parameterWrites = 0;
+  let synthesis = { length_scale: 1, noise_scale: 0.667, noise_w: 0.8 };
+  await page.route('**/api/v1/tts/synthesis-config', async route => {
+    if (route.request().method() === 'PUT') {
+      synthesis = route.request().postDataJSON();
+      parameterWrites++;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify(synthesis) });
+  });
   await page.route('**/api/v1/tts/preview', async route => {
     previewCalls++;
     const payload = route.request().postDataJSON();
@@ -56,8 +66,25 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveValue('voice-b.onnx');
   expect(writes).toBe(1);
   expect(previewCalls).toBe(0);
+  await expect(page.getByLabel('Velocidad Piper')).toHaveValue('1');
+  await page.getByLabel('Velocidad Piper').fill('0.85');
+  await page.getByLabel('Ruido de voz Piper').fill('0.75');
+  await page.getByLabel('Ruido de fonemas Piper').fill('0.95');
+  await expect(page.getByRole('button', { name: 'Probar voz seleccionada' })).toBeDisabled();
+  await expect(page.getByText('Guarda los parámetros nuevos antes de probar la voz.')).toBeVisible();
+  await page.getByRole('button', { name: 'Guardar parámetros Piper' }).click();
+  await expect(page.getByText('Parámetros Piper guardados para las próximas síntesis.')).toBeVisible();
+  expect(parameterWrites).toBe(1);
+  expect(synthesis).toEqual({ length_scale: 0.85, noise_scale: 0.75, noise_w: 0.95 });
   await page.getByRole('button', { name: 'Probar voz seleccionada' }).click();
   await expect(page.getByLabel('Reproducir prueba de voz')).toBeVisible();
   await expect(page.getByText('Muestra generada. Pulsa Reproducir para escucharla.')).toBeVisible();
+  expect(previewCalls).toBe(1);
+  await page.reload();
+  await openSettings();
+  await expect(page.getByLabel('Velocidad Piper')).toHaveValue('0.85');
+  await expect(page.getByLabel('Ruido de voz Piper')).toHaveValue('0.75');
+  await expect(page.getByLabel('Ruido de fonemas Piper')).toHaveValue('0.95');
+  expect(parameterWrites).toBe(1);
   expect(previewCalls).toBe(1);
 });
