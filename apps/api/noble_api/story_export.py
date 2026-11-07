@@ -47,6 +47,13 @@ def _safe_text(text: object) -> str:
     return html.escape(str(text or ""), quote=True)
 
 
+def _story_language(narrative, story_id: str) -> str:
+    """Keep export metadata aligned with the language of the authored story."""
+    creator = getattr(narrative, "creator", None)
+    language = creator.get(story_id).get("language") if creator else None
+    return language if language in {"es-419", "en", "ja", "ko", "pt-BR", "fr"} else "es-419"
+
+
 def _embed_asset(path, limit: dict) -> str | None:
     if limit["count"] >= MAX_INLINE_IMAGES:
         return None
@@ -70,6 +77,7 @@ def render_story_html(narrative, story_id: str) -> bytes:
     story = narrative.get_story(story_id)
     if story is None:
         raise ValueError("Story not found")
+    language = _story_language(narrative, story_id)
     budget = {"count": 0, "bytes": 0}
     body = []
     with narrative.store._conn() as db:
@@ -128,8 +136,8 @@ def render_story_html(narrative, story_id: str) -> bytes:
     title = _safe_text(story["title"])
     coverline = _safe_text(story["premise"])
     protagonist = _safe_text(story.get("protagonist_name") or "Protagonist")
-    origin = (' · Rama independiente' if story.get("origin_story_id") else '')
-    page = ('<!doctype html><html lang="es"><head><meta charset="utf-8">'
+    origin = (' · Independent branch' if story.get("origin_story_id") else '')
+    page = ('<!doctype html><html lang="' + _safe_text(language) + '"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>' + title + '</title><style>' + STYLES +
             '</style></head><body><main><header><small>NOBLE AI · LOCAL EXPORT'
@@ -155,10 +163,11 @@ def render_story_epub(narrative, story_id: str) -> bytes:
     story = narrative.get_story(story_id)
     if story is None:
         raise ValueError("Story not found")
+    language = _story_language(narrative, story_id)
     budget = {"count": 0, "bytes": 0}
     image_files: list[tuple[str, bytes]] = []
     root = ET.Element("{" + XHTML_NS + "}html", {
-        "{" + "http://www.w3.org/XML/1998/namespace" + "}lang": "es"
+        "{" + "http://www.w3.org/XML/1998/namespace" + "}lang": language
     })
     head = ET.SubElement(root, "{" + XHTML_NS + "}head")
     ET.SubElement(head, "{" + XHTML_NS + "}title").text = story["title"]
@@ -172,7 +181,7 @@ def render_story_epub(narrative, story_id: str) -> bytes:
     ET.SubElement(header, "{" + XHTML_NS + "}small").text = (
         "Protagonist: " + (story.get("protagonist_name") or "Protagonist"))
     if story.get("origin_story_id"):
-        ET.SubElement(header, "{" + XHTML_NS + "}p").text = "Rama independiente"
+        ET.SubElement(header, "{" + XHTML_NS + "}p").text = "Independent branch"
 
     def image(path, label: str, cover: bool = False):
         uri = _embed_asset(path, budget)
@@ -244,7 +253,8 @@ def render_story_epub(narrative, story_id: str) -> bytes:
            'unique-identifier="book-id"><metadata '
            'xmlns:dc="http://purl.org/dc/elements/1.1/">'
            '<dc:identifier id="book-id">' + identifier + '</dc:identifier>'
-           '<dc:title>' + title + '</dc:title><dc:language>es</dc:language>'
+           '<dc:title>' + title + '</dc:title><dc:language>' +
+           _safe_text(language) + '</dc:language>'
            '<meta property="dcterms:modified">' + updated + '</meta>'
            '</metadata><manifest>'
            '<item id="chapter" href="chapter.xhtml" media-type="application/xhtml+xml"/>'
@@ -256,7 +266,7 @@ def render_story_epub(narrative, story_id: str) -> bytes:
                  '<rootfiles><rootfile full-path="OEBPS/content.opf" '
                  'media-type="application/oebps-package+xml"/></rootfiles></container>')
     nav = ET.Element("{" + XHTML_NS + "}html", {
-        "{" + "http://www.w3.org/XML/1998/namespace" + "}lang": "es"
+        "{" + "http://www.w3.org/XML/1998/namespace" + "}lang": language
     })
     nav_body = ET.SubElement(nav, "{" + XHTML_NS + "}body")
     toc = ET.SubElement(nav_body, "{" + XHTML_NS + "}nav",

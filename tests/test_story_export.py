@@ -108,7 +108,7 @@ class StoryExportTests(unittest.TestCase):
         self.assertEqual(page.count("<section>"), 1)
         self.assertEqual(page.count("data:image/webp;base64,"), 2)
         self.assertNotIn("Entro a un bosque", page)
-        self.assertIn("Rama independiente", page)
+        self.assertIn("Independent branch", page)
 
     def test_epub3_is_valid_portable_archive_with_cover_and_two_scenes(self):
         cover = self.client.post(f"/api/v1/stories/{self.story}/creator/assets", data={
@@ -168,9 +168,32 @@ class StoryExportTests(unittest.TestCase):
             chapter = archive.read("OEBPS/chapter.xhtml").decode("utf-8")
             self.assertIn("Encuentro un mapa de jade", chapter)
             self.assertNotIn("reino futuro", chapter)
-            self.assertIn("Rama independiente", chapter)
+            self.assertIn("Independent branch", chapter)
             self.assertEqual(len([f for f in archive.namelist()
                                   if f.startswith("OEBPS/images/")]), 1)
+
+    def test_export_language_matches_story_blueprint(self):
+        before = self.client.get(self.url).text
+        self.assertIn('<html lang="es-419">', before)
+        changed = self.client.put(
+            f"/api/v1/stories/{self.story}/creator",
+            json={"language": "en"},
+        )
+        self.assertEqual(changed.status_code, 200, changed.text)
+        page = self.client.get(self.url).text
+        self.assertIn('<html lang="en">', page)
+        response = self.client.get(f"/api/v1/stories/{self.story}/export.epub")
+        self.assertEqual(response.status_code, 200)
+        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+            chapter = ET.fromstring(archive.read("OEBPS/chapter.xhtml"))
+            nav = ET.fromstring(archive.read("OEBPS/nav.xhtml"))
+            xml_lang = "{http://www.w3.org/XML/1998/namespace}lang"
+            self.assertEqual(chapter.attrib[xml_lang], "en")
+            self.assertEqual(nav.attrib[xml_lang], "en")
+            self.assertIn(
+                "<dc:language>en</dc:language>",
+                archive.read("OEBPS/content.opf").decode("utf-8"),
+            )
 
     def test_epub_unknown_story_is_404(self):
         self.assertEqual(self.client.get(
