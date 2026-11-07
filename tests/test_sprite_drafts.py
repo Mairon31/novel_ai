@@ -515,7 +515,7 @@ class SpriteDraftApiTests(unittest.TestCase):
         self.mock.matte_mask_invalid = True
         rejected = self.generate(draft, "neutral")
         self.assertEqual(rejected.status_code, 422, rejected.text)
-        self.assertIn("Neural mask", rejected.text)
+        self.assertIn("neural mask", rejected.text)
         self.assertEqual(self.client.get(self.url(
             f"/{draft['id']}")).json()["ready_count"], 0)
         self.assertEqual(self.client.get(

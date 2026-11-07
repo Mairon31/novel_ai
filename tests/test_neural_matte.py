@@ -51,7 +51,7 @@ class NeuralMatteTests(unittest.TestCase):
         original, mat = data()
         with self.assertRaisesRegex(ValueError, "Invalid image or neural mask"):
             transparent_sprite_from_matte(original, b"wrong", "neural_rmbg2")
-        with self.assertRaisesRegex(ValueError, "no coincide"):
+        with self.assertRaisesRegex(ValueError, "does not match"):
             transparent_sprite_from_matte(
                 original, data(mask_size=(128, 128))[1], "neural_rmbg2")
         with self.assertRaisesRegex(ValueError, "limit"):

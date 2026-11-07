@@ -105,7 +105,7 @@ class VisualDirector:
             if not row:
                 raise ValueError("Visual asset does not belong to this story")
             if row["origin"] != "manual":
-                raise ValueError("Solo se registran fondos importados manualmente")
+                raise ValueError("Only manually imported backgrounds can be registered")
             if row["render_signature"] and not row["render_signature"].startswith("noble-bg-v1:"):
                 raise ValueError("Asset has a generation signature that cannot be replaced")
             path = self.visual._asset_path(story_id, asset_id)

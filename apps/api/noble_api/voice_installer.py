@@ -336,7 +336,7 @@ class VoiceInstaller:
     def shutdown(self):
         with self._db() as db:
             db.execute("""UPDATE tts_downloads SET status='paused',
-                error='Descarga pausada al cerrar', updated_at=?
+                error='Download paused on shutdown', updated_at=?
                 WHERE status IN ('queued','downloading','verifying')""", (time.time(),))
         self.pool.shutdown(wait=False, cancel_futures=False)
 

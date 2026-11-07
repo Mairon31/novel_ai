@@ -64,7 +64,7 @@ class CreatorMediaTests(unittest.TestCase):
             service._path("../escape", str(uuid.uuid4()), "background")
         with self.assertRaisesRegex(ValueError, "Invalid visual asset identifier"):
             service._path(self.story, "../escape", "background")
-        with self.assertRaisesRegex(ValueError, "Tipo"):
+        with self.assertRaisesRegex(ValueError, "Invalid visual asset type"):
             service._path(self.story, str(uuid.uuid4()), "../outside")
 
         # A manipulated story-assets directory must never redirect writes

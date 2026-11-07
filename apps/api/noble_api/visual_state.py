@@ -803,7 +803,7 @@ def mount_visual_routes(app, visual: VisualState):
     def prompt_preview(story_id: uuid.UUID, body: dict):
         prompt = body.get("prompt")
         if not isinstance(prompt, str) or not 8 <= len(prompt) <= 2400:
-            raise HTTPException(422, "El prompt debe tener entre 8 y 2400 caracteres")
+            raise HTTPException(422, "Prompt must contain 8–2,400 characters")
         try:
             # Preview uses the same saved scene plan as actual ComfyUI rendering.
             planner = getattr(visual, "planner", None)
