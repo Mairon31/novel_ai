@@ -19,12 +19,36 @@ import httpx
 from fastapi import HTTPException
 from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
 
 from .media import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from .narrative import NarrativeService, validate_endpoint
 from .resource_policy import ResourceController
 from .comfy_loras import selected_character_loras, validate_lora_inventory
 from .comfy_runtime import render as render_comfy
+
+
+SAMPLER_NAMES = ("euler", "euler_ancestral", "dpmpp_2m", "dpmpp_sde",
+                 "dpmpp_2m_sde", "heun", "uni_pc")
+SCHEDULER_NAMES = ("normal", "karras", "exponential", "sgm_uniform", "simple")
+STYLE_PROMPTS = {
+    "anime_fantasy": (
+        "2D anime fantasy illustration, hand-painted fantasy background, "
+        "expressive character design, cel shading, consistent character appearance"),
+    "anime_cinematic": (
+        "cinematic anime key visual, dynamic composition, evocative lighting, "
+        "beautifully painted fantasy scenery, cohesive character design"),
+    "anime_watercolor": (
+        "watercolor anime fantasy illustration, soft painted textures, "
+        "pastel palette, detailed environmental storytelling"),
+    "none": "",
+}
+
+
+def styled_prompt(prompt: str, preset: str) -> str:
+    """Inject the user's chosen visual direction into actual ComfyUI conditioning."""
+    style = STYLE_PROMPTS[preset]
+    return prompt if not style else f"{style}. {prompt}"
 
 
 class ImageSettings(BaseModel):
@@ -36,6 +60,11 @@ class ImageSettings(BaseModel):
     height: int = Field(default=512, ge=256, le=1536, multiple_of=64)
     steps: int = Field(default=22, ge=1, le=70)
     cfg: float = Field(default=7.0, ge=1, le=20)
+    sampler_name: Literal["euler", "euler_ancestral", "dpmpp_2m", "dpmpp_sde",
+                          "dpmpp_2m_sde", "heun", "uni_pc"] = "euler"
+    scheduler: Literal["normal", "karras", "exponential", "sgm_uniform", "simple"] = "normal"
+    style_preset: Literal["anime_fantasy", "anime_cinematic", "anime_watercolor",
+                          "none"] = "anime_fantasy"
     negative_prompt: str = Field(default="low quality, distorted, text, watermark", max_length=1000)
 
 
@@ -62,7 +91,8 @@ def workflow(settings: dict, prompt: str, seed: int,
             "width": settings["width"], "height": settings["height"], "batch_size": 1}},
         "5": {"class_type": "KSampler", "inputs": {
             "seed": seed, "steps": settings["steps"], "cfg": settings["cfg"],
-            "sampler_name": "euler", "scheduler": "normal",
+            "sampler_name": settings["sampler_name"],
+            "scheduler": settings["scheduler"],
             "denoise": denoise if reference_name else 1,
             "model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0],
             "latent_image": ["9", 0] if reference_name else ["4", 0]}},
@@ -175,6 +205,54 @@ class SceneImageService:
             return {"online": False, "provider": "comfyui",
                     "checkpoints": [], "error": str(exc)[:180]}
 
+    async def sampler_options(self) -> dict:
+        """Inspect actual KSampler controls without triggering any model or generation."""
+        config = self.config()
+        try:
+            async with httpx.AsyncClient(transport=self.transport, trust_env=False,
+                    timeout=8) as client:
+                response = await client.get(config["base_url"] + "/object_info/KSampler",
+                                            follow_redirects=False)
+                response.raise_for_status()
+                data = response.json()
+            node = data.get("KSampler") if isinstance(data, dict) else None
+            required = (node.get("input", {}).get("required")
+                        if isinstance(node, dict) else None)
+            if not isinstance(required, dict):
+                raise ValueError("ComfyUI no expone KSampler")
+            result = {}
+            for field, allowlist in (("sampler_name", SAMPLER_NAMES),
+                                     ("scheduler", SCHEDULER_NAMES)):
+                choices = required.get(field)
+                if (not isinstance(choices, list) or not choices or
+                        not isinstance(choices[0], list) or
+                        not all(isinstance(value, str) for value in choices[0])):
+                    raise ValueError("ComfyUI devolvió opciones inválidas para " + field)
+                # Restrict the presentation to settings whose semantics our
+                # standard workflow has been tested to support.
+                result[field] = [x for x in allowlist if x in choices[0]]
+                if not result[field]:
+                    raise ValueError("No hay métodos admitidos para " + field)
+            return {"online": True, **result, "error": None}
+        except (httpx.HTTPError, ValueError) as exc:
+            return {"online": False, "sampler_name": [], "scheduler": [],
+                    "error": str(exc)[:180]}
+
+    async def validate_sampler_settings(self, config: dict) -> None:
+        # Legacy euler/normal graphs remain compatible without an extra HTTP
+        # call. Nondefault choices must be checked against the actual runtime.
+        if config["sampler_name"] == "euler" and config["scheduler"] == "normal":
+            return
+        inventory = await self.sampler_options()
+        if not inventory["online"]:
+            raise HTTPException(422, "No se pudo comprobar KSampler: " +
+                                (inventory["error"] or "ComfyUI sin respuesta"))
+        for field, label in (("sampler_name", "Muestreador"),
+                             ("scheduler", "Planificador")):
+            if config[field] not in inventory[field]:
+                raise HTTPException(422, label + " no disponible en ComfyUI: " +
+                                    config[field])
+
     async def lora_status(self) -> dict:
         """Discover installed LoRAs only on an explicit user or generation call."""
         config = self.config()
@@ -225,6 +303,7 @@ class SceneImageService:
             visual_prompt = (planner.prompt(story_id, request.prompt)
                              if planner is not None else
                              self.narrative.visual.enriched_prompt(story_id, request.prompt))
+            visual_prompt = styled_prompt(visual_prompt, config["style_preset"])
             reference_id = (str(request.reference_asset_id) if request.reference_asset_id
                             else planner.automatic_reference(story_id)
                             if planner is not None else None)
@@ -285,6 +364,7 @@ class SceneImageService:
                 raise HTTPException(503, "ComfyUI no está disponible")
             if config["checkpoint"] not in connected["checkpoints"]:
                 raise HTTPException(422, "El checkpoint seleccionado ya no está disponible")
+            await self.validate_sampler_settings(config)
             if lora_stack:
                 installed = await self.lora_status()
                 if not installed["online"]:
@@ -324,7 +404,9 @@ class SceneImageService:
                     render_signature=signature,
                     render_details={"workflow_version": (
                         "comfy-native-v3-lora" if lora_stack else "comfy-native-v2"),
-                        "loras": lora_stack})
+                        "loras": lora_stack, "sampler_name": config["sampler_name"],
+                        "scheduler": config["scheduler"],
+                        "style_preset": config["style_preset"]})
             return {"story": self.narrative.get_story(story_id),
                     "asset_id": gallery["selected_asset_id"],
                     "reference_asset_id": reference_id,
@@ -355,6 +437,10 @@ def mount_image_routes(app, images: SceneImageService):
     @app.get("/api/v1/images/status")
     async def image_status():
         return await images.status()
+
+    @app.get("/api/v1/images/sampler-options")
+    async def image_sampler_options():
+        return await images.sampler_options()
 
     @app.get("/api/v1/images/loras")
     async def image_loras():
