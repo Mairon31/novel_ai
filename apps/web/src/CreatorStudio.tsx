@@ -186,7 +186,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         genre: saved.genre, tags: saved.tags, language: saved.language,
       });
       setTagsInput(saved.tags.join(', '));
-      setNotice('Contenido del creador guardado. El narrador utilizará las instrucciones privadas.');
+      setNotice('Creator content saved. The narrator will use the private instructions.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -266,7 +266,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       });
       if (storyGuard.current === active.id) {
         setSpriteDrafts(prev => [created, ...prev]);
-        setNotice('Borrador creado. Genera las expresiones y revísalas antes de aprobar.');
+        setNotice('Draft created. Generate and review expressions before approval.');
       }
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -274,10 +274,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
 
   const spriteExpressions: Array<{ id: SpriteExpression; label: string }> = [
     { id: 'neutral', label: 'Neutral' },
-    { id: 'joy', label: 'Alegría' },
-    { id: 'anger', label: 'Enojo' },
-    { id: 'sadness', label: 'Tristeza' },
-    { id: 'surprise', label: 'Sorpresa' },
+    { id: 'joy', label: 'Joy' },
+    { id: 'anger', label: 'Anger' },
+    { id: 'sadness', label: 'Sadness' },
+    { id: 'surprise', label: 'Surprise' },
   ];
 
   async function generateSprites(draft: SpriteDraft, expression?: SpriteExpression) {
@@ -299,7 +299,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         }
       }
       if (storyGuard.current === storyId) {
-        setNotice('Borrador actualizado. Comprueba contornos, expresión y coherencia antes de aprobar.');
+        setNotice('Draft updated. Review edges, expression, and consistency before approval.');
       }
     } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setDraftProgress(''); setWorking(false); }
@@ -316,7 +316,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       if (storyGuard.current === storyId) {
         setAssets((await api.creatorAssets(storyId)).assets);
         setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
-        setNotice('Aprobadas ' + result.count + ' expresiones. Ya están disponibles en el lector.');
+        setNotice('Approved ' + result.count + ' expressions. They are now available in the reader.');
       }
     } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -368,7 +368,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setLorebookEntries((await api.lorebookEntries(active.id)).entries);
       resetLorebookEditor();
       setLorePreview(null);
-      setNotice('Entrada de Lorebook guardada. Se activará según sus palabras clave.');
+      setNotice('Lorebook entry saved. It will activate when its keywords match.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -381,7 +381,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setLorebookEntries((await api.lorebookEntries(active.id)).entries);
       if (editingLorebook === entry.id) resetLorebookEditor();
       setLorePreview(null);
-      setNotice('Entrada eliminada del Lorebook.');
+      setNotice('Lorebook entry deleted.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -405,7 +405,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     try {
       rememberStory(await api.setStoryCover(active.id, assetId));
       setNotice(assetId ? 'Portada editorial seleccionada para la biblioteca.' :
-        'Se quitó la portada editorial. La historia permanece intacta.');
+        'Editorial cover removed. The story remains intact.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -445,7 +445,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       resetMediaEditor();
       setNotice(mediaKind === 'cover' && !editingAsset ?
         'Portada editorial guardada y seleccionada para la biblioteca.' :
-        'Recurso visual guardado para su selección durante la lectura.');
+        'Visual asset saved for selection during reading.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -474,13 +474,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     finally { setWorking(false); }
   }
 
-  return <section className="creator-studio" aria-label="Estudio de creación de historias">
+  return <section className="creator-studio" aria-label="Story creation studio">
     <div className="creator-heading">
       <button className="creator-return" onClick={onOpenLibrary}>
         <ArrowLeft size={16}/> Biblioteca
       </button>
       <span className="overline"><Feather size={15}/> NOBLE CREATOR STUDIO</span>
-      <h1>Construye historias con intención.</h1>
+      <h1>Build stories with purpose.</h1>
       <p>Separa lo que ve el jugador de lo que conoce el narrador. Define personajes,
         reglas, escenas de apertura y el tono de tu mundo sin mezclarlos con la lectura.</p>
     </div>
@@ -489,7 +489,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       <aside className="creator-projects" aria-label="Historias para crear">
         <div className="creator-projects-head">
           <div><span className="overline">TUS MUNDOS</span><strong>Proyectos</strong></div>
-          <button title="Nuevo proyecto" aria-label="Crear proyecto" onClick={() => setCreateNew(true)}>
+          <button title="New project" aria-label="Create project" onClick={() => setCreateNew(true)}>
             <Plus size={18}/>
           </button>
         </div>
@@ -504,12 +504,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           <small>{story.protagonist_name || 'Protagonista'}</small></span><ChevronRight size={15}/>
         </button>)}
         {!stories.length && !loading && <p className="creator-placeholder">
-          Aún no hay historias. Crea tu primer proyecto para diseñar su mundo.</p>}
+          No stories yet. Create your first project to build its world.</p>}
         <button className="creator-new" onClick={() => {
           setActive(null); setAssistantVisible(true);
-        }}><Sparkles size={17}/> Crear con IA</button>
+        }}><Sparkles size={17}/> Create with AI</button>
         <button className="creator-new" onClick={() => setCreateNew(true)}>
-          <Plus size={17}/> Nuevo proyecto
+          <Plus size={17}/> New project
         </button>
       </aside>
 
@@ -528,7 +528,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           <p>Desde aquí puedes escribir la trama para el jugador, la información
             interna para el modelo, las fichas de personajes y los distintos inicios.</p>
           <button className="primary-button" onClick={() => setCreateNew(true)}>
-            <Plus size={16}/> Crear nueva historia
+            <Plus size={16}/> Create new story
           </button>
         </div> : <>
           <div className="creator-editor-title">
@@ -539,11 +539,11 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <BookOpen size={15}/> Ir a Biblioteca
             </button>
           </div>
-          <nav className="creator-editor-tabs" aria-label="Herramientas de creación">
+          <nav className="creator-editor-tabs" aria-label="Creator tools">
             <button className={section === 'story' ? 'selected' : ''}
               onClick={() => setSection('story')}><FileText size={17}/> Trama y contexto</button>
             <button className={section === 'cast' ? 'selected' : ''}
-              onClick={() => setSection('cast')}><Users size={17}/> Personajes ({characters.length})</button>
+              onClick={() => setSection('cast')}><Users size={17}/> Characters ({characters.length})</button>
             <button className={section === 'lorebook' ? 'selected' : ''}
               onClick={() => setSection('lorebook')}><BookKey size={17}/> Lorebook ({lorebookEntries.length})</button>
             <button className={section === 'world' ? 'selected' : ''}
@@ -551,7 +551,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             <button className={section === 'openings' ? 'selected' : ''}
               onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
             <button className={section === 'media' ? 'selected' : ''}
-              onClick={() => setSection('media')}><ImageIcon size={17}/> Imágenes ({assets.length})</button>
+              onClick={() => setSection('media')}><ImageIcon size={17}/> Images ({assets.length})</button>
           </nav>
 
           {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando contenido...</div> :
@@ -562,7 +562,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <h3>Portadas, escenarios y personajes</h3>
                 <p>Elige una portada fija para la biblioteca, prepara fondos de escenarios
                   y retratos transparentes para las escenas narrativas.
-                  No se generan imágenes automáticamente.</p>
+                  Images are not generated automatically.</p>
               </div>
               <div className="creator-cover-preview" aria-label="Portada editorial actual">
                 <div className="creator-cover-preview-art">
@@ -582,7 +582,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-media-grid">
                 {assets.map(asset => <article className="creator-media-card" key={asset.id}>
                   <div className={'creator-media-thumbnail ' + asset.kind}>
-                    <img src={asset.url} loading="lazy" alt={'Imagen: ' + asset.label}/>
+                    <img src={asset.url} loading="lazy" alt={'Image: ' + asset.label}/>
                   </div>
                   <div className="creator-media-copy">
                     <small>{asset.kind === 'cover' ? 'PORTADA' :
@@ -591,7 +591,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       {asset.source === 'ai_reviewed' ? ' · IA REVISADA' : ''}</small>
                     <strong>{asset.label}</strong><p>{asset.caption}</p>
                     {asset.kind === 'foreground' && <small>
-                      Expresión: {asset.expression} · Pose: {asset.pose}
+                      Expression: {asset.expression} · Pose: {asset.pose}
                     </small>}
                     <div>
                       {asset.kind === 'cover' && asset.id !== active.cover_asset_id &&
@@ -599,19 +599,19 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                           onClick={() => void chooseCover(asset.id)}>Usar como portada</button>}
                       <button className="secondary-button" disabled={working}
                         onClick={() => editAsset(asset)}>Edit description</button>
-                      <button aria-label={'Eliminar imagen ' + asset.label}
+                      <button aria-label={'Delete image ' + asset.label}
                         className="creator-media-delete" disabled={working}
                         onClick={() => void deleteMediaAsset(asset)}><Trash2 size={15}/></button>
                     </div>
                   </div>
                 </article>)}
                 {assets.length === 0 && <div className="creator-media-empty">
-                  <ImageIcon size={30}/><strong>Todavía no hay recursos visuales.</strong>
+                  <ImageIcon size={30}/><strong>No visual assets yet.</strong>
                   <p>Importa un fondo o un retrato para preparar tu novela visual.</p>
                 </div>}
               </div>
               <div className="creator-media-form">
-                <h4>{editingAsset ? 'Editar recurso' : 'Añadir recurso visual'}</h4>
+                <h4>{editingAsset ? 'Edit asset' : 'Add visual asset'}</h4>
                 {!editingAsset && <div className="creator-double">
                   <label>Tipo de recurso
                     <select aria-label="Tipo de recurso visual" value={mediaKind}
@@ -630,14 +630,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </label>}
                 </div>}
                 {mediaKind === 'foreground' && <div className="creator-double">
-                  <label>Expresión de sprite
-                    <select aria-label="Expresión de sprite" value={mediaExpression}
+                  <label>Sprite expression
+                    <select aria-label="Sprite expression" value={mediaExpression}
                       onChange={e => setMediaExpression(e.target.value as SpriteExpression)}>
                       <option value="neutral">Neutral</option>
-                      <option value="joy">Alegría</option>
-                      <option value="anger">Enojo</option>
-                      <option value="sadness">Tristeza</option>
-                      <option value="surprise">Sorpresa</option>
+                      <option value="joy">Joy</option>
+                      <option value="anger">Anger</option>
+                      <option value="sadness">Sadness</option>
+                      <option value="surprise">Surprise</option>
                     </select>
                   </label>
                   <label>Pose (identificador)
@@ -646,15 +646,15 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       placeholder="standing, sitting, waving..."/>
                   </label>
                 </div>}
-                <label>Nombre
-                  <input aria-label="Nombre de imagen" maxLength={100} value={mediaLabel}
-                    placeholder="Salón del trono, Aira sonriendo..."
+                <label>Name
+                  <input aria-label="Image name" maxLength={100} value={mediaLabel}
+                    placeholder="Throne room, Aira smiling..."
                     onChange={e => setMediaLabel(e.target.value)}/></label>
-                <label>Descripción para reconocer la escena
+                <label>Caption for matching the scene
                   <textarea aria-label="Image description" maxLength={220} rows={3}
                     value={mediaCaption} onChange={e => setMediaCaption(e.target.value)}
-                    placeholder="Bosque oscuro de noche, Aira sonríe en la taberna..."/>
-                  <small>Usa lugares y emociones concretas. No se envía esta descripción a ningún modelo.</small>
+                    placeholder="Dark forest at night, Aira smiling in the tavern..."/>
+                  <small>Describe specific places and emotions. This caption is not sent to a model.</small>
                 </label>
                 {!editingAsset && <label>Archivo PNG, JPEG o WebP (hasta 12 MiB)
                   <input type="file" aria-label="Archivo de recurso visual"
@@ -664,7 +664,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     La transparencia se conserva en PNG para superponer personajes sobre el fondo.
                   </small>}
                   {mediaKind === 'cover' && <small>
-                    La portada se guarda como WebP y se selecciona automáticamente al importar.
+                    The cover is saved as WebP and selected automatically upon import.
                   </small>}
                 </label>}
                 <div className="creator-actions">
@@ -679,10 +679,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>
               </div>
               <div className="creator-media-form">
-                <h4>Importar hoja de expresiones</h4>
-                <p>Una cuadrícula de cinco celdas transparentes, en orden: neutral,
-                  alegría, enojo, tristeza y sorpresa. El lector reutiliza cada PNG
-                  sin generar imágenes al avanzar.</p>
+                <h4>Import expression sheet</h4>
+                <p>A grid of five transparent cells in this order: neutral, joy, anger, sadness, surprise. The reader reuses each PNG without generating images when advancing.</p>
                 <div className="creator-double">
                   <label>Personaje de la hoja
                     <select aria-label="Personaje de hoja de expresiones"
@@ -691,8 +689,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
                     </select>
                   </label>
-                  <label>Distribución de celdas
-                    <select aria-label="Distribución de hoja" value={sheetLayout}
+                  <label>Cell layout
+                    <select aria-label="Sheet layout" value={sheetLayout}
                       onChange={e => setSheetLayout(e.target.value as 'horizontal' | 'vertical')}>
                       <option value="horizontal">Una fila de cinco</option>
                       <option value="vertical">Una columna de cinco</option>
@@ -711,7 +709,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       placeholder="standing"/>
                   </label>
                 </div>
-                <label>Hoja PNG o WebP transparente (máximo 12 MiB)
+                <label>Transparent PNG or WebP sheet (maximum 12 MiB)
                   <input type="file" aria-label="Archivo de hoja de expresiones"
                     accept="image/png,image/webp"
                     onChange={e => setSheetFile(e.target.files?.[0] || null)}/>
@@ -720,7 +718,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   disabled={working || !sheetCharacter || sheetCaption.trim().length < 3 ||
                     !/^[a-z0-9_-]{1,32}$/.test(sheetPose.trim().toLowerCase()) || !sheetFile}
                   onClick={() => void importSheet()}><UploadCloud size={16}/>
-                  Importar cinco expresiones
+                  Import five expressions
                 </button>
               </div>
               <div className="creator-media-form">
@@ -744,7 +742,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       value={draftPose} onChange={event => setDraftPose(event.target.value)}/>
                   </label>
                 </div>
-                <label>Descripción para seleccionar los sprites durante la historia
+                <label>Caption to match sprites during the story
                   <input aria-label="Contexto de sprites IA" maxLength={220}
                     value={draftCaption} onChange={event => setDraftCaption(event.target.value)}
                     placeholder="Aira en la biblioteca antigua"/>
@@ -754,19 +752,19 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     value={draftStyle} onChange={event => setDraftStyle(event.target.value)}/>
                 </label>
                 <div className="creator-double">
-                  <label>Semilla opcional (si está vacía se usa la del NPC)
+                  <label>Optional seed (defaults to NPC seed)
                     <input type="number" aria-label="Semilla de sprites IA"
                       min={0} step={1} value={draftSeed}
                       onChange={event => setDraftSeed(event.target.value)}
                       placeholder="Semilla del ADN visual"/>
                   </label>
-                  <label>Referencia de Galería (opcional)
+                  <label>Gallery reference (optional)
                     <select aria-label="Referencia de sprites IA"
                       value={draftReference} onChange={event => {
                         setDraftReference(event.target.value);
                         if (event.target.value) setDraftSpriteReference('');
                       }}>
-                      <option value="">Sin referencia de Galería</option>
+                      <option value="">No Gallery reference</option>
                       {galleryAssets.map(asset => <option value={asset.id} key={asset.id}>
                         {asset.origin === 'comfyui' ? 'ComfyUI' : 'Importada'} · {asset.id.slice(0, 8)}
                       </option>)}
@@ -793,7 +791,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       value={draftReferenceMode}
                       onChange={event => setDraftReferenceMode(
                         event.target.value as 'img2img' | 'ipadapter')}>
-                      <option value="img2img">img2img · conservar composición</option>
+                      <option value="img2img">img2img · preserve composition</option>
                       <option value="ipadapter">IPAdapter · guiar identidad</option>
                     </select>
                   </label>
@@ -825,12 +823,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       ? 'IPAdapter disponible · ' + adapterStatus.model_count + ' modelos y ' +
                         adapterStatus.clip_vision_count + ' CLIP Vision · ' +
                         adapterStatus.presets.join(', ')
-                      : 'IPAdapter no está listo: ' + (adapterStatus.error || 'faltan modelos o nodos')}
+                      : 'IPAdapter is not ready: ' + (adapterStatus.error || 'missing models or nodes')}
                   </p>}
                   <p className="creator-hint">
                     Necesita IPAdapter Plus con nodos UnifiedLoader e IPAdapter,
                     modelos IPAdapter y CLIP Vision instalados y compatibles con el
-                    checkpoint. Es necesario seleccionar una referencia de Galería
+                    checkpoint. Es necesario seleccionar una referencia de Gallery
                     o un sprite aprobado del mismo NPC. No se descargan modelos.
                   </p>
                 </>}
@@ -863,15 +861,15 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>}
                 <p className="creator-hint">
                   El recorte neuronal utiliza ComfyUI-RMBG y reconstruye la transparencia
-                  desde una máscara PNG independiente. Deben estar instalados los nodos
+                  desde una mask PNG independiente. Deben estar instalados los nodos
                   y todos los archivos del modelo. Si faltan, la generación se detiene
                   sin cambiar los sprites anteriores ni descargar modelos desde Noble AI.
-                  La máscara también requiere revisión visual.
+                  La mask también requiere revisión visual.
                 </p>
                 <label>
                   <input type="checkbox" aria-label="Usar LoRA del NPC para sprites IA"
                     checked={draftUseLora} onChange={event => setDraftUseLora(event.target.checked)}/>
-                  {' '}Aplicar el LoRA configurado para este NPC (si está instalado)
+                  {' '}Apply this NPC's configured LoRA (if installed)
                 </label>
                 <p className="creator-hint">
                   Se usa el mismo checkpoint, seed y estilo en las cinco expresiones.
@@ -922,14 +920,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                           {slot.quality && <small>
                             Fondo: {slot.quality.method === 'border_chroma_key'
                               ? 'recorte verde' : slot.quality.method.startsWith('neural_')
-                              ? 'máscara ' + slot.quality.method
+                              ? 'mask ' + slot.quality.method
                               : 'transparencia original'} ·
                             Cobertura {Math.round(slot.quality.coverage * 100)}%
                           </small>}
                           <button className="secondary-button" disabled={working}
                             aria-label={'Generate expression ' + entry.label}
                             onClick={() => void generateSprites(draft, entry.id)}>
-                            {slot.ready ? 'Regenerar' : 'Generar'}
+                            {slot.ready ? 'Regenerate' : 'Generate'}
                           </button>
                         </div>
                       </article>;
@@ -939,7 +937,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       role="status" aria-label="Advertencias de siluetas">
                     <strong>Variaciones importantes de encuadre detectadas</strong>
                     <p>{draft.alignment_warnings.join('; ')}</p>
-                    <p>Esta comparación solo mide posición y escala de la
+                    <p>This comparison only measures the position and scale of the
                       silueta: no verifica identidad facial. Regenera las variantes
                       que se vean distintas, o confirma que las has revisado.</p>
                     <label>
@@ -955,7 +953,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <div className="creator-actions">
                     <button className="secondary-button" disabled={working || draft.ready_count === 5}
                       onClick={() => void generateSprites(draft)}>
-                      <Sparkles size={16}/> Generar expresiones faltantes
+                      <Sparkles size={16}/> Generate missing expressions
                     </button>
                     <button className="primary-button" disabled={working ||
                         draft.ready_count !== 5 ||
@@ -973,16 +971,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             </div> :
             section === 'lorebook' ? <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Lorebook · conocimiento condicional</h3>
+                <h3>Lorebook · conditional knowledge</h3>
                 <p>Guarda secretos, lugares y reglas que el narrador consulta cuando aparecen
-                  palabras activadoras en la intervención o en la escena reciente. El jugador
+                  trigger words in the action or recent scene. The player
                   no recibe estos textos directamente. Cada rama conserva su propia copia.</p>
               </div>
               <div className="creator-character-list">
                 {lorebookEntries.map(entry => <div className="creator-opening" key={entry.id}>
                   <div><strong>{entry.title} · prioridad {entry.priority}</strong>
                     <button className="creator-media-delete" disabled={working}
-                      aria-label={'Eliminar Lorebook ' + entry.title}
+                      aria-label={'Delete Lorebook ' + entry.title}
                       onClick={() => void removeLorebook(entry)}><Trash2 size={15}/></button>
                   </div>
                   <p>{entry.always_active ? 'Siempre activo' :
@@ -993,48 +991,48 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       : ' · Conocimiento general'}</p>
                   <p>{entry.content.slice(0, 170)}{entry.content.length > 170 ? '…' : ''}</p>
                   <button className="secondary-button" disabled={working}
-                    onClick={() => editLorebook(entry)}>Editar entrada</button>
+                    onClick={() => editLorebook(entry)}>Edit entry</button>
                 </div>)}
                 {!lorebookEntries.length && <p className="creator-placeholder">
                   Todavía no hay entradas. Crea hechos que deban recordarse
                   únicamente en escenas relevantes.</p>}
               </div>
               <div className="creator-media-form">
-                <h4>{editingLorebook ? 'Editar entrada del Lorebook' : 'Nueva entrada del Lorebook'}</h4>
-                <label>Título
-                  <input aria-label="Título de Lorebook" value={lorebookDraft.title}
+                <h4>{editingLorebook ? 'Edit Lorebook entry' : 'New Lorebook entry'}</h4>
+                <label>Title
+                  <input aria-label="Lorebook title" value={lorebookDraft.title}
                     maxLength={100} onChange={e => setLorebookDraft(v => ({
                       ...v, title: e.target.value,
                     }))} placeholder="Bosque de cristal, pacto secreto..."/>
                 </label>
                 <label>Hechos que debe recordar el narrador
-                  <textarea aria-label="Contenido de Lorebook" rows={5} maxLength={3500}
+                  <textarea aria-label="Lorebook content" rows={5} maxLength={3500}
                     value={lorebookDraft.content} onChange={e => setLorebookDraft(v => ({
                       ...v, content: e.target.value,
                     }))} placeholder="Describe reglas, secretos o información canónica del mundo."/>
                 </label>
                 <div className="creator-double">
                   <label>Claves principales (separadas por coma)
-                    <input aria-label="Claves de Lorebook" value={loreKeysInput}
+                    <input aria-label="Lorebook keys" value={loreKeysInput}
                       onChange={e => setLoreKeysInput(e.target.value)}
                       placeholder="bosque, ruinas, mapa"/>
                   </label>
                   <label>Claves secundarias opcionales
-                    <input aria-label="Claves secundarias de Lorebook" value={loreSecondaryInput}
+                    <input aria-label="Secondary Lorebook keys" value={loreSecondaryInput}
                       onChange={e => setLoreSecondaryInput(e.target.value)}
                       placeholder="noche, guardia"/>
                   </label>
                 </div>
                 <div className="creator-double">
                   <label>Prioridad (0–100)
-                    <input aria-label="Prioridad de Lorebook" type="number" min={0} max={100}
+                    <input aria-label="Lorebook priority" type="number" min={0} max={100}
                       value={lorebookDraft.priority}
                       onChange={e => setLorebookDraft(v => ({ ...v,
                         priority: Number(e.target.value),
                       }))}/>
                   </label>
-                  <label>Activación secundaria
-                    <select aria-label="Condición secundaria de Lorebook"
+                  <label>Secondary activation
+                    <select aria-label="Lorebook secondary condition"
                       value={lorebookDraft.secondary_mode}
                       onChange={e => setLorebookDraft(v => ({
                         ...v, secondary_mode: e.target.value as 'any'|'all',
@@ -1044,8 +1042,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>
                 </div>
-                <label>Quién puede conocer este hecho
-                  <select aria-label="Visibilidad de Lorebook"
+                <label>Who may know this fact
+                  <select aria-label="Lorebook visibility"
                     value={lorebookDraft.visibility}
                     onChange={e => setLorebookDraft(v => ({
                       ...v, visibility: e.target.value as 'world' | 'witnesses',
@@ -1056,8 +1054,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </select>
                 </label>
                 {lorebookDraft.visibility === 'witnesses' && <fieldset>
-                  <legend>Personajes que conocen este hecho</legend>
-                  {!characters.length && <p>Primero crea personajes en la sección Personajes.</p>}
+                  <legend>Characters who know this fact</legend>
+                  {!characters.length && <p>Create characters in the Characters section first.</p>}
                   {characters.map(person => <label key={person.id} className="creator-lore-toggle">
                     <input type="checkbox" aria-label={'Testigo ' + person.name}
                       checked={lorebookDraft.witness_character_ids.includes(person.id)}
@@ -1089,7 +1087,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     (lorebookDraft.visibility === 'witnesses' &&
                       !lorebookDraft.witness_character_ids.length)}
                     onClick={() => void saveLorebook()}><Save size={16}/>
-                    {editingLorebook ? 'Actualizar Lorebook' : 'Crear entrada de Lorebook'}
+                    {editingLorebook ? 'Update Lorebook' : 'Create Lorebook entry'}
                   </button>
                   {editingLorebook && <button className="secondary-button"
                     onClick={resetLorebookEditor}>Cancel editing</button>}
@@ -1097,18 +1095,17 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-media-form">
                 <h4>Comprobar activaciones antes de jugar</h4>
-                <p>Escribe una acción o frase. Se muestran las entradas que recibiría el
-                  narrador y el presupuesto realmente utilizado (máximo 6000 caracteres).
+                <p>Enter an action or phrase to preview which entries the narrator would receive and the actual character budget used (maximum 6,000 characters).
                   La prueba usa los personajes presentes guardados en Estado del mundo.</p>
-                <label>Simular una intervención
-                  <textarea rows={3} aria-label="Simular activación Lorebook"
+                <label>Simulate an action
+                  <textarea rows={3} aria-label="Simulate Lorebook activation"
                     maxLength={3000} value={loreQuery}
                     onChange={e => { setLoreQuery(e.target.value); setLorePreview(null); }}
                     placeholder="Entro en las ruinas del bosque..."/>
                 </label>
                 <button className="secondary-button" disabled={working}
                   onClick={() => void previewLorebookActivation()}>
-                  <BookKey size={16}/> Previsualizar Lorebook
+                  <BookKey size={16}/> Preview Lorebook
                 </button>
                 {lorePreview && <div role="status" className="creator-hint">
                   <strong>{lorePreview.entries.length} entrada(s) activada(s)</strong>
@@ -1132,8 +1129,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-double">
                 <label>Género
-                  <input aria-label="Género de la historia" value={blueprint.genre}
-                    maxLength={80} placeholder="Fantasía, romance, misterio..."
+                  <input aria-label="Story genre" value={blueprint.genre}
+                    maxLength={80} placeholder="Fantasy, romance, mystery..."
                     onChange={e => update('genre', e.target.value)}/>
                 </label>
                 <label>Idioma
@@ -1149,23 +1146,23 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <label>Sinopsis breve para lectores
                 <textarea rows={3} aria-label="Sinopsis para lectores" maxLength={250}
                   value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}
-                  placeholder="Lo primero que verá el jugador al descubrir la historia."/>
+                  placeholder="What players see when they discover the story."/>
               </label>
               <label>Trama que conoce el jugador
                 <textarea rows={5} maxLength={4000} aria-label="Trama visible"
                   value={blueprint.player_plot}
                   onChange={e => update('player_plot', e.target.value)}
-                  placeholder="Punto de partida, situación y expectativas sin revelar secretos."/>
+                  placeholder="Starting point, situation, and expectations without spoilers."/>
               </label>
               <label>Contexto interno para la IA
                 <textarea rows={8} maxLength={12000} aria-label="Contexto interno de la IA"
                   value={blueprint.ai_plot}
                   onChange={e => update('ai_plot', e.target.value)}
-                  placeholder="Reglas del mundo, relaciones, secretos y sucesos que el narrador sí debe conocer."/>
-                <small>No aparece directamente en la historia, pero influye en su generación.</small>
+                  placeholder="World rules, relationships, secrets, and events the narrator should know."/>
+                <small>Not shown directly in the story, but it influences narration.</small>
               </label>
-              <label>Directrices narrativas
-                <textarea rows={5} maxLength={4000} aria-label="Directrices de narración"
+              <label>Narrative guidelines
+                <textarea rows={5} maxLength={4000} aria-label="Narration guidelines"
                   value={blueprint.guidelines}
                   onChange={e => update('guidelines', e.target.value)}
                   placeholder="Estilo, ritmo, personajes que controla el narrador, detalles de continuidad..."/>
@@ -1173,18 +1170,18 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <label>Recordatorio persistente
                 <textarea rows={3} maxLength={1200} aria-label="Recordatorio persistente"
                   value={blueprint.reminder} onChange={e => update('reminder', e.target.value)}
-                  placeholder="Una instrucción breve que importa en cada turno."/>
+                  placeholder="A short instruction that matters on every turn."/>
               </label>
               <label>Etiquetas (separadas por coma)
                 <input maxLength={500} aria-label="Etiquetas de la historia" value={tagsInput}
                   onChange={e => setTagsInput(e.target.value)} placeholder="isekai, aventura, magia"/>
               </label>
               <button className="primary-button" disabled={working} onClick={() => void saveBlueprint()}>
-                <Save size={16}/>{working ? 'Guardando...' : 'Guardar trama y contexto'}
+                <Save size={16}/>{working ? 'Saving...' : 'Save plot and context'}
               </button>
             </div> : section === 'cast' ? <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Personajes de la novela</h3>
+                <h3>Novel characters</h3>
                 <p>Define personalidad, historia y ejemplos de habla de los NPC.
                   Es un sistema narrativo independiente de las fichas visuales.</p>
               </div>
@@ -1195,8 +1192,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <small>{person.personality || person.description}</small></span>
                   <ChevronRight size={16}/></button>)}
               </div>
-              <label>Nombre
-                <input aria-label="Nombre de NPC" maxLength={80}
+              <label>Name
+                <input aria-label="NPC name" maxLength={80}
                   value={character.name} onChange={e => setCharacter(v => ({...v,name:e.target.value}))}/>
               </label>
               <label>Ficha visual vinculada (opcional)
@@ -1205,16 +1202,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onChange={e => setCharacter(v => ({
                     ...v, visual_character_id: e.target.value || null,
                   }))}>
-                  <option value="">Sin vínculo (identidad por nombre en prompts sin plan)</option>
+                  <option value="">Unlinked (match by name in unplanned prompts)</option>
                   {visualCharacters.map(visual => <option value={visual.id} key={visual.id}>
                     {visual.name}
                   </option>)}
                 </select>
-                <small>Vincula este NPC a una ficha de Galería para que su ADN visual
+                <small>Link this NPC to a Gallery identity so their visual DNA
                   siga al personaje seleccionado en un plan de escena.</small>
               </label>
-              <label>Trasfondo y descripción
-                <textarea rows={5} maxLength={3000} aria-label="Descripción de NPC"
+              <label>Background and description
+                <textarea rows={5} maxLength={3000} aria-label="NPC description"
                   value={character.description} onChange={e => setCharacter(v => ({
                     ...v,description:e.target.value,
                   }))}/>
@@ -1225,16 +1222,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     ...v,personality:e.target.value,
                   }))}/>
               </label>
-              <label>Ejemplos de diálogo
-                <textarea rows={4} maxLength={3000} aria-label="Diálogos de ejemplo"
+              <label>Dialogue examples
+                <textarea rows={4} maxLength={3000} aria-label="Dialogue examples"
                   value={character.dialogue_examples} onChange={e => setCharacter(v => ({
                     ...v,dialogue_examples:e.target.value,
-                  }))} placeholder="Cómo habla, expresiones habituales y forma de responder."/>
+                  }))} placeholder="Speech patterns, typical expressions, and responses."/>
               </label>
               <div className="creator-media-form">
-                <h4>Identidad visual canónica</h4>
+                <h4>Canonical visual identity</h4>
                 <p>Las etiquetas de apariencia y la semilla quedan fijadas al guardarlas.
-                  El LoRA es una referencia opcional a un archivo local; todavía no
+                  A LoRA is an optional reference to a local model file; it does not
                   activa inferencia ni descarga modelos.</p>
                 <label>Etiquetas de apariencia (separadas por coma)
                   <input aria-label="Etiquetas visuales" maxLength={1040}
@@ -1273,7 +1270,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-actions">
                 <button className="primary-button" disabled={working || !character.name.trim() ||
                     character.description.trim().length < 20} onClick={() => void saveCharacter()}>
-                  <Save size={16}/>{editingCharacter ? 'Actualizar personaje' : 'Añadir personaje'}
+                  <Save size={16}/>{editingCharacter ? 'Update character' : 'Add character'}
                 </button>
                 {editingCharacter && <button className="secondary-button" onClick={() => {
                   setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
@@ -1282,7 +1279,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             </div> : <div className="creator-fields">
               <div className="creator-section-intro">
                 <h3>Distintas formas de comenzar</h3>
-                <p>Prepara hasta seis escenas iniciales. El jugador podrá elegir
+                <p>Prepare up to six opening scenes. The player can choose
                   una al iniciar. Puedes usar <code>{'{{user}}'}</code> como referencia al protagonista.</p>
               </div>
               {blueprint.opening_scenarios.map((opening,index) =>
@@ -1302,9 +1299,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </button>
                 </div>)}
               <label>Escribir otra apertura
-                <textarea rows={5} aria-label="Nueva apertura" maxLength={3000}
+                <textarea rows={5} aria-label="New opening" maxLength={3000}
                   value={openingDraft} onChange={e=>setOpeningDraft(e.target.value)}
-                  placeholder="Describe la primera escena tal como debería leerla el jugador."/>
+                  placeholder="Describe the opening scene as the player should read it."/>
               </label>
               <div className="creator-actions">
                 <button className="secondary-button" disabled={working ||
@@ -1312,25 +1309,25 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onClick={() => {
                     update('opening_scenarios',[...blueprint.opening_scenarios, openingDraft.trim()]);
                     setOpeningDraft('');
-                  }}><Plus size={16}/> Añadir apertura</button>
+                  }}><Plus size={16}/> Add opening</button>
                 <button className="primary-button" disabled={working}
-                  onClick={() => void saveBlueprint()}><Save size={16}/> Guardar aperturas</button>
+                  onClick={() => void saveBlueprint()}><Save size={16}/> Save openings</button>
               </div>
               <p className="creator-hint">Guarda las aperturas antes de activar un inicio.
-                No se reemplaza automáticamente una historia que ya tenga turnos.</p>
+                A story with saved turns is never overwritten automatically.</p>
             </div>}
         </>}
       </div>
     </div>
     {createNew && <div className="welcome-scrim">
-      <section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Crear proyecto narrativo">
+      <section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Create story project">
         <div className="story-create-heading"><span className="overline">NUEVA HISTORIA</span>
-          <button aria-label="Cerrar proyecto" className="icon-button"
+          <button aria-label="Close project" className="icon-button"
             onClick={() => setCreateNew(false)}><X size={18}/></button></div>
-        <h2>Crea tu próximo mundo</h2>
-        <p>Primero crea el proyecto. Después tendrás herramientas independientes para
+        <h2>Create your next world</h2>
+        <p>Create the project first. Dedicated tools are available afterward for
           la trama, personajes y aperturas.</p>
-        <label className="form-label">Título
+        <label className="form-label">Title
           <input value={newTitle} maxLength={100}
             onChange={e => setNewTitle(e.target.value)}/></label>
         <label className="form-label">Premisa del mundo
@@ -1342,7 +1339,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         {error && <p role="alert" className="narrative-error">{error}</p>}
         <button className="primary-button full" disabled={working || newTitle.trim().length<2 ||
           newPremise.trim().length<10 || !newProtagonist.trim()} onClick={() => void createStory()}>
-          <Plus size={16}/> Crear proyecto
+          <Plus size={16}/> Create project
         </button>
       </section>
     </div>}
