@@ -862,9 +862,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <p className="creator-hint">
                   El recorte neuronal utiliza ComfyUI-RMBG y reconstruye la transparencia
                   desde una mask PNG independiente. Deben estar instalados los nodos
-                  y todos los archivos del modelo. Si faltan, la generación se detiene
+                  and all required model files. If any are missing, generation stops
                   sin cambiar los sprites anteriores ni descargar modelos desde Noble AI.
-                  La mask también requiere revisión visual.
+                  The mask also requires visual review.
                 </p>
                 <label>
                   <input type="checkbox" aria-label="Usar LoRA del NPC para sprites IA"
@@ -873,8 +873,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </label>
                 <p className="creator-hint">
                   Se usa el mismo checkpoint, seed y estilo en las cinco expresiones.
-                  Con img2img se reutiliza la composición; IPAdapter usa una
-                  referencia de identidad sobre un lienzo nuevo. Ningún método garantiza
+                  img2img preserves a composition; IPAdapter guides a new canvas using an identity reference. Neither method guarantees
                   el mismo rostro. Hasta tres borradores por historia y caducan a las 48 horas.
                   No se realizan cinco generaciones en paralelo.
                 </p>
@@ -994,8 +993,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     onClick={() => editLorebook(entry)}>Edit entry</button>
                 </div>)}
                 {!lorebookEntries.length && <p className="creator-placeholder">
-                  Todavía no hay entradas. Crea hechos que deban recordarse
-                  únicamente en escenas relevantes.</p>}
+                  No entries yet. Add facts that should be recalled only in relevant scenes.</p>}
               </div>
               <div className="creator-media-form">
                 <h4>{editingLorebook ? 'Edit Lorebook entry' : 'New Lorebook entry'}</h4>
@@ -1009,7 +1007,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <textarea aria-label="Lorebook content" rows={5} maxLength={3500}
                     value={lorebookDraft.content} onChange={e => setLorebookDraft(v => ({
                       ...v, content: e.target.value,
-                    }))} placeholder="Describe reglas, secretos o información canónica del mundo."/>
+                    }))} placeholder="Describe world rules, secrets, or canonical facts."/>
                 </label>
                 <div className="creator-double">
                   <label>Claves principales (separadas por coma)
@@ -1128,7 +1126,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   las directrices se entregan al narrador, no al texto del jugador.</p>
               </div>
               <div className="creator-double">
-                <label>Género
+                <label>Genre
                   <input aria-label="Story genre" value={blueprint.genre}
                     maxLength={80} placeholder="Fantasy, romance, mystery..."
                     onChange={e => update('genre', e.target.value)}/>

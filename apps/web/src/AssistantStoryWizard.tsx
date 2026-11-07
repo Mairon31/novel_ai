@@ -341,7 +341,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         {generationBudget && <small aria-label="Estimated generation budget">
           Contexto: {generationBudget.context_characters.toLocaleString()} caracteres,
           aproximadamente {generationBudget.input_tokens_estimate.toLocaleString()} tokens de entrada
-          y máximo {generationBudget.max_output_tokens.toLocaleString()} tokens de salida.
+          and up to {generationBudget.max_output_tokens.toLocaleString()} output tokens.
           Estimaciones, no consumos medidos por el proveedor.
         </small>}
       </div>

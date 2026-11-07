@@ -97,9 +97,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
 
   return <div className="workspace-panel comfy-runtime-panel">
     <h3><Terminal size={18}/> Ejecutar ComfyUI desde Noble AI</h3>
-    <p>Usa una instalación existente de ComfyUI y su Python local.
-      Noble AI controla solamente los procesos que inicia, sin descargar código
-      ni abrir ComfyUI al entrar en Configuración.</p>
+    <p>Use an existing ComfyUI installation and its local Python environment. Noble AI manages only the processes it starts, without downloading code or launching ComfyUI just by opening Settings.</p>
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">Carpeta de ComfyUI
         <input aria-label="Carpeta local de ComfyUI" value={config.install_dir}

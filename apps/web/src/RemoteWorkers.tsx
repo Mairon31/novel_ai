@@ -103,8 +103,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
 
   return <div className="workspace-panel noble-worker-manager">
     <h3><Cloud size={18}/> Workers GPU remotos</h3>
-    <p>Conecta una segunda PC o una sesión de Google Colab a través de un túnel Cloudflare protegido.
-      Noble AI utiliza la GPU del worker para generar los diálogos; el historial permanece en el equipo principal.</p>
+    <p>Connect another PC or an eligible Colab session through a protected Cloudflare tunnel. Remote GPU inference handles narrative generation while story history stays on this computer.</p>
 
     <div className="noble-worker-form">
       <label className="workspace-pref-field">Nombre
@@ -190,19 +189,15 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
         }}/></div>
       </div>)}
       <p className="noble-worker-health-note">
-        Las métricas reflejan el momento de la comprobación, no un benchmark continuo.
-        Actualízalas con «Test connection».
+        Metrics reflect the latest probe, not continuous benchmarking. Refresh them using Test connection.
       </p>
     </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}
     {message && <p role="status" className="narrative-saved"><CheckCircle2 size={15}/>{message}</p>}
     <div className="workspace-note"><ShieldCheck size={17}/>
-      El túnel debe autenticar todas las solicitudes Bearer. Noble AI rechaza workers que respondan
-      a tokens incorrectos. Por ahora se admiten únicamente endpoints de LLM compatibles
-      con OpenAI; no se inicia Colab automáticamente ni se comparten archivos con el worker.
+      The tunnel must authenticate all bearer requests. Noble AI rejects workers accepting invalid tokens. Only compatible LLM endpoints are supported; Colab is not started automatically and no files are shared.
     </div>
-    <p className="noble-worker-guide"><Server size={15}/> Configuración del worker:
-      ejecuta el proxy autenticado de Noble AI en la máquina GPU y publica solo ese proxy
+    <p className="noble-worker-guide"><Server size={15}/> Worker setup: run Noble AI's authenticated proxy on the GPU computer and expose only that proxy
       con cloudflared. <a target="_blank" rel="noreferrer"
         href="https://github.com/Mairon31/novel_ai/blob/master/docs/WORKERS.md">
         Ver instrucciones <RefreshCw size={13}/></a></p>

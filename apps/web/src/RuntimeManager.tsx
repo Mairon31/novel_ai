@@ -112,8 +112,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
         </label>
       </div>
       <p className="narrative-helper">Necesitas tener el ejecutable oficial KoboldCpp descargado.
-        Noble AI solo ejecutará un GGUF previamente instalado y abrirá el servidor en 127.0.0.1.
-        Los valores de memoria son configurables, pero la compatibilidad de 12/16 GB aún necesita medición.</p>
+        Noble AI launches only a registered GGUF and binds to 127.0.0.1. Memory settings are configurable, but 12/16 GB compatibility still requires physical measurement.</p>
     </>}
     {error && <p className="narrative-error" role="alert"><CircleAlert size={15}/> {error}</p>}
     {message && <p className="narrative-saved" role="status"><CheckCircle2 size={15}/> {message}</p>}

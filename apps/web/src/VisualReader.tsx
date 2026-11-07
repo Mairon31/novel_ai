@@ -384,7 +384,7 @@ export function VisualReader({
       setScenePlan(saved);
       setPreviewPrompt('');
       setDirectorPreview(null);
-      setIllustrationNotice('Plan de escena guardado. Se utilizará para las próximas ilustraciones.');
+      setIllustrationNotice('Scene plan saved. It will be used for future illustrations.');
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
@@ -425,7 +425,7 @@ export function VisualReader({
       onUpdateStory({
         ...story, scene_image_url: '/api/v1/stories/' + story.id + '/scene-image?v=' + Date.now(),
       });
-      setIllustrationNotice('Fondo reutilizado desde la galería. No se ejecutó ComfyUI.');
+      setIllustrationNotice('Background reused from Gallery. ComfyUI was not called.');
     } catch (exc) {
       if (directorRequest.current === sequence) setDirectorError((exc as Error).message);
     } finally { if (directorRequest.current === sequence) setDirectorBusy(false); }
@@ -467,15 +467,15 @@ export function VisualReader({
     try {
       const seed = imageSeed.trim() ? Number(imageSeed) : undefined;
       if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
-        throw new Error('La semilla debe ser un número entero positivo.');
+        throw new Error('Seed must be a nonnegative integer.');
       const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed,
         referenceAssetId || undefined, referenceAssetId ? denoise : undefined,
         allowLowVram, applyCharacterLoras);
       const loraInfo = result.applied_loras?.length
         ? ' LoRAs aplicados: ' + result.applied_loras.map(lora => lora.lora_name).join(', ') + '.'
         : '';
-      setIllustrationNotice((result.cached ? 'Ilustración recuperada de la caché.' :
-        'Ilustración nueva guardada como versión independiente.') + loraInfo);
+      setIllustrationNotice((result.cached ? 'Illustration restored from cache.' :
+        'New illustration saved as an independent version.') + loraInfo);
       // Force refreshing a previous scene despite using a stable asset path.
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
@@ -814,7 +814,7 @@ export function VisualReader({
               <button className="noble-inspector-branch" disabled={generating || updating}
                 title="Rebobinar de forma segura sin modificar la historia original"
                 onClick={() => setRewindTurn(turn)}><RotateCcw size={14}/> Rewind here</button>
-            </div>) : <p>Todavía no se han generado escenas.</p>}
+            </div>) : <p>No scenes have been generated yet.</p>}
         </>}
         {tab === 'gallery' && <>
           <h4>Scene and location</h4>
@@ -1152,7 +1152,7 @@ export function VisualReader({
       </section>
     </div>}
     <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/webp"
-      aria-label="Subir ilustración de escena" onChange={e => {
+      aria-label="Upload scene illustration" onChange={e => {
         const file = e.target.files?.[0];
         void upload(file);
         e.target.value = '';

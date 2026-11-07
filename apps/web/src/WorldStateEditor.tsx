@@ -116,9 +116,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
   return <div className="creator-fields world-state-editor" aria-label="Estado del mundo">
     <div className="creator-section-intro">
       <h3>Estado confirmado del mundo</h3>
-      <p>Actualiza ubicación, personajes presentes, inventario y hechos de forma explícita.
-        El narrador no puede convertir suposiciones en canon por sí solo. Cada turno
-        conserva una instantánea que permite reconstruir el estado de una rama.</p>
+      <p>Explicitly update location, present characters, inventory, and facts. The narrator cannot silently promote assumptions into canon. Each turn stores a snapshot for restoring branches.</p>
       <small>Saved revision: {document.revision} · Changes are validated before saving</small>
     </div>
 
@@ -169,7 +167,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       {!!characters.length && <div className="world-relations">
         <h4>Relaciones confirmadas</h4>
         {characters.map(character => <label key={character.id}>
-          Relación de {character.name} con el protagonista
+          Relationship of {character.name} with the protagonist
           <input aria-label={'Relationship with ' + character.name} maxLength={160}
             value={draft.relationships[character.id] || ''}
             onChange={event => {
@@ -217,8 +215,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
 
     <section className="world-section">
       <h4><ShieldCheck size={17}/> Hechos y testigos</h4>
-      <p>Los hechos públicos forman parte del conocimiento general. Los privados solo
-        se incorporan al contexto cuando un testigo declarado está presente.</p>
+      <p>Public facts are general knowledge. Private facts enter the narrator's context only when a declared witness is present.</p>
       {draft.facts.map((fact, index) =>
         <div key={fact.id} className="world-fact">
           <div className="world-fact-title">

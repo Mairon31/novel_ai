@@ -386,7 +386,7 @@ export function StoryStudio({
       {createStep === 'story' ? <>
         <h2>Start a new story.</h2>
         <p>Define the opening scene. Images and speech are generated only when requested.</p>
-        <label className="form-label" htmlFor="story-title">Título</label>
+        <label className="form-label" htmlFor="story-title">Title</label>
         <input id="story-title" className="story-create-input" maxLength={100} value={title}
           onChange={e => setTitle(e.target.value)} placeholder="For example: The Forest of Spirits"/>
         <label className="form-label" htmlFor="story-premise">World premise</label>
