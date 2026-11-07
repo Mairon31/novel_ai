@@ -127,14 +127,14 @@ def render_story_html(narrative, story_id: str) -> bytes:
             body.extend(frame)
     title = _safe_text(story["title"])
     coverline = _safe_text(story["premise"])
-    protagonist = _safe_text(story.get("protagonist_name") or "Protagonista")
+    protagonist = _safe_text(story.get("protagonist_name") or "Protagonist")
     origin = (' · Rama independiente' if story.get("origin_story_id") else '')
     page = ('<!doctype html><html lang="es"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>' + title + '</title><style>' + STYLES +
             '</style></head><body><main><header><small>NOBLE AI · LOCAL EXPORT'
             + _safe_text(origin) + '</small><h1>' + title +
-            '</h1><p>' + coverline + '</p><small>Protagonista: ' +
+            '</h1><p>' + coverline + '</p><small>Protagonist: ' +
             protagonist + '</small></header>' + ''.join(body) +
             '</main></body></html>')
     return page.encode("utf-8")
@@ -170,7 +170,7 @@ def render_story_epub(narrative, story_id: str) -> bytes:
     ET.SubElement(header, "{" + XHTML_NS + "}h1").text = story["title"]
     ET.SubElement(header, "{" + XHTML_NS + "}p").text = story["premise"]
     ET.SubElement(header, "{" + XHTML_NS + "}small").text = (
-        "Protagonista: " + (story.get("protagonist_name") or "Protagonista"))
+        "Protagonist: " + (story.get("protagonist_name") or "Protagonist"))
     if story.get("origin_story_id"):
         ET.SubElement(header, "{" + XHTML_NS + "}p").text = "Rama independiente"
 

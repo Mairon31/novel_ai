@@ -201,7 +201,7 @@ class NarrativeService:
             res.raise_for_status()
             data = res.json()
             if not isinstance(data, dict):
-                raise ValueError("Formato de proveedor incorrecto")
+                raise ValueError("Invalid provider format")
             return data
 
     async def available_models(self) -> dict:

@@ -125,7 +125,7 @@ class CreatorService:
             raise ValueError("Unsupported story language")
         scenarios = [text.strip() for text in body.opening_scenarios]
         if any(len(text)<15 or len(text)>3000 for text in scenarios):
-            raise ValueError("Cada inicio necesita entre 15 y 3000 caracteres")
+            raise ValueError("Each opening must contain 15–3,000 characters")
         if len(set(x.casefold() for x in body.tags)) != len(body.tags):
             raise ValueError("Do not repeat tags")
         if any(not 2<=len(tag.strip())<=35 for tag in body.tags):
