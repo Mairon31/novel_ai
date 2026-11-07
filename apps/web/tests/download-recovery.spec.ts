@@ -17,8 +17,8 @@ test('Downloads displays reconciled files and non-destructive startup conflicts'
   await page.getByRole('button', { name: 'Downloads', exact: true }).click();
   const recovery = page.locator('.workspace-note[role="status"]');
   await expect(recovery).toBeVisible();
-  await expect(recovery).toContainText('2 download(s) recovered after restart');
-  await expect(recovery).toContainText('1 conflict(s) detected');
+  await expect(recovery).toContainText('2 downloads recovered after restart');
+  await expect(recovery).toContainText('1 conflict detected');
   await expect(recovery).toContainText('do not overwrite files');
   await expect(page.getByRole('heading', { name: /^Downloads/ })).toBeVisible();
 });

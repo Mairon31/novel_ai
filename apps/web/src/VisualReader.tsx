@@ -1127,7 +1127,7 @@ export function VisualReader({
             <>
               <div><BookOpen size={15}/>
                 {rewindPreview.lore ?
-                  `Historical Lorebook: ${rewindPreview.lore.entries.length} entries` :
+                  `Historical Lorebook: ${rewindPreview.lore.entries.length} ${rewindPreview.lore.entries.length === 1 ? 'entry' : 'entries'}` :
                   'Historical Lorebook unavailable: current secrets will not be inherited'}
               </div>
               <div><GitBranch size={15}/>

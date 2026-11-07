@@ -444,7 +444,7 @@ class NarrativeService:
                     existing = existing[:positions[0] + 1]
 
                 now = time.time()
-                label = actual["title"][:88].rstrip() + " (rama)"
+                label = actual["title"][:88].rstrip() + " (branch)"
                 db.execute("""INSERT INTO stories
                     (id,title,premise,created_at,updated_at,protagonist_name,
                      canon,origin_story_id,origin_turn_id)

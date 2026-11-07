@@ -74,7 +74,7 @@ test('safe rewind previews historical facts and creates an independent route', a
 
   const dialog = page.getByRole('dialog', { name: 'Confirm rewind' });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Historical Lorebook: 1 entries');
+  await expect(dialog).toContainText('Historical Lorebook: 1 entry');
   await expect(dialog).toContainText('World state: Puerto antiguo');
   await expect(dialog).toContainText('original story');
   await page.screenshot({
@@ -90,10 +90,10 @@ test('safe rewind previews historical facts and creates an independent route', a
   expect(stories.stories.filter(item => item.origin_story_id === storyId)).toHaveLength(0);
 
   await page.getByRole('button', { name: 'Rewind here' }).click();
-  await expect(dialog).toContainText('Historical Lorebook: 1 entries');
+  await expect(dialog).toContainText('Historical Lorebook: 1 entry');
   await dialog.getByRole('button', { name: 'Create branch from this turn' }).click();
   await expect(dialog).toBeHidden();
-  await expect(page.locator('.noble-reader-chapter')).toContainText('(rama)');
+  await expect(page.locator('.noble-reader-chapter')).toContainText('(branch)');
 
   stories = await (await page.request.get('/api/v1/stories')).json();
   const branch = stories.stories.find(item => item.origin_story_id === storyId);

@@ -47,7 +47,7 @@ function ErrorNote({ message, close }: { message: string; close: () => void }) {
     <button aria-label="Dismiss notice" onClick={close}><X size={16}/></button></div>;
 }
 function Loading() {
-  return <div className="loading"><LoaderCircle className="rotating" size={18}/> Consultando...</div>;
+  return <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading...</div>;
 }
 
 // FitCell adapted from Urakatsu (MIT), web/src/components/ModelsPage.tsx.
@@ -666,9 +666,9 @@ export default function App() {
               {recovery.conflicts ? <CircleAlert size={18}/> : <ShieldCheck size={18}/>}
               <span>
                 {recovery.recovered > 0 &&
-                  <strong>{recovery.recovered} download(s) recovered after restart. </strong>}
+                  <strong>{recovery.recovered} download{recovery.recovered === 1 ? '' : 's'} recovered after restart. </strong>}
                 {recovery.conflicts > 0 &&
-                  <strong>{recovery.conflicts} conflict(s) detected. </strong>}
+                  <strong>{recovery.conflicts} conflict{recovery.conflicts === 1 ? '' : 's'} detected. </strong>}
                 Recovered files require an explicit resume and verification before use.
                 {recovery.conflicts > 0 &&
                   ' Conflicts do not overwrite files; review the reason on each download.'}

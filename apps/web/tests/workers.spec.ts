@@ -72,31 +72,31 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
   await page.getByRole('button', { name: 'Settings' }).click();
-  await page.getByRole('button', { name: 'Red y workers' }).click();
-  await expect(page.getByRole('heading', { name: 'Workers GPU remotos' })).toBeVisible();
+  await page.getByRole('button', { name: 'Network & Workers' }).click();
+  await expect(page.getByRole('heading', { name: 'Remote GPU workers' })).toBeVisible();
   await page.getByLabel('Worker name').fill(name);
-  await page.getByLabel('URL del worker').fill(address);
-  await page.getByLabel('Token del worker').fill('a-long-fixture-bearer-secret');
-  await page.getByRole('button', { name: 'Registrar worker' }).click();
+  await page.getByLabel('Worker URL').fill(address);
+  await page.getByLabel('Worker token').fill('a-long-fixture-bearer-secret');
+  await page.getByRole('button', { name: 'Register worker' }).click();
   await expect(page.getByText('Worker registered. Check its connection before activation.')).toBeVisible();
-  await expect(page.getByLabel('Token del worker')).toHaveValue('');
+  await expect(page.getByLabel('Worker token')).toHaveValue('');
   await page.getByRole('button', { name: 'Test connection' }).click();
   await expect(page.getByText('Worker available and authenticated')).toBeVisible();
   await expect(page.getByLabel('Remote model')).toHaveValue('fixture-gguf:4b');
   await expect(page.getByText('NVIDIA T4 fixture')).toBeVisible();
   await expect(page.getByText('VRAM 4100 / 15360 MB · GPU 45%')).toBeVisible();
-  await page.getByRole('button', { name: 'Medir respuesta real' }).click();
+  await page.getByRole('button', { name: 'Measure real response' }).click();
   await expect(page.getByText('Generation test completed')).toBeVisible();
-  await expect(page.getByText('Primer texto: 221 ms')).toBeVisible();
+  await expect(page.getByText('Time to first text: 221 ms')).toBeVisible();
   await page.getByRole('button', { name: 'Use remote model as narrator' }).click();
-  await expect(page.getByText(/Narrator remoto activado: fixture-gguf:4b/)).toBeVisible();
+  await expect(page.getByText(/Remote narrator activated: fixture-gguf:4b/)).toBeVisible();
 
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-remote-workers.png',
     fullPage: true,
   });
-  await page.getByRole('button', { name: 'Quitar' }).click();
-  await expect(page.getByText('Worker eliminado. Su token guardado fue retirado.')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove' }).click();
+  await expect(page.getByText('Worker removed. Its stored token was cleared.')).toBeVisible();
   expect(requests).toContain('GET /probe');
   expect(requests).toContain('POST /activate');
   expect(requests).toContain('POST /benchmark');

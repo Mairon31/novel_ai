@@ -102,7 +102,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
   }
 
   return <div className="workspace-panel noble-worker-manager">
-    <h3><Cloud size={18}/> Workers GPU remotos</h3>
+    <h3><Cloud size={18}/> Remote GPU workers</h3>
     <p>Connect another PC or an eligible Colab session through a protected Cloudflare tunnel. Remote GPU inference handles narrative generation while story history stays on this computer.</p>
 
     <div className="noble-worker-form">
@@ -133,7 +133,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
           {busy ? <LoaderCircle size={16} className="rotating"/> : <PlugZap size={16}/>}
           Test connection</button>
         <button className="secondary-button" disabled={busy || !selected}
-          onClick={() => void remove()}><Trash2 size={16}/> Quitar</button>
+          onClick={() => void remove()}><Trash2 size={16}/> Remove</button>
       </div>
     </div>
     {selected && <div className="noble-worker-info">

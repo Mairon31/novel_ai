@@ -59,16 +59,16 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   // A named character can own a canonical image reference for planned scenes.
   await page.getByRole('button', { name: 'Summary', exact: true }).click();
   await page.getByRole('button', { name: /Aira.*Revision 1/ }).click();
-  await page.getByLabel('Referencia del personaje').selectOption(referenceId!);
+  await page.getByLabel('Character reference').selectOption(referenceId!);
   await page.getByRole('button', { name: 'Save visual reference' }).click();
   await expect(page.getByRole('button', { name: /Aira.*Revision 2/ })).toBeVisible();
   await page.getByRole('button', { name: 'Gallery', exact: true }).click();
-  await page.getByRole('checkbox', { name: 'Personaje visible Aira' }).check();
+  await page.getByRole('checkbox', { name: 'Visible character Aira' }).check();
   await page.getByRole('combobox', { name: 'Scene shot' }).selectOption('closeup');
   await page.getByRole('combobox', { name: 'Scene lighting' }).selectOption('sunset');
   await page.getByLabel('Visual mood').fill('misterio y esperanza');
   await page.getByLabel('Scene direction').fill('Aira levanta el medallón.');
-  const focus = page.getByRole('combobox', { name: 'Foco visual' });
+  const focus = page.getByRole('combobox', { name: 'Visual focus' });
   const airaValue = await focus.locator('option').nth(1).getAttribute('value');
   expect(airaValue).toBeTruthy();
   await focus.selectOption(airaValue!);

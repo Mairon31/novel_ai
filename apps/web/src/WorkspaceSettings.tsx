@@ -37,11 +37,11 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'images', label: 'Images', icon: Image },
   { id: 'voice', label: 'Voice / TTS', icon: Volume2 },
   { id: 'languages', label: 'Languages and translation', icon: Languages },
-  { id: 'providers', label: 'Proveedores', icon: Globe2 },
-  { id: 'appearance', label: 'Apariencia', icon: Palette },
+  { id: 'providers', label: 'Providers', icon: Globe2 },
+  { id: 'appearance', label: 'Appearance', icon: Palette },
   { id: 'runtimes', label: 'Runtimes', icon: Cpu },
-  { id: 'shortcuts', label: 'Atajos', icon: Keyboard },
-  { id: 'network', label: 'Red y workers', icon: Server },
+  { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
+  { id: 'network', label: 'Network & Workers', icon: Server },
   { id: 'about', label: 'About Noble AI', icon: MonitorCog },
   { id: 'updates', label: 'Updates', icon: Download },
 ];
@@ -49,7 +49,7 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
   {title:'OVERVIEW', description:'Quick access to your preferences',
     sections:['overview']},
-  {title:'INTELIGENCIA',description:'Narrator and providers',
+  {title:'INTELLIGENCE',description:'Narrator and providers',
     sections:['narration','providers','languages']},
   {title:'MEDIA CREATION',description:'Image generation and voices',
     sections:['images','voice']},
@@ -160,7 +160,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
   }
 
   return <section className="hub workspace-settings">
-    <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> ESTUDIO PERSONALIZABLE</div>
+    <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> CUSTOMIZABLE STUDIO</div>
       <h1>Settings<span className="title-dot">.</span></h1>
       <p>Engines, languages, reader preferences, diagnostics, and future remote connections in one place.</p>
     </div>
@@ -199,7 +199,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <div><KeyRound size={17}/><small>OpenRouter</small>
               <strong>{credential?.configured ? 'Key configured' : 'No key'}</strong></div>
             <div><Cpu size={17}/><small>Local version</small>
-              <strong>{about?.version || 'Consultando...'}</strong></div>
+              <strong>{about?.version || 'Loading...'}</strong></div>
           </div>
           <div className="workspace-settings-overview-grid">
             {[
@@ -256,8 +256,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             {option('Multilingual handling', prefs.translation_mode, [
               ['off', 'Standard narration'], ['target_output', 'Preserve meaning and respond in the target language'],
             ], v => void update('translation_mode', v))}
-            {option('Estilo narrativo', prefs.narration_style, [
-              ['natural', 'Natural y conversacional'], ['literary', 'Literario y descriptivo'],
+            {option('Narration style', prefs.narration_style, [
+              ['natural', 'Natural and conversational'], ['literary', 'Literary and descriptive'],
               ['concise', 'Brief and dynamic'],
             ], v => void update('narration_style', v))}
           </div>
