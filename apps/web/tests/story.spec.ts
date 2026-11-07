@@ -5,7 +5,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
@@ -47,7 +47,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   });
   await page.getByRole('textbox', { name: 'Your input in the story' })
     .fill('Abro el libro que hay sobre el mostrador.');
-  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(page.locator('.noble-reader-prose').getByText('Una hechicera abre la puerta y señala un libro antiguo.')).toBeVisible();
   await expect(page.getByText('Abro el libro que hay sobre el mostrador.')).toBeVisible();
   await page.getByRole('button', { name: 'Open story details' }).click();

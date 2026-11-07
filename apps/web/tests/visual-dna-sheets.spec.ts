@@ -24,15 +24,15 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
-      await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
-    await page.getByRole('button', { name: /Personajes \(0\)/ }).click();
+      await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await page.getByRole('button', { name: /Characters \(0\)/ }).click();
     await page.getByLabel('Nombre de NPC').fill('Aira');
     await page.getByLabel('Ficha visual del NPC').selectOption(visual.id);
     await page.getByLabel('Descripción de NPC').fill(
       'Aira protege las llaves del castillo antiguo de cristal.');
     await page.getByLabel('Etiquetas visuales').fill('cabello negro, ojos verdes');
     await page.getByLabel('Semilla visual').fill('6789');
-    await page.getByRole('button', { name: 'Añadir personaje' }).click();
+    await page.getByRole('button', { name: 'Add character' }).click();
     await expect(page.getByText(/Ficha narrativa del personaje guardada/)).toBeVisible();
     await page.locator('.creator-character-list button').filter({ hasText: 'Aira' }).click();
     await expect(page.getByLabel('Etiquetas visuales')).toHaveValue(
@@ -49,7 +49,7 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     await page.getByLabel('Archivo de hoja de expresiones').setInputFiles({
       name: 'expressions.png', mimeType: 'image/png', buffer: spriteSheet,
     });
-    await page.getByRole('button', { name: 'Importar cinco expresiones' }).click();
+    await page.getByRole('button', { name: 'Import five expressions' }).click();
     await expect(page.getByText(/Se importaron 5 expresiones/)).toBeVisible();
     await expect(page.locator('.creator-media-card')).toHaveCount(5);
     await page.screenshot({

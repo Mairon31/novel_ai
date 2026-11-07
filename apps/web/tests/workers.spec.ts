@@ -65,7 +65,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
     await expect(setup).toBeHidden();
   }
   if (test.info().project.name === 'mobile') {
@@ -80,7 +80,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await page.getByRole('button', { name: 'Registrar worker' }).click();
   await expect(page.getByText('Worker registrado. Comprueba su conexión antes de activarlo.')).toBeVisible();
   await expect(page.getByLabel('Token del worker')).toHaveValue('');
-  await page.getByRole('button', { name: 'Probar conexión' }).click();
+  await page.getByRole('button', { name: 'Test connection' }).click();
   await expect(page.getByText('Worker disponible y autenticado')).toBeVisible();
   await expect(page.getByLabel('Modelo remoto')).toHaveValue('fixture-gguf:4b');
   await expect(page.getByText('NVIDIA T4 fixture')).toBeVisible();
@@ -89,7 +89,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await expect(page.getByText('Prueba de generación completada')).toBeVisible();
   await expect(page.getByText('Primer texto: 221 ms')).toBeVisible();
   await page.getByRole('button', { name: 'Usar modelo remoto como narrador' }).click();
-  await expect(page.getByText(/Narrador remoto activado: fixture-gguf:4b/)).toBeVisible();
+  await expect(page.getByText(/Narrator remoto activado: fixture-gguf:4b/)).toBeVisible();
 
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-remote-workers.png',

@@ -5,7 +5,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
 
   const title = 'La línea temporal del faro ' + test.info().project.name;
   const created = await page.request.post('/api/v1/stories', {
@@ -67,12 +67,12 @@ test('safe rewind previews historical facts and creates an independent route', a
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).first().click();
-  await page.getByRole('button', { name: 'Continuar historia' }).click();
+  await page.getByRole('button', { name: 'Continue historia' }).click();
   await page.getByRole('button', { name: 'Open story details' }).click();
-  await page.getByRole('button', { name: 'Historial', exact: true }).click();
+  await page.getByRole('button', { name: 'History', exact: true }).click();
   await page.getByRole('button', { name: 'Rewind here' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'Confirmar rebobinado' });
+  const dialog = page.getByRole('dialog', { name: 'Confirm rewind' });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText('Lorebook histórico: 1 entrada(s)');
   await expect(dialog).toContainText('Estado del mundo: Puerto antiguo');
@@ -83,7 +83,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   });
 
   // Cancel is a no-op; only explicit confirmation creates a new route.
-  await dialog.getByRole('button', { name: 'Mantenerme aquí' }).click();
+  await dialog.getByRole('button', { name: 'Stay here' }).click();
   await expect(dialog).toBeHidden();
   type StoryList = { stories: Array<{ id: string; origin_story_id: string | null }> };
   let stories: StoryList = await (await page.request.get('/api/v1/stories')).json();

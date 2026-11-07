@@ -5,32 +5,32 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
 
-  await page.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
+  await page.getByRole('button', { name: 'Create project', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'El mapa y los testigos ' + test.info().project.name;
   await dialog.getByLabel('Título').fill(title);
   await dialog.getByLabel('World premise').fill(
     'Una exploradora descubre un secreto antiguo oculto bajo el puerto de la ciudad.');
   await dialog.getByLabel('Protagonist').fill('Luna');
-  await dialog.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Create project', exact: true }).click();
   await expect(dialog).toBeHidden();
 
-  await page.getByRole('button', { name: /Personajes \(0\)/ }).click();
+  await page.getByRole('button', { name: /Characters \(0\)/ }).click();
   await page.getByLabel('Nombre de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Aira es la protectora del faro que conoce los secretos de la ciudad.');
-  await page.getByRole('button', { name: 'Añadir personaje' }).click();
-  await expect(page.getByRole('button', { name: /Personajes \(1\)/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Add character' }).click();
+  await expect(page.getByRole('button', { name: /Characters \(1\)/ })).toBeVisible();
   await page.getByLabel('Nombre de NPC').fill('Beto');
   await page.getByLabel('Descripción de NPC').fill(
     'Beto es un viajero que se encuentra por primera vez con la guardiana.');
-  await page.getByRole('button', { name: 'Añadir personaje' }).click();
-  await expect(page.getByRole('button', { name: /Personajes \(2\)/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Add character' }).click();
+  await expect(page.getByRole('button', { name: /Characters \(2\)/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Estado del mundo' }).click();
   await page.getByLabel('Lugar del mundo').fill('Puerto de niebla');
@@ -97,7 +97,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.locator('.creator-project').filter({ hasText: title }).first().click();
   await page.getByRole('button', { name: 'Estado del mundo' }).click();
   await expect(page.getByLabel('Lugar del mundo')).toHaveValue('Bosque del futuro');
-  await page.getByText('Historial de instantáneas por turno').click();
+  await page.getByText('History de instantáneas por turno').click();
   await page.getByLabel('Historical world turn').selectOption(turnId);
   await page.getByRole('button', { name: 'Ver instantánea' }).click();
   await expect(page.getByText('Lugar: Puerto de niebla')).toBeVisible();

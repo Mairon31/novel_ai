@@ -28,8 +28,8 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
       engine: 'piper', available: true, device: 'cpu', on_demand_only: true,
       models_dir: '/tmp/noble/models/voices',
       voices: [
-        { id: 'voice-a.onnx', name: 'Narradora A' },
-        { id: 'voice-b.onnx', name: 'Narradora B' },
+        { id: 'voice-a.onnx', name: 'Narratora A' },
+        { id: 'voice-b.onnx', name: 'Narratora B' },
       ],
     }),
   }));
@@ -45,25 +45,25 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await welcome.isVisible()) {
-      await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+      await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
     }
     if (test.info().project.name === 'mobile') {
       await page.getByRole('button', { name: 'Open menu' }).click();
     }
     await page.getByRole('button', { name: 'Settings' }).click();
     await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
-    await expect(page.getByLabel('Voz predeterminada de Piper')).toBeVisible();
+    await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   };
   await page.goto('/');
   await openSettings();
-  await page.getByLabel('Voz predeterminada de Piper').selectOption('voice-b.onnx');
+  await page.getByLabel('Default Piper voice').selectOption('voice-b.onnx');
   await page.getByRole('button', { name: 'Guardar voz predeterminada' }).click();
   await expect(page.getByText('Voz predeterminada guardada para el lector.')).toBeVisible();
   expect(writes).toBe(1);
   expect(selected).toBe('voice-b.onnx');
   await page.reload();
   await openSettings();
-  await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveValue('voice-b.onnx');
+  await expect(page.getByLabel('Default Piper voice')).toHaveValue('voice-b.onnx');
   expect(writes).toBe(1);
   expect(previewCalls).toBe(0);
   await expect(page.getByLabel('Velocidad Piper')).toHaveValue('1');
