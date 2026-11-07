@@ -90,8 +90,11 @@ class ColabPlayTests(unittest.TestCase):
             cmds = launcher.github_fetch_commands("c" * 40, root)
             self.assertEqual(len(cmds), 2)
             self.assertEqual(cmds[0][-1], "c" * 40)
-            self.assertNotIn("clean", " ".join(" ".join(x) for x in cmds))
-            self.assertNotIn("rm", " ".join(" ".join(x) for x in cmds))
+            # Compare complete argv tokens: temporary directory names may
+            # contain "rm" or "clean" as harmless substrings by chance.
+            argv = [part for command in cmds for part in command]
+            self.assertNotIn("clean", argv)
+            self.assertNotIn("rm", argv)
 
     def test_auto_model_selection_with_realistic_gpu_profiles(self):
         self.assertEqual(launcher.model_for_vram("auto", 15360),
