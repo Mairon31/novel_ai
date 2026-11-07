@@ -43,7 +43,7 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     const cast = await page.request.get('/api/v1/stories/' + story.id + '/creator/characters');
     expect(cast.status()).toBe(200);
     expect((await cast.json()).characters[0].visual_character_id).toBe(visual.id);
-    await page.getByRole('button', { name: /Imágenes/ }).click();
+    await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('Personaje de hoja de expresiones').selectOption({ label: 'Aira' });
     await page.getByLabel('Contexto de hoja').fill('Aira castillo cristal');
     await page.getByLabel('Archivo de hoja de expresiones').setInputFiles({

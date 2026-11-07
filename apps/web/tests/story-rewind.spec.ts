@@ -65,7 +65,7 @@ test('safe rewind previews historical facts and creates an independent route', a
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).first().click();
   await page.getByRole('button', { name: 'Continuar historia' }).click();
   await page.getByRole('button', { name: 'Open story details' }).click();

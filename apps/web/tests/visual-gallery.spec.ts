@@ -13,15 +13,15 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await page.getByRole('button', { name: 'Nueva historia' }).click();
-  const creation = page.getByRole('dialog', { name: 'Crear una nueva historia' });
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'New story' }).click();
+  const creation = page.getByRole('dialog', { name: 'Create a new story' });
   await creation.getByLabel('Título').fill('Galería y personajes');
-  await creation.getByLabel('Premisa del mundo').fill(
+  await creation.getByLabel('World premise').fill(
     'Una hechicera visita un pueblo escondido entre montañas y ríos.');
-  await creation.getByRole('button', { name: 'Elegir protagonista' }).click();
-  await creation.getByLabel('Nombre del protagonista').fill('Luna');
-  await creation.getByRole('button', { name: 'Empezar historia' }).click();
+  await creation.getByRole('button', { name: 'Choose protagonist' }).click();
+  await creation.getByLabel('Protagonist name').fill('Luna');
+  await creation.getByRole('button', { name: 'Start story' }).click();
   await expect(creation).toBeHidden();
 
   await page.getByRole('button', { name: 'Open story details' }).click();
@@ -30,10 +30,10 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByLabel('Vestuario visual').fill('Túnica azul oscura');
   await page.getByLabel('Rasgos visuales').fill('Cicatriz bajo el ojo derecho');
   await page.getByRole('button', { name: 'Añadir personaje visual' }).click();
-  await expect(page.getByRole('button', { name: /Aira.*Revisión 1/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Aira.*Revision 1/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Galería', exact: true }).click();
-  await page.getByLabel('Lugar actual').fill('Biblioteca antigua');
+  await page.getByLabel('Lugar actual').fill('Library antigua');
   await page.getByRole('button', { name: 'Confirmar escenario' }).click();
   await expect(page.getByText('Escenas registradas: 2.')).toBeVisible();
   await page.getByLabel('Describe la escena que quieres ilustrar')
@@ -58,10 +58,10 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await expect(page.getByRole('slider', { name: 'Intensidad de transformación' })).toBeVisible();
   // A named character can own a canonical image reference for planned scenes.
   await page.getByRole('button', { name: 'Resumen', exact: true }).click();
-  await page.getByRole('button', { name: /Aira.*Revisión 1/ }).click();
+  await page.getByRole('button', { name: /Aira.*Revision 1/ }).click();
   await page.getByLabel('Referencia del personaje').selectOption(referenceId!);
   await page.getByRole('button', { name: 'Guardar referencia visual' }).click();
-  await expect(page.getByRole('button', { name: /Aira.*Revisión 2/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Aira.*Revision 2/ })).toBeVisible();
   await page.getByRole('button', { name: 'Galería', exact: true }).click();
   await page.getByRole('checkbox', { name: 'Personaje visible Aira' }).check();
   await page.getByRole('combobox', { name: 'Plano de escena' }).selectOption('closeup');

@@ -14,9 +14,9 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   const dialog = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
   const title = 'El mapa y los testigos ' + test.info().project.name;
   await dialog.getByLabel('Título').fill(title);
-  await dialog.getByLabel('Premisa del mundo').fill(
+  await dialog.getByLabel('World premise').fill(
     'Una exploradora descubre un secreto antiguo oculto bajo el puerto de la ciudad.');
-  await dialog.getByLabel('Protagonista').fill('Luna');
+  await dialog.getByLabel('Protagonist').fill('Luna');
   await dialog.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
   await expect(dialog).toBeHidden();
 

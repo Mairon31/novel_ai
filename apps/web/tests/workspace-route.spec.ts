@@ -27,7 +27,7 @@ test('shareable story URLs survive reload and browser Back/Forward', async ({ pa
   await page.getByRole('button', { name: /Comenzar historia|Continuar historia/ }).click();
   await expect(page).toHaveURL(new RegExp('#/historia/' + story.id + '/leer$'));
   await expect(page.locator('.noble-reader-chapter')).toContainText(story.title);
-  const selector = page.getByRole('combobox', { name: 'Cambiar ruta narrativa' });
+  const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });
   await expect(selector).toBeVisible();
   await selector.selectOption(child.id);
   await expect(page).toHaveURL(new RegExp('#/historia/' + child.id + '/leer$'));
@@ -69,11 +69,11 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   await expect(page.getByText('Selecciona una historia para editarla')).toBeVisible();
 
   await page.goto('/#/infraestructura');
-  await expect(page.getByRole('heading', { name: /Diagnóstico/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Diagnostics/ })).toBeVisible();
   await page.goto('/#/biblioteca');
   await expect(page.getByRole('heading', { name: /My stories/ })).toBeVisible();
   await page.goto('/#/modelos');
-  await expect(page.getByRole('heading', { name: /Centro de modelos/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Model Hub/ })).toBeVisible();
 });
 
 test('first-time setup does not discard a bookmarked story URL', async ({ page }) => {

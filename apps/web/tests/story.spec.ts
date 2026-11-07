@@ -10,19 +10,19 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /Historias para vivir/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Stories to experience/ })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Nueva historia' }).click();
-  const creator = page.getByRole('dialog', { name: 'Crear una nueva historia' });
+  await page.getByRole('button', { name: 'New story' }).click();
+  const creator = page.getByRole('dialog', { name: 'Create a new story' });
   const title = 'Prueba visual de la torre '+test.info().project.name;
   await creator.getByLabel('Título').fill(title);
-  await creator.getByLabel('Premisa del mundo').fill(
+  await creator.getByLabel('World premise').fill(
     'En una biblioteca encantada, una hechicera protege el mapa perdido de los reinos.'
   );
-  await creator.getByRole('button', { name: 'Elegir protagonista' }).click();
-  await creator.getByLabel('Nombre del protagonista').fill('Joel');
-  await creator.getByRole('button', { name: 'Empezar historia' }).click();
+  await creator.getByRole('button', { name: 'Choose protagonist' }).click();
+  await creator.getByLabel('Protagonist name').fill('Joel');
+  await creator.getByRole('button', { name: 'Start story' }).click();
   await expect(creator).toBeHidden();
   await expect(page.locator('.noble-reader-chapter')).toContainText(title);
 
@@ -62,7 +62,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   });
   // Reader is its own experience, with no nested bookshelf above it.
   await expect(page.locator('.noble-library-cover-grid')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
+  await page.getByRole('button', { name: 'Return to library' }).click();
   await expect(page.locator('.noble-reader-layout')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /My stories/ })).toBeVisible();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title }).first()).toBeVisible();

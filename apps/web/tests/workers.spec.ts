@@ -71,7 +71,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: 'Red y workers' }).click();
   await expect(page.getByRole('heading', { name: 'Workers GPU remotos' })).toBeVisible();
   await page.getByLabel('Nombre del worker').fill(name);
