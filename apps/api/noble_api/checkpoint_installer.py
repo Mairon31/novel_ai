@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
 import struct
@@ -355,7 +356,11 @@ class CheckpointInstaller:
                 if target.is_symlink() or target.exists():
                     raise ValueError("Conflicto: el checkpoint ya existe")
                 target.parent.mkdir(parents=True, exist_ok=True)
-                part.replace(target)
+                # Atomic creation that never replaces a file created by
+                # another process between our exists() check and publication.
+                # Staging and destination share Noble's own model filesystem.
+                os.link(part, target, follow_symlinks=False)
+                part.unlink()
                 with self.store._conn() as db:
                     db.execute("""UPDATE image_checkpoint_downloads
                                   SET received_bytes=expected_size
