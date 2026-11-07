@@ -21,30 +21,30 @@ import type {
 } from './types';
 
 const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
-  { id: 'narrator', title: 'Narración', subtitle: 'Models de lenguaje GGUF' },
-  { id: 'image', title: 'Imágenes', subtitle: 'Difusión y arte' },
-  { id: 'tts', title: 'Voces', subtitle: 'Síntesis de voz' },
+  { id: 'narrator', title: 'Narration', subtitle: 'GGUF language models' },
+  { id: 'image', title: 'Images', subtitle: 'Diffusion and art' },
+  { id: 'tts', title: 'Voices', subtitle: 'Speech synthesis' },
 ];
 const menu: Array<{ id: Page; label: string; icon: typeof BookOpen }> = [
-  { id: 'inicio', label: 'Biblioteca', icon: BookOpen },
-  { id: 'descubrir', label: 'Descubrir historias', icon: Compass },
+  { id: 'inicio', label: 'Library', icon: BookOpen },
+  { id: 'descubrir', label: 'Discover stories', icon: Compass },
   { id: 'crear', label: 'Creator Studio', icon: Feather },
   { id: 'modelos', label: 'Model Hub', icon: Layers3 },
-  { id: 'descargas', label: 'Descargas', icon: ArrowDownToLine },
-  { id: 'ajustes', label: 'Configuración', icon: Settings2 },
-  { id: 'diagnostico', label: 'Diagnóstico', icon: Cpu },
+  { id: 'descargas', label: 'Downloads', icon: ArrowDownToLine },
+  { id: 'ajustes', label: 'Settings', icon: Settings2 },
+  { id: 'diagnostico', label: 'Diagnostics', icon: Cpu },
 ];
 const terminal = ['completed', 'failed', 'cancelled', 'paused'];
 function humanStatus(job: DownloadJob) {
   return ({
-    queued: 'En cola', downloading: 'Descargando', paused: 'Pausada',
-    verifying: 'Verificando', completed: 'Completada',
-    failed: 'Fallida', cancelled: 'Cancelada',
+    queued: 'Queued', downloading: 'Downloading', paused: 'Paused',
+    verifying: 'Verifying', completed: 'Completed',
+    failed: 'Failed', cancelled: 'Canceled',
   } as Record<string, string>)[job.status] || job.status;
 }
 function ErrorNote({ message, close }: { message: string; close: () => void }) {
   return <div className="error-banner" role="alert"><CircleAlert size={17}/><span>{message}</span>
-    <button aria-label="Cerrar aviso" onClick={close}><X size={16}/></button></div>;
+    <button aria-label="Dismiss notice" onClick={close}><X size={16}/></button></div>;
 }
 function Loading() {
   return <div className="loading"><LoaderCircle className="rotating" size={18}/> Consultando...</div>;
@@ -54,16 +54,16 @@ function Loading() {
 // Copyright (c) 2026 Urakatsu contributors. See docs/THIRD_PARTY_NOTICES.md.
 function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
   const labels: Record<string, string> = {
-    full_gpu: 'GPU completa', partial_offload: 'GPU + RAM',
-    cpu: 'Solo CPU', too_large: 'Memoria insuficiente',
-    unsupported: 'No compatible', unknown: 'Sin datos',
+    full_gpu: 'Full GPU', partial_offload: 'GPU + RAM',
+    cpu: 'CPU only', too_large: 'Insufficient memory',
+    unsupported: 'Unsupported', unknown: 'No data',
   };
   const share = fit.fit === 'partial_offload' && fit.gpu_share > 0
     ? ' · ~' + Math.round(fit.gpu_share * 100) + '% GPU' : '';
   const breakdown = [
-    fit.estimated_required_bytes ? 'Memoria estimada: ' + size(fit.estimated_required_bytes) : '',
+    fit.estimated_required_bytes ? 'Estimated memory: ' + size(fit.estimated_required_bytes) : '',
     fit.estimated_kv_bytes ? 'Context cache: ' + size(fit.estimated_kv_bytes) : '',
-    fit.note, fit.disk_ok === false ? 'Espacio insuficiente en disco.' : '',
+    fit.note, fit.disk_ok === false ? 'Insufficient disk space.' : '',
   ].filter(Boolean).join(' · ');
   return <span className={'hub-fit-state state-' + fit.fit}
     role="status" tabIndex={0} title={breakdown}
@@ -415,8 +415,8 @@ export default function App() {
       // story/reader/creator URL. The default unlinked start is Model Hub.
       if (route.page === 'modelos') changePage('modelos');
       setNotice(route.page === 'modelos'
-        ? 'Configuración inicial guardada. Ahora puedes buscar tu modelo narrativo.'
-        : 'Configuración inicial guardada. El enlace solicitado sigue abierto.');
+        ? 'Initial settings saved. You can now find a narrative model.'
+        : 'Initial settings saved. Your requested page is still open.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -426,7 +426,7 @@ export default function App() {
     try {
       const result = await api.patchSettings({ image_mode: mode });
       setSettings(result); setImageMode(result.image_mode);
-      setNotice('Preferencia visual guardada. Se aplicará al integrar ComfyUI.');
+      setNotice('Image preference saved. It will apply when ComfyUI is configured.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -453,8 +453,8 @@ export default function App() {
         <div className="brand-text"><strong>Noble AI</strong><small>LOCAL STORY STUDIO</small></div>
         <button className="mobile-dismiss icon-button" onClick={() => setNavOpen(false)} aria-label="Close menu"><X size={18}/></button>
       </div>
-      <div className="nav-label">ESPACIO DE TRABAJO</div>
-      <nav className="nav-menu" aria-label="Secciones">
+      <div className="nav-label">WORKSPACE</div>
+      <nav className="nav-menu" aria-label="Sections">
         {menu.map(item => <button key={item.id} onClick={() => changePage(item.id)}
           className={'nav-item ' + (page === item.id ? 'nav-active' : '')}>
           <item.icon size={19}/><span>{item.label}</span>
@@ -463,12 +463,12 @@ export default function App() {
       </nav>
       <div className="sidebar-bottom">
         <div className="device-card"><div className="device-icon"><Cpu size={18}/></div>
-          <div><strong>{hardware?.gpus[0]?.name || 'CPU / sin NVIDIA detectada'}</strong>
+          <div><strong>{hardware?.gpus[0]?.name || 'CPU / no NVIDIA detected'}</strong>
             <small>{hardware?.gpus[0]
-              ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB de VRAM'
-              : 'Diagnóstico disponible'}</small></div>
+              ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM'
+              : 'Diagnostics available'}</small></div>
         </div>
-        <p className="sidebar-footer">PROTOTIPO P1 <span>·</span> LOCAL-FIRST</p>
+        <p className="sidebar-footer">P1 PROTOTYPE <span>·</span> LOCAL-FIRST</p>
       </div>
     </aside>
     {navOpen && <button aria-label="Close navigation" className="mobile-overlay" onClick={() => setNavOpen(false)}/>}
@@ -477,52 +477,52 @@ export default function App() {
         <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setNavOpen(true)}><Menu size={23}/></button>
         <div className="breadcrumb">Noble AI <span>/</span> <strong>{menu.find(m => m.id === page)?.label}</strong></div>
         <div className="top-actions">
-          <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : 'Sin conexión'}</span>
-          <button className="icon-button" title="Actualizar" aria-label="Actualizar datos" onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
+          <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : 'Offline'}</span>
+          <button className="icon-button" title="Refresh" aria-label="Refresh data" onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
         </div>
       </header>
       <main className="content" data-ready={ready ? "yes" : "no"}>
         {releaseNotice && <div className="notice-banner noble-update-notice">
           <RefreshCw size={17}/>
-          <span>Hay una publicación para tu canal: {releaseNotice.name}. La actualización automática aún no está disponible en la versión fuente.</span>
-          <a href={releaseNotice.url} target="_blank" rel="noreferrer">Ver en GitHub</a>
-          <button aria-label="Cerrar aviso de versión" onClick={() => {
+          <span>A release is available on your channel: {releaseNotice.name}. Automatic updates are not yet supported for source builds.</span>
+          <a href={releaseNotice.url} target="_blank" rel="noreferrer">View on GitHub</a>
+          <button aria-label="Close release notice" onClick={() => {
             setReleaseNotice(null);
             localStorage.setItem('noble-seen-release', releaseNotice.label);
           }}><X size={16}/></button>
         </div>}
         {error && <ErrorNote message={error} close={() => setError('')}/>}
-        {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label="Cerrar aviso"><X size={16}/></button></div>}
+        {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label="Dismiss notice"><X size={16}/></button></div>}
         {!ready && <Loading/>}
 
         {page === 'crear' && <CreatorStudio initialStoryId={editingStoryId}
           onOpenLibrary={() => changePage('inicio')}
           onStoryChange={id => navigateRoute({ page: 'crear', storyId: id })}/>}
         {page === 'modelos' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> ECOSISTEMA LOCAL DE IA</div>
-            <h1>Centro de modelos<span className="title-dot">.</span></h1>
+          <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> LOCAL AI ECOSYSTEM</div>
+            <h1>Model Hub<span className="title-dot">.</span></h1>
             <p>Busca, compara e instala modelos de Hugging Face directamente en Noble AI.</p>
           </div>
           <div className="hub-toolbar">
             <div className="tab-buttons" role="tablist">
               <button role="tab" aria-selected={tab === 'discover'} className={tab === 'discover' ? 'active' : ''}
-                onClick={() => { setTab('discover'); closeModelDetail(); }}><Search size={17}/> Descubrir</button>
+                onClick={() => { setTab('discover'); closeModelDetail(); }}><Search size={17}/> Discover</button>
               <button role="tab" aria-selected={tab === 'installed'} className={tab === 'installed' ? 'active' : ''}
-                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> Installeds <span className="mini-count">{installed.length}</span></button>
+                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> Installed <span className="mini-count">{installed.length}</span></button>
             </div>
             <div className="source-tag"><Cloud size={16}/> Hugging Face</div>
           </div>
           {tab === 'discover' ? <>
             <div className="search-row">
               <div className="search-box"><Search size={21}/>
-                <input aria-label="Buscar modelos" value={query} onChange={e => setQuery(e.target.value)}
-                  placeholder="Buscar modelos, familias o autores..."/></div>
+                <input aria-label="Search models" value={query} onChange={e => setQuery(e.target.value)}
+                  placeholder="Search models, families, or authors..."/></div>
               <div className="search-role-wrap"><SlidersHorizontal size={17}/>
                 <select aria-label="Model category" value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select><ChevronDown size={15}/></div>
             </div>
-            <div className="category-tabs" role="group" aria-label="Tipos de modelo">
+            <div className="category-tabs" role="group" aria-label="Model types">
               {roles.map(item => <button key={item.id} onClick={() => { setRole(item.id); closeModelDetail(); }}
                 className={role === item.id ? 'selected' : ''}>
                 {item.id === 'narrator' ? <BookOpen size={18}/> : item.id === 'image' ? <Image size={18}/> : <Headphones size={18}/>}
@@ -530,20 +530,20 @@ export default function App() {
             </div>
             <div className="section-caption"><div><h2>{selectedRole.subtitle}</h2>
               <p>Hugging Face catalog · select a model for its analysis</p></div>
-              <div className="noble-model-sort"><label htmlFor="hub-sort">Ordenar por</label>
-                <select id="hub-sort" aria-label="Ordenar modelos" value={modelSort}
+              <div className="noble-model-sort"><label htmlFor="hub-sort">Sort by</label>
+                <select id="hub-sort" aria-label="Sort models" value={modelSort}
                   onChange={e => setModelSort(e.target.value)}>
-                  <option value="downloads">Descargas</option>
-                  <option value="likes">Me gusta</option>
-                  <option value="trendingScore">Tendencias</option>
-                  <option value="lastModified">Actualizados</option>
+                  <option value="downloads">Downloads</option>
+                  <option value="likes">Most liked</option>
+                  <option value="trendingScore">Trending</option>
+                  <option value="lastModified">Recently updated</option>
                 </select>
                 {searchLoading && <LoaderCircle className="rotating" size={18}/>}
               </div></div>
             {role !== 'narrator' && <div className="info-note"><Info size={18}/>
-              Puedes explorar estos modelos. Su instalación se activará cuando integremos los motores de imágenes y TTS.</div>}
+              You can explore these models. Installation is available only through compatible image or voice installers.</div>}
             <div className="hub-discovery-layout">
-              <div className="model-grid" aria-label="Resultados de modelos">
+              <div className="model-grid" aria-label="Model results">
                 {searchResults.map(m => <button key={m.repo_id} className={'model-card ' + (detail?.repo_id === m.repo_id ? 'hub-model-selected' : '')}
                   aria-pressed={detail?.repo_id === m.repo_id}
                   onClick={() => void viewModel(m)}>
@@ -557,60 +557,60 @@ export default function App() {
                     <span className="hub-model-chips">
                       <span><Download size={13}/> {compactCount(m)}</span>
                       <span>♥ {m.likes.toLocaleString()}</span>
-                      <span>{m.gated ? 'Restringido' : 'Público'}</span>
+                      <span>{m.gated ? 'Restricted' : 'Public'}</span>
                       {m.license !== 'sin verificar' && <span>{m.license}</span>}
                     </span>
                   </span>
                   <ChevronDown className="hub-model-row-arrow" size={18}/>
                 </button>)}
                 {!searchLoading && searchResults.length === 0 && <div className="empty-state">
-                  <Search size={30}/><strong>No hay resultados</strong>
+                  <Search size={30}/><strong>No results</strong>
                   <p>Try a different search or check your Hugging Face connection.</p></div>}
               </div>
               <aside className="hub-hardware-panel">
                 <div className="hub-hardware-title"><Cpu size={20}/>
-                  <div><strong>Compatibilidad de tu equipo</strong>
+                  <div><strong>Hardware compatibility</strong>
                     <small>Estimate by quantization</small></div></div>
                 <div className="hub-hardware-numbers">
-                  <div><span>GPU detectada</span><strong>{hardware?.gpus[0]?.name || 'No detectada'}</strong></div>
-                  <div><span>VRAM libre</span><strong>
-                    {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : 'No disponible'}
+                  <div><span>Detected GPU</span><strong>{hardware?.gpus[0]?.name || 'Not detected'}</strong></div>
+                  <div><span>Free VRAM</span><strong>
+                    {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : 'Unavailable'}
                   </strong></div>
-                  <div><span>RAM disponible</span><strong>
+                  <div><span>Available RAM</span><strong>
                     {hardware ? (hardware.ram_available_mb / 1024).toFixed(1)+' GiB' : '—'}
                   </strong></div>
-                  <div><span>Espacio libre</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
+                  <div><span>Free disk space</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
                 </div>
-                <p>Abre un modelo para comparar sus variantes. Noble AI estima pesos,
-                  memoria de contexto y margen del runtime. La clasificación no garantiza
-                  compatibilidad con un motor concreto ni velocidad.</p>
+                <p>Open a model to compare its variants. Noble AI estimates weight sizes,
+                  context memory, and runtime headroom. These estimates do not
+                  guarantee engine compatibility or performance.</p>
                 <div className="hub-hardware-legend">
-                  <span>GPU completa</span><span>Descarga parcial</span>
-                  <span>CPU</span><span>Memoria insuficiente</span>
+                  <span>Full GPU</span><span>Descarga parcial</span>
+                  <span>CPU</span><span>Insufficient memory</span>
                 </div>
                 <button className="secondary-button" onClick={() => changePage('ajustes')}>
-                  <Settings2 size={15}/> Ajustes de motores
+                  <Settings2 size={15}/> Engine settings
                 </button>
               </aside>
             </div>
           </> : <>
-            <div className="section-caption"><div><h2>Models en tu equipo</h2><p>Solo instalaciones completas y registradas por Noble AI.</p></div></div>
-            {modelStorage && <section className="hub-storage-summary" aria-label="Almacenamiento de modelos">
+            <div className="section-caption"><div><h2>Models on your computer</h2><p>Only completed installations registered by Noble AI.</p></div></div>
+            {modelStorage && <section className="hub-storage-summary" aria-label="Model storage">
               <div className="hub-storage-heading">
-                <div><strong>Espacio de modelos</strong>
+                <div><strong>Model storage</strong>
                   <small title={modelStorage.models_dir}>{modelStorage.models_dir}</small>
                 </div>
-                <span><HardDrive size={15}/> Disco local</span>
+                <span><HardDrive size={15}/> Local disk</span>
               </div>
               <div className="hub-storage-metrics">
-                <div><span>Models registrados</span><strong>{size(modelStorage.installed.bytes)}</strong>
-                  <small>{modelStorage.installed.count} en el registro</small></div>
-                <div><span>Descargas parciales</span><strong>{size(modelStorage.partial.bytes)}</strong>
-                  <small>{modelStorage.partial.count} con archivos .part</small></div>
-                <div><span>Espacio disponible</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
-                  <small>Capacidad: {size(modelStorage.disk.total_bytes)}</small></div>
+                <div><span>Registered models</span><strong>{size(modelStorage.installed.bytes)}</strong>
+                  <small>{modelStorage.installed.count} in the registry</small></div>
+                <div><span>Partial downloads</span><strong>{size(modelStorage.partial.bytes)}</strong>
+                  <small>{modelStorage.partial.count} with .part files</small></div>
+                <div><span>Available space</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
+                  <small>Capacity: {size(modelStorage.disk.total_bytes)}</small></div>
               </div>
-              <div className="hub-storage-meter" role="meter" aria-label="Espacio ocupado por archivos de Noble"
+              <div className="hub-storage-meter" role="meter" aria-label="Space occupied by Noble AI files"
                 aria-valuemin={0} aria-valuemax={100}
                 aria-valuenow={modelStorage.disk.total_bytes > 0 ?
                   Math.round((modelStorage.installed.bytes + modelStorage.partial.bytes) /
@@ -620,13 +620,13 @@ export default function App() {
                 <div className="hub-storage-partial" style={{width: modelStorage.disk.total_bytes > 0 ?
                     (modelStorage.partial.bytes / modelStorage.disk.total_bytes * 100) + '%' : '0%'}}/>
               </div>
-              <p>El inventario mide archivos registrados y descargas incompletas.
-                La capacidad del disco incluye también otros archivos del equipo.</p>
+              <p>The inventory includes registered files and incomplete downloads.
+                Disk capacity also includes other files on this computer.</p>
               {!!modelStorage.items.length && <details className="hub-storage-files">
-                <summary>Ver archivos contabilizados ({modelStorage.items.length})</summary>
+                <summary>View counted files ({modelStorage.items.length})</summary>
                 <div>{modelStorage.items.map(item => <div key={item.id}>
                   <span title={item.repo_id}>{item.name}
-                    {!item.file_present ? ' · No encontrado' : item.kind === 'partial' ? ' · Parcial' : ''}</span>
+                    {!item.file_present ? ' · Missing' : item.kind === 'partial' ? ' · Partial' : ''}</span>
                   <strong>{size(item.size_bytes)}</strong>
                 </div>)}</div>
               </details>}
@@ -638,40 +638,40 @@ export default function App() {
                 <div className="installed-symbol"><HardDrive size={23}/></div>
                 <div className="installed-details"><strong>{model.filename}</strong>
                   <span>{model.repo_id} · {size(model.size_bytes)}</span>
-                  <small>{model.integrity_status === 'sha256_verified' ? 'SHA-256 verificado con el origen' :
+                  <small>{model.integrity_status === 'sha256_verified' ? 'SHA-256 verified against upstream' :
                     'Local hash; the source did not publish SHA-256'}</small>
                   {modelStorage?.items.find(item => item.id === model.id)?.file_present === false &&
                     <small className="hub-file-missing">File not found: check installation.</small>}
                 </div>
                 <div className="installed-actions">
-                  {assignments.narrator === model.id && <span className="assigned"><Check size={16}/> Narrador elegido</span>}
+                  {assignments.narrator === model.id && <span className="assigned"><Check size={16}/> Selected narrator</span>}
                   <button className="secondary-button" disabled={busy || assignments.narrator === model.id ||
                       modelStorage?.items.find(item => item.id === model.id)?.file_present === false}
                     onClick={() => void assignModel(model.id)}>
-                    {assignments.narrator === model.id ? 'Asignado' : 'Elegir narrador'}</button>
+                    {assignments.narrator === model.id ? 'Assigned' : 'Choose narrator'}</button>
                 </div>
               </article>)}
               {installed.length === 0 && <div className="empty-state"><Database size={31}/><strong>No models installed yet</strong>
                 <p>Find a GGUF in Discover, select a variant, and download it here.</p>
-                <button className="secondary-button" onClick={() => setTab('discover')}>Buscar modelos</button></div>}
+                <button className="secondary-button" onClick={() => setTab('discover')}>Search models</button></div>}
             </div>
           </>}
         </section>}
 
         {page === 'descargas' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><ArrowDownToLine size={14}/> ACTIVIDAD</div><h1>Descargas<span className="title-dot">.</span></h1>
-            <p>Consulta el estado de instalaciones y administra las transferencias.</p></div>
+          <div className="page-heading"><div className="eyebrow"><ArrowDownToLine size={14}/> ACTIVITY</div><h1>Downloads<span className="title-dot">.</span></h1>
+            <p>Check installation status and manage transfers.</p></div>
           {recovery && (recovery.recovered > 0 || recovery.conflicts > 0) &&
             <div className="workspace-note" role="status">
               {recovery.conflicts ? <CircleAlert size={18}/> : <ShieldCheck size={18}/>}
               <span>
                 {recovery.recovered > 0 &&
-                  <strong>{recovery.recovered} descarga(s) recuperada(s) tras un reinicio. </strong>}
+                  <strong>{recovery.recovered} download(s) recovered after restart. </strong>}
                 {recovery.conflicts > 0 &&
-                  <strong>{recovery.conflicts} conflicto(s) detectado(s). </strong>}
-                Los archivos recuperados requieren reanudar y verificar el modelo antes de usarlo.
+                  <strong>{recovery.conflicts} conflict(s) detected. </strong>}
+                Recovered files require an explicit resume and verification before use.
                 {recovery.conflicts > 0 &&
-                  ' Los conflictos se mantienen sin sobrescribir archivos; revisa el motivo en cada descarga.'}
+                  ' Conflicts do not overwrite files; review the reason on each download.'}
               </span>
             </div>}
           <div className="downloads-list">{jobs.map(job => {
@@ -682,13 +682,13 @@ export default function App() {
                 <span className={'job-badge status-' + job.status}>{humanStatus(job)}</span></div>
               <div className="progress-track"><div style={{ width: pct + '%' }}/></div>
               <div className="progress-label"><span>{size(job.received_bytes)} / {size(job.expected_size)}</span>
-                <span>{job.expected_size ? pct + '%' : 'Total desconocido'}</span></div>
+                <span>{job.expected_size ? pct + '%' : 'Unknown total'}</span></div>
               {job.error && <p className="job-error">{job.error}</p>}
               <div className="download-controls">
                 {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> Pause</button>}
                 {['paused', 'failed', 'cancelled'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'resume')}><Play size={16}/> Resume</button>}
                 {['queued', 'downloading', 'paused', 'failed'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'cancel')}><X size={16}/> Cancel</button>}
-                {job.status === 'completed' && <span className="complete"><CheckCircle2 size={16}/> Modelo registrado</span>}
+                {job.status === 'completed' && <span className="complete"><CheckCircle2 size={16}/> Model registered</span>}
               </div>
             </article>;
           })}
@@ -700,8 +700,8 @@ export default function App() {
 
         {page === 'descubrir' && <section className="noble-discover-page" aria-label="Story catalog">
           <div className="page-heading">
-            <div className="eyebrow"><Compass size={14}/> DESCUBRIR</div>
-            <h1>Historias para jugar<span className="title-dot">.</span></h1>
+            <div className="eyebrow"><Compass size={14}/> DISCOVER</div>
+            <h1>Playable stories<span className="title-dot">.</span></h1>
             <p>Explore bundled stories and add them to your library as independent projects.
               Community-created stories will be added in a later release.</p>
           </div>
@@ -728,16 +728,16 @@ export default function App() {
         />}
 
         {page === 'diagnostico' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SISTEMA</div><h1>Diagnóstico<span className="title-dot">.</span></h1>
-            <p>Data detectados en el equipo que ejecuta el backend, no en tu navegador.</p></div>
+          <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SYSTEM</div><h1>Diagnostics<span className="title-dot">.</span></h1>
+            <p>Detected on the backend computer, not in your browser.</p></div>
           <div className="stat-grid">
-            <div className="stat"><span>ESTADO DEL BACKEND</span><strong>{health?.status === 'ok' ? 'Conectado' : 'Sin conexión'}</strong><small>API Noble {health?.version || '—'}</small></div>
-            <div className="stat"><span>MEMORIA RAM</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? Math.round(hardware.ram_available_mb / 1024) + ' GB disponibles' : ''}</small></div>
-            <div className="stat"><span>VRAM NVIDIA</span><strong>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB' : 'No detectada'}</strong><small>{hardware?.gpus[0]?.name || 'CPU disponible'}</small></div>
-            <div className="stat"><span>ESPACIO LIBRE</span><strong>{hardware ? hardware.storage_free_gb + ' GB' : '—'}</strong><small>Carpeta de modelos</small></div>
+            <div className="stat"><span>BACKEND STATUS</span><strong>{health?.status === 'ok' ? 'Connected' : 'Offline'}</strong><small>API Noble {health?.version || '—'}</small></div>
+            <div className="stat"><span>SYSTEM RAM</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? Math.round(hardware.ram_available_mb / 1024) + ' GB available' : ''}</small></div>
+            <div className="stat"><span>VRAM NVIDIA</span><strong>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB' : 'Not detected'}</strong><small>{hardware?.gpus[0]?.name || 'CPU available'}</small></div>
+            <div className="stat"><span>FREE DISK SPACE</span><strong>{hardware ? hardware.storage_free_gb + ' GB' : '—'}</strong><small>Model directory</small></div>
           </div>
           <div className="settings-panel"><section><div className="setting-icon"><Cloud size={22}/></div><div className="setting-main">
-            <strong>Proveedores</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? 'Listo' : 'Integration pending'}</p>)}
+            <strong>Providers</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? 'Ready' : 'Integration pending'}</p>)}
           </div></section></div>
         </section>}
       </main>
@@ -745,33 +745,33 @@ export default function App() {
 
     {(detail || detailLoading) && <div className="modal-scrim model-detail-scrim"
       role="presentation" onClick={closeModelDetail}>
-      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label="Detalles del modelo" onClick={e => e.stopPropagation()}>
-        <div className="detail-top"><span>DETALLE DE MODELO</span><button className="icon-button" onClick={closeModelDetail} aria-label="Cerrar detalles"><X size={19}/></button></div>
+      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label="Model details" onClick={e => e.stopPropagation()}>
+        <div className="detail-top"><span>MODEL DETAILS</span><button className="icon-button" onClick={closeModelDetail} aria-label="Close details"><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
           <div className="noble-model-detail-heading">
             <div className="detail-avatar"><BookOpen size={32}/></div>
             <div>
-              <span className="overline">{detail.pipeline_tag || 'MODELO HUGGING FACE'}</span>
+              <span className="overline">{detail.pipeline_tag || 'HUGGING FACE MODEL'}</span>
               <h2>{detail.repo_id.split('/')[1]}</h2>
               <p className="detail-author">{detail.author || detail.repo_id.split('/')[0]}</p>
             </div>
           </div>
           {detail.summary && <p className="hub-detail-description">{detail.summary}</p>}
           <div className="hub-detail-stats">
-            <div><span>Descargas</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
-            <div><span>Me gusta</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
-            <div><span>Licencia</span><strong>{detail.license}</strong></div>
-            <div><span>Acceso</span><strong>{detail.gated ? 'Restringido' : 'Público'}</strong></div>
+            <div><span>Downloads</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
+            <div><span>Most liked</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
+            <div><span>License</span><strong>{detail.license}</strong></div>
+            <div><span>Access</span><strong>{detail.gated ? 'Restricted' : 'Public'}</strong></div>
           </div>
           <div className="hub-detail-metadata">
-            <div><span>Revisión</span><code>{detail.revision.slice(0,12)}</code></div>
+            <div><span>Revision</span><code>{detail.revision.slice(0,12)}</code></div>
             {detail.hardware_fit?.architecture &&
-              <div><span>Arquitectura GGUF</span><strong>{detail.hardware_fit.architecture}</strong></div>}
+              <div><span>GGUF architecture</span><strong>{detail.hardware_fit.architecture}</strong></div>}
             {detail.hardware_fit?.parameter_count != null &&
               <div><span>Declared parameters</span>
                 <strong>{(detail.hardware_fit.parameter_count/1e9).toFixed(2)} B</strong></div>}
-            {detail.library && <div><span>Biblioteca</span><strong>{detail.library}</strong></div>}
-            {detail.base_model && <div><span>Modelo base</span><strong>
+            {detail.library && <div><span>Library</span><strong>{detail.library}</strong></div>}
+            {detail.base_model && <div><span>Base model</span><strong>
               {Array.isArray(detail.base_model) ? detail.base_model.join(', ') : detail.base_model}
             </strong></div>}
           </div>
@@ -779,17 +779,17 @@ export default function App() {
             {detail.tags.slice(0,10).map(tag => <span key={tag}>{tag}</span>)}
           </div>}
           <a className="external-link" href={detail.url} target="_blank" rel="noreferrer">
-            Ver ficha original en Hugging Face <ExternalLink size={15}/></a>
+            View original model card on Hugging Face <ExternalLink size={15}/></a>
           {role === 'narrator' && detail.variants.length > 0 ? <>
             <section className="hub-fit-analysis">
               <div className="hub-fit-header">
                 <div><h3>Hardware assessment</h3>
                   <p>{detail.hardware_fit?.gpu?.name || 'CPU / RAM'} ·
                     {detail.hardware_fit?.metadata_source === 'gguf_header'
-                      ? ' KV estimada desde cabecera GGUF' : ' Reserva de contexto aproximada'}
+                      ? ' KV estimated from GGUF header' : ' Approximate context reserve'}
                   </p></div>
-                <label>Contexto
-                  <select aria-label="Contexto de compatibilidad" value={modelContext}
+                <label>Context
+                  <select aria-label="Compatibility context" value={modelContext}
                     disabled={fitBusy} onChange={e => void selectContext(Number(e.target.value))}>
                     <option value={2048}>2K tokens</option>
                     <option value={4096}>4K tokens</option>
@@ -808,10 +808,10 @@ export default function App() {
                   Could not recommend a quantization from the available data.</div>}
               {selectedFit && <div className="hub-selected-fit">
                 <div className="hub-selected-fit-head">
-                  <strong>Variante seleccionada: {selectedFit.quantization || 'GGUF'}</strong>
+                  <strong>Selected variant: {selectedFit.quantization || 'GGUF'}</strong>
                   <span>{selectedFit.estimated_required_bytes
-                    ? 'Demanda aproximada ' + size(selectedFit.estimated_required_bytes)
-                    : 'Consumo desconocido'}</span>
+                    ? 'Approximate requirement ' + size(selectedFit.estimated_required_bytes)
+                    : 'Unknown consumption'}</span>
                 </div>
                 <div role="meter" aria-label="Memory requirement versus usable memory"
                   aria-valuemin={0} aria-valuemax={100}
@@ -823,16 +823,16 @@ export default function App() {
                     selectedFit.fit === 'partial_offload' ? 'Combined GPU and RAM limit' :
                     'Estimated usable RAM limit'}: {memoryBudget ? size(memoryBudget) : 'sin datos'}</span>
                   <span>{selectedFit.fit === 'partial_offload' ?
-                    'Requiere offload compatible del motor' :
+                    'Requires engine-supported offload' :
                     selectedFit.fit === 'full_gpu' ? 'Based on observed free VRAM' :
-                    'No implica que se ejecute en GPU'}</span>
+                    'Does not imply GPU execution'}</span>
                 </div>
               </div>}
               <div className="hub-variants-toolbar">
-                <h3>Comparar archivos GGUF <small>{detail.variants.length}</small></h3>
+                <h3>Compare GGUF files <small>{detail.variants.length}</small></h3>
                 <div role="group" aria-label="Filtrar compatibilidad de cuantizaciones">
                   {[
-                    {id:'all',label:'Todas'},
+                    {id:'all',label:'All'},
                     {id:'full_gpu',label:'GPU'},
                     {id:'partial_offload',label:'GPU + RAM'},
                     {id:'cpu',label:'CPU'},
@@ -857,9 +857,9 @@ export default function App() {
                   <span className="hub-variant-info">
                     <strong>{v.filename}</strong>
                     <small>{fit?.quantization || 'GGUF'} · {size(v.size_bytes)} ·
-                      {v.sha256 ? ' SHA256 publicado' : ' sin hash publicado'}</small>
+                      {v.sha256 ? ' published SHA-256' : ' no published hash'}</small>
                     {fit && <small>{fit.note}</small>}
-                    {fit?.disk_ok===false && <small>Espacio insuficiente para descargar este archivo.</small>}
+                    {fit?.disk_ok===false && <small>Not enough disk space to download this file.</small>}
                   </span>
                   <span className="hub-variant-aside">
                     {fit && <ModelFitBadge fit={fit}/>}
@@ -867,7 +867,7 @@ export default function App() {
                       ~{size(fit.estimated_required_bytes)} memoria
                     </small>}
                     {detail.hardware_fit?.recommended_filename === v.filename &&
-                      <small className="hub-variant-recommended">Recomendada para tu equipo</small>}
+                      <small className="hub-variant-recommended">Recommended for your hardware</small>}
                     {selected && <Check size={17}/>}
                   </span>
                 </button>;
@@ -876,36 +876,36 @@ export default function App() {
                   detail.hardware_fit?.variants.some(item =>
                     item.filename === v.filename && item.fit === variantFilter)).length === 0 &&
                   <p className="hub-variant-no-fit">No variants in this category.
-                    Prueba otro filtro o ajusta el contexto.</p>}
+                    Try another filter or adjust the context.</p>}
               </div>
               <p className="detail-disclaimer">{detail.hardware_fit?.warning ||
-                'Se muestran estimaciones, no resultados de un benchmark real.'}</p>
+                'These are estimates, not measured benchmark results.'}</p>
             </section>
             <button className="primary-button full"
               disabled={busy || detail.gated || !detail.supports_install ||
                 !pickedVariant || Boolean(isInstalled)} onClick={() => void install()}>
               {busy ? <LoaderCircle className="rotating" size={17}/> :
                 isInstalled ? <CheckCircle2 size={18}/> : <Download size={18}/>}
-              {isInstalled ? 'Variante instalada' : 'Descargar variante seleccionada'}
+              {isInstalled ? 'Variant installed' : 'Download selected variant'}
             </button>
           </> : <div className="info-note"><Info size={18}/>
             {role === 'narrator' ?
-              'No hay un archivo GGUF individual admitido por el descargador actual.' :
-              'Este catálogo permite consultar metadatos; el instalador de imágenes y voces se configura desde su proveedor.'}
+              'The current downloader has no supported individual GGUF file for this model.' :
+              'This catalog shows metadata. Image and voice installation uses their respective provider settings.'}
           </div>}
           <section className="hub-model-card-section">
             <div className="hub-model-card-heading">
-              <div><h3>Ficha del modelo</h3>
-                <p>Documento original del autor en Hugging Face.</p></div>
+              <div><h3>Model card</h3>
+                <p>Original author document on Hugging Face.</p></div>
               <button type="button" className="secondary-button"
                 aria-expanded={cardVisible} onClick={() => void toggleModelCard()}>
-                {cardVisible ? 'Ocultar ficha' : 'Leer ficha completa'}
+                {cardVisible ? 'Hide model card' : 'Read full model card'}
               </button>
             </div>
             {cardVisible && (cardBusy ?
-              <p role="status">Cargando README.md...</p> : cardData?.available ?
+              <p role="status">Loading README.md...</p> : cardData?.available ?
                 <div>
-                  {cardData.truncated && <p>Mostrando los primeros 128 KiB del documento.</p>}
+                  {cardData.truncated && <p>Showing the first 128 KiB of the document.</p>}
                   <pre className="hub-model-readme">{cardData.readme || 'Empty document.'}</pre>
                 </div> : <p>This model does not publish a README.md at the selected revision.</p>)}
           </section>
@@ -918,8 +918,8 @@ export default function App() {
       <h2>Your story studio starts here.</h2>
       <p>Choose how to prepare your library. Models can be configured now or later; nothing will download without your permission.</p>
       <div className="welcome-hardware"><Cpu size={19}/>
-        <div><strong>{hardware?.gpus[0]?.name || 'CPU disponible'}</strong>
-          <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB de VRAM detectados' :
+        <div><strong>{hardware?.gpus[0]?.name || 'CPU available'}</strong>
+          <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM detectados' :
             'No NVIDIA GPU detected by the backend'}</small></div></div>
       <label className="form-label" htmlFor="image-policy">Image generation in future versions</label>
       <select id="image-policy" value={imageMode} onChange={e => setImageMode(e.target.value as 'scene' | 'manual' | 'off')}>
