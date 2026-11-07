@@ -33,11 +33,11 @@ class ChromaCutoutTests(unittest.TestCase):
             self.assertLess(review["coverage"], 0.5)
 
     def test_uncertain_or_non_green_background_fails_closed(self):
-        with self.assertRaisesRegex(ValueError, "Fondo no uniforme"):
+        with self.assertRaisesRegex(ValueError, "Nonuniform background"):
             transparent_sprite(sample(mode="gray"))
 
     def test_character_touching_frame_is_rejected(self):
-        with self.assertRaisesRegex(ValueError, "recorte no es fiable"):
+        with self.assertRaisesRegex(ValueError, "Unreliable cutout"):
             transparent_sprite(sample(touch=True))
 
     def test_pretransparent_valid_input_is_preserved(self):
@@ -54,7 +54,7 @@ class ChromaCutoutTests(unittest.TestCase):
         blank = Image.new("RGB", (256, 256), (4, 245, 8))
         buffer = io.BytesIO()
         blank.save(buffer, "PNG")
-        with self.assertRaisesRegex(ValueError, "recorte no es fiable"):
+        with self.assertRaisesRegex(ValueError, "Unreliable cutout"):
             transparent_sprite(buffer.getvalue())
 
 

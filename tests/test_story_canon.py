@@ -50,7 +50,7 @@ class CanonTests(unittest.TestCase):
             self.assertEqual(story["canon"],canon)
             messages=app2.state.narrative.messages(story,"continuar","continue")
             self.assertIn(canon,messages[0]["content"])
-            self.assertIn("Canon persistente confirmado",messages[0]["content"])
+            self.assertIn("Confirmed persistent story canon",messages[0]["content"])
             self.assertIn("Protagonista",messages[0]["content"])
         bad=self.client.patch(f"/api/v1/stories/{self.story}/canon",json={"canon":"x"*5001})
         self.assertEqual(bad.status_code,422)

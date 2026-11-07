@@ -37,7 +37,7 @@ class AlignmentQualityTests(unittest.TestCase):
 
     def test_empty_or_missing_geometry_is_safe(self):
         self.assertEqual(alignment_warnings({}), [])
-        with self.assertRaisesRegex(ValueError, "silueta visible"):
+        with self.assertRaisesRegex(ValueError, "visible silhouette"):
             silhouette_geometry(Image.new("RGBA", (256, 256), (0, 0, 0, 0)))
 
     def test_png_round_trip_preserves_ratios(self):

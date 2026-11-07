@@ -38,7 +38,7 @@ class ReferencePreparationTests(unittest.TestCase):
     def test_tiny_images_are_not_accepted(self):
         source = io.BytesIO()
         Image.new("RGBA", (4, 4)).save(source, "PNG")
-        with self.assertRaisesRegex(ValueError, "Resolución"):
+        with self.assertRaisesRegex(ValueError, "resolution"):
             identity_reference_png(source.getvalue(), 256, 256)
 
 

@@ -56,7 +56,7 @@ class ModelStorageTests(unittest.TestCase):
         self.app.state.downloads._run(job["id"])
         result = self.store.download(job["id"])
         self.assertEqual(result["status"], "failed")
-        self.assertIn("Ruta de descarga", result["error"])
+        self.assertIn("Download path", result["error"])
         self.assertEqual(outside.read_bytes(), b"untouched")
 
     def test_disk_uses_actual_model_files_and_partial_downloads(self):
@@ -99,7 +99,7 @@ class ModelStorageTests(unittest.TestCase):
         response = self.client.put("/api/v1/model-roles/narrator",
                                    json={"installed_id": external_id})
         self.assertEqual(response.status_code, 422, response.text)
-        self.assertIn("fuera del directorio", response.text)
+        self.assertIn("outside the managed directory", response.text)
         link = self.store.models_dir / "linked-weights.gguf"
         try:
             link.symlink_to(outside)

@@ -49,18 +49,18 @@ class NeuralMatteTests(unittest.TestCase):
 
     def test_missing_wrong_sized_and_non_image_masks_are_rejected(self):
         original, mat = data()
-        with self.assertRaisesRegex(ValueError, "máscara neuronal inválida"):
+        with self.assertRaisesRegex(ValueError, "Invalid image or neural mask"):
             transparent_sprite_from_matte(original, b"wrong", "neural_rmbg2")
         with self.assertRaisesRegex(ValueError, "no coincide"):
             transparent_sprite_from_matte(
                 original, data(mask_size=(128, 128))[1], "neural_rmbg2")
-        with self.assertRaisesRegex(ValueError, "límite"):
+        with self.assertRaisesRegex(ValueError, "limit"):
             transparent_sprite_from_matte(original, b"X" * (13 * 1024 * 1024),
                                           "neural_rmbg2")
 
     def test_inverted_and_empty_masks_fail_closed(self):
         for img, mask in [data(inversion=True), data(blank=True), data(shift=145)]:
-            with self.assertRaisesRegex(ValueError, "no fiable"):
+            with self.assertRaisesRegex(ValueError, "Unreliable"):
                 transparent_sprite_from_matte(
                     img, mask, "neural_rmbg2")
 

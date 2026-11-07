@@ -270,7 +270,7 @@ class NarrativeTests(unittest.TestCase):
             self.assertTrue(result.json()["cancel_requested"])
             self.assertTrue(active.is_set())
             # Registration must not silently replace an active request.
-            with self.assertRaisesRegex(Exception, "ya está en curso"):
+            with self.assertRaisesRegex(Exception, "already running"):
                 narrative.register_generation(story_id, request_id)
         finally:
             narrative.release_generation(story_id, request_id, active)

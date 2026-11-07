@@ -68,7 +68,7 @@ class ScenePlanningTests(unittest.TestCase):
             "prompt":"Primer encuentro al borde de un lago mágico."})
         self.assertEqual(preview.status_code,200,preview.text)
         text=preview.json()["prompt"]
-        for fragment in ("primer plano", "atardecer", "melancólico", "Luna",
+        for fragment in ("close-up", "sunset", "melancólico", "Luna",
                          "Cabello violeta", "Medallón circular", "Primer encuentro"):
             self.assertIn(fragment,text)
         self.assertEqual(preview.json()["revision"],1)

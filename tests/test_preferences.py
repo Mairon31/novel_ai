@@ -124,7 +124,7 @@ class PreferencesTests(unittest.TestCase):
             body = json.loads(upstream.content)
             self.assertIn("ja", body["messages"][0]["content"])
             self.assertIn("en", body["messages"][0]["content"])
-            self.assertIn("Idioma de entrada:", body["messages"][0]["content"])
+            self.assertIn("Input language:", body["messages"][0]["content"])
             self.assertEqual(body["model"], "demo/model")
             self.assertNotIn("test-secret-not-for-users", self.client.get(
                 "/api/v1/workspace/preferences").text)

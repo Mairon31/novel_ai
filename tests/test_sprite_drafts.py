@@ -426,7 +426,7 @@ class SpriteDraftApiTests(unittest.TestCase):
                   "reference_sprite_asset_id": image["id"],
                   "reference_mode": "ipadapter"})
         self.assertEqual(invalid.status_code, 422)
-        self.assertIn("mismo NPC", invalid.text)
+        self.assertIn("same NPC", invalid.text)
         twice = self.client.post(
             f"/api/v1/stories/{self.story}/creator/characters/{self.npc}/sprite-drafts",
             json={"caption": "Aira en biblioteca", "reference_asset_id": image["id"],
@@ -510,12 +510,12 @@ class SpriteDraftApiTests(unittest.TestCase):
         self.mock.matte_mask_missing = True
         missing = self.generate(draft, "neutral")
         self.assertEqual(missing.status_code, 502, missing.text)
-        self.assertIn("máscara", missing.text)
+        self.assertIn("mask", missing.text)
         self.mock.matte_mask_missing = False
         self.mock.matte_mask_invalid = True
         rejected = self.generate(draft, "neutral")
         self.assertEqual(rejected.status_code, 422, rejected.text)
-        self.assertIn("Máscara neuronal", rejected.text)
+        self.assertIn("Neural mask", rejected.text)
         self.assertEqual(self.client.get(self.url(
             f"/{draft['id']}")).json()["ready_count"], 0)
         self.assertEqual(self.client.get(
@@ -603,7 +603,7 @@ class SpriteDraftApiTests(unittest.TestCase):
         state = self.client.get(self.url(f"/{draft['id']}")).json()
         self.assertEqual(state["ready_count"], 5)
         self.assertTrue(state["alignment_review_needed"])
-        self.assertTrue(any("joy: posición" in warning
+        self.assertTrue(any("joy: silhouette position" in warning
                             for warning in state["alignment_warnings"]))
         refused = self.client.post(self.url(f"/{draft['id']}/approve"))
         self.assertEqual(refused.status_code, 409, refused.text)
@@ -628,7 +628,7 @@ class SpriteDraftApiTests(unittest.TestCase):
         invalid = self.client.post(self.url(f"/{draft['id']}/approve"),
                                    json={"accept_alignment_warnings": True})
         self.assertEqual(invalid.status_code, 409, invalid.text)
-        self.assertIn("cambió", invalid.text)
+        self.assertIn("changed", invalid.text)
         self.assertEqual(self.client.get(self.url(
             f"/{draft['id']}")).json()["ready_count"], 5)
         self.assertEqual(self.client.get(
@@ -641,7 +641,7 @@ class SpriteDraftApiTests(unittest.TestCase):
             f"/api/v1/stories/{self.story}/creator/characters/{self.npc}/sprite-drafts",
             json={"caption": "Aira dentro de un castillo"})
         self.assertEqual(excess.status_code, 422, excess.text)
-        self.assertIn("Máximo tres", excess.text)
+        self.assertIn("Maximum three", excess.text)
         self.assertEqual(len(self.client.get(self.url()).json()["drafts"]), 3)
 
 
