@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/noble-banner.svg" alt="Noble AI — Historias interactivas potenciadas por IA" width="100%" />
-
-<br />
+<img src="docs/assets/noble-banner.svg" alt="Noble AI — AI-powered interactive stories" width="100%" />
 
 [![CI](https://github.com/Mairon31/novel_ai/actions/workflows/p0-docs.yml/badge.svg?branch=master)](https://github.com/Mairon31/novel_ai/actions/workflows/p0-docs.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
@@ -10,118 +8,74 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-Local_API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![GitHub Stars](https://img.shields.io/github/stars/Mairon31/novel_ai?style=flat&label=Stars&color=9575cd)](https://github.com/Mairon31/novel_ai/stargazers)
 
-**Crea historias que responden a tus decisiones.**  
-Un lector de novelas visuales con modelos de lenguaje, ilustraciones y voces conectables, donde tú controlas al protagonista y el mundo evoluciona con tus elecciones.
+**Create worlds. Meet characters. Change the story.**
 
-[**Explorar la interfaz**](#-la-aplicación) · [**Instalar**](#-primeros-pasos) · [**Arquitectura**](#-arquitectura) · [**Contribuir**](#-contribuir)
+**Noble AI** is a local-first interactive story and visual novel studio. Create original worlds, direct your protagonist, explore branching narratives, and connect language, image, and speech models without tying your stories to a single inference provider.
+
+[**Explore**](#the-experience) · [**Get started**](#get-started) · [**Features**](#features) · [**Contribute**](#contributing)
 
 </div>
 
 ---
 
-## ✨ La aplicación
+## The experience
 
-Una experiencia **app-first**: Noble AI se utiliza desde su interfaz web local, con biblioteca de historias, lector interactivo, modelos configurables y herramientas creativas. **Google Colab es opcional** para trabajadores remotos o pruebas de desarrollo; no es necesario para abrir la aplicación.
+Noble AI is designed around the **application**, not a notebook or terminal. Its local web interface brings together a story library, a responsive reader, Creator Studio, Model Hub, visual media tools, and separate settings for each system.
 
 <div align="center">
-  <img src="docs/assets/screenshots/reader-desktop.webp" alt="Noble AI: interfaz real del lector de historias en escritorio" width="94%" />
-  <sub>Biblioteca y lector narrativo · captura de la interfaz web durante pruebas de desarrollo</sub>
+  <img src="docs/assets/screenshots/reader-desktop.webp" alt="Noble AI story reader on desktop" width="94%" />
+  <sub>Desktop reader — screenshot captured during automated development testing</sub>
 </div>
 
 <br />
 
 <table>
   <tr>
-    <td align="center" width="60%">
-      <img src="docs/assets/screenshots/model-hub.webp" alt="Model Hub de Noble AI con catálogo de modelos" width="100%" />
-      <br /><b>Model Hub</b><br /><sub>Descubre y administra modelos de lenguaje.</sub>
+    <td width="60%" align="center">
+      <img src="docs/assets/screenshots/model-hub.webp" alt="Noble AI model catalog and detail view" width="100%" />
+      <strong>Model Hub</strong><br /><sub>Browse and manage language models.</sub>
     </td>
-    <td align="center" width="40%">
-      <img src="docs/assets/screenshots/reader-mobile.webp" alt="Lector de Noble AI adaptado a teléfonos" width="100%" />
-      <br /><b>Experiencia móvil</b><br /><sub>Lectura y controles adaptables.</sub>
+    <td width="40%" align="center">
+      <img src="docs/assets/screenshots/reader-mobile.webp" alt="Noble AI reader on a phone" width="100%" />
+      <strong>Mobile-friendly reader</strong><br /><sub>Adaptive layouts and controls.</sub>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="docs/assets/screenshots/gallery.webp" alt="Interfaz de galería y ficha visual de personajes" width="100%" />
-      <br /><b>Escenas y personajes</b><br /><sub>Galería de versiones y continuidad visual.</sub>
+      <img src="docs/assets/screenshots/gallery.webp" alt="Character gallery and visual identity editing" width="100%" />
+      <strong>Scenes and characters</strong><br /><sub>Illustration history and visual continuity.</sub>
     </td>
     <td align="center">
-      <img src="docs/assets/screenshots/workers.webp" alt="Panel de trabajadores remotos de Noble AI" width="100%" />
-      <br /><b>Workers remotos</b><br /><sub>Conexión a motores en otros equipos.</sub>
+      <img src="docs/assets/screenshots/workers.webp" alt="Noble AI remote worker configuration" width="100%" />
+      <strong>Remote workers</strong><br /><sub>Connect inference engines on another machine.</sub>
     </td>
   </tr>
 </table>
 
-<sub>Las imágenes anteriores provienen de capturas automatizadas de la aplicación real. Los escenarios y respuestas de los recorridos visuales son datos de demostración, no ejemplos de calidad de un modelo.</sub>
+<sub>These are screenshots of the actual development UI. Story and model outputs displayed by automated tests are demonstration fixtures, not samples of model quality.</sub>
 
-## 🌌 Qué ofrece Noble AI
+## Features
 
-| | Funcionalidad | |
-|:---:|---|---|
-| 📖 | **Narración interactiva** | Escribe lo que dices, haces o decides. El narrador responde progresivamente, sin controlar las decisiones de tu protagonista. |
-| 🗺️ | **Mundos persistentes** | Guarda historias, premisas, personajes, canon, historial y rutas alternativas que pueden continuar de forma independiente. |
-| 🎨 | **Ilustraciones por escena** | Conecta ComfyUI, crea imágenes bajo demanda, consulta una galería de versiones y reutiliza resultados por semilla. |
-| 🧑‍🎨 | **Identidad visual** | Define vestuario, apariencia y rasgos de personajes, que se incorporan a los prompts cuando aparecen en la escena. |
-| 🎙️ | **Voz opcional** | Escucha turnos guardados con Piper y voces ONNX locales; sin reproducción o síntesis automática al abrir una historia. |
-| 🧠 | **Modelos a tu elección** | Utiliza Ollama, KoboldCpp, OpenRouter o un worker compatible. Busca y descarga GGUF desde el Model Hub. |
-| 🌐 | **Desde más dispositivos** | Interfaz adaptable a escritorio y móvil; workers de inferencia autenticados mediante conexiones remotas. |
-| ⚙️ | **Preferencias propias** | Ajusta idioma de salida, estilo narrativo, generación de imágenes, parámetros de modelo y apariencia. |
+| Area | What you can do |
+|---|---|
+| **Interactive storytelling** | Type actions, dialogue, or decisions and receive streamed narration. Keep the player's choices separate from the narrator's role. |
+| **Persistent worlds** | Store stories, characters, canon, turns, world-state snapshots, Lorebooks, episodic search, and independent narrative branches in SQLite. |
+| **Creator Studio** | Develop a story premise, openings, character profiles, private creator notes, and visual references. Import or curate editorial media. |
+| **Multiple reader layouts** | Switch between visual novel, book, and chat-style reading, with a searchable backlog and optional hidden controls. |
+| **Scene illustration** | Connect ComfyUI, choose models and sampling controls, create images on request, reuse gallery results, and manage character appearance references. |
+| **Character sprites** | Import expression sheets or generate five expression drafts with ComfyUI, inspect cutouts, and approve assets before they appear in the reader. |
+| **Voice playback** | Use Piper voices for explicit, optional playback. Image and voice settings live in separate panels; narration does not synthesize audio merely because a story opens. |
+| **Model Hub** | Search Hugging Face GGUF models, inspect variants and hardware-fit estimates, download supported models, and assign an inference provider. |
+| **Remote inference** | Connect compatible workers and run selected workloads on another computer, subject to endpoint and authentication settings. |
+| **Story Hub** | Install editable copies of the bundled original story worlds. A community publishing service is a future goal, not a released feature. |
 
-## 🧩 Arquitectura
+Noble AI does not guarantee face identity, visual quality, GPU compatibility, or adherence to character knowledge solely from model prompts. Some integrations are implemented as controlled first versions and still need physical GPU testing.
 
-Noble AI separa la interfaz del motor narrativo, los servicios multimedia y la persistencia. Cada proveedor se conecta de forma independiente y se ejecuta cuando se solicita su función.
+## Get started
 
-```mermaid
-flowchart TB
-    UI["Noble AI<br/>React · TypeScript · Vite"]
-    API["Orquestador local<br/>FastAPI · REST · SSE"]
-    DB[("SQLite<br/>Historias · Canon · Escenas · Galería")]
-    HF["Model Hub<br/>Hugging Face · GGUF"]
-    LLM["Narración<br/>Ollama · KoboldCpp · OpenRouter · Workers"]
-    IMG["Ilustración<br/>ComfyUI · escenas y referencias"]
-    TTS["Voces<br/>Piper · ONNX"]
-    UI <-->|"REST + streaming"| API
-    API <--> DB
-    API --> HF
-    API --> LLM
-    API -->|"Bajo demanda"| IMG
-    API -->|"Escuchar"| TTS
-    classDef ui fill:#302452,stroke:#a993ff,color:#fff
-    classDef api fill:#182a43,stroke:#6fbbdd,color:#fff
-    classDef data fill:#182f2e,stroke:#73c0ad,color:#fff
-    class UI ui
-    class API api
-    class DB,HF,LLM,IMG,TTS data
-```
+### Run on Windows
 
-### Cómo fluye una historia
-
-```mermaid
-flowchart LR
-    A["Crear mundo y protagonista"] --> B["Escribir una acción"]
-    B --> C["Narración generada"]
-    C --> D["Guardar turno y canon"]
-    D --> E{"¿Seguir o explorar otra ruta?"}
-    E -->|"Continuar"| B
-    E -->|"Crear rama"| F["Nueva línea narrativa"]
-    F --> B
-    C -.->|"Ilustrar bajo demanda"| G["ComfyUI · Galería"]
-    C -.->|"Escuchar"| H["Piper · Voz"]
-```
-
-## 🚀 Primeros pasos
-
-### Google Colab — aplicación completa en una sola celda
-
-[**Abrir Noble AI y jugar en Google Colab**](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_play.ipynb)
-
-El notebook instala automáticamente el proyecto actual de `master`, dependencias, frontend, backend, un narrador Ollama con modelo seleccionado por hardware y, cuando existe GPU, intenta preparar ComfyUI y un checkpoint inicial para ilustraciones. Abre la interfaz por el proxy de sesión de Colab, **sin crear un túnel público**; también puede restaurar historias desde Drive si activas esa opción antes de iniciar. El código cambia con los commits futuros, mientras los datos permanecen fuera del checkout. La ejecución física en un runtime real requiere verificarse por separado de CI. [Guía del notebook](docs/COLAB_PLAY.md).
-
-Noble AI se ejecuta como **aplicación web local**. Para desarrollarla o probarla necesitas **Python 3.11+**, **Node.js 22+** y **Git**.
-
-<details open>
-<summary><b>Windows · PowerShell</b></summary>
+Requirements: **Python 3.11+**, **Node.js 22+**, and **Git**. In PowerShell:
 
 ```powershell
 git clone https://github.com/Mairon31/novel_ai.git
@@ -136,10 +90,9 @@ npm --prefix apps\web run build
 .\.venv\Scripts\python.exe -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 ```
 
-</details>
+Open **http://127.0.0.1:8000**. The interface can open before you install a language model. Connect Ollama, configure an existing KoboldCpp executable with a local GGUF, or use a compatible provider. Image and audio generation are optional and require their corresponding runtimes and models.
 
-<details>
-<summary><b>Linux · macOS (entorno de desarrollo)</b></summary>
+### Linux / macOS development
 
 ```bash
 git clone https://github.com/Mairon31/novel_ai.git
@@ -147,126 +100,88 @@ cd novel_ai
 
 python3 -m venv .venv
 .venv/bin/python -m pip install -r apps/api/requirements.txt
-
 npm --prefix apps/web install
 npm --prefix apps/web run build
-
 .venv/bin/python -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 ```
 
-</details>
+See the [quickstart](docs/QUICKSTART.md) for provider setup, data locations, troubleshooting, and test commands.
 
-Abre **[http://127.0.0.1:8000](http://127.0.0.1:8000)**. Configura un motor narrativo, crea una historia desde **Biblioteca** y empieza a interactuar con ella. Para ejecutar modelos locales necesitas Ollama o un ejecutable compatible de KoboldCpp; ComfyUI y Piper se instalan por separado si quieres ilustraciones o voces.
+### Run in Google Colab (optional)
 
-Consulta la [guía de instalación y conexión de modelos](docs/QUICKSTART.md) para ver el proceso completo.
+[**Open the Noble AI Colab application notebook**](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_play.ipynb)
 
-### Proveedores
+The notebook can set up the app and development dependencies in an ephemeral Colab runtime and open the UI through Colab's session proxy. Where resources allow, it can prepare Ollama and attempt ComfyUI setup; actual GPU results must be checked in that runtime. Colab is **not required** for local installation. See the [Colab guide](docs/COLAB_PLAY.md).
 
-| Función | Integración | Funcionamiento |
-|---|---|---|
-| Narración | **Ollama**, **KoboldCpp** | Motor local, con modelos instalados por separado |
-| Narración por API | **OpenRouter** | Cuenta y API key del proveedor |
-| Inferencia remota | **Noble AI Workers** | Equipo externo o GPU remota con autenticación |
-| Ilustraciones | **ComfyUI** | Checkpoint local; generación explícita y galería |
-| Voz | **Piper** | Voces locales ONNX; reproducción bajo demanda |
+## Image generation and checkpoint installation
 
-La aplicación no descarga automáticamente todos estos motores. Sus configuraciones, modelos compatibles y requisitos dependen del proveedor.
+Noble AI supports a first-party image-checkpoint installer in **Settings → Images**. It can inspect supported public Hugging Face repositories, download individual root-level `.safetensors` checkpoints, verify the published hash and file structure, and manage pause/resume/cancel operations.
 
-## 📚 Documentación
+Downloaded checkpoints are stored in Noble AI's managed model directory. They become **selectable only after ComfyUI reports them as available**. Noble AI can start and stop an **already installed** ComfyUI process using its managed runtime settings. Installing or upgrading the ComfyUI application itself, broader checkpoint-family support, LoRA/VAE installation, and end-to-end GPU validation remain outstanding.
 
-**Auditoría y tareas de desarrollo:** [TODO verificable](TODO.md) · [Auditoría integral Argon](docs/ARGON_AUDITORIA.md) · [Hoja de ruta](docs/ROADMAP.md) · [Bitácora de cambios y pruebas](docs/PROGRESO.md). La auditoría es una evaluación estática; el TODO diferencia capacidades presentes, implementaciones pendientes y validación física de GPU.
+Read [checkpoint installation](docs/CHECKPOINTS_IMAGEN.md), [ComfyUI integration](docs/COMFY_UI_INTEGRACION.md), and [image controls](docs/CONTROLES_IMAGEN.md).
 
+## Reader, story, and visual tools
 
-| Guía | Descripción |
+The reader supports **VN / Book / Chat** layouts, a searchable backlog, and optional HUD controls. With keyboard shortcuts enabled: `Alt+1/2/3` switches layouts, `Alt+B` opens the backlog, `Alt+H` toggles controls, and `Esc` closes the backlog.
+
+The Visual Director can reuse a registered background by location, time, weather, camera, and lighting context. Sprites may be attached to characters with a pose and one of five expressions; selection from approved local assets is deterministic. Generating new character art is a separate, manual action, not something silently triggered on every turn.
+
+Creator Studio supports imported expression sheets, optional ComfyUI-generated expression drafts, LoRA references, IPAdapter Plus conditioning, and background-cutout methods including optional RMBG/BiRefNet integrations when their dependencies are installed. Drafts require review and approval. A [local sprite benchmark](docs/GPU_SPRITE_BENCHMARK.md) can record observed timing and VRAM on a real ComfyUI installation; simulated CI results are not physical benchmarks.
+
+Story Hub currently includes three original, installable text-based worlds with alternate openings, characters, and lore. Installing a world creates an editable local copy. See [Story Hub](docs/STORY_HUB.md).
+
+## Architecture
+
+```mermaid
+flowchart TB
+    UI["Noble AI UI<br/>React · TypeScript · Vite"]
+    API["Local API and orchestration<br/>FastAPI · REST · SSE"]
+    DB[("SQLite<br/>Stories · Canon · Scenes · Media")]
+    HUB["Model Hub<br/>Hugging Face · GGUF"]
+    LLM["Narrative inference<br/>Ollama · KoboldCpp · OpenRouter · Workers"]
+    IMG["Illustrations<br/>ComfyUI · checkpoints · gallery"]
+    TTS["Speech<br/>Piper · ONNX"]
+    UI <-->|"REST + streaming"| API
+    API <--> DB
+    API --> HUB
+    API --> LLM
+    API -->|"On request"| IMG
+    API -->|"On request"| TTS
+```
+
+The React application, narrative engine, model management, media services, and storage are separate components. The project targets Windows-first local usage and supports remote inference as an optional extension. A packaged desktop executable is still a roadmap item.
+
+## Documentation
+
+| Resource | Purpose |
 |---|---|
-| [Primer inicio](docs/QUICKSTART.md) | Instalación, Model Hub y narrador |
-| [Arquitectura](docs/ARQUITECTURA.md) | Organización de servicios y responsabilidades |
-| [Escenas e imágenes](docs/IMAGENES.md) | ComfyUI, galería, continuidad y caché |
-| [Integración multimedia](docs/MULTIMEDIA_LOCAL.md) | Conectar ComfyUI y Piper |
-| [Workers](docs/WORKERS.md) | Inferencia en otros equipos y Colab |
-| [API](docs/CONTRATOS_API.md) | Rutas REST y streaming SSE |
-| [Seguridad](docs/SEGURIDAD_Y_LICENCIAS.md) | Datos, permisos y uso de componentes |
+| [Quickstart](docs/QUICKSTART.md) | Installation, providers, and first story |
+| [Architecture](docs/ARQUITECTURA.md) | Services, data flow, and implementation notes |
+| [Model Hub](docs/MODEL_HUB.md) | Catalog, installation, and hardware assessment |
+| [Images](docs/IMAGENES.md) | ComfyUI, gallery, references, and consistency |
+| [Checkpoints](docs/CHECKPOINTS_IMAGEN.md) | Secure checkpoint installation |
+| [Speech](docs/TTS.md) | Local speech synthesis |
+| [Remote workers](docs/WORKERS.md) | Distributed inference and connectivity |
+| [API contracts](docs/CONTRATOS_API.md) | REST endpoints and SSE contracts |
+| [Security and licensing](docs/SEGURIDAD_Y_LICENCIAS.md) | Security boundaries and licensing |
+| [Roadmap](docs/ROADMAP.md) | Planned milestones |
+| [TODO](TODO.md) | Verified implementation checklist |
+| [Progress log](docs/PROGRESO.md) | Development and CI evidence |
+| [Third-party notices](docs/THIRD_PARTY_NOTICES.md) | Upstream attribution |
 
-Para conocer tareas de implementación e incidencias, visita [GitHub Issues](https://github.com/Mairon31/novel_ai/issues). Los detalles de ingeniería se mantienen en la documentación técnica, no en esta página de presentación.
+The development backlog and historical audit may contain tasks not yet implemented. A successful simulated test does not establish end-to-end model or GPU compatibility.
 
-## 🤝 Contribuir
+## Contributing
 
-Noble AI busca reunir una buena experiencia de novela visual con modelos abiertos, generación de imágenes, voz y herramientas que funcionen en distintos equipos. Las contribuciones de desarrollo web, Python, IA, accesibilidad, diseño, documentación y pruebas son bienvenidas.
+Contributions to the React UI, Python API, model integrations, accessibility, story tools, design, documentation, and tests are welcome. Browse [issues](https://github.com/Mairon31/novel_ai/issues), read [CONTRIBUTING.md](CONTRIBUTING.md), and propose a focused change.
 
-Puedes comenzar revisando [issues abiertas](https://github.com/Mairon31/novel_ai/issues), proponiendo una mejora o enviando un pull request. Lee la [guía de contribución](CONTRIBUTING.md) antes de publicar cambios importantes.
+Noble AI builds on compatible open-source tools and acknowledges relevant sources in [third-party notices](docs/THIRD_PARTY_NOTICES.md).
 
 <div align="center">
 
-### ⭐ ¿Te interesa Noble AI?
+**Interested in the project?** [Star Noble AI on GitHub](https://github.com/Mairon31/novel_ai) or contribute an issue, design, test, or code change.
 
-**Si el proyecto te resulta útil o quieres apoyar su desarrollo, deja una estrella en GitHub.**  
-Y si quieres ayudar a construirlo, abre una propuesta, reporta un problema o colabora con código, diseño o documentación.
-
-[![Star this repository](https://img.shields.io/badge/⭐_Dejar_una_estrella-en_GitHub-8b65d8?style=for-the-badge)](https://github.com/Mairon31/novel_ai)
-[![Contribute](https://img.shields.io/badge/Contribuir-Enviar_propuesta-2b7591?style=for-the-badge)](https://github.com/Mairon31/novel_ai/issues)
-
-<sub>Hecho para dar vida a historias que todavía no existen.</sub>
+<sub>Made for stories that have not been told yet.</sub>
 
 </div>
-
-
----
-
-## Lectura VN / Libro / Chat y director de fondos
-
-En el lector, **UI/UX** permite elegir **VN** (escenario e historia), **Libro** (narración continua) o **Chat** (turnos separados en burbujas). La selección queda persistida en las preferencias locales. El botón **Backlog** abre las escenas cargadas de la ruta actual con búsqueda y salto al turno. También puedes ocultar el HUD sin perder la narración y restaurarlo con el botón flotante. Con los atajos habilitados: `Alt+1/2/3` cambia de vista, `Alt+B` abre el backlog, `Alt+H` oculta/revela los controles y `Esc` cierra el backlog.
-
-Desde **Galería → Director visual**, Noble evalúa si conviene reutilizar un fondo ya registrado o preparar uno nuevo. Permite registrar manualmente una versión de galería como fondo para un contexto de lugar, hora, clima, plano e iluminación, y seleccionarla otra vez sin procesar GPU. Los cambios de emoción no invalidan la caché del paisaje; las acciones de sprites y CG son propuestas para funciones futuras, **no generaciones automáticas**. La indexación de fondos manuales sigue las historias y sus archivos `.noble.zip`.
-
-Ver [arquitectura](docs/ARQUITECTURA.md), [QA](docs/QA_Y_ACEPTACION.md) y [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317).
-
-
-## Escenario visual con sprites y expresiones
-
-En **Creator Studio → Imágenes**, importa retratos PNG con transparencia, enlázalos a los NPC y selecciona una de cinco expresiones (neutral, alegría, enojo, tristeza o sorpresa) y una pose. Al avanzar la historia, el lector VN reutiliza las imágenes disponibles para mostrar hasta tres personajes; selecciona la variante a partir de pistas en el texto narrado y conserva una expresión neutral cuando no existe una alternativa. Los personajes no aparecen por mencionar su nombre únicamente en el contexto oculto del creador.
-
-La puesta en escena distingue al hablante solo cuando el narrador le atribuye explícitamente una intervención. Incluye fondo, transiciones entre dos imágenes, iluminación del personaje que habla y caja inferior con la narración. Las imágenes originales no se regeneran para cada turno. Las ramas y respaldos transportan las variantes; las instalaciones antiguas asignan `neutral/standing` a retratos anteriores.
-
-La animación y la elección de expresiones son deterministas; la generación de expresiones con ComfyUI es **manual y requiere aprobación**. No hay rigging 2D ni identidad facial garantizada; al avanzar turnos no se genera nuevo arte. [Detalle técnico](docs/ARQUITECTURA.md) y [pruebas](docs/QA_Y_ACEPTACION.md).
-
-**QA del escenario multicapa:** [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723) (247 Python / 60 Playwright, escritorio y móvil).
-
-### Identidad visual y hojas de expresiones
-En **Creator Studio → Personajes**, guarda hasta 16 etiquetas canónicas de apariencia, una semilla opcional de 32 bits y un nombre/intensidad de LoRA local. Una vez fijadas, las etiquetas y la semilla no se pueden cambiar mediante la edición ordinaria; un personaje nuevo o una rama propia puede tener otra identidad. Las etiquetas se incluyen como guía textual únicamente al solicitar ilustraciones para personajes de la escena; la semilla individual y los LoRA siguen siendo metadatos, sin aplicarse automáticamente.
-
-En **Creator Studio → Imágenes → Importar hoja de expresiones**, selecciona un personaje y sube un PNG o WebP con transparencia organizado en cinco celdas iguales, en fila o columna: **neutral, alegría, enojo, tristeza y sorpresa**. Se generan cinco archivos PNG locales y sus registros de galería en una sola operación; el lector los selecciona según la narración guardada, sin inferencia. Ver [medios de autor](docs/CREATOR_MEDIA.md) y [contratos de API](docs/CONTRATOS_API.md).
-
-Al ilustrar manualmente, Noble AI añade las etiquetas visuales de NPC pertinentes al prompt: en una escena libre exige que se mencione su nombre; en un plan guardado exige asociación explícita a una ficha visual de la galería, configurable desde **Creator Studio → Personajes**. La vista previa usa la misma composición que el render, y la caché se invalida si cambia la identidad antes de renderizar. En modo predeterminado es consistencia por instrucciones de texto, **sin** identificación facial automática. Los LoRAs se activan explícitamente en Galería y la generación bajo revisión de expresiones IA se realiza por separado en Creator Studio.
-
-### LoRAs locales de personajes
-
-Asigna un archivo `.safetensors` y una intensidad a un NPC desde **Creator Studio → Personajes**. El modelo debe estar instalado en `ComfyUI/models/loras`. Si utilizas un plan de escena, vincula al NPC con una ficha visual de la Galería. En el lector, entra en **Galería**, consulta **Ver LoRAs instalados** y activa **Aplicar LoRAs de personajes** antes de pedir la ilustración. Noble valida los modelos y el nodo estándar de ComfyUI, admite hasta tres LoRAs, y registra sus nombres e intensidades por versión visual. Esta función no genera imágenes durante el diálogo ni instala pesos; la compatibilidad del checkpoint y la calidad de identidad requieren pruebas GPU. [Guía técnica](docs/COMFY_LORAS.md).
-
-### Generador IA de expresiones para NPC
-
-En **Creator Studio → Imágenes → Generar expresiones con IA**, elige un NPC, pose, contexto y estilo; opcionalmente, fija semilla, imagen de referencia o LoRA local. El generador produce por ComfyUI cinco variantes (neutral, alegría, enojo, tristeza, sorpresa), una por vez. Puedes **reanudar, regenerar una expresión, revisar transparencias y aprobar las cinco**. Mientras son borradores no aparecen en el lector; tras aprobación se indexan como PNG transparentes en la biblioteca editorial. Los borradores duran hasta 48 horas y no se respaldan hasta convertirse en recursos aprobados. El recorte es un croma conservador de fondo verde y puede rechazar resultados complejos. No equivale a segmentación neuronal ni garantiza identidad facial. [Guía completa](docs/COMFY_SPRITE_DRAFTS.md).
-
-### Referencia IPAdapter Plus y control de coherencia en sprites
-
-Al crear un borrador de expresiones en **Creator Studio → Imágenes**, puedes elegir una imagen de Galería o un sprite ya aprobado del **mismo NPC**. El modo `img2img` conserva la composición; el modo opt-in **IPAdapter Plus** condiciona los rasgos del modelo mientras genera sobre un lienzo nuevo. Puedes combinarlo con LoRA, elegir preset `STANDARD / PLUS / PLUS FACE` y fuerza, y verificar si ComfyUI tiene el plugin/nodos y los modelos CLIP Vision/IPAdapter requeridos. No descarga ni instala pesos. Las versiones aprobadas registran preset, fuerza y huella de referencia.
-
-El creador verá avisos si algunas expresiones aparecen con desplazamiento o escala de silueta muy distintos. Para publicar el conjunto debe revisar las diferencias o regenerar variantes, sin que esto se confunda con reconocimiento facial. Se verifican los PNG contra su SHA256 antes de aprobar. [Guía y limitaciones](docs/COMFY_SPRITE_DRAFTS.md).
-
-### Transparencia neuronal opcional con ComfyUI-RMBG
-
-La generación de sprites en **Creator Studio → Imágenes** admite **Recorte de fondo → Verde, RMBG-2.0, BiRefNet Portrait o BiRefNet Matting**. Los tres últimos necesitan [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG) y archivos del modelo ya instalados en el directorio que ComfyUI expone como `rmbg`. El botón **Comprobar modelos de recorte** inspecciona nodos e inventario local sin generar ni descargar pesos.
-
-Noble obtiene la imagen procesada y la máscara como **dos resultados del mismo trabajo** ComfyUI; recompone el PNG RGBA conservando bordes de alfa suavizados y rechaza máscaras ausentes, vacías, invertidas, cortadas o incompatibles. Si el modelo no está listo, no sustituye silenciosamente la máscara por croma verde. La opción de recorte utilizada queda registrada en la procedencia de cada sprite aprobado, junto con su LoRA/IPAdapter cuando corresponda. Se requiere revisión humana; no equivale a una validación automática de identidad facial. [Funcionamiento y limitaciones](docs/COMFY_SPRITE_DRAFTS.md).
-
-### Benchmark reproducible de sprites y VRAM (local)
-
-`tools/sprite_gpu_benchmark.py` permite medir sobre **tu ComfyUI real** las cinco expresiones de un mismo NPC con la misma semilla en recorte verde, RMBG 2.0 y BiRefNet. Incluye sondeo `--check-only` sin inferencia, `--list-stories`/`--list-characters`, muestreo de `nvidia-smi` cuando exista, tiempos, métricas transparentes, PNG comparativos, `report.json`, `review.html` y `review.csv`. Los resultados son borradores no aprobados; `--discard-after` descarta expresamente solo los borradores generados durante el ensayo, manteniendo los informes. No se ejecuta en CI ni descarga modelos; las pruebas automáticas solo validan la lógica con respuestas simuladas. [**Guía y comandos Windows/Linux**](docs/GPU_SPRITE_BENCHMARK.md).
-
-El benchmark CLI y los informes offline fueron comprobados en [CI #42161285281](https://github.com/Mairon31/novel_ai/actions/runs/42161285281) (**337 Python + 66 Playwright PASS; build Vite correcto**) usando API y muestras de NVIDIA simuladas. **Las cifras físicas dependen de ejecutarlo localmente**; los reportes y previews se excluyen de Git de forma predeterminada.
-
-
-### Story Hub integrado — historias originales para comenzar
-
-En **Biblioteca → Descubre un mundo para jugar** puedes instalar tres mundos con 4 NPC, 3 aperturas, contexto narrativo y Lorebooks: «La estación de la última luna», «Las mareas de vidrio» y «El jardín de las horas rotas». Cada instalación crea una copia editable, permite elegir protagonista e inicio, y no requiere GPU hasta que continúes la narración. Es un **catálogo local de texto**, no el hub comunitario o multimedia definitivo. [Guía y contrato](docs/STORY_HUB.md).
-
-El mismo catálogo también está disponible como **espacio independiente «Descubrir historias»**, en el menú y en la ruta `#/descubrir`. La Biblioteca sigue mostrando una selección de mundos originales.

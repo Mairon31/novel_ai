@@ -1,51 +1,65 @@
-# Noble AI — Instalación de checkpoints de imagen desde la aplicación
+# Image checkpoint installation in Noble AI
 
-**Estado:** primer flujo publicado en `master` y validado por [CI #42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206) (393 Python, 82 Playwright y Vite PASS). Corrección posterior de rutas Windows y publicación atómica todavía con CI final pendiente. **No es una instalación automática del runtime ComfyUI.**
+**Status:** the first Hugging Face checkpoint installation workflow is implemented on `master`. The earlier automated run [#42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206) reported 393 Python and 82 Playwright tests passing, plus a successful Vite build. Subsequent Windows-path and runtime-manager changes must be evaluated against their own CI runs. **This does not install ComfyUI itself.**
 
-## Qué hace
+## Install a checkpoint
 
-Abre **Configuración → Imágenes → Checkpoints desde Noble AI**. Escribe un identificador público de Hugging Face en formato `autor/modelo`, pulsa **Buscar archivos del checkpoint** y elige un archivo individual `.safetensors` disponible en la raíz del repositorio. Se muestran tamaño, licencia anunciada y revisión. **Instalar checkpoint** inicia una descarga con progreso, Pausar, Reanudar y Cancelar. No se descarga al entrar en Ajustes ni al consultar el repositorio.
+Open **Settings → Images → Checkpoints**. Enter a public Hugging Face repository ID in `author/model` format and inspect available files. This initial flow supports individual root-level `.safetensors` checkpoint files when Hugging Face publishes both their file size and SHA-256. It displays the advertised license, repository revision, and size before installation.
 
-La descarga final se coloca en el directorio propio `data/models/comfyui/checkpoints/autor/modelo/archivo.safetensors` (o dentro del `models_dir` configurado de la aplicación). Noble no sobrescribe archivos ajenos, comprueba SHA-256 declarado por Hugging Face y la estructura de cabecera/tensores safetensors, y solo publica el archivo verificado.
+Starting a download is an explicit user action. The manager shows progress and offers pause, resume, and cancel. Opening Settings or inspecting a repository does not start a download.
 
-La API no admite archivos de otras extensiones ni rutas con subdirectorios en el nombre de archivo, checkpoints privados/gated ni modelos sin SHA-256 y tamaño declarado. No todos los archivos safetensors son compatibles con `CheckpointLoaderSimple`, por lo que pasar verificación de archivo **no** demuestra compatibilidad de arquitectura, VRAM ni calidad artística.
-
-## Conectar los checkpoints con ComfyUI
-
-Noble genera el archivo `data/models/comfyui/noble_extra_model_paths.yaml` con su carpeta de checkpoints. Desde esta fase existen **dos maneras de conectarlo**: (1) **Configuración → Imágenes → Ejecutar ComfyUI desde Noble AI**: valida una instalación ComfyUI ya existente, guarda sus rutas y pulsa **Iniciar ComfyUI**. Noble pasa automáticamente `--extra-model-paths-config` y configura su URL local; (2) si prefieres administrar ComfyUI por tu cuenta, arráncalo manualmente con:
+Verified files are stored under:
 
 ```text
---extra-model-paths-config "<ruta-absoluta-mostrada-por-Noble>"
+data/models/comfyui/checkpoints/author/model/file.safetensors
 ```
 
-La UI enseña la ruta exacta en tu instalación; ComfyUI quizá necesite reiniciarse para actualizar el catálogo. Después pulsa **Buscar checkpoints**. Solo cuando ComfyUI devuelve el nombre relativo `autor/modelo/archivo.safetensors` en su inventario se habilita **Seleccionar checkpoint**. Guarda entonces los ajustes de imagen; el botón Ilustrar utiliza exactamente el checkpoint reconocido, con el muestreador y el estilo anime que configuraste.
+The base model directory can be configured. Noble AI verifies the immutable repository revision, size, published SHA-256, and safetensors header/tensor structure before publishing the final file. It will not overwrite unrelated files.
 
-**No se debe editar manualmente la carpeta de otros programas** y Noble no mueve el archivo a una ruta ComfyUI elegida arbitrariamente. **Iniciar y detener ComfyUI ya instalado desde Noble AI está implementado**; sigue pendiente la **instalación/actualización automática del propio ComfyUI**, modelos avanzados, familias y pruebas físicas de GPU. [Más información](COMFY_UI_INTEGRACION.md).
+**Not supported in this first flow:** nested model paths within a Hugging Face repository, gated/private files, missing published hashes or sizes, and arbitrary extensions. Passing file verification **does not establish** architecture compatibility, expected VRAM use, or image quality.
 
-## Endpoints
+## Make the checkpoint visible to ComfyUI
 
-| Método | Ruta | Acción |
+Noble AI writes `data/models/comfyui/noble_extra_model_paths.yaml` with the managed checkpoint directory.
+
+There are two supported ways to register it:
+
+1. In **Settings → Images**, configure an **already installed** ComfyUI directory, Python interpreter, and local port. Use the managed launch controls. Noble AI passes the required extra-model-paths configuration automatically and starts only the configured local process.
+2. If you manage ComfyUI separately, start it with:
+
+```text
+--extra-model-paths-config "<absolute path displayed by Noble AI>"
+```
+
+ComfyUI may need a restart before it refreshes its checkpoint inventory. Click **Refresh checkpoints**. A downloaded model becomes selectable only after ComfyUI reports its relative `author/model/file.safetensors` name. Save the image settings before using that checkpoint for illustration.
+
+Noble AI does not write into arbitrary third-party ComfyUI model folders. The managed ComfyUI **start/stop controls exist**, but automated installation/upgrading of ComfyUI is still pending. See [ComfyUI integration](COMFY_UI_INTEGRACION.md).
+
+## API contract
+
+| Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/v1/images/checkpoints/lookup?repo_id=autor/modelo` | Revisión y safetensors raíz con hash publicado |
-| GET | `/api/v1/images/checkpoints/installed` | Inventario de archivos verificados y ruta ComfyUI |
-| GET | `/api/v1/images/checkpoints/downloads` | Trabajos recientes |
-| GET | `/api/v1/images/checkpoints/downloads/{uuid}` | Trabajo individual |
-| POST | `/api/v1/images/checkpoints/install` | `{"repo_id":"autor/modelo","filename":"archivo.safetensors","revision":"<40 hex>"}` |
-| POST | `/api/v1/images/checkpoints/downloads/{uuid}/pause` | Pausar |
-| POST | `/api/v1/images/checkpoints/downloads/{uuid}/resume` | Reanudar o reintentar |
-| POST | `/api/v1/images/checkpoints/downloads/{uuid}/cancel` | Cancelar |
+| GET | `/api/v1/images/checkpoints/lookup?repo_id=author/model` | Inspect an immutable revision and supported root safetensors |
+| GET | `/api/v1/images/checkpoints/installed` | Verified inventory and managed model path |
+| GET | `/api/v1/images/checkpoints/downloads` | Recent installation jobs |
+| GET | `/api/v1/images/checkpoints/downloads/{uuid}` | A single job |
+| POST | `/api/v1/images/checkpoints/install` | Install using repo ID, filename, and revision |
+| POST | `/api/v1/images/checkpoints/downloads/{uuid}/pause` | Pause |
+| POST | `/api/v1/images/checkpoints/downloads/{uuid}/resume` | Resume or retry |
+| POST | `/api/v1/images/checkpoints/downloads/{uuid}/cancel` | Cancel |
 
-La revisión se fija a un SHA de 40 caracteres; el hash de 64 caracteres es obligatorio. El trabajo se persiste en la tabla `image_checkpoint_downloads`. Se reanuda solo tras acción del usuario, y solo se aceptan respuestas HTTP 206 con `Content-Range` exacto. Si el origen devuelve HTTP 200 al reanudar, se reescribe el archivo parcial desde el inicio.
+The requested revision is a 40-character commit SHA and the published content hash is 64 hexadecimal characters. Jobs are persisted in `image_checkpoint_downloads`. An HTTP 206 resume must match the exact expected `Content-Range`; an HTTP 200 response to a resume starts the partial download again from byte zero.
 
-## Pruebas
+Example request body:
 
-`tests/test_checkpoint_installer.py` simula HF para validar integridad, cabeceras, descargas parciales, seguridad de nombres y rutas, cancelación y que no se contacte a HF al abrir el panel. `apps/web/tests/checkpoint-installer.spec.ts` recorre catálogo, instalación, pausa/reanudación, selección solo con confirmación ComfyUI y guardado real de ajustes, en escritorio y móvil. Estas pruebas no sustituyen el ensayo físico con GPU, modelo real y licencia concreta.
+```json
+{"repo_id":"author/model","filename":"checkpoint.safetensors","revision":"<40-character-commit-sha>"}
+```
 
-## Pendiente
+## Validation and remaining work
 
-Soporte de checkpoints almacenados en subcarpetas HF, filtros de familias compatibles (SD1.5/SDXL/Illustrious/Flux), administración de LoRA/VAE, instalación automática/launcher de ComfyUI y validación visual real en Windows/Colab. Los hitos maestros N-01 y N-21 siguen sin completarse.
+`tests/test_checkpoint_installer.py` covers security checks, format parsing, mocked Hugging Face responses, interrupted downloads, and no downloads on panel mount. `apps/web/tests/checkpoint-installer.spec.ts` covers installation controls and ComfyUI-gated selection on desktop and mobile.
 
+Remaining: nested Hugging Face paths, reliable model-family identification (SD 1.5 / SDXL / Illustrious / Flux), managed LoRA/VAE installation, full ComfyUI application installation, and end-to-end Windows/Colab GPU validation. The larger N-01 and N-21 milestones remain open.
 
-## Gestor de procesos ComfyUI
-
-La administración de un **ComfyUI existente** está ahora integrada en **Configuración → Imágenes**, sin ejecutar `.bat` ni shell: carpeta, Python, puerto y VRAM; inicio explícito, diagnóstico, registros y parada del proceso propio. Es un segundo tramo distinto de la instalación de checkpoints, con [instrucciones y límites](COMFY_UI_INTEGRACION.md). La descarga/instalación del programa ComfyUI sigue pendiente.
+The **managed runtime panel** can validate, start, inspect logs for, and stop an existing ComfyUI installation; this is separate from installing its Python environment, dependencies, or executable.

@@ -1,47 +1,48 @@
-# AGENTS.md — instrucciones de ingeniería Noble AI
+# AGENTS.md — Noble AI engineering guidance
 
-Leer `TODO.md`, `docs/ARGON_AUDITORIA.md`, `README.md`, `docs/GDD_TECNICO.md`, `docs/ARQUITECTURA.md`, `docs/MODEL_HUB.md`, `docs/ONBOARDING_Y_UI.md`, `docs/ROADMAP.md`, `docs/PROGRESO.md`, `docs/REFERENCIAS_URAKATSU_KOHARU.md`, `docs/SEGURIDAD_Y_LICENCIAS.md` y ambas ADR antes de cambiar código.
+Read `TODO.md`, `README.md`, `docs/ARGON_AUDITORIA.md`, the relevant technical docs, both ADRs, and the latest `master` history before changing behavior. Inspect existing implementations first. Do not treat old audit findings as proof that a feature is absent.
 
-**Misión:** crear app web/desktop local-first con novela visual, catálogo/descargas de modelos dentro de la UI, proveedores intercambiables y memoria persistente. La experiencia final es **APP-FIRST**, no un notebook; el primer vertical slice debería ser Model Hub + wizard + narrador real. El repositorio ya contiene un frontend React, API FastAPI, almacenamiento SQLite y pruebas automatizadas. Nunca asumir que un módulo falta sin inspeccionar el `master` actual.
+## Mission
 
-## Reglas no negociables
+Build a **local-first, app-first** interactive story and visual novel platform, with an approachable Model Hub, interchangeable inference providers, persistent narrative state, optional image generation and optional speech. The repository already contains React/TypeScript, FastAPI, SQLite, integrations, and automated tests. Colab is an optional runtime/testing environment, not a required user-facing installation step.
 
-1. **Empezar inspeccionando GitHub y el trabajo existente**. Nunca reimplementar por descuido librerías maduras que podamos usar con licencia apropiada.
-2. Estudiar Urakatsu MIT (`catalog/hf.py`, `fit.py`, `installed.py`, `ModelsPage.tsx` y FastAPI) y Koharu MIT/Apache (Settings/Providers, Tauri). **No copiar código hasta decidir el reuso**, registrar commit fuente, licencia y copyright/NOTICE.
-3. **Wizard sin modelos**: app abre aun con 0 checkpoints, permite elegir destino/CPU/GPU/providers y buscar/instalar desde UI; no exigir `.env`, Colab, consola ni descargar manualmente al usuario final.
-4. **Separar catálogo / descarga / modelo instalado / runtime / provider / rol / perfil**. Validar compatibilidad real, ruta, checksum, revisión, esquema, y jobs; no suponer que una safetensors es un TTS válido.
-5. Los proveedores exponen capacidades reales; campos incompatibles deben quedar deshabilitados con explicación; CPU/GPU elegible solo cuando lo permita el backend.
-6. LLM narrativo disponible al jugar; puede estar parcialmente CPU offloaded. **12GB mínimo objetivo y 16GB recomendado** requieren medición. No cargar LLM+ComfyUI+TTS a la vez sin scheduler/VRAM budget.
-7. **Imágenes** solo por cambio visual material de escena o solicitud; reutilizar caché; historia puede funcionar sin ellas.
-8. **TTS OFF por defecto**: nada de precarga, llamadas ni síntesis sin clic/autolectura autorizada por el usuario.
-9. Presets globales + overrides por historia; cambiar un modelo nunca destruye canon ni datos.
-10. Mantener SQLite event log inmutable; retry/edit crea rama; idempotencia y revisión optimista.
-11. Interfaz VN responsive móvil/escritorio; cada cambio UI requiere Playwright/capturas 390x844 y 1440x900. **No botones ficticios ni placeholders en producción**.
-12. Tauri 2 es candidato de futuro `.exe`, **no implementación asumida**. El shell solo debe cerrar procesos propios y proteger acceso local/LAN.
-13. No descargar/ejecutar código Python remoto a partir de manifest de modelo. Secrets en keychain, URL/procedencia verificadas. No guardar pesos, proyectos privados o `.env` en Git.
-14. Colab sirve para pruebas con GPU, no entorno principal; respetar limitaciones de runtimes y evitar túneles/anti-AFK.
-15. Cada PR exige código, contrato, pruebas unit/integration reales si factible, error paths, QA visual, docs/ADR/PROGRESO, sha/licencias de modelos y regresión.
-16. Respetar español latinoamericano natural en UX y narrativa, usar identificadores de código/API consistentes en inglés.
-17. Sin afirmaciones 'PASS' sin ejecución y evidencia; mock PASS no es una integración real. Si hay FAIL, arreglarlo o reportarlo como bloqueo.
-18. Cambios en issues/milestones deben reflejarse en roadmap.
+## Non-negotiable principles
 
-## Orden técnico obligatorio
+1. Inspect current GitHub `master` before implementation. Prefer maintained, license-compatible open-source components when practical. Preserve required attribution and license text.
+2. Keep catalog search, model download, installed files, runtime processes, inference providers, assigned roles, and hardware profiles conceptually distinct.
+3. The app must open even when zero models are installed. Do not require users to edit `.env` or run Colab just to browse the UI.
+4. Check file paths, repository revisions, supported formats, hashes, runtime capabilities, and declared provider features. A valid `.safetensors` file is not automatically a usable diffusion checkpoint or TTS model.
+5. Respect actual backend support when offering CPU/GPU controls, parameter settings, and hardware compatibility estimates. Never label a theoretical performance estimate as a benchmark.
+6. Do not load LLM, ComfyUI, and TTS concurrently without respecting resource budgets. The 12 GB minimum target and 16 GB recommended profile still need real measurements.
+7. Generate images on explicit request or meaningful scene changes only; reuse visual assets where applicable. Stories must also work without images.
+8. Keep TTS **off by default**. Never start synthesis or downloads merely by visiting a panel.
+9. Support shared defaults and per-story settings without destroying story canon or existing data on model changes.
+10. Preserve narrative history, idempotency, branch isolation, and transactional SQLite changes. Distinguish reversible branches from destructive operations.
+11. Keep desktop/mobile reader layouts responsive and accessible. UI changes require appropriate automated checks and, when available, screenshots at 390×844 and 1440×900. No nonfunctional production controls.
+12. Tauri 2 is a future desktop packaging candidate, not an already shipped `.exe`.
+13. Never run arbitrary remote Python from model manifests; secure downloads, secrets, endpoints, and model provenance. Do not commit model weights, credentials, personal stories, or local data.
+14. Treat Colab as ephemeral. Do not add public tunnels or anti-idle mechanisms that bypass runtime restrictions.
+15. Every functional change should include relevant contracts, failure handling, tests, documentation, and license notes. Distinguish mocks, CI, and real hardware checks.
+16. **English is the default language for the entire product and repository**: README, documentation, contribution guidance, UI labels, settings, accessibility names, errors, test descriptions, and developer comments. Existing stable API paths, database fields, persisted data, user-authored content, and external model identifiers must not be renamed merely for translation. Story output language remains user-selectable; natural Latin American Spanish remains a supported story-language option.
+17. Do not report PASS without a traceable execution. Record FAILED, SKIPPED, or NOT RUN accurately.
+18. Update `TODO.md`, roadmap, progress log, and issue links when completing milestones. Work directly on `master` unless explicitly instructed otherwise.
 
-**P0**: estudiar reuso + contrato y licencias. **P0.5**: backend health/hardware, UI wizard + Models Hub, búsqueda HF/descargas/revisión real. **P1**: runtime supervisor + LLM/narración/SQLite y VN. **P2**: imágenes ComfyUI progresivas. **P3**: TTS opt-in. **P4**: empaquetado Tauri y editores. **P5**: GPU 12/16 y calidad.
+## Engineering priorities
 
-## Reporte de cierre de cada tarea
+- **P0:** security, recovery, cancellation, data integrity, and truthful documentation.
+- **P1:** model/runtime lifecycle, resource policies, world state, Lorebooks, and reader stability.
+- **P2:** improved Model Hub, scene/character media tooling, and actual hardware evidence.
+- **P3:** optional speech systems and advanced provider support.
+- **P4:** desktop packaging, deployment, and final product polish.
 
-- Qué se implementó y **qué sigue sin implementarse**.
-- Archivos y commits; proveedores/versions/licencias.
-- Pruebas corridas (comando, resultado, entorno, screenshots/benchmark); tests no corridos en SKIP/NOT_RUN.
-- Fallos/limitaciones/preferencias de perfil por GPU.
-- `docs/PROGRESO.md` actualizado, link a issue y siguiente paso medible.
+Avoid claiming that an engineering milestone is complete because one narrow slice is merged.
 
-## Integración obligatoria de la auditoría Argon (2026-11-05)
+## Argon audit and progress tracking
 
-- `TODO.md` es el backlog operativo con casillas y criterios verificables; `docs/ARGON_AUDITORIA.md` contiene los 22 apartados de diagnóstico, fases y arquitectura objetivo. **Trabajar directamente en `master`** salvo instrucción explícita en contrario; no crear una rama por tarea.
-- Antes de implementar, comprobar si el hallazgo sigue vigente: el código existente ya incluye WAL, SSE, Range/SHA-256 condicional y bloqueo básico GPU, pero no completa todas sus garantías.
-- Distinguir diseño, código, suite CI y validación sobre GPU real. Cerrar una casilla solo con pruebas y citar commit/resultado en `docs/PROGRESO.md`.
-- P0: rutas de archivos, atomicidad/rollback, cancelación y seguridad de workers. P1: VRAM, estado canónico, Lorebooks, escena multicapa. P2: V2/V3, Model Hub avanzado, medidor de contexto. No priorizar P3 por encima de estabilidad.
-- Las etiquetas `AUD-005/006/007` están duplicadas con otros sentidos dentro de la auditoría: `TODO.md` usa la nomenclatura estable de su §18. Citar §05 para los hallazgos homónimos.
-- Reutilizar implementaciones open-source compatibles y registrar su origen/licencia en `docs/THIRD_PARTY_NOTICES.md`; no inventar prohibiciones de copia de interfaz, ni asumir que atribución por sí sola cubre todas las obligaciones de licencia.
+`docs/ARGON_AUDITORIA.md` is the historical source of audit observations; `TODO.md` is the actionable checklist. Some audit IDs are repeated with different meanings: prefer the stable IDs and references in the TODO. Existing features include SQLite WAL, SSE streaming, resume/checksum handling, world-state snapshots, and basic GPU locks, but each has distinct remaining limits.
+
+Use the open-source reference work from Urakatsu and Koharu only in accordance with the applicable licenses and notices, recording the upstream revision and adaptations in `docs/THIRD_PARTY_NOTICES.md`. Attribution alone is not a substitute for satisfying all license terms.
+
+## Completion report
+
+Describe what changed, what remains unfinished, modified paths, exact commit(s), evidence from executed tests (with environment and screenshots where applicable), and any known real-hardware limitations. Update `docs/PROGRESO.md` and `TODO.md` without inventing validation results.

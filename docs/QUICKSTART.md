@@ -1,12 +1,14 @@
-# Noble AI — Instalar y ejecutar la aplicación local
+# Noble AI quickstart
 
-**Descripción:** aplicación web local React + FastAPI con Model Hub, historias persistentes, ramas, galería de ilustraciones, integración ComfyUI y síntesis Piper opcional. No requiere Google Colab. Las funciones externas necesitan sus motores instalados por separado.
+Noble AI is a local-first React and FastAPI application for interactive stories, branching narrative state, optional ComfyUI images, and optional Piper speech. Google Colab is not required for local operation.
 
-## Requisitos
+## Requirements
 
-Windows 11 (o Linux para desarrollo), Python 3.11+, Node.js 22+, Git. Internet necesario para dependencias y para buscar/descargar pesos de Hugging Face. La narración puede funcionar offline si el motor y los modelos ya están presentes.
+- Windows 11 for the primary local workflow; Linux is supported for development.
+- Python 3.11+, Node.js 22+, and Git.
+- Internet access for dependencies and model discovery/downloads. Previously installed local models can be used offline when their inference runtime supports it.
 
-## Instalar y abrir Noble AI
+## Install and launch
 
 PowerShell:
 
@@ -20,77 +22,75 @@ npm --prefix apps\web run build
 .\.venv\Scripts\python.exe -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 ```
 
-Abre **http://127.0.0.1:8000**. Usa `Ctrl+C` para detener Noble AI.
+Open **http://127.0.0.1:8000**. Use `Ctrl+C` to stop the API.
 
-## Ruta A — Usar KoboldCpp con el GGUF del Model Hub
+## Option A: use a GGUF model with KoboldCpp
 
-1. En **Model Hub**, busca un modelo narrativo GGUF con cuantización adecuada a tu VRAM/RAM; abre una variante GGUF de **archivo único**, instálala y espera que aparezca en **Instalados**.
-2. Obtén el ejecutable de KoboldCpp por su fuente oficial: https://github.com/LostRuins/koboldcpp/releases . **Noble AI no descarga ni instala el ejecutable todavía**.
-3. Abre **Configuración → KoboldCpp administrado**. Selecciona el GGUF que acabas de instalar y escribe la ruta a `koboldcpp.exe` (p. ej. `C:\Tools\koboldcpp.exe`).
-4. Elige capas GPU: **Automático (-1)**, **Solo CPU (0)** o 12/24/36/etc. Puedes elegir contexto y puerto local; inicia con 4096 tokens, puerto 5001.
-5. Pulsa **Iniciar modelo**. Espera el estado **Modelo listo**. Si KoboldCpp falla, revisa `data/logs/koboldcpp.log`, el límite VRAM/RAM y la cuantización.
-6. Pulsa **Usar como narrador**. El backend descubre la ID real informada por KoboldCpp y actualiza la configuración del narrador.
-7. Ve a **Biblioteca**, pulsa **Nueva historia**, escribe título/premisa y después **Enviar intervención** o **Continuar**. El texto aparece progresivamente y se guarda en SQLite.
-8. Al salir de Noble AI, el backend **solo cierra el KoboldCpp que inició**, nunca procesos de otro programa.
+1. Browse **Model Hub** and install a supported single-file GGUF variant that fits your VRAM/RAM budget. Wait for its installation to complete.
+2. Download the KoboldCpp executable from its [official releases](https://github.com/LostRuins/koboldcpp/releases). Noble AI does not yet install that executable for you.
+3. In the managed KoboldCpp settings, select the installed GGUF and provide the executable path (for example `C:\Tools\koboldcpp.exe`).
+4. Choose GPU layers: automatic (`-1`), CPU-only (`0`), or a specific count. Set a local port (typically `5001`) and an initial context size such as 4096 tokens.
+5. Start the model. If startup fails, inspect `data/logs/koboldcpp.log`, model compatibility, GPU memory, and the selected port.
+6. Select the running model as the narrator. Noble AI reads the model ID exposed by KoboldCpp.
+7. Open **Library**, create a story with a title and premise, and submit the first action. Narrative output streams to the reader and is saved to SQLite.
+8. The managed launcher shuts down only processes it started; it should not terminate unrelated services.
 
-La ejecución real de esta ruta **todavía no se ha probado en una GPU física dentro de Noble AI**. La API y ciclo de vida están validados con procesos y motores simulados. `--host 127.0.0.1`, `--gpulayers`, `--contextsize` y `--model` provienen de los argumentos declarados por KoboldCpp.
+The process-management and API contracts have automated coverage. End-to-end real-GPU behavior still requires testing on the target machine.
 
-## Ruta B — Conectar Ollama
+## Option B: connect Ollama
 
-1. Instala y ejecuta Ollama en el mismo equipo: https://ollama.com . Asegúrate de disponer de un modelo en su biblioteca local. Hasta incorporar la descarga de Ollama al Model Hub, puedes obtener uno con los controles/herramientas propios de Ollama (p. ej., `ollama pull qwen3:8b`).
-2. Noble AI → **Configuración → Motor narrativo local**: selecciona `Ollama`, URL `http://127.0.0.1:11434`, pulsa **Guardar y probar conexión**.
-3. Elige o escribe el ID que aparece en la lista real de Ollama, p. ej. `qwen3:8b`; configura temperatura, Top-P, contexto y máximo de tokens.
-4. En Ollama, **Automático** deja la selección de GPU al motor; **Solo CPU** usa `num_gpu=0`. Guarda los ajustes.
-5. Abre Biblioteca y crea una historia. Ollama carga el modelo cuando se inicia la generación; Noble AI envía `keep_alive: 30m` para mantenerlo listo durante el uso.
+1. Install and start [Ollama](https://ollama.com). Make sure a suitable model is installed (for example, via `ollama pull qwen3:8b`).
+2. In narrative-provider settings, select **Ollama** and `http://127.0.0.1:11434`; save and test the connection.
+3. Select the model ID reported by Ollama. Configure temperature, top-p, context length, and output limit.
+4. Choose an available GPU/CPU mode. The CPU-only option maps to `num_gpu=0`; otherwise Ollama manages device placement.
+5. Create or reopen a story from the library. Noble AI requests a `keep_alive` of 30 minutes for supported Ollama requests.
 
-No se admiten endpoints remotos en este incremento. El backend solo permite direcciones HTTP loopback con puerto, y no envía historias a servicios externos.
+Provider endpoints and remote access are subject to the backend's security policy. Configuring an arbitrary URL does not bypass local endpoint restrictions.
 
-## Cómo se guarda
+## Optional image and voice services
 
-- `data/noble.sqlite`: modelos/descargas/asignaciones, parámetros narrativos y tablas `stories` y `story_turns`.
-- `data/models`: GGUF instalados por Noble AI.
-- `data/logs/koboldcpp.log`: salida del proceso administrado.
-- `apps/web/dist`: frontend compilado, servido por FastAPI.
+- **Images:** connect an already installed ComfyUI instance. You can install supported Hugging Face image checkpoints from the Images settings page; a downloaded checkpoint is usable only when ComfyUI recognizes it. See [checkpoint installation](CHECKPOINTS_IMAGEN.md).
+- **Voice:** configure Piper and local ONNX voice assets. Audio is on demand and does not start on page load. See [speech](TTS.md).
+- **Colab:** the [application notebook](../notebooks/noble_ai_colab_play.ipynb) can run a development environment on an ephemeral remote runtime.
 
-Las historias guardan título, premisa, intervención del jugador y respuesta del motor, asociadas a un `request_id` idempotente. Se reutilizan hasta 16 turnos previos al construir el contexto. Todavía **no** hay seguimiento estructurado del canon, memoria semántica, reintentos, ramas ni assets visuales. No borrar `data/` para actualizar.
+## Data locations
 
-## Pruebas
+| Path | Purpose |
+|---|---|
+| `data/noble.sqlite` | Stories, turns, canon, settings, models, download jobs, and related metadata |
+| `data/models/` | Installed and managed model files, including supported image checkpoints |
+| `data/logs/` | Logs for managed runtime processes |
+| `apps/web/dist/` | Built frontend served by FastAPI |
+
+**Keep the `data/` directory when upgrading.** A reinstall of application source files should not erase local stories and models.
+
+## Run automated checks
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
 npm --prefix apps\web run build
+npm --prefix apps\web run test:e2e
 ```
 
-Playwright se ejecuta en GitHub Actions para escritorio y móvil. **Pruebas verificadas:** contratos simulados de Ollama/KoboldCpp, SSE, error sin commit parcial, idempotencia y reinicio de SQLite; comando de KoboldCpp, CPU (0 capas), proceso propio/stop y activación; 6 recorridos Playwright (dos de navegador básico, dos catálogo con fixtures, dos lector con respuesta LLM simulada). El funcionamiento real con pesos/GPU queda pendiente.
+Browser tests require Playwright browser dependencies and the relevant running services. The GitHub Actions workflow provides the reference CI environment. Mocked tests are not proof that a specific model generates correctly on a physical GPU.
 
-## Problemas frecuentes
+## Navigation
 
-- **API sin conexión:** verifica que FastAPI esté activo en puerto 8000.
-- **El backend no detecta NVIDIA:** comprueba `nvidia-smi` desde PowerShell.
-- **No aparece el GGUF:** revisa que terminó la descarga y existe en la biblioteca de Noble AI.
-- **KoboldCpp no inicia:** comprueba exe, puerto, archivo y `data/logs/koboldcpp.log`.
-- **KoboldCpp responde, pero no puedo narrar:** pulsa **Usar como narrador** después de que el estado sea *listo*.
-- **Ollama no responde:** confirma servidor, modelo y URL loopback.
-- **Error de modelo/VRAM:** reduce cuantización, contexto, capas GPU o usa CPU/Auto; el perfil todavía no está medido.
-- **Historias sin imágenes o voces:** esas integraciones serán fases siguientes.
+- **Library:** story cards open a dedicated detail page with the synopsis, protagonist, tags, and actions. Continue into the reader without keeping the library in the background.
+- **Creator Studio:** manage characters, story openings, creator-only information, and editorial assets.
+- **Model Hub:** browse model details and quantizations, inspect installed files, and monitor downloads.
+- **Settings:** distinct Images, Voice/TTS, About, and Updates panels, plus other provider and application settings.
+- **Discover Stories:** install editable copies of the bundled original story worlds.
 
-[Model Hub](MODEL_HUB.md) · [Bitácora](PROGRESO.md) · [Issues](https://github.com/Mairon31/novel_ai/issues).
+## Troubleshooting
 
+- **Cannot connect to the API:** check that FastAPI is running on port 8000.
+- **No NVIDIA device detected:** run `nvidia-smi` in PowerShell.
+- **GGUF does not appear:** confirm download completion and the managed model directory.
+- **KoboldCpp will not start:** check the executable, selected model, local port, and logs.
+- **KoboldCpp responds but stories cannot generate:** select its loaded model as the active narrator.
+- **Ollama does not respond:** check that Ollama is running and the model ID/loopback URL are correct.
+- **Insufficient VRAM:** lower model quantization, context, or GPU layers as appropriate.
+- **Images or speech unavailable:** verify that the relevant runtime and assets are installed and explicitly enabled.
 
-## Referencias visuales y VRAM
-
-Puedes generar nuevas variantes de una ilustración guardada usando **ComfyUI → Imagen de referencia** y el control **Transformación**, que utiliza un workflow de imagen-a-imagen nativo. En **Configuración → Imágenes y voz** puedes consultar la VRAM libre observada y establecer una reserva mínima para trabajos de imagen. Esta política no instala un scheduler de GPU ni elimina procesos existentes. Ver [Guía multimedia](MULTIMEDIA_LOCAL.md) y [Imágenes](IMAGENES.md).
-
-## Espacios de navegación
-
-- **Biblioteca:** cada portada abre una ficha independiente con sinopsis,
-  protagonista, etiquetas y acciones para continuar o editar. Al continuar,
-  el lector se abre sin la biblioteca detrás.
-- **Creator Studio:** acceso desde el menú o directamente desde la ficha de
-  historia. Los proyectos mantienen su información privada y medios visuales.
-- **Model Hub:** en escritorio mantiene una lista de descubrimiento y un
-  inspector lateral de modelo. En móviles muestra el detalle superpuesto.
-  La pestaña Instalados presenta un inventario real del disco y archivos
-  parciales, sin afirmar instalaciones inexistentes.
-- **Configuración:** abre una vista general de sistemas y accesos directos.
-  Las preferencias avanzadas están separadas por secciones.
+[Model Hub](MODEL_HUB.md) · [Roadmap](ROADMAP.md) · [Issues](https://github.com/Mairon31/novel_ai/issues)

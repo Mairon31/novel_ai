@@ -1,17 +1,18 @@
-# Contribuir a Noble AI
+# Contributing to Noble AI
 
-Gracias por tu interés en Noble AI. Las contribuciones pueden cubrir la interfaz web, el motor narrativo, imágenes, voz, accesibilidad, compatibilidad, documentación y pruebas.
+Thanks for your interest in Noble AI. Contributions can improve the web interface, narrative engine, images, speech, accessibility, compatibility, documentation, and automated testing.
 
-## Antes de comenzar
+## Before you begin
 
-1. Revisa los [issues existentes](https://github.com/Mairon31/novel_ai/issues) para evitar trabajo duplicado.
-2. Para cambios grandes, abre primero una propuesta con la motivación, el alcance y cómo se podrá comprobar.
-3. Trabaja sobre una rama propia y procura que cada pull request tenga un objetivo claro.
-4. No agregues checkpoints de varios gigabytes, credenciales, claves privadas, historias personales ni capturas con datos sensibles.
+1. Search [existing issues](https://github.com/Mairon31/novel_ai/issues) to avoid duplicate work.
+2. For substantial changes, open a proposal explaining the motivation, scope, and verifiable acceptance criteria.
+3. Keep pull requests focused. The project's active integration branch is `master`; use a feature branch for community submissions unless maintainers instruct otherwise.
+4. Do not commit large model checkpoints, credentials, private keys, personal stories, or screenshots containing sensitive information.
+5. Write **public-facing content, documentation, UI copy, and contributions in English**. User-authored story content and the story output language may remain multilingual.
 
-## Configurar entorno y ejecutar pruebas
+## Set up and test
 
-Sigue [la guía de inicio](docs/QUICKSTART.md). Después:
+Follow the [quickstart](docs/QUICKSTART.md), then run:
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v
@@ -19,20 +20,22 @@ npm --prefix apps/web run build
 npm --prefix apps/web run test:e2e
 ```
 
-Playwright requiere Chromium instalado y los servicios de desarrollo activos, de acuerdo con [.github/workflows/p0-docs.yml](.github/workflows/p0-docs.yml).
+Playwright requires its browser dependencies and the development services described in [the CI workflow](.github/workflows/p0-docs.yml). If you cannot run a check, report it as **NOT RUN** instead of claiming it passed.
 
-## Requisitos de un pull request
+## Pull request checklist
 
-- Explica el problema que resuelve y los cambios de interfaz o API.
-- Incluye tests relevantes; no escondas fallos preexistentes ni simules benchmarks de GPU reales.
-- Si modificas la interfaz, aporta capturas de escritorio y móvil.
-- Si alteras proveedores, registra los límites, requisitos y posibles fallos sin exponer claves.
-- Actualiza los contratos o documentos técnicos cuando cambie el comportamiento.
+- Explain the problem and the intended behavior change.
+- Provide tests for relevant success and failure paths, and disclose existing failures.
+- Include desktop and mobile screenshots for UI changes where practical.
+- Document model/provider prerequisites, security boundaries, and limitations without leaking secrets.
+- Update API contracts, README, roadmap, TODO, or technical documentation where behavior changes.
+- Preserve licenses, copyright notices, and upstream references for reused code or assets.
+- Do not present simulated GPU measurements as physical benchmarks.
 
-El README presenta el proyecto a usuarios y colaboradores. El progreso interno, las decisiones de ingeniería y las incidencias se documentan en \`docs/\` o en los issues.
+The README presents the product to new users; internal milestones, decisions, and evidence belong in `docs/` and GitHub issues.
 
-## Reportar problemas
+## Reporting bugs
 
-Abre un [issue](https://github.com/Mairon31/novel_ai/issues) con pasos para reproducirlo, comportamiento esperado y observado, sistema operativo y versión o commit. Elimina rutas privadas, claves, tokens y contenido personal de cualquier log.
+Open an [issue](https://github.com/Mairon31/novel_ai/issues) with reproduction steps, expected and actual results, operating system, and version or commit. Remove private paths, API keys, tokens, and personal data from logs before sharing.
 
-¡Gracias por ayudar a construir Noble AI!
+Thank you for helping improve Noble AI.
