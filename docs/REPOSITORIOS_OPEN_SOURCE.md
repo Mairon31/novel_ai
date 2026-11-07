@@ -1,97 +1,88 @@
-# Catálogo de proyectos y herramientas reutilizables — Noble AI
+# Noble AI — open-source projects and reusable tools
 
-**Corte de investigación:** 2026-11-04. Los enlaces son oficiales cuando fue posible. **Inventario, no incorporación automática.** El estado de compatibilidad expresa hipótesis hasta que exista un spike reproducible en el repositorio.
+**Research snapshot:** November 4, 2026. Sources are official where possible. This is an **inventory, not automatic integration**, and reported compatibility remains a hypothesis until independently tested. License descriptions must be checked against each exact upstream revision.
 
-## 1. Matriz de selección
+## 1. Comparison matrix
 
-| Proyecto | URL | Licencia observada | Qué aporta | Uso propuesto | Estado |
+| Project | Source | Observed license | Relevant features | Proposed use | Research state |
 |---|---|---|---|---|---|
-| **Urakatsu** | https://github.com/karrot0/Urakatsu | **MIT (LICENSE)**; aviso a Koharu | Catálogo HF con fit por GPU, descarga, selección de modelos, frontend React y launcher | **Prioridad alta: Model Hub y UI**; reuso tras spike/atribución | Código y docs inspeccionados; Model Hub master/detail y caché de Urakatsu MIT adaptados (ver THIRD_PARTY_NOTICES.md) |
-| **Koharu** | https://github.com/koharu-rs/koharu | **MIT OR Apache-2.0** | Settings/Providers, descarga, runtime Rust, Tauri | Inspiración y posible reuso de componentes UI/desktop | Código y docs inspeccionados 2026-11-04; integración pendiente |
-| **Open Dungeon** | https://github.com/newideas99/open-dungeon | MIT | Historias locales, Continue/Retry/Edit, texto streaming, imágenes inline, SQLite, UI | **Candidato principal de referencia/reuso** UX y bucle | Revisado README; integración **pendiente** |
-| **Talemate** | https://github.com/vegu-ai/talemate | AGPL-3.0 | Narrador, agentes, memoria, estado de mundo, imagen y TTS | Evaluar completo / estudiar arquitectura de agentes | Revisado README; integración **pendiente** |
-| **Gamentic** | https://github.com/hec-ovi/gamentic | MIT | Narrador + agentes NPC, voz, imágenes, estado; FastAPI/SQLite | Referencia de orquestación Python, **portabilidad NVIDIA pendiente** | Investigación |
-| **TaleWeaver** | https://github.com/TaleWeaverAdmin/TaleWeaver | **Licencia custom no comercial (NOASSERTION)** | Escenas/sprites/expresiones, visual novel y ComfyUI | **Solo estudiar o experimentar respetando restricciones**, no importar al core | Investigación |
-| **SillyTavern** | https://github.com/SillyTavern/SillyTavern | AGPL-3.0 | Lorebooks, modo VN, extensiones, generación imagen y TTS | Referencia de UX, prompt y extensibilidad | Investigación |
-| **RisuAI** | https://github.com/kwaroran/Risuai | GPL-3.0 | Expresiones de personaje, chats grupales, plataformas | Referencia de UI y fichas | Investigación |
-| **KoboldCpp** | https://github.com/LostRuins/koboldcpp | AGPL-3.0 | Inferencia GGUF, CUDA/offload, streaming, API `/v1` | **Proveedor LLM recomendado**, servicio externo separado | API documentada; smoke pendiente |
-| **Ollama** | https://github.com/ollama/ollama | MIT | Servicio de inferencia local, gestión de modelos, API | Proveedor LLM alternativo | Smoke pendiente |
-| **llama.cpp** | https://github.com/ggml-org/llama.cpp | MIT | Motor GGUF, batching, inferencia y offload | Alternativa de bajo nivel si exige más control | Spike futuro |
-| **ComfyUI** | https://github.com/Comfy-Org/ComfyUI | GPL-3.0 | Motor de workflows de imágenes con HTTP/WS | **Proveedor de imagen recomendado**, servicio externo | API documentada; smoke pendiente |
-| **ComfyUI_examples** | https://github.com/comfyanonymous/ComfyUI_examples | Verificar licencia de recursos individuales | Ejemplos de SDXL, LoRA, control, inpaint | Base de workflows, no copiar modelos/outputs sin revisar | Recurso |
-| **Chatterbox** | https://github.com/resemble-ai/chatterbox | MIT | TTS multilingüe, voces, variantes regionales (es-mx-latam) | **TTS primario, carga bajo demanda** | API Python documentada; smoke pendiente |
-| **Qwen3-TTS** | https://github.com/QwenLM/Qwen3-TTS | Apache-2.0 | TTS expresivo y diseño de voz | TTS alternativo para evaluar | Investigación |
+| **Urakatsu** | [GitHub](https://github.com/karrot0/Urakatsu) | MIT `LICENSE`; Koharu notice | HF catalog, GPU fit, resumable installs, React UI, launcher | High-priority Model Hub reference/reuse | Inspected; master/detail and session cache adapted with notices |
+| **Koharu** | [GitHub](https://github.com/koharu-rs/koharu) | MIT OR Apache-2.0 | Provider settings, downloads, Rust runtime, Tauri | UX and optional code reuse | Source/docs inspected; direct integration pending |
+| **Open Dungeon** | [GitHub](https://github.com/newideas99/open-dungeon) | MIT | Local story loops, streaming, continue/retry/edit, images, SQLite | VN/gameplay reference or compatible UI parts | README reviewed; integration pending |
+| **Talemate** | [GitHub](https://github.com/vegu-ai/talemate) | AGPL-3.0 | Agents, memory, world state, images, TTS | Evaluate architecture or standalone app | Research only |
+| **Gamentic** | [GitHub](https://github.com/hec-ovi/gamentic) | MIT | Python/FastAPI/SQLite narrator and NPC agents | Orchestration reference | NVIDIA support not verified |
+| **TaleWeaver** | [GitHub](https://github.com/TaleWeaverAdmin/TaleWeaver) | Restrictive noncommercial terms | VN scenes, sprites, expressions, ComfyUI | Study under restrictions; **do not bundle without permission** | Research only |
+| **SillyTavern** | [GitHub](https://github.com/SillyTavern/SillyTavern) | AGPL-3.0 | Lorebooks, VN mode, plugins, images/speech | UX and prompt reference | Research only |
+| **RisuAI** | [GitHub](https://github.com/kwaroran/Risuai) | GPL-3.0 | Expressions, multi-character chats | Character and UI reference | Research only |
+| **KoboldCpp** | [GitHub](https://github.com/LostRuins/koboldcpp) | AGPL-3.0 | GGUF, CUDA/offload, streaming `/v1` | Recommended external LLM runtime | API documented; hardware checks required |
+| **Ollama** | [GitHub](https://github.com/ollama/ollama) | MIT | Local inference, model management | Alternate LLM runtime | Integration exists; verify physical performance |
+| **llama.cpp** | [GitHub](https://github.com/ggml-org/llama.cpp) | MIT | GGUF inference, batching, offload | Low-level runtime where needed | Colab QA experiments exist |
+| **ComfyUI** | [GitHub](https://github.com/Comfy-Org/ComfyUI) | GPL-3.0 | Image graphs, HTTP/WebSocket | External image provider | Managed connection/start for existing installation; automatic installer pending |
+| **ComfyUI examples** | [GitHub](https://github.com/comfyanonymous/ComfyUI_examples) | Check each asset | SDXL, LoRA, inpainting/control examples | Workflow references, not unreviewed asset redistribution | Resource |
+| **Chatterbox** | [GitHub](https://github.com/resemble-ai/chatterbox) | MIT source; weights separately | Multilingual TTS and regional voices | Planned optional speech adapter | Research only; Piper is implemented |
+| **Qwen3-TTS** | [GitHub](https://github.com/QwenLM/Qwen3-TTS) | Apache-2.0 source; weights separately | Expressive speech/voice design | Planned alternate adapter | Research only |
 
-Verificación de licencias a fecha de corte: metadatos GitHub y README/LICENCIAS oficiales. **La licencia de un motor no sustituye la del checkpoint** que usa. Ejemplos: SDXL OpenRAIL++ y LoRAs con términos propios. Para adoptar código de terceros: conservar copyright, atribuciones y obligaciones; registrar commit exacto, archivos copiados/modificados y revisión de licencia. Los servicios externos no quedan exentos automáticamente de cualquier obligación de licencia.
+**Licensing:** code, model checkpoints, LoRAs, voices, images, and other assets can have different terms. Retain copyright and permission text, identify commit and adapted paths, and review distribution/hosting obligations. Running an external service is not a universal exemption from license conditions.
 
-**Cambio de prioridad APP-FIRST:** ahora **Urakatsu/Koharu** son referencias principales del gestor de modelos/configuración, y **Open Dungeon** continúa como referencia para historia VN. Ver [auditoría específica](REFERENCIAS_URAKATSU_KOHARU.md) con commits y rutas exactas y [Model Hub](MODEL_HUB.md). Las licencias de modelo/LoRA separadas deben verificarse.
+**App-first priority:** Urakatsu/Koharu are principal Model Hub/settings references; Open Dungeon remains a VN gameplay reference. See [upstream reuse analysis](REFERENCIAS_URAKATSU_KOHARU.md) and [Model Hub](MODEL_HUB.md).
 
-## 2. Ranking operativo (no equivale a integración)
+## 2. Practical evaluation order
 
-**1. Open Dungeon:** prueba de concepto excelente para controles y narrativa visual. MIT y Next.js/TypeScript. Evaluar dos rutas: (A) levantar demo intacta y medir UX/ciclo; (B) reutilizar componentes específicos documentando procedencia dentro del frontend propio. **No asumir** que su estado/DB sea compatible con Noble AI.
+1. **Open Dungeon:** useful VN and story-loop reference in MIT-licensed Next.js/TypeScript. Compare (A) running its intact demo and (B) adapting individually licensed UI components; do not assume its database/state schema fits Noble AI.
+2. **KoboldCpp:** well suited for Windows/RTX GGUF experiments. Its OpenAI-compatible API is generally exposed at `http://127.0.0.1:5001/v1`. Compare with Ollama using the **same** model and settings. Treat its AGPL requirements carefully and keep it an external runtime in this phase.
+3. **ComfyUI:** flexible graph engine for anime generation. Need real scene scheduling, identity control, and GPU evidence. Relevant endpoints: `POST /prompt`, `GET /history/{id}`, `GET /view`, `/ws`. Keep process/distribution boundaries explicit.
+4. **Chatterbox:** candidate multilingual speech including [Latin American Spanish variant](https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam). Measure latency, VRAM, pronunciation, and per-model licensing before integration.
+5. **Talemate:** strong conceptual agent/memory system, but AGPL and internal API coupling require explicit evaluation before importing code.
+6. **Gamentic:** Python/FastAPI/SQLite inspiration; an AMD-focused reference environment does not prove NVIDIA support.
+7. **TaleWeaver:** relevant VN patterns but restrictive noncommercial conditions; do not incorporate redistributable code without compatible permission.
 
-**2. KoboldCpp:** buen compromiso para Windows/RTX GGUF. API OpenAI-compatible documentada en `http://127.0.0.1:5001/v1`. Comparar contra Ollama con mismo modelo/prompt. **AGPL-3.0:** ejecutar como proveedor externo, sin fusionar fuentes al backend en esta fase.
+## 3. Candidate test models (weights not bundled)
 
-**3. ComfyUI:** modular y capaz de usar workflows de anime; necesita diseñar identidad persistente y gestión de recursos. API oficial: `POST /prompt`, `GET /history/{id}`, `GET /view`, `/ws`. **GPL-3.0**; mantener límites de proceso claros y revisar distribución si se empaqueta.
-
-**4. Chatterbox:** generación de voces español y variante LatAm documentada: https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam . Debe medirse latencia, consumo de VRAM y calidad. MIT en repositorio; revisar tarjeta de modelo particular.
-
-**5. Talemate:** arquitectura avanzada para agentes y memoria. **No importarlo sin decisión explícita sobre AGPL**. Es un producto completo con posibles interfaces internas no estables, no una librería plug-and-play garantizada.
-
-**6. Gamentic:** MIT, inspiración útil de FastAPI + SQLite + agentes; README orientado a AMD Strix Halo, por lo que el soporte real en NVIDIA no está demostrado por su perfil predeterminado.
-
-**7. TaleWeaver:** experiencia VN muy pertinente, pero su licencia **no es una licencia open source aprobada por OSI para uso irrestricto**: restringe reventa/uso comercial. No incorporarlo a código distribuible de Noble sin permiso compatible.
-
-## 3. Modelos recomendados para pruebas (pesos no incluidos)
-
-| Función | Candidato | Origen | Estatus |
+| Role | Candidate | Source | Verification |
 |---|---|---|---|
-| Narración 12GB | Qwen3-8B GGUF Q4_K_M / Q5_K_M | https://huggingface.co/Qwen/Qwen3-8B | **Propuesto**; variantes GGUF de terceros requieren verificar uploader, artefactos/licencia |
-| Narración 16GB | Qwen3-8B alta cuantización; Qwen3-14B Q4 como experimento | https://huggingface.co/Qwen/Qwen3-14B | **Benchmark pendiente** |
-| Imagen anime | SDXL/Illustrious compatible con ComfyUI; checkpoint anime específico | https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0 | **Verificar licencia del checkpoint/LoRA seleccionado** |
-| Voz ES-LA | Chatterbox Multilingual variante LatAm | https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam | **Benchmark pendiente** |
-| Voz alternativa | Qwen3-TTS | https://github.com/QwenLM/Qwen3-TTS | **Benchmark pendiente** |
+| Narration, 12 GB | Qwen3-8B GGUF Q4_K_M/Q5_K_M | [Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B) | Proposed; verify exact GGUF uploader, license, and artifacts |
+| Narration, 16 GB | Qwen3-8B larger quantization; Qwen3-14B Q4 as experiment | [Qwen3-14B](https://huggingface.co/Qwen/Qwen3-14B) | Physical benchmark pending |
+| Anime illustration | ComfyUI-compatible SDXL/Illustrious checkpoint | [SDXL base](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) | Verify chosen checkpoint/LoRA license |
+| Latin American Spanish TTS | Chatterbox regional variant | [Hugging Face](https://huggingface.co/ResembleAI/Chatterbox-Multilingual-es-mx-latam) | Benchmark pending |
+| Alternate speech | Qwen3-TTS | [GitHub](https://github.com/QwenLM/Qwen3-TTS) | Benchmark pending |
 
-No confundir cuantización del checkpoint con la VRAM total. Longitud de contexto, KV cache, batch, backend CUDA, offload y memoria de escritorio cambian resultados.
+Total VRAM cannot be inferred from checkpoint quantization alone. Context, KV cache, batch, driver, CUDA backend, offload, and desktop overhead all matter.
 
-## 4. Checklist obligatorio por proveedor
+## 4. Required provider checklist
 
-- [ ] Repo/commit y fecha de auditoría registrados.
-- [ ] Licencia del **código** y del **modelo** revisadas.
-- [ ] Capacidad/endpoint verificados con llamada real.
-- [ ] Configuración Windows probada; errores de instalación documentados.
-- [ ] Configuración Colab probada (si factible) sin mecanismos que infrinjan sus límites.
-- [ ] Latencia, RAM/VRAM pico y throughput medidos, con nombre de GPU.
-- [ ] Streaming/cancelación/reintentos comprobados si están disponibles.
-- [ ] Contratos y tests de compatibilidad automatizados.
-- [ ] Se registra un ADR al decidir incorporar/cambiar proveedor.
+- [ ] Record upstream URL, exact commit, and research date.
+- [ ] Review code **and model** licenses.
+- [ ] Verify real capabilities and endpoints.
+- [ ] Test Windows setup, record installation failures.
+- [ ] Test Colab where practical without bypassing platform limits.
+- [ ] Measure latency, throughput, peak RAM/VRAM, and GPU identity.
+- [ ] Verify streaming, retries, and cancellation when supported.
+- [ ] Add automated API/compatibility contract tests.
+- [ ] Record an ADR whenever a provider decision changes.
 
-## 5. Experimentos iniciales comparativos
+## 5. Comparative experiments
 
-**SPIKE-001:** Open Dungeon stock contra diseño Noble: puntuación UX VN, modularidad, posibilidad de extraer interfaces con MIT, tiempo de integración y mantenimiento.
+- **SPIKE-001:** Open Dungeon demo vs Noble design: VN UX, modularity, MIT reuse, integration effort.
+- **SPIKE-002:** KoboldCpp vs Ollama with identical GGUF, context, prompt and settings: startup, TTFT, tokens/s, memory, OOM.
+- **SPIKE-003:** simple ComfyUI SDXL: scene-triggered render, asset hash, gallery reuse.
+- **SPIKE-004:** Chatterbox in Latin American Spanish: 3-character dialogue, speech latency, subjective pronunciation rating, cache hit, GPU.
+- **SPIKE-005:** 12/16 GB stress with LLM, pending illustration and speech requests: measure actual scheduler behavior.
 
-**SPIKE-002:** KoboldCpp vs Ollama con **mismo GGUF, contexto, prompt y configuración**, medir arranque, primer token, tokens/s, RAM/VRAM y OOM. No extrapolar resultados entre modelos.
+Record each experiment in [Progress](PROGRESO.md) with honest evidence and hardware versions.
 
-**SPIKE-003:** ComfyUI SDXL simple; disparar por evento de escena, obtener asset y SHA, verificar reuso.
+## 6. Official technical references
 
-**SPIKE-004:** Chatterbox ES-LA un diálogo de prueba de 3 personajes, latencia, MOS subjetivo, cache hit y GPU.
+- [KoboldCpp API](https://github.com/LostRuins/koboldcpp#apis-and-integrations), [API docs](https://lite.koboldai.net/koboldcpp_api)
+- [ComfyUI HTTP/WS](https://docs.comfy.org/development/comfyui-server/comms_routes), [WebSocket example](https://github.com/Comfy-Org/ComfyUI/blob/master/script_examples/websockets_api_example.py)
+- [Talemate](https://github.com/vegu-ai/talemate/blob/main/README.md)
+- [Open Dungeon](https://github.com/newideas99/open-dungeon/blob/main/README.md)
+- [Chatterbox](https://github.com/resemble-ai/chatterbox)
+- [Colab usage FAQ](https://research.google.com/colaboratory/faq.html)
 
-**SPIKE-005:** Stress 12GB/16GB: LLM preparado + trabajo imagen/TTS; medición real y scheduler. Cada spike queda en `docs/PROGRESO.md` con evidencia.
+Before adoption, pin upstream revisions, review dependency security, and avoid blindly vendoring entire repositories.
 
-## 6. Fuentes técnicas oficiales de referencia
+## 7. App-first integration sequence
 
-- KoboldCpp API: https://github.com/LostRuins/koboldcpp#apis-and-integrations y https://lite.koboldai.net/koboldcpp_api
-- ComfyUI server HTTP/WS: https://docs.comfy.org/development/comfyui-server/comms_routes
-- Ejemplo WS de ComfyUI: https://github.com/Comfy-Org/ComfyUI/blob/master/script_examples/websockets_api_example.py
-- Talemate funcionalidades: https://github.com/vegu-ai/talemate/blob/main/README.md
-- Open Dungeon guía de Windows y proveedores: https://github.com/newideas99/open-dungeon/blob/main/README.md
-- Chatterbox idiomas regionales: https://github.com/resemble-ai/chatterbox
-- Reglas/recursos Colab: https://research.google.com/colaboratory/intl/es/faq.html
+Research priority: **Urakatsu** catalog/fit/downloads → **Koharu** settings/desktop packaging → **Open Dungeon** VN patterns → **KoboldCpp** narration → **ComfyUI** illustration → **Chatterbox** optional speech. This is a dependency/research ordering, not a statement that no modules have since been implemented. See [ADR-0002](adr/0002-app-first-model-hub.md) and the current [TODO](../TODO.md).
 
-**Acciones pendientes:** verificar commits exactos antes de instalar; no vendorizar repositorios enteros sin evaluar licencia, seguridad de dependencias y coste de mantenimiento.
-
-## 7. Repos adicionales de APP-FIRST
-
-El orden de integración recomendado es: **Urakatsu** para benchmark/posible reuso de catalog/fit/installs; **Koharu** para preferencias y paquete Tauri; **Open Dungeon** para narrativa/UI VN; **KoboldCpp** proveedor narrativo; **ComfyUI** imágenes; **Chatterbox** voz. Ninguno está integrado todavía. Decisión [ADR-002](adr/0002-app-first-model-hub.md).
-
-Urakatsu `LICENSE` MIT (aunque metadata API GitHub no lo clasifique); Koharu MIT OR Apache-2.0. Si se incorporan módulos concretos, dejar registro de atribución/NOTICE y revisión del código utilizado.
+Urakatsu publishes an MIT `LICENSE` even where some API metadata is inconclusive; Koharu uses MIT OR Apache-2.0. Document concrete imports and copyright notices in [Third-party notices](THIRD_PARTY_NOTICES.md).

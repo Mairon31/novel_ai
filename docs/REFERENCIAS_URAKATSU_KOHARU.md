@@ -1,112 +1,104 @@
-# Análisis de reutilización: Urakatsu y Koharu
+# Noble AI — Urakatsu and Koharu reuse analysis
 
-Investigación: 2026-11-04. Este documento registra **funciones verificadas en fuentes**, puntos de reuso y límites. Ambos proyectos se dedican principalmente a traducción/edición de manga: Noble AI no incorporará su pipeline OCR/limpieza como motor de novela.
+**Research date:** November 4, 2026. This document records source-inspected functions, potential reuse, and boundaries. Both upstream projects primarily support manga translation/editing. Noble AI should not import their manga OCR/cleanup pipelines merely to build an interactive novel.
 
-## Versiones inspeccionadas
+## Inspected revisions
 
-| Proyecto | Commit inspeccionado | Licencia | URL |
+| Project | Commit inspected | License | Source |
 |---|---|---|---|
-| **Urakatsu** | `fed313c70cf11afdba85ae2314c1a4a5b21f6bf7` | `LICENSE`: **MIT** + aviso de contribuciones Koharu | https://github.com/karrot0/Urakatsu/tree/fed313c70cf11afdba85ae2314c1a4a5b21f6bf7 |
-| **Koharu** | `cd31ad2c7016b64d0ff0400a09e86cd13fb5df13` | `LICENSE-MIT` / `LICENSE-APACHE`: **MIT OR Apache-2.0** | https://github.com/koharu-rs/koharu/tree/cd31ad2c7016b64d0ff0400a09e86cd13fb5df13 |
+| **Urakatsu** | `fed313c70cf11afdba85ae2314c1a4a5b21f6bf7` | MIT `LICENSE` with Koharu contributions notice | [Repository revision](https://github.com/karrot0/Urakatsu/tree/fed313c70cf11afdba85ae2314c1a4a5b21f6bf7) |
+| **Koharu** | `cd31ad2c7016b64d0ff0400a09e86cd13fb5df13` | MIT OR Apache-2.0 | [Repository revision](https://github.com/koharu-rs/koharu/tree/cd31ad2c7016b64d0ff0400a09e86cd13fb5df13) |
 
-**Revisión de licencia:** el API de GitHub muestra `NOASSERTION` para Urakatsu aunque su **archivo LICENSE** contiene explícitamente MIT. La lectura del archivo es más específica que el identificador inferido del API; registrar copyright/NOTICE si se incorpora código. La licencia de modelos externos, recursos y dependencias es independiente.
+GitHub metadata reported `NOASSERTION` for Urakatsu in the original audit, despite an MIT `LICENSE` file. Inspect the actual copyright/notice when using code. Model, asset, and dependency licensing remains separate.
 
-## Urakatsu: componentes concretos
+## Urakatsu — inspected components
 
-| Archivo / módulo | Responsabilidad comprobada | Reutilización posible |
+| File or module | Observed role | Potential Noble AI adaptation |
 |---|---|---|
-| `docs/models.md` | Catálogo HF, recomendación de cuantización según hardware, modelos instalados | Especificación funcional del Noble Model Hub |
-| `web/src/components/ModelsPage.tsx` | Página de modelos React: búsqueda, detalles, variantes, estado de descarga, instalación y uso | Inspiración UI y potencial reuso **tras aislar dependencias y atribuir** |
-| `web/src/components/ModelsStorage.tsx` | Uso de almacenamiento y carpetas de modelos | Patrones UX de almacenamiento |
-| `web/src/api/catalog.ts` | Contratos JSON tipados para catálogo, fits, descargas, instalados | Adaptación de interfaces a dominio `narration/image/tts` |
-| `urakatsu/catalog/hf.py` | Cliente de Hugging Face, búsqueda por runtime, caché y lectura parcial de metadata GGUF | Primer candidato a reusar algoritmo de descubrimiento |
-| `urakatsu/catalog/fit.py` | Estimaciones de pesos, KV cache, overhead y niveles de offload | Reuso parcial, recalibrando presupuestos 12/16GB y colas |
-| `urakatsu/catalog/service.py` | Asociación modelo→provider, cuantizaciones, comp. runtime y catálogo | Estudiar abstraer `Provider.accepts(facts)` |
-| `urakatsu/catalog/installed.py` | Registro en `installed.json`, revisiones HF, descarga background y roles | Adaptación del esquema/gestión de trabajos |
-| `urakatsu/service/catalog_api.py` | FastAPI JSON de búsqueda, instalados, descargas pause/resume/cancel, runtimes | Reusar patrones de API y errores, no asumir integración directa |
-| `urakatsu/runtimes/{hardware,packages,manager,models_folder}.py` | Detección GPU, runtimes, carpetas, lifecycle | Spike de portabilidad, aislamiento |
-| `web/src/components/SettingsPage.tsx` | Configuración de providers y modelos por etapa | Inspiración para configuración detallada |
-| `packaging/launcher`, `docs/app.md` | Launcher/instalador Rust que aloja app en webview; rutas de instalación y modelos | Comparativa con Tauri 2; no copiar instalador íntegro |
+| `docs/models.md` | Hugging Face catalog, hardware-fit advice, installed models | Model Hub requirements |
+| `web/src/components/ModelsPage.tsx` | Search, detail, variants, download/install/use | Model Hub interface pattern |
+| `web/src/components/ModelsStorage.tsx` | Model storage usage | Local inventory UX |
+| `web/src/api/catalog.ts` | Typed JSON for catalog, fit, downloads, models | Separate narrator/image/speech contracts |
+| `urakatsu/catalog/hf.py` | HF search, caching, partial GGUF inspection | Discovery adapter |
+| `urakatsu/catalog/fit.py` | Weights, KV cache, runtime overhead, offload | Hardware estimate with 12/16 GB calibration |
+| `urakatsu/catalog/service.py` | Provider/runtime matching and quantizations | Capability-based provider dispatch |
+| `urakatsu/catalog/installed.py` | Installed registry, revision and jobs | Download/installer service pattern |
+| `urakatsu/service/catalog_api.py` | FastAPI catalog, pause/resume/cancel and runtime routes | API/error design inspiration |
+| `urakatsu/runtimes/{hardware,packages,manager,models_folder}.py` | Hardware discovery, runtime lifecycle, storage | Cross-platform feasibility spike |
+| `web/src/components/SettingsPage.tsx` | Per-provider/step settings | Advanced preferences |
+| `packaging/launcher`, `docs/app.md` | Rust webview/launcher | Compare with Tauri 2, do not blindly copy |
 
-Urakatsu describe niveles `gpu/partial/offload/cpu/too_large`. Para Noble: añadir `unknown` y distinguir **estimación** de **medición física**; considerar carga concurrente de LLM/imagen/TTS. No modificar internamente Urakatsu para simular un RPG: extraer ideas/módulos idóneos y adaptar.
+Urakatsu describes `gpu/partial/offload/cpu/too_large` tiers. Noble AI also needs `unknown`, a hard distinction between **estimated** and **physically measured** fit, and contention policies for LLM/image/TTS.
 
-Urakatsu obtiene **Hugging Face** como fuente de modelos, además de distinguir runtimes `llama`, `diffusion`, `torch`, `onnx`. Noble deberá detectar **función** (narración, imagen, TTS) y **motor** (KoboldCpp/Ollama/ComfyUI/Chatterbox/externo). No todo GGUF es LLM narrativo; no toda carpeta diffusion representa un checkpoint listo para ComfyUI; no todo modelo safetensors es TTS.
+The catalog distinguishes `llama`, `diffusion`, `torch`, and `onnx` runtimes. Noble AI must further distinguish **role** (narration/image/speech) and **engine** (KoboldCpp/Ollama/ComfyUI/Piper/future providers). Not every GGUF is a narrator; not every safetensors file is a compatible ComfyUI checkpoint.
 
-## Koharu: componentes concretos
+## Koharu — inspected components
 
-| Archivo / módulo | Responsabilidad comprobada | Aplicación a Noble |
+| File or module | Observed role | Noble AI application |
 |---|---|---|
-| `packages/koharu/components/preferences/ProviderPreferences.tsx` | Conexiones a proveedores y campos específicos | Ajustes de múltiples proveedores y endpoints |
-| `packages/koharu/components/preferences/SettingsPage.tsx` | Secciones de configuración | Navegación de preferencias |
-| `packages/koharu/components/preferences/GenerationPreferences.tsx` | Parámetros ajustables de generación | Modelo de controles avanzados del LLM |
-| `packages/docs/models/providers.mdx` | Selección local, hospedada y OpenAI-compatible; descubrimiento del modelo; privacidad de credenciales | Adapter/provider registry |
-| `packages/docs/reference/settings.mdx` | Config persistente por categoría, cambio de modelo y descarga de recursos | Guardar perfil y validarlo antes de activar |
-| `crates/koharu-runtime/src/download.rs` | Descargas con eventos de progreso, reintentos y control | Referencia de downloads robustos |
-| `crates/koharu-runtime/src/source/hugging_face.rs` | Descarga desde revisiones HF fijadas | Integridad y revisión inmutable |
-| `crates/koharu/tauri.conf.json` | App escritorio Tauri (Windows, macOS, Linux) | Arquitectura de paquete desktop + web frontend |
-| `packages/ui/src/components/` | Biblioteca reutilizable de controles | Patrones de componentes accesibles con licencia apropiada |
+| `packages/koharu/components/preferences/ProviderPreferences.tsx` | Provider connections and specialized fields | Multiple endpoint/provider settings |
+| `packages/koharu/components/preferences/SettingsPage.tsx` | Settings navigation | Separated settings panels |
+| `packages/koharu/components/preferences/GenerationPreferences.tsx` | Generation parameters | Advanced narrator controls |
+| `packages/docs/models/providers.mdx` | Local/hosted/OpenAI-compatible choices | Provider registry and privacy |
+| `packages/docs/reference/settings.mdx` | Persisted settings and model changes | Profile validation |
+| `crates/koharu-runtime/src/download.rs` | Progress, retries, downloads | Robust installation jobs |
+| `crates/koharu-runtime/src/source/hugging_face.rs` | Pinned HF revisions | Download integrity |
+| `crates/koharu/tauri.conf.json` | Cross-platform Tauri shell | Future desktop packaging |
+| `packages/ui/src/components/` | UI components | Reuse only with license compliance |
 
-Koharu documenta que las credenciales remotas se almacenan en servicio seguro del SO. Noble debe hacer lo mismo y **mostrar cuándo el relato sale de la máquina**.
+Koharu's remote credentials are stored through a secure OS mechanism. Noble AI should likewise use the operating-system keyring and show clearly when story content leaves the computer.
 
-## Reuso real y atribución
+## Actual reuse and attribution
 
-**Estado actualizado:** se ha adaptado código de caché de sesión de Urakatsu MIT en `apps/web/src/modelCatalogCache.ts`. El resto de los componentes citados continúa bajo análisis. Koharu no se ha integrado como código fuente. Todo código que se importe después debe:
-1. Registrar repo + commit exacto + ruta de origen + archivos derivados + modificaciones.
-2. Conservar avisos de copyright y licencia del archivo/proyecto, incluyendo notices de Koharu cuando aplique.
-3. Especificar compatibilidad con licencia elegida para Noble antes de distribuir.
-4. Aislar cambios propios en `integrations` o `apps` con pruebas específicas; no depender ciegamente de imports internos de Urakatsu.
-5. Revisar transitive dependencies, instalaciones y llamadas de red.
-6. Confirmar autoría de imágenes/sprites/UI; **no incorporar screenshots o iconos ajenos como recursos distribuidos por defecto**.
+The verified adaptation began with Urakatsu's MIT session-cache patterns in `apps/web/src/modelCatalogCache.ts`; additional Model Hub UI patterns were later adapted. Koharu source has **not** been imported as a direct implementation in the cited commits. For further reuse:
 
-## Selección técnica
+1. Record origin repository, exact commit, upstream path, new path, and modifications.
+2. Preserve original copyright/license/NOTICE, including Koharu contributions where applicable.
+3. Resolve compatibility with Noble AI's eventual license before distribution.
+4. Isolate adapted integrations and test them; do not depend blindly on private imports from Urakatsu.
+5. Review transitive dependencies, network calls, and installers.
+6. Check authorship and redistribution rights for images, sprites, screenshots, and icons individually.
 
-**Prioridad 1:** reproducir en Noble el flujo de `ModelsPage`: búsqueda → variantes → estimación hardware → instalar/reanudar → registrar → asignar a rol → probar → activar. Preferir reutilizar partes de `catalog/hf.py`, `fit.py` y `installed.py` **si el spike demuestra menor costo** que usar `huggingface_hub` oficialmente y diseñar API propia.
+## Technical selection priorities
 
-**Prioridad 2:** preferencias/providers de Koharu como guía de arquitectura; UI de Noble se diseñará para novela visual y tendrá sección Studio, Biblioteca y Model Hub.
+**Priority 1:** search → variants → hardware estimate → install/resume → register → assign role → start/test. Compare focused reuse of `catalog/hf.py`, `fit.py`, and `installed.py` with official `huggingface_hub` and an independently maintained API.
 
-**Prioridad 3:** comparar launcher webview de Urakatsu con Tauri 2 de Koharu. Elegir Tauri como candidato inicial, sujeto a prueba real con Python sidecar y CI Windows.
+**Priority 2:** use Koharu settings/provider patterns as an architecture reference, while retaining a Noble-specific Reader, Studio, Library, and Model Hub.
 
-**Reutilización autorizada por las licencias:** pueden copiarse y adaptarse código, componentes y diseño de interfaz de Urakatsu (MIT) y Koharu (MIT/Apache-2.0), incluso con cambios directos. Las funciones OCR o traducción manga se integrarán únicamente cuando resulten útiles para Noble AI. Los archivos de modelos, ilustraciones y dependencias se revisan según sus propias licencias.
+**Priority 3:** compare Urakatsu's Rust webview launcher with a Tauri 2 + Python FastAPI sidecar; verify packaging, permissions, and Windows CI before choosing a final desktop shell.
 
-## Spikes (pendientes)
+MIT/Apache-2.0 may permit close UI/code adaptations when their terms are satisfied. Attribution is not a prohibition on reuse. Manga OCR or translation should only be added if directly useful to Noble AI's actual narrative product.
 
-- [ ] AUD-URAKATSU-001: extraer la funcionalidad de HF search en un entorno Python limpio; licencias/atribución y tests.
-- [ ] AUD-URAKATSU-002: comparar el algoritmo de fit con 12/16GB en hardware real; corregir sobreestimaciones.
-- [ ] AUD-URAKATSU-003: simular descarga interrumpida, reanudación, hash, instalación, importación.
-- [ ] AUD-KOHARU-001: estudiar contratos de provider/params y mapearlos a roles Noble.
-- [ ] AUD-KOHARU-002: prototipo de shell Tauri+FastAPI en Windows y revisión de permisos/WebView2.
+## Research spikes — pending
 
-## Enlaces directos
+- [ ] **AUD-URAKATSU-001:** verify standalone HF discovery, license notices, and automated tests.
+- [ ] **AUD-URAKATSU-002:** calibrate fit estimates on physical 12/16 GB hardware.
+- [ ] **AUD-URAKATSU-003:** simulate interrupted downloads, resume, hash, installation, and import.
+- [ ] **AUD-KOHARU-001:** map provider capability/parameter contracts to Noble AI roles.
+- [ ] **AUD-KOHARU-002:** prototype Tauri + FastAPI on Windows and review permissions/WebView2.
 
-- https://github.com/karrot0/Urakatsu/blob/main/docs/models.md
-- https://github.com/karrot0/Urakatsu/blob/main/urakatsu/catalog/hf.py
-- https://github.com/karrot0/Urakatsu/blob/main/urakatsu/catalog/fit.py
-- https://github.com/karrot0/Urakatsu/blob/main/urakatsu/service/catalog_api.py
-- https://github.com/karrot0/Urakatsu/blob/main/web/src/components/ModelsPage.tsx
-- https://github.com/koharu-rs/koharu/blob/main/packages/docs/models/providers.mdx
-- https://github.com/koharu-rs/koharu/blob/main/crates/koharu-runtime/src/download.rs
-- https://github.com/koharu-rs/koharu/blob/main/crates/koharu/tauri.conf.json
+## Direct references
 
+- [Urakatsu models](https://github.com/karrot0/Urakatsu/blob/main/docs/models.md)
+- [Urakatsu Hugging Face](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/catalog/hf.py)
+- [Urakatsu fit](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/catalog/fit.py)
+- [Urakatsu catalog API](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/service/catalog_api.py)
+- [Urakatsu ModelsPage](https://github.com/karrot0/Urakatsu/blob/main/web/src/components/ModelsPage.tsx)
+- [Koharu providers](https://github.com/koharu-rs/koharu/blob/main/packages/docs/models/providers.mdx)
+- [Koharu downloader](https://github.com/koharu-rs/koharu/blob/main/crates/koharu-runtime/src/download.rs)
+- [Koharu Tauri](https://github.com/koharu-rs/koharu/blob/main/crates/koharu/tauri.conf.json)
 
-## Reutilización comprobada — interfaz Model Hub (2026-11-05)
+## Confirmed Model Hub reuse (November 5, 2026)
 
-- Origen: `karrot0/Urakatsu`, `web/src/components/ModelsPage.tsx`,
-  commit `165bf592716019b8487249bf7ca3ff3b708a23e7`, licencia MIT.
-- Adaptación real: mapas de caché de descubrimiento/metadata por sesión, con
-  caducidad para las estimaciones sensibles a VRAM, tipado de roles y contexto.
-- Noble AI utiliza una lista interactiva + inspector lateral no bloqueante en
-  escritorio y un panel de detalle superpuesto en móvil. Conserva descarga y
-  selección de GGUF por separado.
-- Se incorpora el aviso íntegro MIT en `THIRD_PARTY_NOTICES.md`; los cambios
-  de archivos permanecen en el historial git.
-- Siguientes adaptaciones: inventario de almacenamiento por volumen, gestión
-  de instalaciones/modelos por runtime, estado de descargas, limpieza, providers.
+- Origin: `karrot0/Urakatsu`, `web/src/components/ModelsPage.tsx`, commit `165bf592716019b8487249bf7ca3ff3b708a23e7`, MIT.
+- Adaptations: per-session search/model-detail caches, short TTL for VRAM-sensitive estimates, typed role/context data, persistent list + side inspector on desktop, modal inspector on mobile, with separate GGUF download and assignment actions.
+- The full upstream MIT permission notice is in [Third-party notices](THIRD_PARTY_NOTICES.md), with modifications traceable through Git history.
+- Later priorities include model folder/volume inventory, per-runtime installs, download progress, cleanup, and providers.
 
+## Additional implemented adaptations (November 5, 2026)
 
-## Implementaciones concretas incorporadas (2026-11-05)
+- **Urakatsu MIT — ModelsPage:** persistent master/detail pattern, search/detail caching, `FitCell`-style memory/offload estimates and accessible explanations, adapted into `apps/web/src/App.tsx`, `modelCatalogCache.ts`, and `styles.css`.
+- **Urakatsu MIT — upstream model-card display:** on-demand README retrieval with a pinned revision and a 128 KiB proxy cap, implemented in `apps/api/noble_api/catalog.py` and `main.py`, then displayed safely as text.
+- **Koharu MIT/Apache-2.0:** provider/settings controls remain candidates for source reuse; UX references are not claims that its code was imported.
 
-- **Urakatsu MIT** — `web/src/components/ModelsPage.tsx`: patrón de lista persistente y ficha lateral de detalles, caché de búsqueda y detalles, indicador `FitCell` para memoria, porcentaje GPU de offload y explicaciones accesibles. Adaptado a `apps/web/src/App.tsx`, `apps/web/src/modelCatalogCache.ts` y `apps/web/src/styles.css`.
-- **Urakatsu MIT** — sección `Model card` del mismo componente: consulta de `README.md` bajo demanda desde Hugging Face. Se implementó un proxy limitado a 128 KiB con revisión SHA fija en `apps/api/noble_api/catalog.py`, `apps/api/noble_api/main.py`, y una presentación de texto seguro en Noble.
-- **Koharu MIT/Apache-2.0** — los controles de providers y preferencias continúan siendo candidatos a reutilización de código; las referencias de UX no equivalen a incorporación del source.
-
-No existe ninguna prohibición general de copiar o adaptar la UI de los repositorios con licencia libre. El contrato de atribución consiste en conservar copyright, licencia y origen de cada componente importado; esto no restringe el grado de adaptación de la interfaz.
+There is no blanket prohibition on copying or adapting permitted open-source UI code. Preserve its copyright, license, attribution, and any other specific obligations.
