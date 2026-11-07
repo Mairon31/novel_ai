@@ -59,6 +59,8 @@ jobs:
           trap 'kill $API_PID $WEB_PID 2>/dev/null || true' EXIT
           curl --fail --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:8000/api/v1/health
           cd apps/web
+          # Catch high-impact English UI/selector mismatches before the full suite.
+          npx playwright test tests/app.spec.ts tests/creator-ai.spec.ts tests/settings-separation.spec.ts --project=desktop --workers=2
           npm run test:e2e
       - name: Upload browser screenshots and traces
         if: always()
