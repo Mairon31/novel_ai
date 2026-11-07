@@ -154,6 +154,27 @@ class VisualRenderProvenanceTests(unittest.TestCase):
             self.assertEqual(db.execute(
                 "SELECT COUNT(*) FROM stories").fetchone()[0], 0)
 
+    def test_sampling_style_provenance_roundtrip_and_reject_forgery(self):
+        self.details = {
+            **self.details, "sampler_name": "dpmpp_2m",
+            "scheduler": "karras", "style_preset": "anime_cinematic",
+        }
+        self.publish()
+        archive = self.download()
+        result = self.restore(archive)
+        self.assertEqual(result.status_code, 201, result.text)
+        assets = self.b.get(self.base + "/visual-state").json()["assets"]
+        self.assertEqual(assets[0]["render_details"], self.details)
+        for field, invalid in (("sampler_name", "../escape"),
+                               ("scheduler", "invalid"),
+                               ("style_preset", "photorealistic")):
+            tampered = change_archive(archive, lambda manifest: [
+                row.__setitem__("render_details_json", json.dumps(
+                    {**self.details, field: invalid}))
+                for row in manifest["tables"]["visual_assets"]])
+            denied = self.restore(tampered, self.a, as_copy=True)
+            self.assertEqual(denied.status_code, 422, (field, denied.text))
+
     def test_tampered_provenance_json_rejected_without_writes(self):
         self.publish()
         forged = change_archive(self.download(), lambda manifest: [

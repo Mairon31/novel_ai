@@ -272,7 +272,11 @@ export type VisualAsset = {
   content_sha256: string; origin: 'manual' | 'comfyui';
   prompt: string; checkpoint: string | null; seed: number | null;
   created_at: number; selected: boolean; url: string;
-  render_details: { workflow_version?: string; loras?: AppliedCharacterLora[] };
+  render_details: {
+    workflow_version?: string; loras?: AppliedCharacterLora[];
+    sampler_name?: string; scheduler?: string;
+    style_preset?: 'anime_fantasy' | 'anime_cinematic' | 'anime_watercolor' | 'none';
+  };
 };
 export type VisualCharacter = {
   id: string; story_id: string; name: string; appearance: string;
