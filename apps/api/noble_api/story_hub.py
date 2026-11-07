@@ -251,7 +251,7 @@ def _validate_pack(pack: dict) -> tuple[CreatorBlueprint, list[CreatorCharacter]
 
 PACK_BY_ID = {entry["id"]: entry for entry in PACKS}
 if len(PACK_BY_ID) != len(PACKS):
-    raise ValueError("Identificadores de historias duplicados")
+    raise ValueError("Duplicate story identifiers")
 for _pack in PACKS:
     _validate_pack(_pack)
 

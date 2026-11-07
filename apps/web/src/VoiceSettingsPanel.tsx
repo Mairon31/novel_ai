@@ -202,7 +202,7 @@ export function VoiceSettingsPanel() {
           </div>;
         })}
       </div>
-      {voices && <p>Motor: {voices.available ? 'Piper detected' : 'Piper not found in PATH'} ·
+      {voices && <p>Engine: {voices.available ? 'Piper detected' : 'Piper not found in PATH'} ·
         Installed voices: {voices.voices.length} · Folder: <code>{voices.models_dir}</code></p>}
       {voicePreferences && <div className="workspace-field-grid">
         <label className="workspace-pref-field">Default reader voice

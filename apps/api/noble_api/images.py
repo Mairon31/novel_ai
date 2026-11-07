@@ -247,8 +247,8 @@ class SceneImageService:
         if not inventory["online"]:
             raise HTTPException(422, "Could not verify KSampler: " +
                                 (inventory["error"] or "ComfyUI did not respond"))
-        for field, label in (("sampler_name", "Muestreador"),
-                             ("scheduler", "Planificador")):
+        for field, label in (("sampler_name", "Sampler"),
+                             ("scheduler", "Scheduler")):
             if config[field] not in inventory[field]:
                 raise HTTPException(422, label + " unavailable in ComfyUI: " +
                                     config[field])

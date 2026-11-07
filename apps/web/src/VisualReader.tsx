@@ -557,8 +557,8 @@ export function VisualReader({
   return <div className={'noble-reader-layout ' + (hudHidden ? 'is-hud-hidden' : '')}
     data-reader-mode={readerMode}>
     <button className="noble-hud-switch" type="button"
-      aria-label={hudHidden ? 'Mostrar interfaz del lector' : 'Ocultar interfaz del lector'}
-      title={hudHidden ? 'Mostrar interfaz (Alt+H)' : 'Ocultar interfaz (Alt+H)'}
+      aria-label={hudHidden ? 'Show reader interface' : 'Hide reader interface'}
+      title={hudHidden ? 'Show interface (Alt+H)' : 'Hide interface (Alt+H)'}
       onClick={() => setHudHidden(hidden => !hidden)}>
       {hudHidden ? <Eye size={17}/> : <EyeOff size={17}/>}
     </button>

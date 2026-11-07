@@ -64,7 +64,7 @@ def alignment_warnings(geometry: dict[str, dict]) -> list[str]:
             if dx > 0.15 or dy > 0.15:
                 result.append(name + ": silhouette position differs significantly")
             if max(iw / bw, bw / iw, ih / bh, bh / ih) > 1.65:
-                result.append(name + ": escala de silueta muy distinta")
+                result.append(name + ": silhouette scale differs significantly")
         except (TypeError, KeyError, ValueError, ZeroDivisionError):
             result.append(name + ": geometry could not be compared")
     return result

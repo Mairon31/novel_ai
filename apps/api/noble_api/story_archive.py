@@ -517,7 +517,7 @@ def mount_story_archive_routes(app, narrative) -> None:
         try:
             binary = build_archive(narrative, str(story_id))
         except ValueError as exc:
-            raise HTTPException(404 if "inexistente" in str(exc) else 422,
+            raise HTTPException(404 if "Story not found" in str(exc) else 422,
                                 str(exc)) from exc
         return Response(
             content=binary, media_type="application/zip",

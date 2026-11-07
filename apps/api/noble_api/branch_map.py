@@ -40,5 +40,5 @@ def mount_branch_routes(app, narrative) -> None:
         try:
             return branch_tree(narrative, str(story_id))
         except ValueError as exc:
-            raise HTTPException(404 if "inexistente" in str(exc) else 422,
+            raise HTTPException(404 if "Story not found" in str(exc) else 422,
                                 str(exc)) from exc

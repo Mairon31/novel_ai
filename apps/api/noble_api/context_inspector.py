@@ -108,5 +108,5 @@ def mount_context_inspector_routes(app, narrative) -> None:
             return preview_context(narrative, str(story_id),
                                    body.input_text, body.mode)
         except ValueError as exc:
-            status = 404 if "inexistente" in str(exc) else 422
+            status = 404 if "Story not found" in str(exc) else 422
             raise HTTPException(status, str(exc)) from exc
