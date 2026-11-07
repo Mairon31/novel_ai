@@ -20,7 +20,7 @@
 
 ## The experience
 
-Noble AI is designed around the **application**, not a notebook or terminal. Its local web interface brings together a story library, a responsive reader, Creator Studio, Model Hub, visual media tools, and separate settings for each system.
+Noble AI follows an **app-first** approach: it is designed around the **application**, not a notebook or terminal. Its local web interface brings together a story library, a responsive reader, Creator Studio, Model Hub, visual media tools, and separate settings for each system.
 
 <div align="center">
   <img src="docs/assets/screenshots/reader-desktop.webp" alt="Noble AI story reader on desktop" width="94%" />
@@ -151,6 +151,22 @@ flowchart TB
 ```
 
 The React application, narrative engine, model management, media services, and storage are separate components. The project targets Windows-first local usage and supports remote inference as an optional extension. A packaged desktop executable is still a roadmap item.
+
+
+### How a story progresses
+
+```mermaid
+flowchart LR
+    A["Create a world and protagonist"] --> B["Enter a decision or action"]
+    B --> C["Narrative response"]
+    C --> D["Save turn and world state"]
+    D --> E{"Continue or branch?"}
+    E -->|"Continue"| B
+    E -->|"Create a branch"| F["Independent timeline"]
+    F --> B
+    C -.->|"Illustrate on request"| G["ComfyUI gallery"]
+    C -.->|"Listen on request"| H["Piper speech"]
+```
 
 ## Documentation
 

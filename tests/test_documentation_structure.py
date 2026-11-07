@@ -1,4 +1,4 @@
-"""P0: verifica solo integridad del scaffold/documentación; NO proveedores ni GPU."""
+"""P0 documentation/scaffold integrity checks; not provider or GPU validation."""
 import json
 import pathlib
 import unittest
@@ -62,9 +62,12 @@ class DocumentationStructureTests(unittest.TestCase):
     def test_media_policies_are_documented(self):
         image_doc = (ROOT / "docs/IMAGENES.md").read_text(encoding="utf-8")
         tts_doc = (ROOT / "docs/TTS.md").read_text(encoding="utf-8")
-        self.assertIn("No generar imagen", image_doc)
-        self.assertIn("solo", tts_doc.lower())
-        self.assertIn("por defecto", tts_doc.lower())
+        self.assertTrue(
+            "No generar imagen" in image_doc or "on request" in image_doc.lower(),
+            "Image documentation must describe an on-demand generation policy",
+        )
+        self.assertIn("opt-in", tts_doc.lower())
+        self.assertIn("default", tts_doc.lower())
 
 if __name__ == "__main__":
     unittest.main()

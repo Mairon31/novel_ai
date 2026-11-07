@@ -13,12 +13,12 @@ class PublicReadmeTests(unittest.TestCase):
         needles=("Noble AI", "github.com/Mairon31/novel_ai",
                  "actions/workflows/p0-docs.yml/badge.svg",
                  "docs/assets/noble-banner.svg", "docs/assets/screenshots/",
-                 "CONTRIBUTING.md", "Contribuir", "estrella", "app-first")
+                 "CONTRIBUTING.md", "Contributing", "Star Noble AI", "app-first")
         for item in needles:
             self.assertIn(item.casefold(),readme.casefold())
-        self.assertNotIn("## Próximo resultado comprobable",readme)
+        self.assertNotIn("## Next verifiable milestone",readme)
         self.assertNotIn("## Roadmap",readme)
-        self.assertNotIn("Estado: P1.",readme)
+        self.assertNotIn("Status: P1.",readme)
         self.assertTrue((ROOT/"CONTRIBUTING.md").is_file())
         self.assertTrue((ROOT/"docs/assets/noble-banner.svg").is_file())
         self.assertGreaterEqual(readme.count(chr(96)*3+"mermaid"),2)
