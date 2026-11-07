@@ -33,9 +33,9 @@ function tabFromHash(): Tab {
 
 const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'overview', label: 'Panel general', icon: Settings2 },
-  { id: 'narration', label: 'Narración', icon: SlidersHorizontal },
-  { id: 'images', label: 'Imágenes', icon: Image },
-  { id: 'voice', label: 'Voz / TTS', icon: Volume2 },
+  { id: 'narration', label: 'Narration', icon: SlidersHorizontal },
+  { id: 'images', label: 'Images', icon: Image },
+  { id: 'voice', label: 'Voice / TTS', icon: Volume2 },
   { id: 'languages', label: 'Languages and translation', icon: Languages },
   { id: 'providers', label: 'Proveedores', icon: Globe2 },
   { id: 'appearance', label: 'Apariencia', icon: Palette },
@@ -49,7 +49,7 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
   {title:'OVERVIEW', description:'Quick access to your preferences',
     sections:['overview']},
-  {title:'INTELIGENCIA',description:'Narrador y proveedores',
+  {title:'INTELIGENCIA',description:'Narrator and providers',
     sections:['narration','providers','languages']},
   {title:'MEDIA CREATION',description:'Image generation and voices',
     sections:['images','voice']},
@@ -161,8 +161,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
   return <section className="hub workspace-settings">
     <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> ESTUDIO PERSONALIZABLE</div>
-      <h1>Configuración<span className="title-dot">.</span></h1>
-      <p>Motores, idioma, interfaz, diagnóstico y futuras conexiones remotas desde un solo lugar.</p>
+      <h1>Settings<span className="title-dot">.</span></h1>
+      <p>Engines, languages, reader preferences, diagnostics, and future remote connections in one place.</p>
     </div>
     <div className="workspace-settings-shell">
       <nav aria-label="Settings sections" className="workspace-settings-tabs">
@@ -205,10 +205,10 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-settings-overview-grid">
             {[
               {id:'narration',title:'Narrative engine',summary:'Connect your LLM, context, settings, and model.'},
-              {id:'images',title:'Imágenes',summary:'ComfyUI, illustrations, checkpoints, and GPU.'},
-              {id:'voice',title:'Voz / TTS',summary:'Piper, modelos de voz y prueba de audio.'},
+              {id:'images',title:'Images',summary:'ComfyUI, illustrations, checkpoints, and GPU.'},
+              {id:'voice',title:'Voice / TTS',summary:'Piper, voice models, and audio previews.'},
               {id:'providers',title:'Servicios y claves',summary:'Accesos, proveedores y credenciales externas.'},
-              {id:'languages',title:'Languages and style',summary:'Latin American Spanish, traducción y narración.'},
+              {id:'languages',title:'Languages and style',summary:'Latin American Spanish, translation, and narration.'},
               {id:'appearance',title:'Reader appearance',summary:'Theme, visual novel layout, and typography.'},
               {id:'runtimes',title:'Models and executables',summary:'Installed packages and engine diagnostics.'},
               {id:'network',title:'GPU remotas y red',summary:'Workers, conexiones seguras y red local.'},
@@ -234,7 +234,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
         {tab === 'narration' && <>
           <div className="setting-section-intro"><h2>Narrative engine</h2>
-            <p>Elige entre un LLM local o una API de pago. Configura muestreo, razonamiento y contexto.</p></div>
+            <p>Choose a local LLM or a hosted API. Configure sampling, reasoning, and context.</p></div>
           <NarrativeSettings key={narrativeRevision}/>
           <RuntimeManager onActivated={onNarratorActivated}/>
         </>}
@@ -244,7 +244,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
         {tab === 'languages' && prefs && <>
           <div className="setting-section-intro"><h2>Language and translation</h2>
-            <p>La salida se aplica al prompt que recibe el narrador en cada turno; todavía no es un motor independiente de traducción.</p></div>
+            <p>This preference applies to the narrator prompt on each turn; it is not a separate translation engine.</p></div>
           <div className="workspace-panel workspace-field-grid">
             {option('Idioma de salida', prefs.target_language, [
               ['es-419', 'Latin American Spanish'], ['en', 'English'], ['ja', '日本語'],
@@ -254,7 +254,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               ['auto', 'Detect automatically'], ['es', 'Español'], ['en', 'English'],
               ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['fr', 'French'],
             ], v => void update('source_language', v))}
-            {option('Tratamiento multilingüe', prefs.translation_mode, [
+            {option('Multilingual handling', prefs.translation_mode, [
               ['off', 'Standard narration'], ['target_output', 'Preserve meaning and respond in the target language'],
             ], v => void update('translation_mode', v))}
             {option('Estilo narrativo', prefs.narration_style, [
@@ -262,24 +262,24 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               ['concise', 'Brief and dynamic'],
             ], v => void update('narration_style', v))}
           </div>
-          <div className="workspace-note"><Languages size={17}/> Estos ajustes se guardan en SQLite y afectan la siguiente generación, no reescriben automáticamente capítulos anteriores.</div>
+          <div className="workspace-note"><Languages size={17}/> Settings are stored in SQLite and affect new generation, not previously saved chapters.</div>
         </>}
 
         {tab === 'providers' && <>
           <div className="setting-section-intro"><h2>Proveedores y servicios</h2>
-            <p>Conecta modelos externos para narrar sin consumir tu GPU. ComfyUI se configura en «Imágenes» y Piper en «Voz / TTS»; los proveedores de pago para estas tareas siguen pendientes.</p></div>
+            <p>Connect an external narrator without consuming local GPU resources. ComfyUI belongs in Images and Piper in Voice / TTS; paid image and voice provider integrations remain planned.</p></div>
           <div className="workspace-panel">
             <div className="workspace-provider-head"><span className="provider-icon">OR</span><div>
-              <h3>OpenRouter</h3><p>Models de lenguaje en la nube, con consumo según el proveedor.</p></div>
+              <h3>OpenRouter</h3><p>Cloud language models with provider-specific billing.</p></div>
               <span className={credential?.configured ? 'provider-ready' : 'provider-missing'}>
                 {credential?.configured ? 'Configurado' : 'Sin clave'}</span></div>
-            <p>La clave se guarda en el almacén de credenciales del sistema; nunca en el historial de historias ni en SQLite.</p>
+            <p>The key is kept in the system credential store, never in story history or SQLite.</p>
             <label className="workspace-pref-field">Clave de API
               <input type="password" value={keyDraft} autoComplete="off" placeholder="Introduce tu clave OpenRouter"
                 onChange={e => setKeyDraft(e.target.value)}/></label>
             <div className="settings-buttons">
               <button className="primary-button" disabled={busy || keyDraft.trim().length < 12}
-                onClick={() => void changeKey()}><KeyRound size={16}/> Guardar clave</button>
+                onClick={() => void changeKey()}><KeyRound size={16}/> Save key</button>
               {credential?.configured && credential.storage !== 'environment' && <button className="secondary-button"
                 disabled={busy} onClick={() => void changeKey(true)}><Trash2 size={16}/> Quitar clave</button>}
               <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer"
@@ -287,17 +287,17 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             </div>
           </div>
           <div className="workspace-panel">
-            <h3>Catálogo de proveedores por herramienta</h3>
-            <div className="workspace-service-row"><strong>Narración</strong><span>Ollama, KoboldCpp y OpenRouter</span><b>Integrados</b></div>
-            <div className="workspace-service-row"><strong>Imágenes</strong><span>ComfyUI local bajo demanda</span><b>Conectable</b></div>
-            <div className="workspace-service-row"><strong>Voces</strong><span>Piper local CPU bajo demanda</span><b>Conectable</b></div>
-            <div className="workspace-service-row"><strong>Workers</strong><span>Worker remoto LLM autenticado</span><b>Conectable</b></div>
+            <h3>Providers by feature</h3>
+            <div className="workspace-service-row"><strong>Narration</strong><span>Ollama, KoboldCpp y OpenRouter</span><b>Integrated</b></div>
+            <div className="workspace-service-row"><strong>Images</strong><span>ComfyUI local bajo demanda</span><b>Connectable</b></div>
+            <div className="workspace-service-row"><strong>Voces</strong><span>Piper local CPU bajo demanda</span><b>Connectable</b></div>
+            <div className="workspace-service-row"><strong>Workers</strong><span>Worker remoto LLM autenticado</span><b>Connectable</b></div>
           </div>
         </>}
 
         {tab === 'appearance' && prefs && <>
           <div className="setting-section-intro"><h2>Apariencia y lector</h2>
-            <p>Personaliza Noble AI y adapta la forma de leer historias para PC y móvil.</p></div>
+            <p>Customize Noble AI and your reading experience for desktop and mobile.</p></div>
           <div className="workspace-panel workspace-field-grid">
             {option('Paleta de color', prefs.accent, [
               ['violet', 'Violeta nocturno'], ['rose', 'Rosa oscuro'], ['teal', 'Turquesa'],
@@ -312,13 +312,13 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           </div>
           <div className="workspace-reader-preview"><span className="overline">VISTA PREVIA</span>
             <h3>El encuentro bajo la lluvia</h3>
-            <p>La luz de la biblioteca tembló. <em>«¿En serio viniste hasta aquí?»</em>, preguntó la joven con una sonrisa apenas visible.</p>
+            <p>The library lights flickered. <em>“Did you really come all this way?”</em> the young woman asked with a faint smile.</p>
           </div>
         </>}
 
         {tab === 'runtimes' && <>
           <div className="setting-section-intro"><h2>Runtimes y paquetes</h2>
-            <p>Inventario de dependencias detectadas en la máquina que ejecuta el backend, no en el navegador.</p></div>
+            <p>Inventory of dependencies detected on the backend computer, not the browser.</p></div>
           <div className="workspace-panel">
             {diagnostics ? <>
               <h3><Cpu size={17}/> Paquetes Python</h3>
@@ -331,7 +331,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
                 {Object.entries(diagnostics.binaries).map(([name, pathname]) =>
                   <div key={name}><span>{name}</span><code>{pathname || 'No encontrado'}</code></div>)}
               </div>
-              <p>Actualización de runtimes pendiente. Este panel es de solo lectura: no instala ni reemplaza binarios del sistema.</p>
+              <p>Runtime updates are not implemented. This read-only panel does not install or replace system binaries.</p>
               <button className="secondary-button" onClick={() => void api.runtimeDiagnostics().then(setDiagnostics)}>
                 <RefreshCcw size={16}/> Actualizar inventario</button>
             </> : <div className="loading"><LoaderCircle className="rotating" size={18}/> Consultando runtimes...</div>}
@@ -345,8 +345,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             {toggle('Activar atajos de teclado', prefs.shortcuts_enabled, v => void update('shortcuts_enabled', v))}
             {[
               ['Ctrl / ⌘ + 1', 'Biblioteca'], ['Ctrl / ⌘ + 2', 'Model Hub'],
-              ['Ctrl / ⌘ + 3', 'Configuración'], ['Ctrl / ⌘ + Enter', 'Enviar intervención del lector'],
-              ['Alt + Enter', 'Continuar historia'], ['Esc', 'Cerrar paneles'],
+              ['Ctrl / ⌘ + 3', 'Settings'], ['Ctrl / ⌘ + Enter', 'Submit reader input'],
+              ['Alt + Enter', 'Continue story'], ['Esc', 'Close panels'],
             ].map(([combo, action]) => <div className="workspace-shortcut-row" key={combo}>
               <kbd>{combo}</kbd><span>{action}</span></div>)}
           </div>
@@ -359,10 +359,10 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <h3><LockKeyhole size={17}/> Estado de la red</h3>
             {network ? <p>{network.message}</p> : <p>Consultando disponibilidad...</p>}
             <div className="workspace-service-row"><strong>Servidor local</strong><span>127.0.0.1:8000</span><b>Activo</b></div>
-            <div className="workspace-service-row"><strong>Acceso desde móviles en LAN</strong><span>Autenticación y TLS pendientes</span><b>Bloqueado</b></div>
+            <div className="workspace-service-row"><strong>Mobile LAN access</strong><span>Authentication and TLS pending</span><b>Blocked</b></div>
             <div className="workspace-service-row"><strong>Workers Colab / otras PC</strong><span>LLM remoto compatible con OpenAI</span><b>Registro disponible</b></div>
-            <div className="workspace-service-row"><strong>Túnel Cloudflare</strong><span>Conexión a túneles externos con token Bearer</span><b>Conectable</b></div>
-            <div className="workspace-note"><ShieldCheck size={17}/> El servidor principal sigue siendo local. Solo se conecta a un proxy de worker protegido mediante token; publicar el workspace completo en Internet continúa deshabilitado.</div>
+            <div className="workspace-service-row"><strong>Cloudflare Tunnel</strong><span>Bearer-authenticated external tunnels</span><b>Connectable</b></div>
+            <div className="workspace-note"><ShieldCheck size={17}/> The main server remains local. Only a bearer-protected worker proxy may be connected; publishing the entire workspace online is disabled.</div>
           </div>
           <RemoteWorkers onActivated={onNarratorActivated}/>
         </>}
