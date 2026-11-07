@@ -301,3 +301,6 @@ Implementación publicada en `master`: catálogo por repositorio HF, solo safete
 ### N-01 · Segundo tramo: inicio y control del runtime ComfyUI local (2026-11-06)
 
 Implementación en `master`: gestor de proceso propio y ajustes persistentes en Imágenes. Valida instalación existente, Python, puerto, modo VRAM; inicia `main.py` con argv fijo `--listen 127.0.0.1 --port ... --extra-model-paths-config ...`, comprueba `/system_stats`, expone logs y detiene solo el proceso que abrió Noble. Ya no es obligatorio arrancar ComfyUI a mano si está instalado localmente. No hay instalación automática del código ni dependencias, instalación de complementos, soporte explícito SDXL/Flux, ni QA físico con GPU. [Guía](COMFY_UI_INTEGRACION.md). CI final pendiente.
+
+
+**N-01 segundo tramo validado:** [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171) PASS (398 Python, 84 Playwright y Vite). El gestor de procesos Comfy existente queda implementado, incluida defensa de solicitudes cross-site; no equivale a tener el instalador oficial Comfy/PyTorch dentro de Noble ni al render GPU. Tercer tramo de instalación/actualización integral documentado en TODO.

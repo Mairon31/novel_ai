@@ -1,6 +1,6 @@
 # Integración de ComfyUI administrado por Noble AI
 
-**Estado:** implementación de arranque y control de una instalación **existente** publicada en `master`; CI final de esta fase pendiente. No es un instalador del código ComfyUI ni del entorno PyTorch.
+**Estado:** implementación de arranque y control de una instalación **existente** publicada en `master`; [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171) **PASS (398 Python / 84 Playwright / Vite)**, incluida protección contra acciones cross-site. No es un instalador del código ComfyUI ni del entorno PyTorch.
 
 ## Utilizar ComfyUI sin salir de Noble AI
 
@@ -45,4 +45,4 @@ El backend está en `apps/api/noble_api/comfy_process.py`; la UI está en `apps/
 
 Los endpoints **Iniciar** y **Detener** validan el encabezado `Origin` y los metadatos `Sec-Fetch-Site` para rechazar formularios o solicitudes de sitios web ajenos a Noble AI. Se admiten llamadas locales sin `Origin` para pruebas o clientes de la propia máquina, y la interfaz localhost de Noble. La protección evita peticiones cruzadas del navegador; no es un sistema de autenticación contra programas maliciosos ya ejecutándose en el equipo. En el cierre de la aplicación solo se termina la instancia que Noble creó.
 
-**Evidencia de código principal:** [CI #42343555333](https://github.com/Mairon31/novel_ai/actions/runs/42343555333), 397 pruebas Python, 84 de navegador escritorio/móvil y build Vite. La protección adicional de `Origin` y su test en `tests/test_comfy_process.py` tienen CI separado pendiente.
+**Evidencia de código principal:** [CI #42343555333](https://github.com/Mairon31/novel_ai/actions/runs/42343555333), 397 pruebas Python, 84 de navegador escritorio/móvil y build Vite. La protección adicional de `Origin` y su test en `tests/test_comfy_process.py` pasaron [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171). La corrección posterior de una prueba multimedia intermitente tiene una ejecución de CI aparte.

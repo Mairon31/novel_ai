@@ -410,3 +410,6 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 
 
 - Protección CSRF para `POST /images/runtime/start` y `/stop`: rechazar `Origin` ajeno a Noble o `Sec-Fetch-Site: cross-site` antes de crear o detener el proceso, sin impedir llamadas locales permitidas y sin habilitar `shell=True`. Test de seguridad `test_cross_site_post_cannot_launch_or_stop_local_process`.
+
+
+**Gate automática del gestor Comfy existente:** [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171) PASS, 398 Python, 84 Playwright desktop+móvil y compilación Vite. Sigue pendiente gate física: instalación Python/Torch y Comfy reales, GPU/VRAM, checkpoints y render.
