@@ -13,7 +13,7 @@ export function VoiceSettingsPanel() {
   const [voiceCatalog, setVoiceCatalog] = useState<PiperVoiceCatalog | null>(null);
   const [voiceJobs, setVoiceJobs] = useState<PiperVoiceJob[]>([]);
   const [voiceAction, setVoiceAction] = useState<string | null>(null);
-  const [previewText, setPreviewText] = useState('Hola. Esta es una prueba de voz de Noble AI.');
+  const [previewText, setPreviewText] = useState('Hello. This is a Noble AI voice test.');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);

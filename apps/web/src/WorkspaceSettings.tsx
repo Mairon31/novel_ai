@@ -210,8 +210,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               {id:'languages',title:'Languages and style',summary:'Latin American Spanish, translation, and narration.'},
               {id:'appearance',title:'Reader appearance',summary:'Theme, visual novel layout, and typography.'},
               {id:'runtimes',title:'Models and executables',summary:'Installed packages and engine diagnostics.'},
-              {id:'network',title:'GPU remotas y red',summary:'Workers, conexiones seguras y red local.'},
-              {id:'shortcuts',title:'Atajos de teclado',summary:'Combinaciones para navegar y jugar.'},
+              {id:'network',title:'Remote GPUs and network',summary:'Workers, secure connections, and local networking.'},
+              {id:'shortcuts',title:'Keyboard shortcuts',summary:'Shortcuts for navigating and playing.'},
               {id:'about',title:'About Noble AI',summary:'Application version, build, and data.'},
               {id:'updates',title:'Updates',summary:'Release channel and update checks.'},
             ].map(item => {
@@ -225,9 +225,9 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             })}
           </div>
           <div className="workspace-panel workspace-overview-storage">
-            <h3>Almacenamiento de modelos</h3>
+            <h3>Model storage</h3>
             <code title={modelsDir}>{modelsDir || 'Path not available yet'}</code>
-            <p>Las rutas y ejecutables se administran desde sus apartados correspondientes.</p>
+            <p>Manage paths and executables in their respective sections.</p>
           </div>
         </div>}
 
@@ -265,7 +265,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         </>}
 
         {tab === 'providers' && <>
-          <div className="setting-section-intro"><h2>Proveedores y servicios</h2>
+          <div className="setting-section-intro"><h2>Providers and services</h2>
             <p>Connect an external narrator without consuming local GPU resources. ComfyUI belongs in Images and Piper in Voice / TTS; paid image and voice provider integrations remain planned.</p></div>
           <div className="workspace-panel">
             <div className="workspace-provider-head"><span className="provider-icon">OR</span><div>
@@ -273,75 +273,75 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               <span className={credential?.configured ? 'provider-ready' : 'provider-missing'}>
                 {credential?.configured ? 'Configured' : 'No key'}</span></div>
             <p>The key is kept in the system credential store, never in story history or SQLite.</p>
-            <label className="workspace-pref-field">Clave de API
-              <input type="password" value={keyDraft} autoComplete="off" placeholder="Introduce tu clave OpenRouter"
+            <label className="workspace-pref-field">API key
+              <input type="password" value={keyDraft} autoComplete="off" placeholder="Enter your OpenRouter key"
                 onChange={e => setKeyDraft(e.target.value)}/></label>
             <div className="settings-buttons">
               <button className="primary-button" disabled={busy || keyDraft.trim().length < 12}
                 onClick={() => void changeKey()}><KeyRound size={16}/> Save key</button>
               {credential?.configured && credential.storage !== 'environment' && <button className="secondary-button"
-                disabled={busy} onClick={() => void changeKey(true)}><Trash2 size={16}/> Quitar clave</button>}
+                disabled={busy} onClick={() => void changeKey(true)}><Trash2 size={16}/> Remove key</button>}
               <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer"
                 className="workspace-external">Create key <ArrowUpRight size={15}/></a>
             </div>
           </div>
           <div className="workspace-panel">
             <h3>Providers by feature</h3>
-            <div className="workspace-service-row"><strong>Narration</strong><span>Ollama, KoboldCpp y OpenRouter</span><b>Integrated</b></div>
+            <div className="workspace-service-row"><strong>Narration</strong><span>Ollama, KoboldCpp, and OpenRouter</span><b>Integrated</b></div>
             <div className="workspace-service-row"><strong>Images</strong><span>Local ComfyUI on demand</span><b>Connectable</b></div>
-            <div className="workspace-service-row"><strong>Voces</strong><span>Local CPU Piper on demand</span><b>Connectable</b></div>
-            <div className="workspace-service-row"><strong>Workers</strong><span>Worker remoto LLM autenticado</span><b>Connectable</b></div>
+            <div className="workspace-service-row"><strong>Voices</strong><span>Local CPU Piper on demand</span><b>Connectable</b></div>
+            <div className="workspace-service-row"><strong>Workers</strong><span>Authenticated remote LLM worker</span><b>Connectable</b></div>
           </div>
         </>}
 
         {tab === 'appearance' && prefs && <>
-          <div className="setting-section-intro"><h2>Apariencia y lector</h2>
+          <div className="setting-section-intro"><h2>Appearance and reader</h2>
             <p>Customize Noble AI and your reading experience for desktop and mobile.</p></div>
           <div className="workspace-panel workspace-field-grid">
-            {option('Paleta de color', prefs.accent, [
-              ['violet', 'Violeta nocturno'], ['rose', 'Rosa oscuro'], ['teal', 'Turquesa'],
+            {option('Color palette', prefs.accent, [
+              ['violet', 'Night violet'], ['rose', 'Dark rose'], ['teal', 'Teal'],
             ], v => void update('accent', v))}
             {option('Reader layout', prefs.reader_layout, [
               ['immersive', 'VN · background and narration'], ['classic', 'Book · continuous reading'],
-              ['chat', 'Chat · turnos y respuestas'],
+              ['chat', 'Chat · turns and replies'],
             ], v => void update('reader_layout', v))}
             <label className="workspace-pref-field">Reader text size: {prefs.font_scale}%
               <input type="range" min={85} max={135} step={5} value={prefs.font_scale}
                 disabled={busy} onChange={e => void update('font_scale', Number(e.target.value))}/></label>
           </div>
-          <div className="workspace-reader-preview"><span className="overline">VISTA PREVIA</span>
-            <h3>El encuentro bajo la lluvia</h3>
+          <div className="workspace-reader-preview"><span className="overline">PREVIEW</span>
+            <h3>The encounter in the rain</h3>
             <p>The library lights flickered. <em>“Did you really come all this way?”</em> the young woman asked with a faint smile.</p>
           </div>
         </>}
 
         {tab === 'runtimes' && <>
-          <div className="setting-section-intro"><h2>Runtimes y paquetes</h2>
+          <div className="setting-section-intro"><h2>Runtimes and packages</h2>
             <p>Inventory of dependencies detected on the backend computer, not the browser.</p></div>
           <div className="workspace-panel">
             {diagnostics ? <>
-              <h3><Cpu size={17}/> Paquetes Python</h3>
+              <h3><Cpu size={17}/> Python packages</h3>
               <div className="workspace-diagnostics-list">
                 {Object.entries(diagnostics.python_packages).map(([name, version]) =>
                   <div key={name}><span>{name}</span><code>{version || 'Not installed'}</code></div>)}
               </div>
-              <h3>Ejecutables detectados</h3>
+              <h3>Detected executables</h3>
               <div className="workspace-diagnostics-list">
                 {Object.entries(diagnostics.binaries).map(([name, pathname]) =>
-                  <div key={name}><span>{name}</span><code>{pathname || 'No encontrado'}</code></div>)}
+                  <div key={name}><span>{name}</span><code>{pathname || 'Not found'}</code></div>)}
               </div>
               <p>Runtime updates are not implemented. This read-only panel does not install or replace system binaries.</p>
               <button className="secondary-button" onClick={() => void api.runtimeDiagnostics().then(setDiagnostics)}>
                 <RefreshCcw size={16}/> Refresh inventory</button>
-            </> : <div className="loading"><LoaderCircle className="rotating" size={18}/> Consultando runtimes...</div>}
+            </> : <div className="loading"><LoaderCircle className="rotating" size={18}/> Checking runtimes...</div>}
           </div>
         </>}
 
         {tab === 'shortcuts' && prefs && <>
-          <div className="setting-section-intro"><h2>Atajos de teclado</h2>
-            <p>Los atajos se desactivan dentro de campos de escritura, excepto los del lector.</p></div>
+          <div className="setting-section-intro"><h2>Keyboard shortcuts</h2>
+            <p>Shortcuts are disabled in text fields, except reader shortcuts.</p></div>
           <div className="workspace-panel">
-            {toggle('Activar atajos de teclado', prefs.shortcuts_enabled, v => void update('shortcuts_enabled', v))}
+            {toggle('Enable keyboard shortcuts', prefs.shortcuts_enabled, v => void update('shortcuts_enabled', v))}
             {[
               ['Ctrl / ⌘ + 1', 'Library'], ['Ctrl / ⌘ + 2', 'Model Hub'],
               ['Ctrl / ⌘ + 3', 'Settings'], ['Ctrl / ⌘ + Enter', 'Submit reader input'],
@@ -352,12 +352,12 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         </>}
 
         {tab === 'network' && <>
-          <div className="setting-section-intro"><h2>Red, dispositivos y workers</h2>
+          <div className="setting-section-intro"><h2>Network, devices, and workers</h2>
             <p>Architecture for connecting remote GPUs or sharing Noble AI with other devices.</p></div>
           <div className="workspace-panel">
             <h3><LockKeyhole size={17}/> Network status</h3>
-            {network ? <p>{network.message}</p> : <p>Consultando disponibilidad...</p>}
-            <div className="workspace-service-row"><strong>Servidor local</strong><span>127.0.0.1:8000</span><b>Activo</b></div>
+            {network ? <p>{network.message}</p> : <p>Checking availability...</p>}
+            <div className="workspace-service-row"><strong>Local server</strong><span>127.0.0.1:8000</span><b>Active</b></div>
             <div className="workspace-service-row"><strong>Mobile LAN access</strong><span>Authentication and TLS pending</span><b>Blocked</b></div>
             <div className="workspace-service-row"><strong>Colab / other PC workers</strong><span>OpenAI-compatible remote LLM</span><b>Registration available</b></div>
             <div className="workspace-service-row"><strong>Cloudflare Tunnel</strong><span>Bearer-authenticated external tunnels</span><b>Connectable</b></div>

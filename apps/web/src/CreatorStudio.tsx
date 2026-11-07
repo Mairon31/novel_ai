@@ -252,7 +252,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     try {
       const seed = draftSeed.trim() ? Number(draftSeed) : undefined;
       if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
-        throw new Error('La semilla debe ser un entero positivo seguro.');
+        throw new Error('The seed must be a nonnegative safe integer.');
       const created = await api.startSpriteDraft(active.id, draftCharacter, {
         caption: draftCaption.trim(), pose: draftPose.trim(),
         style: draftStyle.trim(), seed,
@@ -290,8 +290,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         .filter(entry => expression === entry.id || (!expression && !current.slots[entry.id].ready));
       for (const [index, entry] of chosen.entries()) {
         if (storyGuard.current !== storyId) break;
-        setDraftProgress('Generando ' + entry.label + ' (' +
-          (index + 1) + '/' + chosen.length + ') mediante ComfyUI...');
+        setDraftProgress('Generating ' + entry.label + ' (' +
+          (index + 1) + '/' + chosen.length + ') via ComfyUI...');
         current = await api.generateSpriteExpression(storyId, draft.id, entry.id);
         if (storyGuard.current === storyId) {
           setAlignmentConfirmed(prev => ({ ...prev, [draft.id]: false }));
@@ -531,9 +531,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           </button>
         </div> : <>
           <div className="creator-editor-title">
-            <div><span className="overline">EDITANDO PROYECTO</span>
+            <div><span className="overline">EDITING PROJECT</span>
               <h2>{active.title}</h2>
-              <small>El jugador controla a {active.protagonist_name || 'Protagonist'}.</small></div>
+              <small>The player controls {active.protagonist_name || 'Protagonist'}.</small></div>
             <button className="secondary-button" onClick={onOpenLibrary}>
               <BookOpen size={15}/> Go to Library
             </button>
@@ -637,8 +637,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       <option value="surprise">Surprise</option>
                     </select>
                   </label>
-                  <label>Pose (identificador)
-                    <input aria-label="Pose de sprite" maxLength={32} value={mediaPose}
+                  <label>Pose (identifier)
+                    <input aria-label="Sprite pose" maxLength={32} value={mediaPose}
                       onChange={e => setMediaPose(e.target.value)}
                       placeholder="standing, sitting, waving..."/>
                   </label>
@@ -653,12 +653,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     placeholder="Dark forest at night, Aira smiling in the tavern..."/>
                   <small>Describe specific places and emotions. This caption is not sent to a model.</small>
                 </label>
-                {!editingAsset && <label>Archivo PNG, JPEG o WebP (hasta 12 MiB)
-                  <input type="file" aria-label="Archivo de recurso visual"
+                {!editingAsset && <label>PNG, JPEG, or WebP file (up to 12 MiB)
+                  <input type="file" aria-label="Visual asset file"
                     accept="image/png,image/jpeg,image/webp"
                     onChange={e => setMediaFile(e.target.files?.[0] || null)}/>
                   {mediaKind === 'foreground' && <small>
-                    La transparencia se conserva en PNG para superponer personajes sobre el fondo.
+                    PNG transparency is preserved so characters can be layered over the background.
                   </small>}
                   {mediaKind === 'cover' && <small>
                     The cover is saved as WebP and selected automatically upon import.
@@ -738,9 +738,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </label>
                 </div>
                 <label>Caption to match sprites during the story
-                  <input aria-label="Contexto de sprites IA" maxLength={220}
+                  <input aria-label="AI sprite context" maxLength={220}
                     value={draftCaption} onChange={event => setDraftCaption(event.target.value)}
-                    placeholder="Aira en la biblioteca antigua"/>
+                    placeholder="Aira in the ancient library"/>
                 </label>
                 <label>Expression art style
                   <input aria-label="AI sprite style" maxLength={220}
@@ -751,7 +751,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <input type="number" aria-label="AI sprite seed"
                       min={0} step={1} value={draftSeed}
                       onChange={event => setDraftSeed(event.target.value)}
-                      placeholder="Semilla del ADN visual"/>
+                      placeholder="Visual DNA seed"/>
                   </label>
                   <label>Gallery reference (optional)
                     <select aria-label="AI sprite reference"
@@ -773,7 +773,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         setDraftSpriteReference(event.target.value);
                         if (event.target.value) setDraftReference('');
                       }}>
-                      <option value="">No usar sprite publicado</option>
+                      <option value="">Do not use an approved sprite</option>
                       {assets.filter(item => item.kind === 'foreground' &&
                         item.character_id === draftCharacter).map(item =>
                         <option value={item.id} key={item.id}>
@@ -895,18 +895,18 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         <div className="creator-media-thumbnail foreground">
                           {slot.preview_url ? <img
                             src={slot.preview_url + '?v=' + draft.updated_at}
-                            alt={'Vista previa ' + entry.label + ' de ' + draft.character_name}
+                            alt={'Preview ' + entry.label + ' of ' + draft.character_name}
                             loading="lazy"/> : <ImageIcon size={28}/>}
                         </div>
                         <div className="creator-media-copy">
                           <strong>{entry.label}</strong>
                           <small>{slot.ready ? 'Needs review' : 'Not generated'}</small>
                           {slot.quality && <small>
-                            Fondo: {slot.quality.method === 'border_chroma_key'
-                              ? 'recorte verde' : slot.quality.method.startsWith('neural_')
+                            Background: {slot.quality.method === 'border_chroma_key'
+                              ? 'green-screen cutout' : slot.quality.method.startsWith('neural_')
                               ? 'mask ' + slot.quality.method
-                              : 'transparencia original'} ·
-                            Cobertura {Math.round(slot.quality.coverage * 100)}%
+                              : 'original transparency'} ·
+                            Coverage {Math.round(slot.quality.coverage * 100)}%
                           </small>}
                           <button className="secondary-button" disabled={working}
                             aria-label={'Generate expression ' + entry.label}
@@ -918,8 +918,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     })}
                   </div>
                   {!!draft.alignment_warnings?.length && <div className="creator-hint"
-                      role="status" aria-label="Advertencias de siluetas">
-                    <strong>Variaciones importantes de encuadre detectadas</strong>
+                      role="status" aria-label="Silhouette warnings">
+                    <strong>Significant framing differences detected</strong>
                     <p>{draft.alignment_warnings.join('; ')}</p>
                     <p>This comparison only measures the position and scale of the
                       silueta: no verifica identidad facial. Regenera las variantes
@@ -969,8 +969,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     'Keys: ' + entry.keys.join(', ')}
                     {entry.enabled ? '' : ' · Disabled'}
                     {entry.visibility === 'witnesses'
-                      ? ' · Solo personajes testigos presentes'
-                      : ' · Conocimiento general'}</p>
+                      ? ' · Present witness characters only'
+                      : ' · General knowledge'}</p>
                   <p>{entry.content.slice(0, 170)}{entry.content.length > 170 ? '…' : ''}</p>
                   <button className="secondary-button" disabled={working}
                     onClick={() => editLorebook(entry)}>Edit entry</button>
@@ -984,7 +984,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <input aria-label="Lorebook title" value={lorebookDraft.title}
                     maxLength={100} onChange={e => setLorebookDraft(v => ({
                       ...v, title: e.target.value,
-                    }))} placeholder="Bosque de cristal, pacto secreto..."/>
+                    }))} placeholder="Crystal forest, secret pact..."/>
                 </label>
                 <label>Facts the narrator should remember
                   <textarea aria-label="Lorebook content" rows={5} maxLength={3500}
@@ -1111,7 +1111,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     maxLength={80} placeholder="Fantasy, romance, mystery..."
                     onChange={e => update('genre', e.target.value)}/>
                 </label>
-                <label>Idioma
+                <label >Language
                   <select aria-label="Story language" value={blueprint.language}
                     onChange={e => update('language', e.target.value)}>
                     <option value="es-419">Latin American Spanish</option>
@@ -1121,19 +1121,19 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </select>
                 </label>
               </div>
-              <label>Sinopsis breve para lectores
+              <label>Short synopsis for readers
                 <textarea rows={3} aria-label="Reader synopsis" maxLength={250}
                   value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}
                   placeholder="What players see when they discover the story."/>
               </label>
-              <label>Trama que conoce el jugador
-                <textarea rows={5} maxLength={4000} aria-label="Trama visible"
+              <label>Player-facing plot
+                <textarea rows={5} maxLength={4000} aria-label="Visible plot"
                   value={blueprint.player_plot}
                   onChange={e => update('player_plot', e.target.value)}
                   placeholder="Starting point, situation, and expectations without spoilers."/>
               </label>
-              <label>Contexto interno para la IA
-                <textarea rows={8} maxLength={12000} aria-label="Contexto interno de la IA"
+              <label>Private AI context
+                <textarea rows={8} maxLength={12000} aria-label="Private AI context"
                   value={blueprint.ai_plot}
                   onChange={e => update('ai_plot', e.target.value)}
                   placeholder="World rules, relationships, secrets, and events the narrator should know."/>
@@ -1145,14 +1145,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onChange={e => update('guidelines', e.target.value)}
                   placeholder="Style, pace, NPC agency, and continuity details..."/>
               </label>
-              <label>Recordatorio persistente
-                <textarea rows={3} maxLength={1200} aria-label="Recordatorio persistente"
+              <label>Persistent reminder
+                <textarea rows={3} maxLength={1200} aria-label="Persistent reminder"
                   value={blueprint.reminder} onChange={e => update('reminder', e.target.value)}
                   placeholder="A short instruction that matters on every turn."/>
               </label>
-              <label>Etiquetas (separadas por coma)
+              <label>Tags (comma-separated)
                 <input maxLength={500} aria-label="Story tags" value={tagsInput}
-                  onChange={e => setTagsInput(e.target.value)} placeholder="isekai, aventura, magia"/>
+                  onChange={e => setTagsInput(e.target.value)} placeholder="isekai, adventure, magic"/>
               </label>
               <button className="primary-button" disabled={working} onClick={() => void saveBlueprint()}>
                 <Save size={16}/>{working ? 'Saving...' : 'Save plot and context'}
@@ -1307,7 +1307,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         <label className="form-label">Title
           <input value={newTitle} maxLength={100}
             onChange={e => setNewTitle(e.target.value)}/></label>
-        <label className="form-label">Premisa del mundo
+        <label className="form-label">World premise
           <textarea rows={4} maxLength={4000} value={newPremise}
             onChange={e => setNewPremise(e.target.value)}/></label>
         <label className="form-label">Protagonist

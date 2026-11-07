@@ -128,7 +128,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <div className="creator-double">
         <label>Current location
           <input aria-label="World location" maxLength={200} value={draft.location}
-            placeholder="Port de las estrellas..."
+            placeholder="Star Harbor..."
             onChange={event => patch({ location: event.target.value })}/>
         </label>
         <label>Time of day
@@ -145,13 +145,13 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <label>Confirmed inventory (one item per line)
         <textarea aria-label="World inventory" rows={4} value={inventoryInput}
           onChange={event => { setInventoryInput(event.target.value); setNotice(''); }}
-          placeholder="Llave de plata\nMapa antiguo"/>
+          placeholder="Silver key\nOld map"/>
       </label>
     </section>
 
     <section className="world-section">
       <h4><Users size={17}/> Present characters</h4>
-      <p>Solo los personajes marcados como presentes pueden activar hechos que presenciaron.
+      <p>Only characters marked as present can activate facts they witnessed.
         Private text for an absent character is not sent to the narrator.</p>
       <div className="world-npc-grid">
         {characters.map(character => <label className="world-check" key={character.id}>
@@ -176,14 +176,14 @@ export function WorldStateEditor({ storyId, characters }: Props) {
               if (value) relationships[character.id] = value;
               else delete relationships[character.id];
               patch({ relationships });
-            }} placeholder="Aliado, desconfianza, rivalidad..."/>
+            }} placeholder="Ally, distrust, rivalry..."/>
         </label>)}
       </div>}
     </section>
 
     <section className="world-section">
       <h4>Persistent flags</h4>
-      <p>Guarda decisiones y condiciones observables, por ejemplo <code>puerta_abierta</code>.</p>
+      <p>Store decisions and observable conditions, for example <code>door_open</code>.</p>
       {Object.entries(draft.flags).map(([name, value]) =>
         <div className="world-flag-row" key={name}>
           <label className="world-check">
@@ -202,7 +202,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <div className="world-add-row">
         <input aria-label="New flag name" maxLength={70}
           value={flagName} onChange={event => setFlagName(event.target.value)}
-          placeholder="puerta_abierta"/>
+          placeholder="door_open"/>
         <button className="secondary-button"
           disabled={!/^[\p{L}\p{N}_\-.]{1,70}$/u.test(flagName) ||
             Object.prototype.hasOwnProperty.call(draft.flags, flagName)}
@@ -247,7 +247,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
                 })}/>
               <span>{character.name}</span>
             </label>)}
-            {!characters.length && <p>Un hecho privado necesita personajes registrados.</p>}
+            {!characters.length && <p>A private fact requires registered characters.</p>}
           </div>}
         </div>)}
       <button className="secondary-button" disabled={draft.facts.length >= 120}
@@ -261,10 +261,10 @@ export function WorldStateEditor({ storyId, characters }: Props) {
         onClick={() => void save()}><Save size={16}/>
         {busy ? 'Saving...' : 'Save world state'}</button>
       <button className="secondary-button" disabled={busy}
-        onClick={() => void reload()}><RotateCcw size={16}/> Recargar desde disco</button>
+        onClick={() => void reload()}><RotateCcw size={16}/> Reload from disk</button>
     </div>
     {!canSave && <p className="creator-hint">
-      Revisa los hechos: cada uno necesita al menos 10 caracteres y, si es privado,
+      Review the facts: each needs at least 10 characters and, if private,
       one or more witnesses.</p>}
 
     <details className="world-history">
@@ -276,18 +276,18 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>
           <option value="">Select turn</option>
           {turns.map((turn, index) =>
-            <option key={turn.id} value={turn.id}>Turno {index + 1}: {turn.input_text.slice(0, 65)}</option>)}
+            <option key={turn.id} value={turn.id}>Turn {index + 1}: {turn.input_text.slice(0, 65)}</option>)}
         </select>
         <button className="secondary-button" disabled={busy || !turnId}
           onClick={() => void inspectSnapshot()}><BookOpen size={16}/> View snapshot</button>
       </div>
       {snapshot && <div className="world-snapshot" role="status">
         <strong>State recorded at that turn</strong>
-        <span>Lugar: {snapshot.state.location || 'No definido'}</span>
-        <span>Momento: {snapshot.state.time_of_day || 'No definido'}</span>
-        <span>Weather: {snapshot.state.weather || 'No definido'}</span>
-        <span>Objetos: {snapshot.state.inventory.join(', ') || 'Ninguno'}</span>
-        <span>Hechos registrados: {snapshot.state.facts.length}</span>
+        <span>Location: {snapshot.state.location || 'Not defined'}</span>
+        <span>Time: {snapshot.state.time_of_day || 'Not defined'}</span>
+        <span>Weather: {snapshot.state.weather || 'Not defined'}</span>
+        <span>Items: {snapshot.state.inventory.join(', ') || 'None'}</span>
+        <span>Recorded facts: {snapshot.state.facts.length}</span>
         <span>Canon at that turn: {snapshot.canon || 'No confirmed canon'}</span>
       </div>}
     </details>

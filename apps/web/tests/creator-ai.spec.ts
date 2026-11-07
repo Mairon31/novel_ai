@@ -116,7 +116,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByLabel('Editable generated synopsis').fill(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );
-  await expect(page.getByRole('alert')).toContainText('draft changed while the request was running');
+  await expect(page.getByRole('alert')).toContainText('The draft changed during the request');
   await expect(page.getByLabel('Editable generated synopsis')).toHaveValue(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );

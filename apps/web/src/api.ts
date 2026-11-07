@@ -8,7 +8,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const failure: { detail?: string | Array<{ msg?: string }> } = await response.json().catch(() => ({}));
     const message = Array.isArray(failure.detail)
-      ? failure.detail.map((entry) => entry.msg || 'Error de validación').join(', ')
+      ? failure.detail.map((entry) => entry.msg || 'Validation error').join(', ')
       : failure.detail;
     throw new Error(message || ('Error HTTP ' + response.status));
   }
@@ -172,7 +172,7 @@ export const api = {
     });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'No se pudo generar la muestra de voz');
+      throw new Error(error.detail || 'Could not generate the voice preview');
     }
     return response.blob();
   },
@@ -194,7 +194,7 @@ export const api = {
     });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'Error de síntesis de voz');
+      throw new Error(error.detail || 'Voice synthesis failed');
     }
     return response.blob();
   },
@@ -233,7 +233,7 @@ export const api = {
       '/creator/assets', { method: 'POST', body });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'No se pudo guardar el recurso visual');
+      throw new Error(error.detail || 'Could not save the visual asset');
     }
     return response.json() as Promise<CreatorMediaAsset>;
   },
@@ -248,7 +248,7 @@ export const api = {
       { method: 'POST', body });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'No se pudo importar la hoja de expresiones');
+      throw new Error(error.detail || 'Could not import the expression sheet');
     }
     return response.json() as Promise<{ assets: CreatorMediaAsset[]; count: number }>;
   },
@@ -363,7 +363,7 @@ export const api = {
       { method: 'POST', body });
     if (!response.ok) {
       const payload: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || 'No se pudo restaurar el respaldo');
+      throw new Error(payload.detail || 'Could not restore the backup');
     }
     return response.json();
   },
@@ -386,7 +386,7 @@ export const api = {
     });
     if (!response.ok) {
       const payload: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || 'Error al importar la ilustración');
+      throw new Error(payload.detail || 'Could not import the illustration');
     }
     return response.json() as Promise<Story>;
   },
@@ -420,7 +420,7 @@ export const api = {
       } catch { /* Response may not be JSON. */ }
       throw new Error(error);
     }
-    if (!response.body) throw new Error('El proveedor no envió un flujo de datos.');
+    if (!response.body) throw new Error('The provider did not return a data stream.');
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -454,7 +454,7 @@ export const api = {
   },
 };
 export function size(bytes?: number | null): string {
-  if (bytes == null) return 'Tamaño desconocido';
+  if (bytes == null) return 'Unknown size';
   if (bytes < 1024) return String(bytes) + ' B';
   const unit = Math.floor(Math.log(bytes) / Math.log(1024));
   return (bytes / Math.pow(1024, unit)).toFixed(1) + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][unit];

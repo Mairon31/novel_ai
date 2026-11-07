@@ -501,7 +501,7 @@ export default function App() {
         {page === 'modelos' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> LOCAL AI ECOSYSTEM</div>
             <h1>Model Hub<span className="title-dot">.</span></h1>
-            <p>Busca, compara e instala modelos de Hugging Face directamente en Noble AI.</p>
+            <p>Search, compare, and install Hugging Face models directly in Noble AI.</p>
           </div>
           <div className="hub-toolbar">
             <div className="tab-buttons" role="tablist">
@@ -830,7 +830,7 @@ export default function App() {
               </div>}
               <div className="hub-variants-toolbar">
                 <h3>Compare GGUF files <small>{detail.variants.length}</small></h3>
-                <div role="group" aria-label="Filtrar compatibilidad de cuantizaciones">
+                <div role="group" aria-label="Filter quantization compatibility">
                   {[
                     {id:'all',label:'All'},
                     {id:'full_gpu',label:'GPU'},
@@ -914,17 +914,17 @@ export default function App() {
     </div>}
 
     {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Welcome and initial setup">
-      <div className="welcome-icon"><Sparkles size={31}/></div><span className="overline">BIENVENIDO A NOBLE AI</span>
+      <div className="welcome-icon"><Sparkles size={31}/></div><span className="overline">WELCOME TO NOBLE AI</span>
       <h2>Your story studio starts here.</h2>
       <p>Choose how to prepare your library. Models can be configured now or later; nothing will download without your permission.</p>
       <div className="welcome-hardware"><Cpu size={19}/>
         <div><strong>{hardware?.gpus[0]?.name || 'CPU available'}</strong>
-          <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM detectados' :
+          <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM detected' :
             'No NVIDIA GPU detected by the backend'}</small></div></div>
       <label className="form-label" htmlFor="image-policy">Image generation in future versions</label>
       <select id="image-policy" value={imageMode} onChange={e => setImageMode(e.target.value as 'scene' | 'manual' | 'off')}>
         <option value="scene">Create images when the scene changes</option>
-        <option value="manual">Solo cuando las solicite</option>
+        <option value="manual">Only when I request them</option>
         <option value="off">No images</option>
       </select>
       <div className="setup-callout"><ShieldCheck size={18}/> TTS is disabled by default. Your story will not be sent to remote providers in this prototype.</div>

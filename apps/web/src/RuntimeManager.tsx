@@ -120,7 +120,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
       {!running && <button className="primary-button" disabled={busy || !installedId || !executable.trim()}
         onClick={() => void start()}><Play size={17}/> Start model</button>}
       {running && <button className="secondary-button" disabled={busy} onClick={() => void stop()}>
-        <Power size={16}/> Detener motor</button>}
+        <Power size={16}/> Stop engine</button>}
       {status?.status === 'ready' && <button className="primary-button" disabled={busy}
         onClick={() => void activate()}>
         {busy ? <LoaderCircle className="rotating" size={16}/> : <CheckCircle2 size={16}/>}
