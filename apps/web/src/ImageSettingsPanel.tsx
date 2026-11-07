@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
+import { ImageCheckpointManager } from './ImageCheckpointManager';
 import type { ImageSettings, ImageStatus, ImageSamplerOptions, Settings, ResourceConfig, ResourceStatus } from './types';
 
 const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
@@ -191,6 +192,11 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       <p className="noble-inspector-hint">El estilo modifica el prompt real de cada imagen; cambiar el muestreador o planificador modifica el nodo KSampler. Las opciones distintas de Euler/Normal se validan en el motor antes de generar.</p>
       {status?.online && <p>Checkpoint(s) detectados: {status.checkpoints.length}. El modelo se cargará cuando pulses «Ilustrar».</p>}
     </div>
+    <ImageCheckpointManager availableInComfy={status?.online ? status.checkpoints : []}
+      onSelectCheckpoint={name => {
+        change('checkpoint', name);
+        setMessage('Checkpoint seleccionado. Guarda los ajustes de imagen para aplicarlo.');
+      }}/>
     <div className="workspace-panel">
       <h3>Memoria GPU y admisión</h3>
       <p>Consulta la VRAM libre observada con nvidia-smi. Puedes avisar o impedir una
