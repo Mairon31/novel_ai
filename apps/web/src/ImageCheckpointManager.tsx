@@ -133,7 +133,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
       })}
     </div>}
 
-    {jobs.length > 0 && <div className="noble-voice-library" aria-label="Descargas de checkpoints">
+    {jobs.length > 0 && <div className="noble-voice-library" aria-label="Transferencias de modelos visuales">
       <h4>Descargas recientes</h4>
       {jobs.map(job => {
         const active = ['queued','downloading','verifying'].includes(job.status);
