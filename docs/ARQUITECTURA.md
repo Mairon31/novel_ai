@@ -1,224 +1,260 @@
-undefined
-## 11. P1 implementado: separación real de narración y control de procesos
+# Noble AI — modular architecture and implementation history
 
-**Código disponible:**
-- `apps/api/noble_api/narrative.py`: configuración local, validación loopback, adaptadores Ollama chat NDJSON y KoboldCpp OpenAI SSE; persistencia SQLite de historia/turnos; bloqueo por historia y `request_id` idempotente.
-- `apps/api/noble_api/runtime.py`: administrador KoboldCpp `Popen(shell=False)`; archivo GGUF **registrado**, ejecutable KoboldCpp proporcionado expresamente, `--host 127.0.0.1`, `--gpulayers -1/0/N`, `--contextsize`, status/stop propio y activación del modelo real reportado por `/v1/models`.
-- `apps/web/src/StoryStudio.tsx`: lector narrativo y entrada libre; `NarrativeSettings.tsx`: LLM/provider/params; `RuntimeManager.tsx`: motor administrado.
-- `tests/test_narrative.py`, `tests/test_runtime.py`, `apps/web/tests/story.spec.ts`.
+The app-first architecture uses **React/Vite/TypeScript**, **FastAPI/Python**, **SQLite**, and separate narrative/image/voice inference adapters. It is a modular local application, **not a fleet of microservices**. Historical implementation notes below refer to the initial development milestones; treat dated CI results as evidence of those commits, not proof of current hardware compatibility.
 
-**Límites precisos:** sigue sin existir un supervisor multiplataforma que descargue/instale automáticamente KoboldCpp u Ollama. Tampoco hay streaming persistente de eventos con replay por secuencia después de una desconexión; la idempotencia guarda el resultado final, sin memoria/canon estructurado ni ramificaciones. Los modelos externos permanecen gestionados por su propio proveedor y nunca se matan al cerrar Noble.
+## 11. P1 implementation — narrative and process control boundaries
 
-**Validación:** 21 Python PASS y 6 Playwright PASS usando motores simulados; ninguna sesión real de GPU física probada. Ver [Progreso](PROGRESO.md).
+**Source modules:**
+- `apps/api/noble_api/narrative.py`: local configuration, loopback validation, Ollama chat NDJSON and KoboldCpp OpenAI SSE adapters; SQLite story/turn persistence, per-story locking and `request_id` idempotency.
+- `apps/api/noble_api/runtime.py`: KoboldCpp manager using `Popen(shell=False)`; registered GGUF only, explicitly configured executable, `--host 127.0.0.1`, `--gpulayers -1/0/N`, `--contextsize`, owned start/status/stop, and activation based on the model advertised by `/v1/models`.
+- `apps/web/src/StoryStudio.tsx`: reader/input; `NarrativeSettings.tsx`: LLM/provider/settings; `RuntimeManager.tsx`: owned engine controls.
+- Tests: `tests/test_narrative.py`, `tests/test_runtime.py`, `apps/web/tests/story.spec.ts`.
 
-## 12. P1.1 — Control plane / GPU worker
+**Initial limits:** no cross-platform automatic KoboldCpp/Ollama installer; no full replayable SSE event log with per-sequence resume. Early idempotency persisted only completed turns. Later milestones added canon, snapshots, and branches, described below. Externally managed models are not terminated when Noble exits.
 
-El registro local mantiene URL/nombre/rol de worker en SQLite y token en keyring. El backend usa HTTPS a Quick Tunnel y prueba que un token incorrecto sea rechazado. El proxy remoto autentica el acceso y reenvía las llamadas de LLM OpenAI-compatible al servidor local de la GPU.
+**Initial evidence:** 21 Python / 6 Playwright tests using simulated inference; no physical GPU at that milestone. See [Progress](PROGRESO.md).
 
-Componentes: `noble_api/workers.py`, `worker_server.py`, `narrative.py`, `RemoteWorkers.tsx` y `tests/test_workers.py`. El navegador gestiona el registro, pero jamás obtiene el token previamente guardado. El contenido de contexto narrativo sí viaja a la GPU externa. No hay servidor LAN compartido ni workers de difusión/TTS.
+## 12. P1.1 — Control plane and remote GPU worker
 
-Estado: protocolos simulados con pruebas; sin sesión real de GPU. Detalles en [ADR-003](adr/0003-remote-workers.md).
+Local registration stores a worker URL/name/role in SQLite and bearer credentials in the OS keyring. The backend connects via HTTPS to a Cloudflare Quick Tunnel and verifies that incorrect credentials are rejected. A remote proxy authenticates and forwards OpenAI-compatible LLM requests to a GPU-local server.
 
-## Decisión técnica — Aplicación de auditoría Argon (2026-11-05)
+Relevant modules: `workers.py`, `worker_server.py`, `narrative.py`, `RemoteWorkers.tsx`, `tests/test_workers.py`. The browser can register a worker without reading back its previously saved secret. **Narrative context is transmitted to the remote GPU.** No hosted shared LAN server or diffusion/TTS worker is included.
 
-**Evolución modular, no reescritura:** conservar el monolito modular Python/FastAPI (`apps/api/noble_api`), React/Vite (`apps/web`), SQLite local, adaptadores de inferencia y workers. Separar responsabilidades sin convertir un producto local-first en microservicios. Ver la [arquitectura objetivo y fronteras por capa (§20)](ARGON_AUDITORIA.md) y [tareas priorizadas](../TODO.md).
+Initial protocol tests were simulated, not real remote-GPU measurements. See [ADR-0003](adr/0003-remote-workers.md).
 
-**Fronteras obligatorias:**
-- UI: envía intenciones, muestra estado visual y consume REST/SSE; no ensambla el prompt canónico.
-- Narrativa: canon, ramas, testigos, estado por turno, presupuesto/contexto y postprocesamiento de cambios.
-- Infraestructura: hardware, modelos, lifecycle de procesos, descarga, VRAM, workers; no contamina la interfaz inmersiva.
-- Escena: decisión explícita de reutilizar fondo, cambiar sprite, generar fondo nuevo o ilustración especial.
-- Persistencia: transacciones coherentes para mutaciones relacionadas y esquema versionado; no confundir WAL con atomicidad de operaciones **entre servicios**.
+## Architectural direction after Argon audit — November 5, 2026
 
-Orden de migración: cimientos P0 → coordinación GPU y modelos → narrador estructurado/memoria → composición visual → navegación VN/Creator/infraestructura → empaquetado y benchmarks. API externa estable y cobertura E2E durante la transición. El informe estático contiene hallazgos ya parcial o totalmente implementados; comprobar `master` antes de abrir tareas duplicadas.
+**Evolve modules; do not rewrite everything.** Retain the modular FastAPI backend, React/Vite frontend, local SQLite, inference adapters, and optional workers. Separate duties without turning a local-first product into unnecessary microservices. See [Argon audit §20](ARGON_AUDITORIA.md) and [TODO](../TODO.md).
 
+**Layer boundaries:**
+- **UI:** submit user intent, display stage/reader state, consume REST/SSE; never build canonical narrator prompts independently.
+- **Narrative:** canon, branches, witnesses, per-turn state, context budgets, validated event processing.
+- **Infrastructure:** hardware, models, process lifecycle, downloads, VRAM and remote workers; keep it out of the immersive reader.
+- **Visual stage:** choose whether to reuse a background, switch a sprite, generate missing scenery, or request an exceptional CG.
+- **Persistence:** use coherent transactions for related database changes; SQLite WAL is not distributed atomicity across services/files.
 
-## Unit of Work para bifurcaciones (2026-11-05)
+Migration order: P0 integrity → resource/model management → narrative state/memory → visual composition → VN/Creator/infrastructure UX → packaging and physical benchmarks. Preserve API contracts and E2E coverage. Audit findings may already have been addressed by later code; check current `master` first.
 
-`NarrativeService.fork_story` centraliza el commit de un nuevo branch: usa una sola conexión a `noble.sqlite` con `BEGIN IMMEDIATE`, y llama a los clonadores de VisualState, ScenePlanner, CreatorService, CreatorMediaService, LorebookService y WorldStateService con `conn` opcional. Los servicios reutilizan esa conexión mediante `nullcontext` sin confirmaciones parciales; solo el método orquestador realiza COMMIT o ROLLBACK. Se preservan los remapeos UUID del historial/scene/NPC/fact, y el punto de bifurcación determina el estado/canon histórico.
+## Transactional Unit of Work for story forks
 
-Al no poder transaccionar archivos físicos con SQLite, el orquestador compensa errores borrando únicamente la carpeta de destino UUID recién creada. Para interrupciones de proceso, un marcador de staging `fork-staging/<UUID>.pending` se crea bajo el bloqueo SQLite antes de copiar; la rutina de arranque recorre solo estos marcadores, conserva ramas con fila SQLite confirmada y elimina carpetas de operaciones no confirmadas, verificando paths y symlinks. La recuperación reutiliza `BEGIN IMMEDIATE` para no competir con una clonación en curso.
+`NarrativeService.fork_story` coordinates the branch commit using a **single `noble.sqlite` connection** and `BEGIN IMMEDIATE`. VisualState, ScenePlanner, CreatorService, CreatorMediaService, LorebookService, and WorldStateService clone with an optional supplied `conn`, reused through `nullcontext`, instead of independently committing. The orchestrator alone executes final COMMIT or ROLLBACK. Historical turn, scene, character, and fact UUID mappings are preserved, and the selected fork turn determines restored canon/state.
 
-La estrategia conserva límites de durabilidad ante corte eléctrico abrupto y TOCTOU. Los tests `tests/test_fork_atomicity.py` incluyen fallos tardíos por módulo, error de filesystem, recuperación por marcador y bifurcaciones concurrentes. Véanse [QA](QA_Y_ACEPTACION.md), [TODO](../TODO.md) y [PROGRESO](PROGRESO.md).
+Physical files cannot join the SQLite transaction. On error, remove **only the newly created destination UUID directory**. For abrupt interruptions, a staging marker `fork-staging/<UUID>.pending` is created under the SQLite lock before file copies. Startup recovery inspects only markers, preserves rows that actually committed, and removes abandoned folders after validating paths and rejecting symlinks. Recovery holds `BEGIN IMMEDIATE` to avoid racing a new fork.
 
+Power loss, file-system durability, and TOCTOU remain separate limitations. Tests in `tests/test_fork_atomicity.py` cover late module failure, filesystem errors, marker recovery and concurrent forks. See [QA](QA_Y_ACEPTACION.md) and [Progress](PROGRESO.md).
 
-## Aislamiento temporal de recursos editoriales — 2026-11-05
+## Historical editorial-media isolation
 
-`CreatorMediaService` conserva el inventario de recursos, metadatos y selección de portada en `creator_media_turn_snapshots` por turno confirmado, en la misma transacción SQLite que la narración. Un fork parcial obtiene únicamente el inventario del turno elegido; un fork completo conserva el estado editorial actual y clona los checkpoints anteriores, remapeando los UUID. Ante historia legacy sin snapshot, no se importa arte futuro.
+`CreatorMediaService` snapshots editor asset inventory, metadata, and the current cover into `creator_media_turn_snapshots` at each committed narrative turn **in the same SQLite transaction**. A partial fork selects only assets present at the chosen turn; a full fork copies current editorial data and historical snapshots while remapping UUIDs. A legacy turn without a snapshot does not import future artwork.
 
-La eliminación borra el registro activo y deja de servir la URL, pero conserva los bytes físicos si existe un turno que los referencie. Una rama histórica puede restaurarlos; si falta el archivo requerido, el fork se revierte por completo. Este mecanismo se apoya en el staging y la compensación de archivos de la bifurcación. La recolección de basura deberá considerar los recursos históricos y la seguridad TOCTOU de rutas sigue pendiente.
+Deletion removes the active metadata and stops serving its URL, but retains physical bytes referenced by an earlier turn so a historical fork can restore them. A required missing file aborts the fork. Cleanup/garbage collection must account for historical references; path-substitution attacks remain a QA concern.
 
-**Verificación de medios editoriales:** [CI #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045), **184 Python + 34 Playwright PASS**.
+Evidence: [CI #42093293045](https://github.com/Mairon31/novel_ai/actions/runs/42093293045), **184 Python / 34 Playwright PASS**.
 
-## Snapshots por turno de galería, referencias y composición
+## Per-turn gallery, reference and scene-plan snapshots
 
-`VisualState` también dispone de `visual_turn_snapshots`: al confirmar el turno registra fichas visuales (incluidas referencias de imagen), IDs de galería existentes, selección de imagen y filas de `scene_plans`. Se usa la conexión SQLite de `NarrativeService.append`, sin segundo commit independiente. El clonador de una rama parcial restringe galería y perfiles a lo que existía en el turno de corte y pasa un plan histórico a `ScenePlanner.clone`; no importa la imagen o edición de referencia posterior. Una rama total copia el estado vivo y reescribe la cadena de snapshots con nuevos identificadores para que se pueda rebobinar también desde ella.
+`VisualState` stores `visual_turn_snapshots` when a turn commits: visual profiles including image references, existing gallery IDs, selected asset, and `scene_plans`. The operation uses `NarrativeService.append`'s SQLite connection, not a second commit.
 
-Ante un turno heredado sin checkpoint visual, el fork parcial no adivina perfiles, imágenes ni planes mirando el presente. Se mantiene la limitación de que los archivos externos a SQLite necesitan compensación y recuperación tras interrupciones. No se han añadido workers GPU, generación automática de escenas ni un mecanismo de expiración/GC para los bytes históricos.
+A partial fork restricts gallery/profiles to the selected historical turn and passes the selected plan to `ScenePlanner.clone`. A full fork copies live state and rewrites prior snapshot links to new branch IDs so it too can be rewound.
 
-**Evidencia backend:** commit [`a49ca05`](https://github.com/Mairon31/novel_ai/commit/a49ca0591222837d28b344798646dd113ea567c4), [CI #42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974) con **189 Python PASS**; Playwright estaba pendiente al registrar esta nota.
+Legacy turns without historical visual snapshots do not borrow present-day data. Filesystem copy/compensation remains separate from SQLite atomicity. No automatic scene generator, GPU worker, or historical-file garbage collector was added by this feature.
 
+Backend evidence: commit [`a49ca05`](https://github.com/Mairon31/novel_ai/commit/a49ca0591222837d28b344798646dd113ea567c4), [CI #42094814974](https://github.com/Mairon31/novel_ai/actions/runs/42094814974): **189 Python PASS** when recorded; Playwright was still pending at that moment.
 
-## Lorebooks con acceso por testigos — P1
+## Lorebooks with witness-scoped access
 
-Además del alcance clásico `world` (conocimiento general), cada entrada puede declarar `visibility=witnesses` y hasta 16 UUID de personajes narrativos de Creator. Antes del presupuesto y selección por prioridad, `LorebookService.activate` cruza estos IDs con los personajes presentes de `WorldStateService.current`. Si no hay testigo presente, ni las palabras clave ni `always_active` permiten inyectar ese secreto. Los IDs se comprueban al guardar contra `creator_characters` de la misma historia, bajo bloqueo `BEGIN IMMEDIATE`.
+In addition to shared `visibility=world`, an entry may declare `visibility=witnesses` and up to 16 creator-character UUIDs. Before applying budget/priority, `LorebookService.activate` intersects these IDs with `WorldStateService.current`'s confirmed present cast. If no witness is present, neither keyword matches nor `always_active` may inject the secret.
 
-Se preserva la estructura existente de Lorebook y sus snapshots: el JSON nuevo se conserva por turno; al bifurcar, los testigos privados se remapean usando los mismos IDs destino de `CreatorService.clone`, incluidos los checkpoints copiados. Una entrada privada que no tenga ningún testigo destino se omite por seguridad, no se transforma en conocimiento general.
+On save, witness UUIDs must belong to the same story's `creator_characters`, checked under `BEGIN IMMEDIATE`. Lorebook snapshots store the extended JSON. Forks remap witness IDs using the exact new mappings from `CreatorService.clone`. A private entry without a valid destination witness is omitted instead of becoming public.
 
-El alcance es de **control de inclusión de datos en el prompt**, no un sistema completo de cognición individual: un modelo puede inferir o verbalizar secretos desde otras fuentes ya inyectadas, como descripciones NPC, el blueprint o diálogos. Para garantías más fuertes faltan recuperación episódica con procedencia y separación de mensajes/conocimiento por actor, más pruebas semánticas del texto generado.
+This is **prompt inclusion control**, not a complete per-NPC cognitive model. An LLM can still infer or disclose secrets from other injected data, such as blueprint text, NPC descriptions, or prior dialogue. Stronger epistemic isolation and semantic output QA remain pending.
 
+Evidence: commit `cef3a99`, E2E fix `cb687ec`, [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216): **193 Python / 36 Playwright PASS**.
 
-**Evidencia de regresión para Lorebook por testigos:** commit `cef3a99`, fix E2E `cb687ec`, [GitHub Actions #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216): **193 Python y 36 Playwright PASS**. Es un filtro explícito y determinista de contexto, no una garantía de que la IA nunca produzca un secreto por inferencia.
+## Fork durability: filesystem synchronization and WAL
 
+The branch staging UUID marker is written before copying and flushed with `os.fsync`; on POSIX, parent/staging directories are also synchronized. After cloning gallery, covers, and editorial media, the implementation traverses only the new destination UUID directory, rejects symlinks, and syncs all files and directory entries **before** SQLite COMMIT.
 
-## Unidad de bifurcación: orden de durabilidad de archivos y WAL
+`fork_story` uses `PRAGMA synchronous=FULL` for its WAL commit without changing the general Store's `NORMAL` mode. Precommit sync failure rolls back SQL and compensates files.
 
-La bifurcación escribe un marcador UUID antes de copiar y lo sincroniza con `os.fsync`; en POSIX también sincroniza el directorio `fork-staging` y su padre para persistir la entrada. Tras clonar la galería, portada y recursos editoriales, recorre solamente el directorio UUID destino, rechaza symlinks y sincroniza todos sus archivos y entradas de directorio **antes** de confirmar la conexión SQLite. `fork_story` usa `PRAGMA synchronous=FULL` para ese commit WAL, sin cambiar el comportamiento general del Store (`NORMAL`). Los fallos de sincronización antes del commit se tratan como fallos de fork, con rollback y compensación de archivos.
+Windows Python has no portable directory `fsync`: file contents can be flushed, but metadata sync remains an explicit limitation. Even on POSIX, filesystem and SQLite do not form a single transaction, and no physical power-loss durability guarantee exists.
 
-En Windows no hay `fsync` portable para directorios en Python; se sincronizan archivos accesibles pero el flush de metadatos se registra como límite. En ambos sistemas, incluso con `FULL`, SQLite y filesystem siguen siendo dominios de fallo distintos: no existe una transacción distribuida atómica, ni prueba de hardware físico, ni garantía frente a controladores que mientan sobre flush. El marcador y recuperación de inicio continúan como segunda barrera.
+First [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230): **197 Python / 36 Playwright PASS**, commit `eca8166`. An external `os._exit(41)` test was subsequently added.
 
+**Crash-recovery evidence:** [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453): **198 Python / 36 Playwright PASS**. `os._exit(41)` after copying but before commit leaves a durable marker and unregistered files; the next app instance's `recover_incomplete_forks` removes only the abandoned marked folder, preserving the original story. This is not a physical blackout experiment or complete symlink-race defense.
 
-**Primera verificación:** [CI #42098969230](https://github.com/Mairon31/novel_ai/actions/runs/42098969230) — 197 Python + 36 Playwright PASS (commit `eca8166`). Se añadió como segundo nivel una prueba de `os._exit(41)` en un proceso externo después de copiar los archivos, pendiente de validación CI. No se debe interpretar como prueba de durabilidad contra fallo eléctrico.
+## Multi-process interruption tests
 
+Tests run independent `create_app` processes against the same Store, coordinating timing **in the test harness** with atomically published handshake files. `Popen.kill()` stops actual Python processes after fsync/before COMMIT or after COMMIT/before marker cleanup, while another writer contends on SQLite. On startup, recovery must distinguish uncommitted directories from committed story rows.
 
-**Recuperación probada con proceso externo:** [CI #42099555453](https://github.com/Mairon31/novel_ai/actions/runs/42099555453) — 198 Python y 36 Playwright PASS. Una terminación con `os._exit(41)` después de copiar datos y antes del COMMIT deja el marcador durable y bytes sin fila SQLite. Al crear otra app, `recover_incomplete_forks` elimina solo esa carpeta marcada y conserva el proyecto original. La prueba no demuestra durabilidad física ante un apagón ni protección completa ante carreras de symlinks.
+Production does not add artificial delays or test hooks. Tests exercise the actual `BEGIN IMMEDIATE`, `synchronous=FULL`, marker and startup recovery contracts, but not a power outage.
 
+[CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771): **201 Python / 36 Playwright PASS** at commit `f684580`, covering before-commit competing writer, after-commit marker, and serialized recovery of two terminated processes.
 
-## Recovery multiproceso — gates de interrupción real
+## Synchronizing cleanup during recovery
 
-Los tests nuevos ejercitan varias **instancias reales** de `create_app` sobre el mismo `Store`. La coordinación se implementa fuera del producto en el harness de pruebas con archivos de handshake publicados atómicamente. `Popen.kill()` interrumpe intérpretes Python independientes en el punto declarado (después de fsync antes del COMMIT o después del COMMIT antes de borrar el marcador), mientras un segundo escritor compite por el lock SQLite. Tras la caída, `recover_incomplete_forks` debe distinguir las rutas realmente abandonadas de aquellas confirmadas en `stories`.
+The inverse recovery protocol syncs parent directories after deletion: when no committed story row exists, remove its UUID directory and sync `story-assets`; after removing a marker for an abandoned **or committed** branch, sync `fork-staging`. Only count success after required flushes.
 
-No se añadieron retardos ni modos de prueba a la API de producción. El mismo comportamiento real de `BEGIN IMMEDIATE`, `synchronous=FULL`, `fork-staging/*.pending` y recuperación de inicio se usa para el ensayo. Ninguno de estos mecanismos constituye una transacción distribuida con el filesystem ni una simulación de un apagón físico.
+If syncing a parent fails, retain the marker for the next startup. Repeated cleanup is idempotent when the folder was already removed. Portable directory sync still depends on POSIX; this is not distributed filesystem/SQLite atomicity.
 
+[CI #42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649): **203 Python / 36 Playwright PASS**, commit `c2dbbca`; checks deletion ordering, directory metadata flush and retry after failure on Linux.
 
-**Gate multiproceso confirmado:** [CI #42101497771](https://github.com/Mairon31/novel_ai/actions/runs/42101497771) aprobó 201/201 Python y 36/36 Playwright para el commit `f684580`. Se verificaron tres puntos: antes del COMMIT con otro escritor esperando, después del COMMIT antes de limpiar marcador, y recuperación serializada de dos procesos eliminados. No sustituye pruebas de apagón eléctrico, durabilidad NTFS ni kill dentro del COMMIT.
+## Portable single-branch HTML export
 
+`story_export.py` exports without modifying SQLite. It selects turns from the requested story/branch, embeds the Creator-managed cover and historical gallery WebPs from `selected_asset_id` snapshots **only when those IDs belong to that branch**. It never reconstructs an older image selection from future data.
 
-## Sincronización en la fase de recuperación
+`html.escape` prevents player/narrator text being interpreted as HTML, and exported images contain no remote fetch paths. Resource limits prevent unbounded reads.
 
-El protocolo de staging ya fuerza las copias y metadatos antes del COMMIT. El **protocolo inverso** de recuperación completa ese ciclo: una vez determinada la ausencia de fila confirmada de la rama, se elimina su carpeta UUID y se sincroniza `story-assets`; tras eliminar un marcador `.pending` de rama abandonada o confirmada, se sincroniza `fork-staging`. Los contadores de recuperación exitosa se incrementan únicamente si terminan estos pasos. Un `fsync` fallido en la carpeta principal conserva el marcador para el siguiente inicio; las operaciones son seguras al repetirlas con carpeta ya ausente. El comportamiento sigue condicionado a plataformas con sincronización de directorios (POSIX), sin prometer atomicidad entre SQLite y el filesystem ni durabilidad ante cortes reales de energía.
+The self-contained HTML covers **one narrative line**, labeled as an independent branch where appropriate. It excludes private Creator instructions, complete Lorebooks, and administrative state. EPUB and full family ZIP backup are distinct operations; full backups include author material and require explicit import.
 
+## Episodic FTS5 limited to player inputs
 
-**Gate de recuperación de borrados validado:** [CI #42102315649](https://github.com/Mairon31/novel_ai/actions/runs/42102315649) — **203 Python y 36 Playwright PASS**, commit `c2dbbca`. Las pruebas confirman el orden de sincronización de metadatos de directorio durante la limpieza y el reintento después de un error de flush; se ejecutaron en Linux, no en hardware con corte eléctrico.
+`narrative_turn_fts` indexes `turn_id,story_id,mode,input_text` using `unicode61`; legacy SQLite files can be reindexed without changing scenes. `story_turns` remains the source of truth. New turns and index rows commit together, and branch copying excludes future turns.
 
+Search filters by story and validates each retrieved turn against `story_turns`. A bounded lexical fallback examines up to the latest 2,500 turns when FTS5 is unavailable.
 
-## Exportación portátil de historias — HTML (P1)
+**Only player input** is indexed, not model-generated prose or private Creator/Lorebook content. Up to three recovered distant actions are appended as historical `user` messages, not promoted into system instructions. Such input does not independently prove NPC knowledge or causality. Semantic retrieval, witnessed summaries and exact token accounting remain open.
 
-`story_export.py` implementa el contrato de lectura/exportación sin modificar SQLite. Selecciona turnos desde la historia/ramificación elegida, incluye en un archivo HTML autocontenido una portada administrada por Creator y los WebP del `selected_asset_id` de snapshots visuales históricos, solo si sus IDs pertenecen a la galería de la misma rama. No reconstruye imágenes históricas usando selecciones futuras. `html.escape` impide interpretar texto narrativo o del usuario como etiquetas HTML, y los datos de Illustrator no contienen rutas remotas. Hay límites de recursos para impedir lecturas masivas.
+## Narrator adapter message inspector
 
-El archivo HTML es una exportación de **una sola línea narrativa**, con marca «Rama independiente» cuando corresponde. No incluye secretos/instrucciones de Creator, Lorebooks completos ni estados administrativos; el EPUB y el ZIP de toda la familia son funciones distintas. Exportar HTML solo lee el contenido de la rama elegida; el respaldo incluye los datos de autor y requiere importación explícita.
+`context_inspector.py` calls `NarrativeService.messages` directly to reproduce the exact message array prepared for Ollama/KoboldCpp/OpenRouter/worker. Read-only; does not load a model or save turns.
 
+The inspector groups the unmodified message content into system/preferences, premise, canon, creator context, Lorebook, world state, episodic retrieval, and recent history. Character counts are exact; `ceil(characters/4) + overhead` is a **heuristic**, not model-specific tokenization. Context-cap warnings are informational. Never invent KV cache-hit metrics.
 
-## Memoria episódica: búsqueda FTS5 limitada a entradas del jugador
+The inspector belongs in `NarrativeSettings` for the author because it contains private story instructions. It must not appear in the public reader or portable HTML.
 
-El índice `narrative_turn_fts` contiene `turn_id,story_id,mode,input_text` y utiliza tokenizador `unicode61`; se reconstruye en archivos SQLite legados sin sobreescribir escenas. `story_turns` sigue siendo el registro de verdad. Nuevos turnos e índices y copias por rama se confirman juntos; ningún turno posterior al corte se recupera en una bifurcación. Al buscar, se filtra por `story_id` y se valida cada ID de turno contra `story_turns`; la alternativa léxica analiza como máximo los últimos 2500 turnos y usa los mismos límites de consultas.
+## EPUB3 without external dependencies
 
-Se indexa **solo la entrada del jugador**, no el texto del LLM ni material privado de Creator/Lorebook. La recuperación automática de hasta tres recuerdos remotos los introduce con rol `user`, separadamente del prompt de sistema y del historial reciente, evitando la promoción directa de texto no confiable a instrucciones de sistema. Esto no atribuye hechos a NPC ni certifica causalidad; siguen pendientes búsqueda semántica, resúmenes con procedencia/testigos y tokenización real.
+EPUB export uses Python's `zipfile` and `xml.etree.ElementTree`. An uncompressed `mimetype` is the first ZIP entry; `META-INF/container.xml` points to package OPF defining metadata, the manifest (including WebPs), XHTML chapters, navigation, and reading order.
 
+Chapters contain ordered turns and scenes with story-owned cover/illustrations selected from historical snapshots. Files contain no remote requests or Creator private instructions. The reader offers EPUB alongside portable HTML.
 
-## Inspector de mensaje enviado al adaptador
+Combined P1 evidence: [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352): **217 Python / 42 desktop/mobile Playwright / Vite PASS**, covering export, episodic player memory, and private message inspector.
 
-`context_inspector.py` consume `NarrativeService.messages` directamente para reproducir el arreglo exacto de mensajes que se prepara para Ollama/KoboldCpp/OpenRouter/worker. La operación es solo lectura y no instancia modelos ni guarda mensajes. Secciona el contenido sin reescribirlo para desglose de sistema/preferencias, premisa, canon, datos del creador, Lorebook, estado del mundo, episodios e historial. Las secciones tienen conteos exactos de caracteres; la estimación `ceil(caracteres/4)+overhead` es **heurística**, no tokenización por modelo, y el límite de contexto solo se usa para mostrar una advertencia informativa de posible exceso. No se publican contadores inventados de KV-cache.
+## `.noble.zip` v1 — portable family archive, limits, and recovery
 
-El inspector forma parte de `NarrativeSettings` y es una herramienta local **para el autor** porque muestra instrucciones confidenciales de la novela. No se incorpora al lector público ni a la exportación HTML.
+Export follows `origin_story_id` to the family's root, then traverses descendants. `manifest.json` stores the root, **18 domain SQLite tables** (excluding global/index-only FTS tables), and owned media entries with `sha256`, size, and UUID paths. Only regular files in approved locations are included: `story-assets/{uuid}/scene.webp`, `images/{uuid}.webp`, `creator/{uuid}.webp`, `creator/{uuid}.png`. Player input FTS is rebuilt upon import.
 
+The importer validates archive type/version/structure, graph connectivity, allowed table columns, `story_id` ownership, snapshot turn IDs, UUID formats, ZIP members, sizes, and hashes **before** writing. Caps: 64 stories, 25,000 database rows, 1,200 media files, 192 MiB total media, 16 MiB per file, 24 MiB manifest. It does not extract arbitrary ZIP filenames as filesystem paths; it reconstructs known Noble-owned destinations.
 
-## EPUB3 local sin dependencias externas
+Default import refuses UUID conflicts with **409**, never overwriting an existing project.
 
-La exportación EPUB utiliza `zipfile` y `xml.etree.ElementTree` de la biblioteca estándar. `mimetype` es la primera entrada ZIP sin compresión; `META-INF/container.xml` apunta al package OPF, que define metadata, manifest con todos los WebP, XHTML de capítulos, navegación e índice. `chapter.xhtml` contiene títulos, escenas y intervenciones ordenados; la portada y las imágenes de cada capítulo se leen desde rutas administradas por UUID y snapshots. Los archivos no incluyen peticiones a redes externas ni contexto privado de Creator. La variante EPUB se descarga desde el lector junto al HTML portátil.
+Restoration holds the SQLite writer lock, checks collisions, creates `fork-staging/{uuid}.pending` markers and fresh `story-assets/{uuid}` folders. It writes/syncs files and directories before COMMIT, inserts domain tables/rebuilds FTS in one transaction, and rolls back with file compensation on error. Startup recovery reuses the fork marker protocol.
 
+These controls do not guarantee power-loss atomicity across SQLite and the filesystem, or overwrite existing UUIDs.
 
-**Verificación conjunta de extensiones P1:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) — 217 Python, 42 Playwright (escritorio y móvil), compilación frontend PASS. Se validaron exportaciones EPUB3/HTML, recuperación de episodios del jugador y desglose privado del prompt.
+## Navigable story branch tree
 
+`branch_map.py` reads the connected story family, preserving IDs, and returns nodes with parent, fork turn, depth, and turn count; read-only and cycle-safe. Library → Detail renders indented branches; the reader has a selector to switch to linked branches.
 
-## Archivo `.noble.zip` — formato v1, límites y recuperación
+Switching branches fetches existing story/history and does not merge, edit, or generate turns.
 
-La exportación de una historia desde su raíz o rama sigue `origin_story_id` hasta la raíz y recorre sus descendientes. El respaldo versionado almacena un `manifest.json` con raíz, 18 tablas SQLite de dominio (sin tablas globales ni índices FTS de implementación) y un listado firmado de bytes con `sha256`, tamaño y ruta administrada por UUID. Solo se incluyen archivos regulares en `story-assets/{uuid}/scene.webp`, `images/{uuid}.webp`, `creator/{uuid}.webp` y `creator/{uuid}.png`. La restauración reindexa automáticamente las intervenciones del jugador en FTS.
+**Backup and branches CI:** [#42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) passed **226 Python / 46 Playwright / Vite**, including a mobile return-button stacking fix.
 
-El importador valida tipo, versión, estructura, conexión del árbol, columnas SQLite permitidas, propiedad `story_id`, `turn_id` de snapshots, canon de UUID, miembros ZIP y SHA antes de crear archivos. Limita número de historias (64), registros (25 mil), archivos (1200), bytes de recursos (192 MiB), tamaño por archivo (16 MiB) y manifest (24 MiB). No extrae nombres ZIP como rutas de disco: reconstruye exclusivamente rutas permitidas dentro del almacenamiento de Noble. Si alguna historia o carpeta existe, devuelve 409 y no modifica datos del usuario.
+## Import family archives as non-conflicting copies
 
-Para restaurar, obtiene el bloqueo de escritor SQLite, comprueba colisiones, crea marcadores durables `fork-staging/{uuid}.pending` y carpetas nuevas `story-assets/{uuid}`. Escribe los recursos y sincroniza archivos/directorios antes del COMMIT. Inserta tablas y reconstruye FTS en la misma transacción; errores permiten rollback de SQL y eliminación compensatoria de carpetas creadas. La recuperación de startup reutiliza el protocolo de marcadores ya probado para forks. Este diseño no garantiza atomicidad eléctrica entre FS y SQLite ni restauración sobre historias con el mismo UUID.
+The default restore remains non-destructive (409 on conflict). Explicit `as_copy=true` first fully validates the ZIP and then remaps all original UUIDs to fresh IDs for structured records, relational references, JSON **keys and values**, and media. It does **not** replace UUID-looking strings in free-form prose.
 
+The importer rebuilds story-owned paths, labels copied titles, rewrites parent/child relationships, and reuses the same SQLite transaction/staging/file-compensation rules. The response provides a story-ID map for opening imported copies.
 
-## Navegador del árbol de ramas
+[CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321) covered duplicate import; [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) verified remapping UUIDs in structured JSON keys/values such as `world_states.relationships` and `world_state_edits`, with **231 Python / 52 Playwright**.
 
-`branch_map.py` reutiliza la lectura de familia conectada (raíz y descendientes), conserva identificadores existentes y devuelve nodos con padre, corte de turno, profundidad y número de intervenciones. Es API de solo lectura y rechaza datos cíclicos. Biblioteca → Detalle muestra las rutas con sangría; el lector ofrece un selector para cambiar a la ruta vinculada al mismo árbol. Cambiar de ruta solicita sus datos e historial existentes sin editar ni generar turnos ni fusionar líneas.
+## Shareable local UI routing
 
+`workspaceRoute.ts` parses hash-based links such as `#/biblioteca`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`. These **URLs are stable compatibility identifiers** even though English is now the UI language.
 
-**Gate de backup/ramas:** [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293) confirmó 226/226 Python, 46/46 Playwright y build, incluido el ajuste móvil del `z-index` del botón de retorno. Se preservan UUID de la familia; el importador retorna 409 en conflictos en lugar de sobreescribir datos.
+`App.tsx` coordinates route state; `StoryStudio` and `CreatorStudio` receive the selected story/project as props and notify navigation. Hash routes permit reload/bookmarks in FastAPI or future desktop packaging without adding backend routes for every view, while REST remains under `/api/v1`. Navigation does not merge/erase turns or bypass branch isolation.
 
+During first-run setup, redirect to Model Hub only if already viewing its destination; a requested `#/historia/{id}` stays selected. Opening `#/creator` without an ID clears previous project selection; mobile menus must open before interaction.
 
-## Duplicación de familias sin colisiones
+## Reader modes and history controls
 
-El endpoint de restauración conserva su comportamiento no destructivo por defecto (`409` si existe una historia). El modo explícito `as_copy=true` ejecuta primero la validación completa del ZIP, después genera un mapa `UUID original → UUID nuevo` para entidades del archivo, referencias relacionales, entradas JSON estructuradas y medios del árbol; **no** transforma prosa ni campos narrativos de texto libre. Reconstruye las rutas de `story-assets`, títulos con «(copia)» y enlaces entre padre/hija, y reutiliza la misma transacción SQLite, marcadores durables y compensación en caso de errores. Responde con el mapa de IDs de historias para navegar la copia importada. [CI #42117963321](https://github.com/Mairon31/novel_ai/actions/runs/42117963321).
+A single source of truth (`story_turns`) is displayed according to saved `workspace_preferences.reader_layout`: `immersive` (VN scene), `classic` (Book), and `chat`. Backlog searches already loaded turns in `StoryStudio`; it does **not** mutate storage or expose private memory. HUD hide/show keeps a visible restoration action.
 
-## Enrutamiento local compartible
+Keyboard shortcuts respect `shortcuts_enabled` and must not act while focus is in an editable input. Backlog is distinct from FTS5 retrieval of historic player messages.
 
-`workspaceRoute.ts` maneja rutas de UI en el fragmento de URL (`#/biblioteca`, `#/historia/<uuid>/leer`, `#/creator/<uuid>`, etc.), distinguiendo estado de navegación de cada dominio visual. `App.tsx` es el punto de coordinación del hash; `StoryStudio` y `CreatorStudio` reciben destino por props y notifican cuando el usuario abre otra historia o proyecto. El uso de hash permite recarga y favoritos dentro de instalaciones locales FastAPI/desktop sin agregar rutas backend para cada vista, preservando la API `/api/v1`. El enrutamiento no borra ni fusiona turnos ni anula el límite de aislamiento de ramas.
+## Deterministic visual director and contextual background cache
 
+`VisualDirector` derives a deterministic `noble-bg-v1:sha256(context)` key from `world_states.location/time_of_day/weather` or current visual scene, plus `scene_plans.shot/lighting`, normalized with NFKC, casefold, and whitespace rules.
 
-**Integridad de UUID en JSON:** el remapeo para `as_copy=true` registra y transforma UUID tanto en **valores como en claves** de objetos JSON estructurados, necesario para `world_states.relationships`, `world_state_edits` y snapshots de mundo. No sustituye UUID en los campos de prosa libre. [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) valida 231 pruebas Python y 52 Playwright.
+Character emotion does not enter the background key: switching expressions must not regenerate scenery. The director returns an action/reason/existing background **without inference**; sprite/CG actions are plans, not proof a new asset exists.
 
-**Onboarding con enlace directo:** completar la configuración inicial solo redirige a Model Hub si el usuario ya está en Model Hub; un destino `#/historia/{id}` permanece intacto. `#/creator` sin ID deselecciona el último proyecto activo. La navegación móvil abre el menú antes de interactuar con sus botones.
+Registering a cached background requires an **explicit author action**, existing gallery media with `origin=manual`, and an exact expected-context signature. The key is stored in `visual_assets.render_signature` and enables reuse across scenes **of the same story**, including fork/backup semantics. It does not overwrite a ComfyUI render signature.
 
+Applying a background rechecks context and ownership, changing `visual_current`/legacy image pointer only. It does not generate new bytes or modify narration. Creator caption-matched backgrounds and foreground overlays retain their existing priority.
 
-## Modos del lector y controles de historial
+File selection cannot guarantee atomicity against hostile symlink substitution or physical power loss. [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317) covers SQLite/filesystem logic, not a GPU benchmark.
 
-El lector mantiene una única fuente de verdad (`story_turns`) y cambia solo la representación del estado `reader_layout` guardado en `workspace_preferences`: `immersive` (VN con escena), `classic` (Libro) y `chat` (mensajes diferenciados). El diálogo Backlog busca las escenas cargadas por `StoryStudio`; no realiza escritura, truncamiento ni consulta de recuerdos privados. El modo HUD oculta controles sin eliminar la narración, y mantiene botón visible de restauración. Los atajos están condicionados a `shortcuts_enabled` y no actúan mientras se escribe en campos editables. No confundir este backlog local con la búsqueda FTS de intervenciones antiguas del jugador.
+## Visual novel compositor: backgrounds and 2D cast
 
-## Director visual y caché por contexto (sin GPU implícita)
+`creator_media_assets` extends its schema backward-compatibly with `expression` (`neutral/joy/anger/sadness/surprise`) and bounded `pose`, using conditional `ALTER TABLE` and `creator_sprite_variant` index.
 
-`VisualDirector` calcula una clave determinista `noble-bg-v1:sha256(contexto)` con `world_states.location/time_of_day/weather` o escena visual y `scene_plans.shot/lighting`. Normaliza con NFKC, casefold y espacios. La emoción del personaje no entra en el hash: una expresión distinta no tiene por qué producir un paisaje distinto. La decisión se devuelve como acción, razón y fondo existente, sin inferencia. Las acciones de sprites/CG son planes, no activos ya generados.
+Authors import real alpha images; there is no invented generation on story load. `CreatorMediaService.presentation` scores captions against location/latest saved turn, identifies explicitly present NPC names, limits selection to **three distinct identities**, and chooses detected emotion variants with `neutral` fallback. A linked portrait must not be displayed unless that NPC is actually identified in narration. Legacy `foreground` remains an alias for the first `sprites[]` element.
 
-Registrar un fondo requiere **acción explícita del autor** y una versión de galería de origen `manual`, con recurso existente y firma esperada del contexto. La clave se almacena en el `visual_assets.render_signature` ya versionado; esto permite reutilizar assets entre escenas de la **misma historia** sin una nueva tabla y conserva el comportamiento de fork/backup. No se sobrescribe la firma del render ComfyUI. Aplicar el fondo vuelve a validar el contexto y la selección, y solo cambia `visual_current` + imagen legacy; no genera nuevos bytes ni modifica la narración. Los recursos de Creator Studio con coincidencia de caption conservan su prioridad visual habitual y pueden superponerse al artwork de galería.
+Speaker highlight requires explicit attribution patterns (for example, "*Aira says*" or "*replied Aira*"), not any mention of a character. Generated prose is always presented with a separate **Narrator** label. UI layers include up to three PNG sprite slots, optional background, wash, lower dialogue pane, and independent controls.
 
-La comprobación y selección no son una garantía de atomicidad frente a carreras de rutas bajo cambios concurrentes de symlinks o fallos eléctricos. [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317) verifica comportamiento local SQLite/archivos, no hardware GPU real.
+Background transitions retain the prior scene for roughly 560 ms during crossfade, then remove it; the previous story's background must **never survive a story-ID change**. Mobile adjusts sprite slots/dialogue panel and respects reduced-motion preferences.
 
+Forks and snapshots preserve expression/pose metadata. Legacy v1 archive rows lacking those columns default to `neutral` and `standing`; arbitrary schema fields remain rejected.
 
-## Composición de novela visual: fondos + reparto 2D
+Gate: [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723): **247 Python / 60 desktop-mobile Playwright / Vite PASS**, including no visual mixing across story navigation.
 
-`creator_media_assets` amplía su esquema hacia atrás (`ALTER TABLE` condicional, índice `creator_sprite_variant`) con `expression` (`neutral/joy/anger/sadness/surprise`) y `pose` (identificador limitado). El creador importa imágenes con alfa; no existe generación falsa ni inferencia oculta. `CreatorMediaService.presentation` puntúa pies de foto sobre ubicación y último turno completado, identifica nombres de NPC presentes, limita a tres **identidades distintas** y selecciona la variante de expresión detectada con fallback `neutral`. Sin presencia explícita de NPC en la narración, un retrato enlazado no puede mostrarse. La propiedad `foreground` sigue siendo alias del primer elemento de `sprites[]` para clientes viejos.
+## Canonical visual DNA and expression sheets (Creator Studio)
 
-El iluminado de hablante solo se activa con patrones atribuidos explícitamente (`Aira dice`, `respondió Aira`, etc.), no por cualquier última mención. El texto completo del narrador siempre se presenta con la etiqueta «Narrador». La UI renderiza PNG transparentes en tres slots, una capa de fondo opcional, wash, subtítulo inferior y controles independientes. El crossfade conserva el fondo anterior por unos 560 ms mientras funde una segunda capa encima; siempre retira la anterior y **no la conserva si el ID de historia cambia**. En móvil adapta los slots y la caja de texto; con reducción de movimiento desactiva animaciones.
+`creator_characters.visual_dna` stores identity tags, seed, and optional LoRA filename/strength with Pydantic validation. `CreatorService` rejects locked tag/seed mutations under one writer transaction; old rows have read defaults, and legacy PUT requests that omit visual DNA preserve its value.
 
-Clonación e instantáneas serializan la metadata de expresión/pose. La restauración de backup v1 sigue validando el mismo conjunto de tablas, SHA y propietario; para filas `creator_media_assets` anteriores admite exclusivamente la ausencia de `expression` y `pose`, rellenándolas con `neutral` y `standing`. Esa compatibilidad no desactiva validaciones del ZIP ni permite extensiones arbitrarias de tabla.
+NPC voice and narrative personality remain separate from visual prompt fields.
 
-**Gate final:** [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723): 247 pruebas Python, 60 Playwright (escritorio y móvil) y build Vite PASS; las imágenes de historias distintas no se mezclan al navegar sin recargar.
+`CreatorMediaService` imports one transparent horizontal/vertical sheet containing **five equal cells**, crops to memory, writes new UUID PNGs per expression, and inserts all five in one SQLite transaction. Failure cleans newly written files without affecting existing assets. The importer reuses media ownership, per-turn snapshots, fork remapping and archive handling; it does not start GPU work or configure ComfyUI.
 
-## Ficha canónica y hoja de expresiones (Creator Studio)
+## Character LoRA graph and render provenance
 
-Las configuraciones JSON de `creator_characters` contienen `visual_dna` (etiquetas, seed, nombre y fuerza de LoRA) con validación Pydantic; `CreatorService` rechaza mutaciones de tags/seed fijadas bajo la misma conexión de escritura. `CreatorCharacter` expone defaults al leer filas antiguas y preserva DNA ante PUT de clientes legados que no envían el campo. La voz y personalidad se mantienen separadas y no toman estos datos como prompt narrativo.
+`comfy_loras.py` selects only story-owned creator NPCs: exact NPC-name matches in free-form mode, or UUID-linked `visual_character_id` records in a saved scene plan. It validates path-free `.safetensors` filenames, bounded positive weights, duplicates and maximum **three** LoRAs.
 
-`CreatorMediaService` recibe una hoja transparente de cinco celdas iguales, la recorta en memoria y prepara PNGs de cada expresión con UUID diferentes; registra los cinco recursos en una transacción SQLite. Al fallar la inserción limpia sus archivos, y los demás recursos permanecen intactos. Esta ruta reusa `creator_media_assets`, `creator_media_turn_snapshots`, los clonadores con mapeo de personajes y el exportador/importador de historias. No añade cargas de GPU ni rutas de modelos externos, y no configura el motor ComfyUI.
+Only explicitly enabled image requests use this path. `SceneImageService` checks ComfyUI's inventory/`LoraLoader` over loopback and chains MODEL/CLIP loading before `KSampler`/`CLIPTextEncode`, including the img2img branch. Requests without LoRA use the previous graph/signature.
 
-## Pipeline de LoRA de personajes y metadatos visuales
+`render_provenance.py` validates gallery metadata. `visual_assets.render_details_json` stores per-version settings exposed as `render_details`. `VisualState.clone_branch` and `story_archive` preserve/remap metadata and support safe v1 import. LoRA weights are never embedded in the story.
 
-`comfy_loras.py` es un módulo aislado que resuelve el reparto Creator usando nombre de NPC exacto si no hay plan visual guardado, y `visual_character_id` de NPC enlazados si existe uno. En ambos casos lee solo la historia solicitada. Valida nombres `.safetensors` sin ruta, peso positivo acotado, ausencia de duplicados y máximo de tres LoRAs. `SceneImageService` activa la lógica solo en requests explícitos, valida el catálogo y nodo de ComfyUI (HTTP loopback) y conecta los nodos `LoraLoader` sobre los puertos MODEL/CLIP antes de `KSampler` y CLIPTextEncode, también con img2img. Los renders sin LoRA conservan el workflow/firma anteriores.
+## SpriteDraftService: explicit five-step generation and approval
 
-`render_provenance.py` valida metadatos normalizados de la galería; `visual_assets.render_details_json` almacena configuración por versión, expuesta como `render_details` en la API. `VisualState.clone_branch` y `story_archive` preservan procedencia con remapeo de activos e importación segura de v1. No se almacenan ni descargan pesos en la historia.
+`SpriteDraftService` connects `CreatorMediaService` and `SceneImageService`, but does not start ComfyUI on app launch or ordinary story turns.
 
-## SpriteDraftService — generación IA por pasos y revisión previa
+Workflow: **create draft with no GPU → request each expression separately → GET own story/UUID preview → approve all five → transactionally publish assets**.
 
-`SpriteDraftService` está conectado a `CreatorMediaService` y `SceneImageService`; no inicia ComfyUI durante arranque ni durante un turno narrativo. El flujo es **crear sin GPU → generar cada slot por petición independiente → GET preview por historia/UUID → aprobar las cinco → publicar assets en una transacción**. SQLite `sprite_drafts` almacena snapshot de identidad/estilo/configuración y estados de cada expresión; `store.root/sprite-drafts/<story>/<draft>` contiene únicamente vistas previas PNG y no participa del respaldo ni del lector hasta aprobar. Máximo tres borradores por historia; expiración de 48 h sobre actividad y limpieza por creación/listado.
+SQLite `sprite_drafts` stores snapshot settings and slot state; `store.root/sprite-drafts/<story>/<draft>` holds temporary PNG previews excluded from reader/archive until approval. Limit three drafts per story, expire after 48 hours of inactivity, cleanup on create/list.
 
-`comfy_runtime.render` centraliza `/prompt`, `/history/<prompt_id>`, `/view` del nodo `SaveImage` validando respuestas. El generador comparte el candado `SceneImageService.lock`, la reserva GPU y el preflight checkpoint/LoRA; una expresión fallida no sustituye su preview anterior. `sprite_cutout.transparent_sprite` conserva alfa original o elimina croma verde conectado al borde, reduce artefactos de silueta y rechaza recortes opacos, cortados o fuera de presupuesto. Esto no es segmentación de personas por modelo y necesita revisión visual. `approve` compone la fila RGBA y llama `CreatorMediaService.import_expression_sheet` con procedencia aprobada por expresión. `sprite_provenance.py` valida `generation_json`; las columnas `source/generation_json` migran bibliotecas anteriores con `manual/{}`, se copian en forks y se exportan a respaldos v1, aceptando formatos v1 que carecían de las columnas.
+`comfy_runtime.render` centralizes `/prompt`, `/history/<prompt_id>`, and `/view`; it validates responses and shares the `SceneImageService.lock`, VRAM reserve, and checkpoint/LoRA preflight. A failed expression leaves earlier valid previews intact.
 
-### Validación estricta de salidas ComfyUI
+`sprite_cutout.transparent_sprite` preserves existing alpha or removes border-connected green chroma, reduces simple edge artifacts and rejects opaque/cropped/out-of-budget candidates. This is **not neural human segmentation**; editor review is required.
 
-El protocolo compartido `comfy_runtime.render` comprueba que `prompt_id` solo contenga letras ASCII, números, guiones o guion bajo (máximo 100), impidiendo que una respuesta del proveedor modifique la ruta de consulta `/history/<id>`. Solo acepta una salida de tipo `output` del nodo `SaveImage` y nombres de archivo sin separadores/segmentos `..`; la carpeta devuelta por ComfyUI debe estar vacía, coherente con el `filename_prefix` fijo de Noble. El cliente nunca interpreta la salida como ruta de disco de Noble. `test_comfy_runtime.py` prueba respuestas maliciosas antes de consultar `/view`.
+Approval assembles an RGBA row and invokes the transactional expression importer. `sprite_provenance.py` validates `generation_json`; legacy `source/generation_json` rows default to `manual/{}`. Approved provenance survives forks and v1 archives, including imports predating the new fields.
 
-## Adaptador IPAdapter Plus y control de continuidad editorial
+### Strict ComfyUI output validation
 
-`comfy_identity_adapter.inject_ipadapter` modifica el grafo **solo si** el creador pidió `reference_mode='ipadapter'` en un borrador con una referencia propia. Inserta `IPAdapterUnifiedLoader` y `IPAdapter` tras los nodos LoRA, con `LoadImage` de referencia; `KSampler.model` toma el MODEL condicionado, `CLIPTextEncode` conserva el CLIP de checkpoint/LoRA, y `KSampler.latent_image` permanece en `EmptyLatentImage` para dibujar nuevas expresiones. El camino img2img sigue conectando `LoadImage → VAEEncode`. `reference_preparation.identity_reference_png` normaliza referencia RGB y conserva el personaje completo mediante *letterbox*, en lugar de `ImageOps.fit` que recorta. El sondeo solo lee los endpoints ComfyUI propios de dos nodos y modelos necesarios; errores de plugin/modelos detienen el workflow. No hay instalación de pesos o descarga de código.
- 
-Las referencias editoriales son activos `foreground` previamente aprobados, del **mismo NPC y misma historia**, o imágenes ya propias de Galería; ambas deben permanecer sin modificar (SHA256) hasta generar. `sprite_provenance.py` normaliza `comfy-sprite-v2-ipadapter` con el preset/intensidad y hash de referencia; respaldos y forks viajan con el JSON, y datos anteriores v1 siguen válidos.
- 
-`sprite_alignment.py` ofrece una alarma de geometría, **no reconocimiento facial**. Calcula el rectángulo de píxeles alfa visibles (umbral 128) y mide desviación del centro y razón de escala respecto a la expresión neutral. El backend compara de nuevo los cinco PNG definitivos y su SHA256 antes de aprobar, de modo que una vista previa reemplazada no se publica; si detecta drift geométrico obliga a una confirmación editorial explícita. La interfaz no convierte las alarmas en certificaciones de identidad.
+`comfy_runtime.render` accepts `prompt_id` containing only ASCII alphanumerics, hyphens, underscores (max 100), preventing an upstream response from injecting `/history/<id>` routes. It accepts only valid `output` items from the Noble SaveImage node and path-free filenames; ComfyUI's reported subfolder must be empty, matching fixed Noble `filename_prefix`.
 
-## RMBG neuronal con máscara independiente (v3/v4 sprite workflows)
+The client never interprets an upstream filename as a Noble local filesystem path. `tests/test_comfy_runtime.py` covers malicious responses before querying `/view`.
 
-`comfy_matting.py` define un registro cerrado de modos de recorte neuronal. El backend valida `/object_info/{RMBG,BiRefNetRMBG,MaskToImage}` y `/models/rmbg` sin ejecutar el modelo, comparando los archivos de pesos/configuración requeridos según el upstream del plugin. Falla con 422 cuando falta algún elemento en lugar de cambiar silenciosamente a croma o iniciar una descarga desde Noble. Los modelos/neuronales no son necesarios para el resto del lector.
+## IPAdapter Plus and editorial alignment
 
-En cada solicitud manual, el workflow existente se extiende con `VAEDecode[6] → (RMBG o BiRefNetRMBG)[23]` con `background='Alpha'` y `unload_model=true`. Se conectan dos salidas: `IMAGE` del matting a `SaveImage[7]`, y `MASK` a `MaskToImage[24] → SaveImage[25]`. `comfy_runtime.render_outputs` recupera ambas imágenes de un **único ID de trabajo**, con validación de salida/completitud antes de solicitar `/view`. `transparent_sprite_from_matte` convierte la máscara a alfa dentro de Pillow, preservando contornos suaves; no confía en que `SaveImage` mantenga transparencia del tensor. La publicación transaccional sigue exigiendo cinco vistas válidas y aprobación humana.
+`comfy_identity_adapter.inject_ipadapter` changes a graph **only when** the author requests `reference_mode='ipadapter'` using an owned reference for a particular NPC draft.
 
-`SpriteDraft.settings_json.cutout_mode` es un atributo de snapshot, predeterminado `chroma_green` para borradores previos. Las imágenes aceptadas almacenan `quality.method` y su origen de modelo en `creator_media_assets.generation_json`: v3 con recorte neuronal, v4 cuando además se usa IPAdapter. El validador de procedencia exige correspondencia modelo↔modo↔método, rechaza archivos manipulados y conserva archivos v1/v2. La pertenencia a historia/NPC, SHA256 de referencia, calidad de contornos y gate de siluetas previas se mantienen intactos.
+It adds `IPAdapterUnifiedLoader` and `IPAdapter` after optional LoRA nodes and uses `LoadImage` for the reference. `KSampler.model` receives the conditioned model; `CLIPTextEncode` retains checkpoint/LoRA CLIP, and `KSampler.latent_image` stays `EmptyLatentImage` for newly drawn expressions. The img2img alternative remains `LoadImage → VAEEncode`.
+
+`reference_preparation.identity_reference_png` letterboxes the whole character as RGB rather than cropping with `ImageOps.fit`. Preflight reads only expected ComfyUI plugin-node/model endpoints; missing dependencies fail visibly. No automatic weight or code download occurs.
+
+Owned gallery images or previously approved `foreground` for the **same NPC/story** must remain unchanged under SHA-256. `sprite_provenance.py` persists `comfy-sprite-v2-ipadapter` with preset, strength, reference digest; backups/forks preserve this structure and older v1 data.
+
+`sprite_alignment.py` performs **geometry warnings, not face recognition**: calculate visible-alpha bounding box with threshold 128; compare center drift and scale against neutral. Before publishing, revalidate five final PNGs/SHA-256. Significant displacement requires explicit creator acceptance instead of mislabeling a face as verified.
+
+## Neural RMBG with separate IMAGE/MASK outputs (v3/v4)
+
+`comfy_matting.py` defines a closed registry of neural cutout modes. The backend inspects `/object_info/{RMBG,BiRefNetRMBG,MaskToImage}` and `/models/rmbg` without running inference, checking required files/config for each model. Missing dependencies yield 422 rather than silent chroma fallback or a download.
+
+An explicitly requested draft extends the graph with `VAEDecode[6] → (RMBG or BiRefNetRMBG)[23]`, with `background='Alpha'` and `unload_model=true`. Two outputs are saved: processed `IMAGE → SaveImage[7]` and `MASK → MaskToImage[24] → SaveImage[25]`.
+
+`comfy_runtime.render_outputs` retrieves **both images from one job ID** after output completeness/path validation. `transparent_sprite_from_matte` uses the grayscale mask as soft Pillow alpha instead of assuming SaveImage preserves four tensor channels. Five validated previews and explicit human approval remain necessary.
+
+`SpriteDraft.settings_json.cutout_mode` defaults to `chroma_green` for older drafts. Published `creator_media_assets.generation_json` stores `quality.method` and matting model: v3 for neural cutout, v4 with IPAdapter as well. Provenance validation enforces consistent mode/model/method combinations, rejects tampering, and retains compatibility with older v1/v2 assets.
+
+Story/NPC ownership, reference SHA-256, edge quality, and geometry acceptance gates still apply.
