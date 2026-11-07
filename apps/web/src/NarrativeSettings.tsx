@@ -113,8 +113,8 @@ export function NarrativeSettings() {
           }}>
             <option value="ollama">Ollama (API local)</option>
             <option value="koboldcpp">KoboldCpp (API compatible)</option>
-            <option value="openrouter">OpenRouter (modelos por API)</option>
-            <option value="worker" disabled={!config.worker_id}>Worker GPU remoto (Red y workers)</option>
+            <option value="openrouter">OpenRouter (API models)</option>
+            <option value="worker" disabled={!config.worker_id}>Remote GPU worker (Network & Workers)</option>
           </select>
         </label>
         <label>Provider address
@@ -240,15 +240,13 @@ export function NarrativeSettings() {
             <strong>Estimated prompt budget</strong>
             <p>{inspectorData.estimated_prompt_tokens} estimated input tokens + {inspectorData.reserved_output_tokens} reserved output tokens / {inspectorData.context_window_tokens} configured context-window tokens.</p>
             {inspectorData.estimated_overflow && <p role="alert">
-              Posible desbordamiento: entrada + salida estimadas superan la ventana.
+              Possible overflow: estimated input and output exceed the context window.
             </p>}
-            <p>Los tokens se estiman por caracteres, no mediante el tokenizador
-              of the model. KV cache is not measured and the supported length is not guaranteed
-              por el proveedor.</p>
+            <p>Token counts are estimated from characters, not the model's tokenizer. KV cache is not measured, and the provider does not guarantee the supported context length.</p>
             <details>
               <summary>View section breakdown</summary>
               <ul>{inspectorData.sections.map((block, i) => <li key={i}>
-                {block.name}: {block.characters} caracteres · ~{block.approx_tokens} tokens
+                {block.name}: {block.characters} characters · ~{block.approx_tokens} tokens
               </li>)}</ul>
             </details>
             <details>

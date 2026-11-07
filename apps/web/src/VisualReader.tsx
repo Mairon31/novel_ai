@@ -1078,7 +1078,7 @@ export function VisualReader({
         <header className="noble-backlog-heading">
           <div><span className="overline"><History size={15}/> READING HISTORY</span>
             <h2>Story backlog</h2>
-            <p>{turns.length} escenas cargadas de esta ruta. Turns from other branches are not mixed in.</p></div>
+            <p>{turns.length} scenes loaded from this route. Turns from other branches are not mixed in.</p></div>
           <button className="icon-button" aria-label="Close backlog"
             onClick={() => setBacklogOpen(false)}><X size={19}/></button>
         </header>

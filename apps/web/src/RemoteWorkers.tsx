@@ -110,12 +110,12 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
         <input aria-label="Worker name" placeholder="My Colab GPU" value={name}
           onChange={e => setName(e.target.value)} maxLength={80}/></label>
       <label className="workspace-pref-field">URL Cloudflare HTTPS
-        <input aria-label="URL del worker" placeholder="https://mi-gpu.trycloudflare.com"
+        <input aria-label="Worker URL" placeholder="https://my-gpu.trycloudflare.com"
           value={url} onChange={e => setUrl(e.target.value)} maxLength={256}
           spellCheck={false}/></label>
-      <label className="workspace-pref-field">Token del worker (Bearer)
-        <input aria-label="Token del worker" type="password" autoComplete="off"
-          placeholder="Token secreto de al menos 12 caracteres" value={token}
+      <label className="workspace-pref-field">Worker token (Bearer)
+        <input aria-label="Worker token" type="password" autoComplete="off"
+          placeholder="Secret token with at least 12 characters" value={token}
           maxLength={512} onChange={e => setToken(e.target.value)}/></label>
       <button className="secondary-button" disabled={busy || name.trim().length < 2
         || !url.startsWith('https://') || token.trim().length < 12} onClick={() => void add()}>
@@ -152,15 +152,15 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <button className="secondary-button" disabled={busy || !model}
         onClick={() => void measure()}>
         {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCw size={16}/>}
-        Medir respuesta real</button>
+        Measure real response</button>
       {benchmark && <div className="noble-worker-benchmark" role="status">
         <strong>{benchmark.success ? 'Generation test completed' : 'Test failed'}</strong>
-        <span>Primer texto: {benchmark.ttft_ms == null
+        <span>Time to first text: {benchmark.ttft_ms == null
           ? 'No data' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
         <span>Total duration: {benchmark.duration_ms.toFixed(0)} ms</span>
-        <span>Caracteres de salida: {benchmark.output_characters}</span>
+        <span>Output characters: {benchmark.output_characters}</span>
         <small>This is one test request. For p50/p95 latency and sampled VRAM
-          utiliza el benchmark del notebook Colab.</small>
+          use the Colab notebook benchmark.</small>
       </div>}
 
     </div>}
@@ -169,7 +169,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <div className="noble-worker-health-stats">
         <div><span>Connection</span><strong>{probe.latency_ms === undefined
           ? 'Unavailable' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
-        <div><span>Motor</span><strong>{probe.health?.engine_status === 'ready'
+        <div><span>Engine</span><strong>{probe.health?.engine_status === 'ready'
           ? 'Available' : probe.health?.engine_status === 'unavailable'
             ? 'No response' : 'No telemetry'}</strong></div>
         <div><span>Time to first byte</span><strong>
@@ -198,7 +198,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       The tunnel must authenticate all bearer requests. Noble AI rejects workers accepting invalid tokens. Only compatible LLM endpoints are supported; Colab is not started automatically and no files are shared.
     </div>
     <p className="noble-worker-guide"><Server size={15}/> Worker setup: run Noble AI's authenticated proxy on the GPU computer and expose only that proxy
-      con cloudflared. <a target="_blank" rel="noreferrer"
+      with cloudflared. <a target="_blank" rel="noreferrer"
         href="https://github.com/Mairon31/novel_ai/blob/master/docs/WORKERS.md">
         View instructions <RefreshCw size={13}/></a></p>
   </div>;

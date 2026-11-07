@@ -158,7 +158,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
     </div>}
 
     {installed && <>
-      <h4>Checkpoints administrados por Noble AI ({installed.models.length})</h4>
+      <h4>Checkpoints managed by Noble AI ({installed.models.length})</h4>
       {installed.models.map(model => {
         // ComfyUI on Windows may report native backslash paths. Preserve the
         // exact spelling reported by the provider when saving the selection.

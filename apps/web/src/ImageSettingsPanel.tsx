@@ -6,7 +6,7 @@ import { ComfyRuntimePanel } from './ComfyRuntimePanel';
 import type { ImageSettings, ImageStatus, ImageSamplerOptions, Settings, ResourceConfig, ResourceStatus } from './types';
 
 const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
-  {id: 'euler', label: 'Euler (compatible por defecto)'},
+  {id: 'euler', label: 'Euler (default compatible)'},
   {id: 'euler_ancestral', label: 'Euler ancestral'},
   {id: 'dpmpp_2m', label: 'DPM++ 2M'},
   {id: 'dpmpp_sde', label: 'DPM++ SDE'},
@@ -15,7 +15,7 @@ const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
   {id: 'uni_pc', label: 'UniPC'},
 ];
 const SCHEDULERS: Array<{id: ImageSettings['scheduler']; label: string}> = [
-  {id: 'normal', label: 'Normal (compatible por defecto)'},
+  {id: 'normal', label: 'Normal (default compatible)'},
   {id: 'karras', label: 'Karras'},
   {id: 'exponential', label: 'Exponential'},
   {id: 'sgm_uniform', label: 'SGM Uniform'},
@@ -101,18 +101,18 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       setMessage('Noble AI-managed ComfyUI started at ' + url);
     }}/>
     <div className="workspace-panel">
-      <h3><Image size={18}/> Escenas con ComfyUI</h3>
+      <h3><Image size={18}/> Scenes with ComfyUI</h3>
       <p>You can start an existing ComfyUI installation here or connect an external one. A compatible checkpoint is required. The reader's Illustrate action replaces the current scene only after a successful render.</p>
       <label className="workspace-pref-field">Illustration policy
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
-          <option value="manual">On demand (funcional)</option>
+          <option value="manual">On demand (available)</option>
           <option value="scene">Scenes (automatic detection pending; manual button)</option>
-          <option value="off">Desactivadas</option>
+          <option value="off">Disabled</option>
         </select>
       </label>
       {image ? <div className="workspace-field-grid">
-        <label className="workspace-pref-field">ComfyUI local
+        <label className="workspace-pref-field">Local ComfyUI
           <input value={image.base_url} disabled={busy}
             onChange={e => change('base_url', e.target.value)} placeholder="http://127.0.0.1:8188"/>
         </label>

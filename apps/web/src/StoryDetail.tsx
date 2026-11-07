@@ -86,11 +86,11 @@ export function StoryDetail({
       <div className="noble-story-detail-overview">
         <div><UserRound size={18}/><span>Protagonist</span><strong>{story.protagonist_name || 'Not assigned'}</strong></div>
         <div><BookOpen size={18}/><span>Intervenciones</span><strong>{turns.length}</strong></div>
-        <div><CalendarDays size={18}/><span>Creada</span><strong>{date(story.created_at)}</strong></div>
-        <div><Clock3 size={18}/><span>Actualizada</span><strong>{date(story.updated_at)}</strong></div>
+        <div><CalendarDays size={18}/><span>Created</span><strong>{date(story.created_at)}</strong></div>
+        <div><Clock3 size={18}/><span>Updated</span><strong>{date(story.updated_at)}</strong></div>
       </div>
       <article className="noble-story-detail-resume">
-        <span className="overline">{last ? 'TU AVENTURA' : 'EL MUNDO'}</span>
+        <span className="overline">{last ? 'YOUR ADVENTURE' : 'THE WORLD'}</span>
         <h2>{last ? 'Where your story left off' : 'Before you begin'}</h2>
         <p>{last ? last.assistant_text.slice(0, 700) :
           preview(publicPlot || story.premise, story.protagonist_name)}</p>
@@ -116,8 +116,8 @@ export function StoryDetail({
           <GitBranch size={18}/>
           <span><strong>{branch.title}</strong><small>
             {branch.depth === 0 ? 'Main story' : 'Alternate branch'}
-            {' · '}{branch.turn_count} escenas guardadas
-            {branch.is_selected ? ' · Ruta actual' : ''}
+            {' · '}{branch.turn_count} saved scenes
+            {branch.is_selected ? ' · Current route' : ''}
           </small></span>
           {!branch.is_selected && <ArrowRight size={16}/>}
         </button>)}
@@ -164,7 +164,7 @@ export function StoryDetail({
           <p>{preview(opening, story.protagonist_name)}</p>
           <button className="secondary-button" disabled={openingBusy}
             onClick={() => onStartOpening(index)}>
-            <Play size={16}/> {openingBusy ? 'Guardando inicio...' : 'Comenzar con esta apertura'}
+            <Play size={16}/> {openingBusy ? 'Saving opening...' : 'Start with this opening'}
             <ArrowRight size={16}/>
           </button>
         </article>)}

@@ -106,12 +106,12 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n} tokens</option>)}
           </select>
         </label>
-        <label>Port local (loopback)
+        <label>Local port (loopback)
           <input aria-label="Port KoboldCpp" type="number" min={1024} max={65535}
             value={port} onChange={e => setPort(Number(e.target.value))}/>
         </label>
       </div>
-      <p className="narrative-helper">Necesitas tener el ejecutable oficial KoboldCpp descargado.
+      <p className="narrative-helper">You need to download the official KoboldCpp executable.
         Noble AI launches only a registered GGUF and binds to 127.0.0.1. Memory settings are configurable, but 12/16 GB compatibility still requires physical measurement.</p>
     </>}
     {error && <p className="narrative-error" role="alert"><CircleAlert size={15}/> {error}</p>}

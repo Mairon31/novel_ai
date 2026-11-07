@@ -127,7 +127,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       window.dispatchEvent(new CustomEvent('noble-shortcuts-changed', { detail: next.shortcuts_enabled }));
       if (field === 'accent' || field === 'font_scale' || field === 'reader_layout')
         applyAppearance(next);
-      setFeedback('Preferencia guardada.');
+      setFeedback('Preference saved.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
