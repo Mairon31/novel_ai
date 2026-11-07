@@ -18,10 +18,10 @@ test('shareable story URLs survive reload and browser Back/Forward', async ({ pa
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
-  await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
+  await expect(page.getByRole('region', { name: 'Details of ' + story.title }))
     .toBeVisible();
   await page.reload();
-  await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
+  await expect(page.getByRole('region', { name: 'Details of ' + story.title }))
     .toBeVisible();
 
   await page.getByRole('button', { name: /Start story|Continue historia/ }).click();
@@ -38,7 +38,7 @@ test('shareable story URLs survive reload and browser Back/Forward', async ({ pa
   await expect(page.locator('.noble-reader-chapter')).toContainText(story.title);
   await page.goBack();
   await expect(page).toHaveURL(new RegExp('#/historia/' + story.id + '$'));
-  await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
+  await expect(page.getByRole('region', { name: 'Details of ' + story.title }))
     .toBeVisible();
   await page.goForward();
   await expect(page.locator('.noble-reader-chapter')).toContainText(story.title);
@@ -100,6 +100,6 @@ test('first-time setup does not discard a bookmarked story URL', async ({ page }
   await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
   await expect(setup).toBeHidden();
   await expect(page).toHaveURL(new RegExp('#/historia/' + story.id + '$'));
-  await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
+  await expect(page.getByRole('region', { name: 'Details of ' + story.title }))
     .toBeVisible();
 });

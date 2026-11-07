@@ -30,15 +30,15 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     await page.getByLabel('Ficha visual del NPC').selectOption(visual.id);
     await page.getByLabel('NPC description').fill(
       'Aira protege las llaves del castillo antiguo de cristal.');
-    await page.getByLabel('Etiquetas visuales').fill('cabello negro, ojos verdes');
-    await page.getByLabel('Semilla visual').fill('6789');
+    await page.getByLabel('Visual tags').fill('cabello negro, ojos verdes');
+    await page.getByLabel('Visual seed').fill('6789');
     await page.getByRole('button', { name: 'Add character' }).click();
     await expect(page.getByText(/Ficha narrativa del personaje guardada/)).toBeVisible();
     await page.locator('.creator-character-list button').filter({ hasText: 'Aira' }).click();
-    await expect(page.getByLabel('Etiquetas visuales')).toHaveValue(
+    await expect(page.getByLabel('Visual tags')).toHaveValue(
       'cabello negro, ojos verdes');
-    await expect(page.getByLabel('Etiquetas visuales')).toBeDisabled();
-    await expect(page.getByLabel('Semilla visual')).toHaveValue('6789');
+    await expect(page.getByLabel('Visual tags')).toBeDisabled();
+    await expect(page.getByLabel('Visual seed')).toHaveValue('6789');
     await expect(page.getByLabel('Ficha visual del NPC')).toHaveValue(visual.id);
     const cast = await page.request.get('/api/v1/stories/' + story.id + '/creator/characters');
     expect(cast.status()).toBe(200);

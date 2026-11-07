@@ -66,10 +66,10 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await expect(page.getByLabel('Default Piper voice')).toHaveValue('voice-b.onnx');
   expect(writes).toBe(1);
   expect(previewCalls).toBe(0);
-  await expect(page.getByLabel('Velocidad Piper')).toHaveValue('1');
-  await page.getByLabel('Velocidad Piper').fill('0.85');
+  await expect(page.getByLabel('Piper speed')).toHaveValue('1');
+  await page.getByLabel('Piper speed').fill('0.85');
   await page.getByLabel('Piper voice noise').fill('0.75');
-  await page.getByLabel('Ruido de fonemas Piper').fill('0.95');
+  await page.getByLabel('Piper phoneme noise').fill('0.95');
   await expect(page.getByRole('button', { name: 'Preview selected voice' })).toBeDisabled();
   await expect(page.getByText('Save the updated settings before testing the voice.')).toBeVisible();
   await page.getByRole('button', { name: 'Save Piper settings' }).click();
@@ -82,9 +82,9 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   expect(previewCalls).toBe(1);
   await page.reload();
   await openSettings();
-  await expect(page.getByLabel('Velocidad Piper')).toHaveValue('0.85');
+  await expect(page.getByLabel('Piper speed')).toHaveValue('0.85');
   await expect(page.getByLabel('Piper voice noise')).toHaveValue('0.75');
-  await expect(page.getByLabel('Ruido de fonemas Piper')).toHaveValue('0.95');
+  await expect(page.getByLabel('Piper phoneme noise')).toHaveValue('0.95');
   expect(parameterWrites).toBe(1);
   expect(previewCalls).toBe(1);
 });

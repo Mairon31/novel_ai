@@ -38,9 +38,9 @@ test('story-first bundled hub installs an independent playable world without a m
     expect(body.lore_installed).toBe(3);
     expect(body.openings_installed).toBe(3);
 
-    const detail = page.getByRole('region', { name: 'Detalle de Las mareas de vidrio' });
+    const detail = page.getByRole('region', { name: 'Details of Las mareas de vidrio' });
     await expect(detail).toBeVisible();
-    await expect(detail.getByRole('heading', { name: /Characters de este mundo/ })).toBeVisible();
+    await expect(detail.getByRole('heading', { name: /Characters in this world/ })).toBeVisible();
     await expect(detail.getByRole('heading', { name: 'Choose how the story begins' })).toBeVisible();
     await expect(detail.getByText('Sara recoge un fragmento de vidrio')).toBeVisible();
     const openings = detail.locator('.noble-detail-opening');
@@ -79,7 +79,7 @@ test('Discover Stories has its own shareable route and installs into the library
     expect(reply.status()).toBe(201);
     const data = await reply.json() as { story: { id: string } };
     await expect(page).toHaveURL(new RegExp('#/historia/' + data.story.id + '$'));
-    await expect(page.getByRole('region', { name: 'Detalle de El jardín de las horas rotas' }))
+    await expect(page.getByRole('region', { name: 'Details of El jardín de las horas rotas' }))
       .toBeVisible();
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Choose how the story begins' }))

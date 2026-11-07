@@ -33,24 +33,24 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await expect(page.getByRole('button', { name: /Characters \(2\)/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'World state' }).click();
-  await page.getByLabel('Lugar del mundo').fill('Puerto de niebla');
-  await page.getByLabel('Momento del mundo').fill('Anochecer');
-  await page.getByLabel('Clima del mundo').fill('Lluvia intensa');
-  await page.getByLabel('Inventario del mundo').fill('Mapa del faro\nLlave oxidada');
-  await page.getByRole('checkbox', { name: 'Presente Aira' }).check();
+  await page.getByLabel('World location').fill('Puerto de niebla');
+  await page.getByLabel('World time of day').fill('Anochecer');
+  await page.getByLabel('World weather').fill('Lluvia intensa');
+  await page.getByLabel('World inventory').fill('Mapa del faro\nLlave oxidada');
+  await page.getByRole('checkbox', { name: 'Present Aira' }).check();
   await page.getByLabel('Relationship with Aira').fill('Aliada de Luna');
 
   await page.getByLabel('New flag name').fill('faro_encendido');
-  await page.getByRole('button', { name: 'Añadir indicador' }).click();
-  await page.getByRole('checkbox', { name: 'Indicador faro_encendido' }).check();
+  await page.getByRole('button', { name: 'Add flag' }).click();
+  await page.getByRole('checkbox', { name: 'Flag faro_encendido' }).check();
 
-  await page.getByRole('button', { name: 'Añadir hecho' }).click();
-  await page.getByLabel('Texto del hecho 1').fill(
+  await page.getByRole('button', { name: 'Add fact' }).click();
+  await page.getByLabel('Fact text 1').fill(
     'La llave secreta del rey está escondida bajo el faro.');
   await page.getByRole('checkbox', { name: 'Hecho público 1' }).uncheck();
-  await page.getByRole('checkbox', { name: 'Testigo Aira del hecho 1' }).check();
+  await page.getByRole('checkbox', { name: 'Witness Aira for fact 1' }).check();
   await page.getByRole('button', { name: 'Guardar estado del mundo' }).click();
-  await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('Estado confirmado.');
+  await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('State confirmed.');
 
   const response = await page.request.get('/api/v1/stories');
   expect(response.ok()).toBeTruthy();
@@ -78,9 +78,9 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   expect(opening.ok()).toBeTruthy();
   const turnId = (await opening.json() as { id: string }).id;
 
-  await page.getByLabel('Lugar del mundo').fill('Bosque del futuro');
+  await page.getByLabel('World location').fill('Bosque del futuro');
   await page.getByRole('button', { name: 'Guardar estado del mundo' }).click();
-  await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('Estado confirmado.');
+  await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('State confirmed.');
   const archived = await page.request.get(base + '/world-state/turns/' + turnId);
   expect(archived.ok()).toBeTruthy();
   expect((await archived.json()).state.location).toBe('Puerto de niebla');
@@ -96,9 +96,9 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.locator('.creator-project').filter({ hasText: title }).first().click();
   await page.getByRole('button', { name: 'World state' }).click();
-  await expect(page.getByLabel('Lugar del mundo')).toHaveValue('Bosque del futuro');
+  await expect(page.getByLabel('World location')).toHaveValue('Bosque del futuro');
   await page.getByText('History de instantáneas por turno').click();
   await page.getByLabel('Historical world turn').selectOption(turnId);
-  await page.getByRole('button', { name: 'Ver instantánea' }).click();
+  await page.getByRole('button', { name: 'View snapshot' }).click();
   await expect(page.getByText('Lugar: Puerto de niebla')).toBeVisible();
 });
