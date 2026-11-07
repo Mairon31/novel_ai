@@ -19,13 +19,13 @@ test('author can inspect full prepared prompt without running an LLM', async ({ 
   await page.getByRole('button', { name: 'Narration', exact: true }).click();
   const inspector = page.getByRole('region', { name: 'Inspector de contexto narrativo' });
   await expect(inspector).toBeVisible();
-  await inspector.getByLabel('Historia para inspeccionar').selectOption(story.id);
+  await inspector.getByLabel('Story to inspect').selectOption(story.id);
   await inspector.getByLabel('Intervención para inspeccionar').fill(
     'Abro un libro escondido en el palacio.');
   await inspector.getByRole('button', { name: 'Inspeccionar contexto' }).click();
   await expect(inspector.getByText('Presupuesto estimado del prompt')).toBeVisible();
   await expect(inspector.getByText(/tokens aproximados de entrada/)).toBeVisible();
-  await inspector.getByText('Ver todos los mensajes enviados al motor').click();
+  await inspector.getByText('View all messages sent to the engine').click();
   await expect(inspector.locator('pre').filter({
     hasText: 'El protagonista hace: Abro un libro escondido en el palacio.',
   })).toBeVisible();

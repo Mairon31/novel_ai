@@ -69,18 +69,18 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await panel.getByLabel('Perfil de VRAM ComfyUI').selectOption('lowvram');
   await expect(panel.getByText('Hay cambios sin guardar')).toBeVisible();
   await panel.getByRole('button', { name: 'Validate installation' }).click();
-  await expect(panel.getByText('Instalación ComfyUI y ejecutable Python verificados.')).toBeVisible();
+  await expect(panel.getByText('ComfyUI installation and Python executable verified.')).toBeVisible();
   expect(validations).toBe(1);
   expect(launches).toBe(0);
-  await panel.getByRole('button', { name: 'Guardar arranque de ComfyUI' }).click();
+  await panel.getByRole('button', { name: 'Save ComfyUI launch' }).click();
   await expect(panel.getByText('Settings de ComfyUI guardada.')).toBeVisible();
   await panel.getByRole('button', { name: 'Iniciar ComfyUI' }).click();
   await expect(panel.getByText('Ready', { exact: true })).toBeVisible();
   await expect(panel.getByText('mock GPU', { exact: false })).toBeVisible();
   await expect(page.getByLabel('ComfyUI local')).toHaveValue('http://127.0.0.1:19080');
   expect(launches).toBe(1);
-  await expect(panel.getByRole('button', { name: 'Guardar arranque de ComfyUI' })).toBeDisabled();
-  await panel.getByRole('button', { name: 'Ver registros ComfyUI' }).click();
+  await expect(panel.getByRole('button', { name: 'Save ComfyUI launch' })).toBeDisabled();
+  await panel.getByRole('button', { name: 'View ComfyUI logs' }).click();
   await expect(panel.getByText('ComfyUI launched on 127.0.0.1:19080')).toBeVisible();
   await panel.getByRole('button', { name: 'Stop ComfyUI' }).click();
   await expect(panel.getByText('Detenido', { exact: true })).toBeVisible();
@@ -89,8 +89,8 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await expect(panel.getByLabel('Puerto de ComfyUI')).toHaveValue('19080');
   await expect(panel.getByLabel('Perfil de VRAM ComfyUI')).toHaveValue('lowvram');
   expect(launches).toBe(1);
-  await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
+  await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();
   await expect(panel).toHaveCount(0);
   expect(stopping).toBe(1);
   await page.screenshot({ path: 'test-results/' + test.info().project.name +

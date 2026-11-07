@@ -18,7 +18,7 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByRole('button', { name: 'Create project', exact: true }).click();
   const modal = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'El castillo visual ' + test.info().project.name;
-  await modal.getByLabel('Título').fill(title);
+  await modal.getByLabel('Title').fill(title);
   await modal.getByLabel('World premise')
     .fill('Una viajera conoce a Aira en un castillo iluminado en la ciudad.');
   await modal.getByLabel('Protagonist').fill('Luna');

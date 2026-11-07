@@ -13,7 +13,7 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.getByRole('button', { name: 'Create project', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'Archivo de los mapas ' + test.info().project.name;
-  await dialog.getByLabel('Título').fill(title);
+  await dialog.getByLabel('Title').fill(title);
   await dialog.getByLabel('World premise').fill(
     'Una exploradora visita las ruinas perdidas en un reino lleno de secretos.');
   await dialog.getByLabel('Protagonist').fill('Luna');
@@ -67,7 +67,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await page.getByRole('button', { name: 'Create project', exact: true }).click();
   const creation = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'Testigo del sello ' + test.info().project.name;
-  await creation.getByLabel('Título').fill(title);
+  await creation.getByLabel('Title').fill(title);
   await creation.getByLabel('World premise').fill(
     'Dos personajes exploran una ciudad donde solo uno conoce un antiguo secreto.');
   await creation.getByLabel('Protagonist').fill('Luna');
@@ -75,7 +75,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await expect(creation).toBeHidden();
 
   await page.getByRole('button', { name: /Characters \(0\)/ }).click();
-  await page.getByLabel('Nombre de NPC').fill('Aira');
+  await page.getByLabel('Name de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Aira conoce los senderos del reino, aunque evita hablar con viajeros.');
   await page.getByRole('button', { name: 'Add character' }).click();

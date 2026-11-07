@@ -57,10 +57,10 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: 'Images', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
-  await expect(page.getByLabel('Activar botones de voz bajo demanda')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Buscar checkpoints' }).click();
+  await expect(page.getByLabel('Enable on-demand speech buttons')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Find checkpoints' }).click();
   await page.getByLabel('Checkpoint').fill('story-model.safetensors');
-  await page.getByRole('button', { name: 'Comprobar muestreo ComfyUI' }).click();
+  await page.getByRole('button', { name: 'Check ComfyUI sampling' }).click();
   expect(samplingChecks).toBe(1);
   await expect(page.getByText('Compatibilidad KSampler: selección compatible.')).toBeVisible();
   await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_sde');
@@ -78,25 +78,25 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   expect(params.scheduler).toBe('karras');
   expect(params.style_preset).toBe('anime_cinematic');
   await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
-  await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
+  await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();
   await page.getByRole('button', { name: 'Images', exact: true }).click();
   await expect(page.getByLabel('Muestreador ComfyUI')).toHaveValue('dpmpp_2m');
   await expect(page.getByLabel('Planificador ComfyUI')).toHaveValue('karras');
   await expect(page.getByLabel('Illustration style')).toHaveValue('anime_cinematic');
-  await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
+  await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   // Speech preferences initialize independently after switching tabs.
-  await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeEnabled();
-  await page.getByLabel('Activar botones de voz bajo demanda').check();
-  await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeChecked();
+  await expect(page.getByLabel('Enable on-demand speech buttons')).toBeEnabled();
+  await page.getByLabel('Enable on-demand speech buttons').check();
+  await expect(page.getByLabel('Enable on-demand speech buttons')).toBeChecked();
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.getByRole('button', { name: 'New story' }).click();
   const wizard = page.getByRole('dialog', { name: 'Create a new story' });
-  await wizard.getByLabel('Título').fill('Laboratorio multimedia');
+  await wizard.getByLabel('Title').fill('Laboratorio multimedia');
   await wizard.getByLabel('World premise').fill('Una biblioteca escondida bajo la montaña.');
   await wizard.getByRole('button', { name: 'Choose protagonist' }).click();
   await wizard.getByLabel('Protagonist name').fill('Luna');

@@ -31,10 +31,10 @@ test('story detail shows a non-destructive branch tree and reader switches route
   const region = page.getByRole('region', { name: 'Narrative branch tree' });
   await expect(region).toBeVisible();
   await expect(region.locator('.noble-route-node')).toHaveCount(3);
-  await expect(region.getByText('Historia principal')).toBeVisible();
+  await expect(region.getByText('Main story')).toBeVisible();
   await region.getByRole('button', { name: 'Abrir ruta ' + grandson.title }).click();
   await expect(page.getByRole('heading', { name: grandson.title, exact: true })).toBeVisible();
-  await page.getByRole('button', { name: /Comenzar historia|Continue historia/ }).click();
+  await page.getByRole('button', { name: /Start story|Continue historia/ }).click();
   const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });
   await expect(selector).toBeVisible();
   await expect(selector.locator('option')).toHaveCount(3);

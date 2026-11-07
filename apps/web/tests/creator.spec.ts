@@ -15,7 +15,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await page.getByRole('button',{name:'Create project',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Create story project'});
   const projectTitle = 'El mundo de Aira '+test.info().project.name;
-  await dialog.getByLabel('Título').fill(projectTitle);
+  await dialog.getByLabel('Title').fill(projectTitle);
   await dialog.getByLabel('World premise').fill(
     'La aventura comienza en una biblioteca secreta bajo una montaña encantada.');
   await dialog.getByLabel('Protagonist').fill('Luna');
@@ -33,7 +33,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await expect(page.getByText(/Contenido del creador guardado/)).toBeVisible();
 
   await page.getByRole('button',{name:/Characters \(0\)/}).click();
-  await page.getByLabel('Nombre de NPC').fill('Aira');
+  await page.getByLabel('Name de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Una bibliotecaria dedicada que protege los registros secretos de la ciudad.');
   await page.getByLabel('Personalidad de NPC').fill('Sarcástica, reservada y muy observadora.');
