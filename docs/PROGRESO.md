@@ -895,3 +895,13 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] URLs directas `#/configuracion/images`, `/voice`, `/about` y `/updates`, soporte de recarga/atrás/adelante y enlace heredado `/multimedia` que abre Imágenes; no se alteraron preferencias SQLite, API ni motores.
 - [x] Tests antiguos de imágenes, Piper y Ajustes migrados; nuevo `settings-separation.spec.ts` con validación de cuatro pantallas, APIs aisladas, recarga, navegación e interfaz móvil/escritorio. Corregidos selectores ambiguos detectados por CI intermedia.
 - [x] **N-25 cerrado en código y CI:** [run #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131) con **381/381 Python + 80/80 Playwright** desktop/móvil y Vite PASS, incluyendo capturas de Imágenes, Voz, Acerca y Actualizaciones y pruebas de deep link/aislamiento API. Las pruebas de navegador usan API local, pero no incluyen revisión humana de capturas ni instalaciones físicas GPU/Piper (pendientes N-21/N-24).
+
+
+## 2026-11-06 · N-21, controles avanzados de ilustración anime (CI pendiente)
+
+- [x] `ImageSettings` extiende persistencia SQLite con `sampler_name`, `scheduler` y `style_preset`; validación Pydantic restringe los valores admitidos. Configuraciones anteriores se leen aplicando defaults y utilidades antiguas de grafo conservan Euler/Normal.
+- [x] `workflow()` usa realmente los valores en KSampler; `styled_prompt()` añade ADN visual elegido solo al invocar una ilustración, con anime de fantasía como preset global inicial, y `none` que no modifica el prompt.
+- [x] Endpoint explícito `GET /api/v1/images/sampler-options`: inspecciona el `object_info/KSampler` del ComfyUI configurado, expone intersección de métodos probados y valida métodos no predeterminados antes de enviar el prompt, fallando con 422 si no están instalados.
+- [x] Metadatos del render y firma de caché guardan muestreador, scheduler y estilo, con compatibilidad de archivos antiguos; pruebas de importación de procedencia malformada previenen datos no autorizados.
+- [x] UI Imágenes incluye desplegables, comprobación manual de compatibilidad, guardado y aviso de no compatibilidad sin abrir otra interfaz. Test navegador verifica persistencia entre paneles y bloqueo de ajustes conocidos no compatibles.
+- [ ] CI integral pendiente y prueba física con ComfyUI real sin mocks pendiente. N-21 completo sigue abierto: instalación de modelos de imagen y ajustes por historia/escena y TTS de múltiples proveedores.

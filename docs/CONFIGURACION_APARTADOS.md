@@ -38,3 +38,12 @@ Se conserva `#/configuracion` para el resumen de ajustes y `#/configuracion/mult
 La suite genera **capturas de los cuatro apartados para escritorio y móvil** en `test-results/` como artefacto de GitHub Actions. La prueba `settings-separation.spec.ts` valida rutas persistentes, navegador Atrás, compatibilidad `/multimedia`, aislamiento de APIs imagen/voz y ausencia de descargas automáticas al abrir ajustes. `multimedia.spec.ts`, `tts-preferences.spec.ts` y `piper-installer.spec.ts` confirman que siguen operativos los controles anteriores. [Run #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131).
 
 La revisión visual manual de las capturas sigue disponible para mejoras de estética; no se confunde con validación de motores reales en GPU.
+
+
+## N-21 — Ajustes de difusión y dirección anime (primer tramo)
+
+La pestaña **Imágenes** ahora contiene tres controles efectivos: muestreador, planificador y preset visual anime. Sus valores residen en la configuración SQLite de imagen y llegan al workflow estándar de ComfyUI. `anime_fantasy` es el preset predeterminado, `anime_cinematic` modifica el encuadre e iluminación, `anime_watercolor` aplica dirección acuarela y `none` mantiene intacto el prompt generado por el planificador de escena. No se cambia el texto original del usuario.
+
+El botón **Comprobar muestreo ComfyUI** consulta `GET /api/v1/images/sampler-options`, que utiliza el endpoint local `/object_info/KSampler`, limita los resultados a los métodos conocidos por Noble y expone error si ComfyUI no responde. **Al generar**, los muestreadores/planificadores distintos de Euler/Normal se comprueban de nuevo contra el runtime, evitando enviar valores no disponibles. Euler/Normal mantiene compatibilidad con un ComfyUI que no exponga introspección.
+
+La semilla se sigue eligiendo por solicitud de escena, no como ajuste global en esta fase. La caché y los metadatos de galería diferencian el estilo y los parámetros, preservando imágenes antiguas. No incluye instalación de checkpoints, LoRA global por modelo, render automático inicial ni perfiles por historia; tareas N-21/N-22 pendientes. Ver [guía detallada](CONTROLES_IMAGEN.md).

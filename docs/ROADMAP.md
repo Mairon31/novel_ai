@@ -286,3 +286,8 @@ Los sistemas de Piper, ComfyUI, Creator Studio y Story Hub existentes se reutili
 ### Reorganización de Ajustes N-25 — implementada y validada (2026-11-06)
 
 Se implementó la separación física de la navegación y los componentes antes de ampliar los parámetros de imagen/TTS de N-21: **Imágenes** y **Voz / TTS** como pantallas independientes. Dividir asimismo **Acerca de Noble AI** y **Actualizaciones**, antes reunidas en «Sobre y actualizaciones». Mantener todo integrado dentro de Noble AI, **no** volver a juntar opciones no relacionadas por ahorrar pestañas. Preservar preferencias actuales, instalación de Piper/ComfyUI, controles de actualización y acceso móvil. `WorkspaceSettings.tsx` presenta navegación independiente; `CreativeSettings.tsx` fue eliminado y sustituido por componentes separados. [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131): 381 Python + 80 Playwright + Vite PASS. [Diseño y pruebas de aceptación](PLAN_HISTORIAS_ANIME_2026_11_06.md#9-n-25-separacion-de-paginas-de-configuracion).
+
+
+### N-21 · Primer tramo técnico: muestreo real y presets anime (2026-11-06)
+
+Código publicado: presets visuales aplicados al prompt, muestreador/scheduler persistidos y enviados a KSampler, consulta manual de compatibilidad y bloqueo de selección no válida antes de inferencia. Se mantiene **pendiente** el resto de N-21: instalación/gestión de checkpoints desde Noble, selección por historia/escena, parámetros de referencia/LoRA y TTS avanzado. [Documentación](CONTROLES_IMAGEN.md). CI final aún por observar.
