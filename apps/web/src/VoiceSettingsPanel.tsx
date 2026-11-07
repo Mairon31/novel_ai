@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
-import type { Settings, SpeechVoices, SpeechPreferences, PiperVoiceCatalog, PiperVoiceJob } from './types';
+import type { Settings, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob } from './types';
 
 /** Piper preferences, downloads and samples never initialize image generation. */
 export function VoiceSettingsPanel() {
   const [setup, setSetup] = useState<Settings | null>(null);
   const [voices, setVoices] = useState<SpeechVoices | null>(null);
   const [voicePreferences, setVoicePreferences] = useState<SpeechPreferences | null>(null);
+  const [synthesisConfig, setSynthesisConfig] = useState<PiperSynthesisConfig | null>(null);
+  const [savedSynthesis, setSavedSynthesis] = useState<PiperSynthesisConfig | null>(null);
   const [voiceCatalog, setVoiceCatalog] = useState<PiperVoiceCatalog | null>(null);
   const [voiceJobs, setVoiceJobs] = useState<PiperVoiceJob[]>([]);
   const [voiceAction, setVoiceAction] = useState<string | null>(null);
@@ -18,6 +20,10 @@ export function VoiceSettingsPanel() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const synthesisDirty = synthesisConfig && savedSynthesis &&
+    (synthesisConfig.length_scale !== savedSynthesis.length_scale ||
+     synthesisConfig.noise_scale !== savedSynthesis.noise_scale ||
+     synthesisConfig.noise_w !== savedSynthesis.noise_w);
   useEffect(() => () => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
   }, []);
@@ -43,9 +49,13 @@ export function VoiceSettingsPanel() {
 
   useEffect(() => {
     let mounted = true;
-    Promise.all([api.settings(), api.speechVoices(), api.speechPreferences()])
-      .then(([appSettings, speech, preferences]) => {
-        if (mounted) { setSetup(appSettings); setVoices(speech); setVoicePreferences(preferences); }
+    Promise.all([api.settings(), api.speechVoices(), api.speechPreferences(),
+                 api.piperSynthesisConfig()])
+      .then(([appSettings, speech, preferences, synthesis]) => {
+        if (mounted) {
+          setSetup(appSettings); setVoices(speech); setVoicePreferences(preferences);
+          setSynthesisConfig(synthesis); setSavedSynthesis(synthesis);
+        }
       }).catch((exc: Error) => { if (mounted) setError(exc.message); });
     return () => { mounted = false; };
   }, []);
@@ -104,6 +114,23 @@ export function VoiceSettingsPanel() {
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setBusy(false); }
+  }
+
+  async function savePiperParameters() {
+    if (!synthesisConfig || busy) return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      const saved = await api.savePiperSynthesisConfig(synthesisConfig);
+      setSynthesisConfig(saved); setSavedSynthesis(saved);
+      clearPreview();
+      setMessage('Parámetros Piper guardados para las próximas síntesis.');
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  function changePiperParameter(field: keyof PiperSynthesisConfig, value: number) {
+    clearPreview();
+    setSynthesisConfig(previous => previous ? { ...previous, [field]: value } : previous);
   }
 
   async function toggleSpeech(enabled: boolean) {
@@ -197,6 +224,39 @@ export function VoiceSettingsPanel() {
           <Check size={16}/> Guardar voz predeterminada
         </button>
       </div>}
+      <div className="noble-voice-synthesis workspace-field-grid">
+        <h4>Parámetros de síntesis Piper</h4>
+        <p>Estos parámetros se aplican a las muestras y a cada narración nueva.
+          No reproducen audio automáticamente.</p>
+        {synthesisConfig && <>
+          <label className="workspace-pref-field">Velocidad (duración de fonemas)
+            <input aria-label="Velocidad Piper" type="number" min={0.5} max={2}
+              step={0.05} value={synthesisConfig.length_scale} disabled={busy || previewBusy}
+              onChange={e => changePiperParameter('length_scale', Number(e.target.value))}/>
+            <small>1,0 es la velocidad normal; menor valor = voz más rápida.</small>
+          </label>
+          <label className="workspace-pref-field">Variación de la voz
+            <input aria-label="Ruido de voz Piper" type="number" min={0} max={1.5}
+              step={0.05} value={synthesisConfig.noise_scale} disabled={busy || previewBusy}
+              onChange={e => changePiperParameter('noise_scale', Number(e.target.value))}/>
+          </label>
+          <label className="workspace-pref-field">Variación de fonemas
+            <input aria-label="Ruido de fonemas Piper" type="number" min={0} max={1.5}
+              step={0.05} value={synthesisConfig.noise_w} disabled={busy || previewBusy}
+              onChange={e => changePiperParameter('noise_w', Number(e.target.value))}/>
+          </label>
+          <button className="secondary-button" type="button" disabled={busy || previewBusy ||
+            !Number.isFinite(synthesisConfig.length_scale) ||
+            synthesisConfig.length_scale < 0.5 || synthesisConfig.length_scale > 2 ||
+            !Number.isFinite(synthesisConfig.noise_scale) ||
+            synthesisConfig.noise_scale < 0 || synthesisConfig.noise_scale > 1.5 ||
+            !Number.isFinite(synthesisConfig.noise_w) ||
+            synthesisConfig.noise_w < 0 || synthesisConfig.noise_w > 1.5}
+            onClick={() => void savePiperParameters()}>
+            <Check size={16}/> Guardar parámetros Piper
+          </button>
+        </>}
+      </div>
       <div className="noble-voice-preview">
         <label className="workspace-pref-field">Texto para probar voz
           <input aria-label="Texto de muestra de voz" maxLength={400}
@@ -204,7 +264,7 @@ export function VoiceSettingsPanel() {
             onChange={e => { setPreviewText(e.target.value); clearPreview(); }}/>
         </label>
         <button type="button" className="secondary-button"
-          disabled={previewBusy || !voices?.available || !voices.voices.length ||
+          disabled={previewBusy || !!synthesisDirty || !voices?.available || !voices.voices.length ||
             previewText.trim().length < 10}
           onClick={() => void previewPiper()}>
           {previewBusy ? <LoaderCircle size={16} className="rotating"/> : <Volume2 size={16}/>}
@@ -212,6 +272,7 @@ export function VoiceSettingsPanel() {
         </button>
         {previewUrl && <audio aria-label="Reproducir prueba de voz" controls
           preload="none" src={previewUrl}/>}
+        {synthesisDirty && <small role="status">Guarda los parámetros nuevos antes de probar la voz.</small>}
         <small>Solo genera la muestra al pulsar Probar. Necesita Piper instalado y
           una voz ONNX/JSON válida; el audio no se añade a ninguna historia.</small>
       </div>

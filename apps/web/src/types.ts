@@ -238,6 +238,9 @@ export type IllustrationResult = {
   duration_ms: number; cached: boolean; applied_loras: AppliedCharacterLora[];
 };
 export type SpeechPreferences = { default_voice_id: string };
+export type PiperSynthesisConfig = {
+  length_scale: number; noise_scale: number; noise_w: number;
+};
 export type PiperVoiceCatalog = {
   source: string; language_focus: string; runtime: string; engine_installed: boolean;
   note: string; voices: Array<{
