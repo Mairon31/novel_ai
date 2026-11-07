@@ -1,316 +1,318 @@
-# Noble AI — contratos de API
+# Noble AI — API contracts and compatibility
 
-## Endpoints reales disponibles en P1 (2026-11-04)
+**Status:** versioned working endpoints plus historical contract evolution. This page describes software behavior observed at individual milestones. Verify a deployed build against the current FastAPI OpenAPI schema and tests before claiming it supports a particular optional provider. **API paths, JSON field identifiers, persisted UUIDs, and existing hash-based frontend routes stay unchanged even when the user interface is translated into English.**
 
-Los bloques anteriores describen **diseño futuro**, no deben confundirse con implementación completa. Esta es la tabla de endpoints **implementados ahora** para la etapa narrativa:
+## P1 — narration and managed KoboldCpp
 
-| Método/ruta | Uso real |
+| Method and endpoint | Contract |
 |---|---|
-| GET/PUT `/api/v1/narrative/config` | Proveedor Ollama/Kobold, URL loopback, modelo y parámetros |
-| GET `/api/v1/narrative/models` | Lista local del motor o `online:false` + error |
-| GET/POST `/api/v1/stories` | Biblioteca y alta de historia con premisa |
-| GET `/api/v1/stories/{story_id}` | Ficha de historia |
-| GET `/api/v1/stories/{story_id}/turns` | Turnos confirmados |
-| POST `/api/v1/stories/{story_id}/generate` | SSE `delta/done/error` de LLM; idempotente por UUID de solicitud |
-| GET `/api/v1/runtime/kobold/status` | Estado del proceso gestionado y salud del endpoint |
-| GET `/api/v1/runtime/kobold/installed` | GGUF registrados aptos para intentar arrancar |
-| POST `/api/v1/runtime/kobold/start` | Arranca **solo** ejecutable KoboldCpp seleccionado con GGUF registrado |
-| POST `/api/v1/runtime/kobold/stop` | Detiene proceso propio |
-| POST `/api/v1/runtime/kobold/activate` | Adopta el modelo anunciado por runtime en configuración del narrador |
+| GET/PUT `/api/v1/narrative/config` | Narrator provider (Ollama/KoboldCpp), loopback URL, model and sampling parameters |
+| GET `/api/v1/narrative/models` | Models exposed by the selected engine, or `online:false` with error |
+| GET/POST `/api/v1/stories` | List/create stories with a premise |
+| GET `/api/v1/stories/{story_id}` | Story details |
+| GET `/api/v1/stories/{story_id}/turns` | Committed turns |
+| POST `/api/v1/stories/{story_id}/generate` | Streaming SSE `status/delta/done/error`; UUID request idempotency |
+| GET `/api/v1/runtime/kobold/status` | Managed process state/endpoint health |
+| GET `/api/v1/runtime/kobold/installed` | Registered GGUF files eligible for launch |
+| POST `/api/v1/runtime/kobold/start` | Launch explicitly selected executable with a registered GGUF |
+| POST `/api/v1/runtime/kobold/stop` | Stop only Noble-owned process |
+| POST `/api/v1/runtime/kobold/activate` | Assign the model reported by the runtime's `/v1/models` |
 
-**Entrada de generación:**
-```json
-{"mode":"do","input_text":"Examino la biblioteca.","request_id":"7053aead-3e62-411f-a5d5-598c5609dbfb"}
-```
-`mode` = `do | say | story | continue`; `input_text` vacío solo permitido con continue. La respuesta puede enviar varios `event: delta`, exactamente un `event: done` **si el turno se confirmó** o `event: error` en caso de fallo. No hay un API de reintento con branching todavía.
+Generation example:
 
-**Arranque de KoboldCpp (ejemplo de contrato):**
 ```json
-{"executable":"C:\\Tools\\koboldcpp.exe","installed_id":"uuid-de-modelo-registrado","gpu_layers":-1,"contextsize":4096,"port":5001}
+{"mode":"do","input_text":"I examine the library.","request_id":"7053aead-3e62-411f-a5d5-598c5609dbfb"}
 ```
 
-No se suministran URLs/ejecutables arbitrarios. La narrativa limita el endpoint a HTTP loopback con puerto, el runtime acepta binarios con nombre KoboldCpp, y los GGUF deben existir en el directorio administrado. La conexión no exige GPU. La API del juego usa historial reciente y no implementa aún eventos estructurados ni revision/branch. Esos contratos anteriores permanecen como objetivos futuros.
+`mode` is `do | say | story | continue`; empty `input_text` is permitted only for `continue`. Stream multiple `event:delta` packets, then **one `event:done` only after a successful transactional commit**, or `event:error`. A failed/canceled request must not persist a partial turn.
 
-Ver [Quickstart](QUICKSTART.md), [Progreso](PROGRESO.md) y pruebas `tests/test_narrative.py` y `tests/test_runtime.py`.
+KoboldCpp launch example:
 
-## Endpoints reales P1.1: workers y preferencias
+```json
+{"executable":"C:\\Tools\\koboldcpp.exe","installed_id":"registered-model-uuid","gpu_layers":-1,"contextsize":4096,"port":5001}
+```
 
-| Método | Ruta | Función |
+The executable must be recognized and the GGUF registered inside managed storage. The runtime binds to loopback and does not require a CUDA GPU for CPU-only execution.
+
+## P1.1 — workers, workspace, preferences
+
+| Method | Endpoint | Behavior |
 |---|---|---|
-| GET/POST | `/api/v1/workers` | Lista o registra worker LLM |
-| GET | `/api/v1/workers/{uuid}/probe` | Verifica token y anuncia modelos |
-| POST | `/api/v1/workers/{uuid}/activate` | Elige el modelo del narrador |
-| DELETE | `/api/v1/workers/{uuid}` | Elimina metadatos y token |
-| GET/PATCH | `/api/v1/workspace/preferences` | Idioma, lectura, apariencia y atajos |
-| GET | `/api/v1/about` | Versión fuente, commit, carpetas |
-| GET | `/api/v1/runtime/diagnostics` | Paquetes/binarios, solo lectura |
-| GET | `/api/v1/updates` | Consulta de releases; no instala |
-| GET | `/api/v1/network/capabilities` | Red principal loopback; límites |
-| GET/PUT/DELETE | `/api/v1/provider-credentials/openrouter` | Gestión de clave sin lectura del secreto |
-| PATCH | `/api/v1/stories/{uuid}/protagonist` | Nombre del protagonista |
-| GET/POST | `/api/v1/stories/{uuid}/scene-image` | Leer/importar ilustración |
+| GET/POST | `/api/v1/workers` | List/register remote LLM workers |
+| GET | `/api/v1/workers/{uuid}/probe` | Authenticate/test token, discover advertised models |
+| POST | `/api/v1/workers/{uuid}/activate` | Assign a remote narrator |
+| DELETE | `/api/v1/workers/{uuid}` | Remove worker record and secret |
+| GET/PATCH | `/api/v1/workspace/preferences` | Output language, reader layout, appearance and shortcuts |
+| GET | `/api/v1/about` | Source version, commit and paths |
+| GET | `/api/v1/runtime/diagnostics` | Read-only packages/binaries |
+| GET | `/api/v1/updates` | Release metadata, **not** automatic installation |
+| GET | `/api/v1/network/capabilities` | Loopback network defaults |
+| GET/PUT/DELETE | `/api/v1/provider-credentials/openrouter` | Secret management without returning the actual value |
+| PATCH | `/api/v1/stories/{uuid}/protagonist` | Update protagonist name |
+| GET/POST | `/api/v1/stories/{uuid}/scene-image` | Read/import a scene illustration |
 
-**Proxy remoto separado:** `GET /v1/models` y `POST /v1/chat/completions`, ambos requieren Bearer. No hay servicio remoto para archivos, procesos, imágenes o TTS. El backend principal sigue limitado a loopback. Ver [WORKERS.md](WORKERS.md).
+The separate **remote worker proxy** exposes bearer-required `GET /v1/models`, `POST /v1/chat/completions`, and health diagnostics. It is not a general remote file, process, image or speech API. Keep the main workspace on loopback; see [Workers](WORKERS.md).
 
-## P1.2 — generación corta de benchmark desde interfaz
+## P1.2 — remote inference benchmark
 
-`POST /api/v1/workers/{uuid}/benchmark` recibe `{"model":"id-anunciado"}`. Realiza una única inferencia explícita con prompt de prueba, **no** un turno de historia. Devuelve éxito/fracaso, TTFT, duración total y caracteres, con GPU disponible en el sondeo de salud. No devuelve ni persiste el texto generado; el servidor exige worker ya registrado, autenticado, online y modelo anunciado.
+`POST /api/v1/workers/{uuid}/benchmark` with `{"model":"advertised-model-id"}` runs **one explicit synthetic inference**, not a story turn. It returns success/failure, time to first content, total duration, character count, and available GPU telemetry, but does not store or return generated story prose. The worker must be registered, authenticated and online, with a model it actually advertises.
 
-`GET /v1/health` en el **proxy remoto** devuelve contadores agregados y GPU/VRAM (best-effort), y también exige Bearer. El endpoint principal `GET /api/v1/workers/{uuid}/probe` recoge esa telemetría si está disponible sin fallar frente a una versión vieja de worker.
+The bearer-protected remote `GET /v1/health` offers aggregate request and sampled GPU/VRAM metrics. Primary `GET /workers/{uuid}/probe` tolerates older workers that do not implement those counters.
 
-La prueba no es una medición p95 ni una certificación de compatibilidad GPU. Ver [WORKERS.md](WORKERS.md).
+One sample is neither p95 latency nor a physical GPU fit certification.
 
+## P1.4 — canon, explicit engine preparation and on-demand media
 
-## P1.4 — generación bajo demanda y canon
-
-- \`PATCH /api/v1/stories/{uuid}/canon\` con \`{"canon":"..." }\` (hasta 5000 caracteres). Se guarda en SQLite y se añade al contexto del narrador; no reescribe turnos antiguos.
-- \`GET/PUT /api/v1/images/config\`: configuración persistente de ComfyUI.
-- \`GET /api/v1/images/status\`: sondeo del checkpoint instalado, conexión local con tiempo limitado.
-- \`POST /api/v1/stories/{uuid}/illustrate\` con \`{"prompt":"...","seed":123}\`: genera imagen SOLO si el usuario lo solicita. ComfyUI debe estar instalado y en marcha por separado. Puede devolver 409 ocupado, 422 config inválida, 503 offline y 502/504 error/timeout.
-- \`GET /api/v1/tts/voices\`: voces Piper detectadas (ONNX + JSON) en el directorio de modelos.
-- \`POST /api/v1/stories/{uuid}/turns/{uuid}/speech\` con \`{"voice_id":"es_MX.onnx","request_source":"listen_button"}\`: devuelve WAV, exige \`tts_enabled=true\`. No hay autolectura.
-- La narración \`POST /api/v1/stories/{uuid}/generate\` ahora emite eventos SSE adicionales \`status\` con \`phase=preparing|connecting|streaming\`, antes de \`delta/done/error\`. Los clientes anteriores pueden ignorar \`status\`.
-
-
-## P1.4 — canon, ramificación y preparación explícita
-
-| Método | Ruta | Estado |
+| Method | Endpoint | Contract |
 |---|---|---|
-| PATCH | `/api/v1/stories/{uuid}/canon` | Guarda notas persistentes de historia (hasta 5000 caracteres) |
-| POST | `/api/v1/stories/{uuid}/fork` | Clona la historia hasta `until_turn_id` incluido, o completa si null |
-| POST | `/api/v1/narrative/prepare` | Inferencia corta para preparar motor local/worker sin crear un turno |
+| PATCH | `/api/v1/stories/{uuid}/canon` | Save up to 5,000 characters of persistent canon, independent of past turn text |
+| POST | `/api/v1/stories/{uuid}/fork` | Clone through `until_turn_id` inclusive, or all turns if omitted/null |
+| POST | `/api/v1/narrative/prepare` | Explicit short local/worker inference warmup without committing a story turn |
+| GET/PUT | `/api/v1/images/config` | Persistent local ComfyUI settings |
+| GET | `/api/v1/images/status` | Bounded probe of local image runtime/checkpoints |
+| POST | `/api/v1/stories/{uuid}/illustrate` | **Explicit** image render `{"prompt":"...","seed":123}`; ComfyUI must be available |
+| GET | `/api/v1/tts/voices` | Installed Piper ONNX/JSON voices |
+| POST | `/api/v1/stories/{uuid}/turns/{turn_id}/speech` | Manual `{"voice_id":"es_MX.onnx","request_source":"listen_button"}`; WAV; requires enabled on-demand TTS |
 
-La operación fork retorna una historia con `origin_story_id` y `origin_turn_id`, además de otros campos. No edita ni borra el origen. No existe todavía API de fusionar ramas. La llamada de preparación no está habilitada para OpenRouter; debe solicitarse explícitamente desde la UI y no sustituye pruebas de calidad/rendimiento reales.
+ComfyUI may return 409 busy, 422 invalid configuration, 503 offline, and 502/504 upstream/timeout. The narration SSE adds `status.phase=preparing|connecting|streaming` before content; old clients can ignore status frames.
 
+Fork results include `origin_story_id` and `origin_turn_id`. They never mutate the source; a merge endpoint is not implemented. The prepare endpoint must be invoked explicitly and is not managed preloading for OpenRouter.
 
-## P1.5 — journal visual y galería inmutable
+## P1.5 — immutable gallery and visual timeline
 
-`GET /stories/{uuid}/visual-state` responde `{current_scene, scenes, assets, characters, selected_asset_id}`, con URLs individuales de recursos, `origin`, `content_sha256`, `seed` y `selected`. `PUT /stories/{uuid}/scene` recibe `{location}`. `POST /stories/{uuid}/visual-characters` y `PUT /stories/{uuid}/visual-characters/{uuid}` reciben `{name, appearance, outfit, distinguishing_features}`. `POST /stories/{uuid}/illustration-prompt` devuelve `{prompt, inference_used:false}`; `GET /stories/{uuid}/gallery/{uuid}` obtiene el WebP, `POST /stories/{uuid}/gallery/{uuid}/select` selecciona el archivo anterior. Los IDs deben pertenecer a la historia solicitada.
+`GET /api/v1/stories/{uuid}/visual-state` returns `{current_scene,scenes,assets,characters,selected_asset_id}` with individual owned media URLs, `origin`, `content_sha256`, `seed`, and selection state.
 
-`POST /stories/{uuid}/illustrate` acepta `{prompt,seed?}` y ahora responde también `cached` y `asset_id`. Si el seed, parámetros, prompt enriquecido y escena no cambian, puede devolver el recurso de caché sin contactar ComfyUI. La detección de un cambio de lugar **nunca** equivale a iniciar difusión ni a cargar GPU.
+- `PUT /api/v1/stories/{uuid}/scene` with `{location}`: confirm location without image generation.
+- `POST /api/v1/stories/{uuid}/visual-characters` and `PUT /.../visual-characters/{uuid}`: `{name,appearance,outfit,distinguishing_features}`.
+- `POST /api/v1/stories/{uuid}/illustration-prompt`: `{prompt,inference_used:false}` preview without loading models.
+- `GET /api/v1/stories/{uuid}/gallery/{asset_uuid}`: retrieve a story-owned WebP.
+- `POST /api/v1/stories/{uuid}/gallery/{asset_uuid}/select`: select an existing immutable gallery version.
+- `POST /api/v1/stories/{uuid}/illustrate`: now also reports `asset_id` and `cached`. A matching explicit seed, enriched prompt, model config and scene may return cached output with **no ComfyUI call**.
 
+The server validates every story/media UUID relationship. Detecting a new location never initiates diffusion by itself.
 
-## Imagen de referencia y recursos (P1.6)
+## P1.6 — reference image and GPU resource policy
 
-`POST /api/v1/stories/{uuid}/illustrate` acepta campos adicionales opcionales `reference_asset_id:uuid`, `denoise:0.2..0.95` y `allow_low_vram:boolean`, junto a `prompt` y `seed`. Sin `reference_asset_id` se mantiene el modo texto-a-imagen. Con referencia se verifica autoría de historia, integridad SHA256 y se utiliza `POST /upload/image` del ComfyUI local antes del grafo de imagen-a-imagen.
+Image rendering accepts optional `reference_asset_id:uuid`, `denoise:0.2..0.95`, and `allow_low_vram:boolean`, together with `prompt`/`seed`. A reference must belong to the story and pass SHA-256 checks before a local ComfyUI `POST /upload/image` and the img2img graph. Without a reference, use text-to-image.
 
-- `GET /api/v1/resources/config`: `{mode:"monitor"|"guard",gpu_index:number,minimum_free_mib:number}`.
-- `PUT /api/v1/resources/config`: persiste configuración validada.
-- `GET /api/v1/resources/status`: GPU(s) observadas, MiB libres/usados, índice, porcentaje de utilización, `status=above_reserve|below_reserve|unknown`, política y tiempo de consulta.
+- `GET /api/v1/resources/config` returns `{mode:"monitor"|"guard",gpu_index,minimum_free_mib,serialize_local_gpu}`.
+- `PUT /api/v1/resources/config` persists validated policy. `serialize_local_gpu` defaults to `true`.
+- `GET /api/v1/resources/status` reports observed NVIDIA cards, total/used/free MiB, utilization, timestamp and `above_reserve|below_reserve|unknown`.
+- `GET /api/v1/resources/active` describes a currently managed local operation, if present.
 
-El modo guard consulta `nvidia-smi` **solo** antes de enviar una generación de ComfyUI explícita que no haya sido servida por caché. No bloquea a los proveedores sin telemetría NVIDIA y no garantiza que el modelo quepa. `allow_low_vram=true` permite una excepción por solicitud, pero no edita la configuración persistida.
+Guard mode runs `nvidia-smi` **before an uncached explicit ComfyUI job**, not on every narration turn. It cannot guarantee the model fits. A one-time `allow_low_vram=true` bypasses the reserve check without saving that exception. Concurrent local engine work may return 409; there is no hidden GPU job queue.
 
+## Scene planner, visual identity, and saved references
 
-## Planificador de escenas e identidad visual
+- `GET /api/v1/stories/{uuid}/scene-plan` returns current `scene_id,revision,shot,lighting,mood,direction,visible_character_ids,reference_character_id`.
+- `PUT /api/v1/stories/{uuid}/scene-plan` accepts:
 
-- `GET /api/v1/stories/{uuid}/scene-plan`: plan del escenario actual. Incluye `scene_id`, `revision`, `shot`, `lighting`, `mood`, `direction`, `visible_character_ids` y `reference_character_id`.
-- `PUT /api/v1/stories/{uuid}/scene-plan`: guarda `{"shot":"medium","lighting":"natural","mood":"","direction":"","visible_character_ids":[],"reference_character_id":null}`. Son válidos `shot=wide|medium|closeup` y `lighting=natural|sunset|night|interior|dramatic`.
-- `POST /api/v1/stories/{uuid}/scene-plan/preview`: con `{"prompt":"..."}`, compone el prompt enriquecido y expone la referencia automática sin generar imágenes.
-- `PUT /api/v1/stories/{uuid}/visual-characters/{char_uuid}/reference`: asigna `{"asset_id":"uuid"}` o elimina una referencia con `null`. Solo admite imágenes verificadas pertenecientes a la historia.
-- `POST /api/v1/stories/{uuid}/illustrate`: puede elegir automáticamente la referencia del personaje focal del plan si no se envía una referencia explícita; informa `reference_asset_id` usado.
-- `GET /api/v1/resources/active`: operación multimedia local en curso, si existe.
-- `PUT /api/v1/resources/config`: además de la política de VRAM acepta `serialize_local_gpu:boolean` (predeterminado `true`). Una operación local ocupada devuelve HTTP 409. No hay cola de jobs oculta.
+```json
+{"shot":"medium","lighting":"natural","mood":"","direction":"","visible_character_ids":[],"reference_character_id":null}
+```
 
-Los cambios de escena no realizan ningún trabajo de GPU automáticamente. Las rutas anteriores mantienen sus parámetros originales compatibles.
+Allowed shots: `wide|medium|closeup`; lighting: `natural|sunset|night|interior|dramatic`. Cast IDs must be story-owned.
 
-## Evolución de contratos según Argon (2026-11-05)
+- `POST /api/v1/stories/{uuid}/scene-plan/preview` with `{"prompt":"..."}` builds an enriched prompt and reports an automatic reference without inference.
+- `PUT /api/v1/stories/{uuid}/visual-characters/{char_uuid}/reference` with `{"asset_id":"uuid"}` or null sets/clears a verified story-owned image.
+- `POST /api/v1/stories/{uuid}/illustrate` can use the plan's focal-character reference when the request did not explicitly supply another; returns `reference_asset_id`.
 
-**Actual:** `POST /api/v1/stories/{id}/generate` devuelve SSE `status`, `delta`, `done`, `error` a través de `narrative.stream_turn`, no un JSON completo; los proveedores Ollama/Kobold emiten stream; el cliente web consume los fragmentos. No marcar «streaming inexistente». **Pendiente:** desconexión y cancelación efectiva de inferencia, telemetría TTFT y SSE adicionales para multimedia/descargas.
+The scene planner cannot automatically launch image generation solely from a scene change.
 
-**Contrato objetivo (sin declarar implementado):**
+## API evolution after Argon audit — November 5
 
-- `POST /api/v1/stories/{id}/generate`: recibir `request_id` idempotente, `mode`, `input_text`; devolver eventos tipados progresivos, errores estructurados y `done` solo cuando el turno se confirmó transaccionalmente. `AbortSignal` debe cerrar el upstream y liberar la reserva de GPU.
-- `GET /api/v1/stories/{id}/context/preview` (propuesto): desglose de tokens y recuerdos activados, sin efectuar inferencia ni filtrar secretos de otros personajes a consumidores no autorizados.
-- `/api/v1/stories/{id}/lorebook` (propuesto): CRUD validado por historia, claves, secundarios, prioridad, presupuesto, activación y límites de regex.
-- `/api/v1/stories/{id}/stage` (propuesto): estado multicapa, decisión de reutilizar/generar fondos, personajes/expresiones y revisiones de assets.
-- `/api/v1/models/downloads/*` (evolución de endpoints existentes): bytes, velocidad y reanudación verificada; hashes con estado distinguible.
+**Already implemented:** `POST /api/v1/stories/{id}/generate` streams `status/delta/done/error` through `narrative.stream_turn`; browser clients consume incremental fragments. Do **not** describe streaming as absent.
 
-El frontend no construirá prompts ni inferirá estados canónicos: esas decisiones pertenecen al backend. Ver [TODO](../TODO.md), [auditoría §§14, 20](ARGON_AUDITORIA.md) y [QA](QA_Y_ACEPTACION.md).
+**Further target contracts** (some pieces subsequently implemented, see sections below):
+- Stable typed response states `token/state_delta/scene_plan/done/error` and structured provider failures.
+- Per-story `GET /context/preview` with exact future tokenizer budgets while preventing private context disclosure.
+- Lorebook CRUD, safe triggers, priority and bounded activation.
+- Future `/stage` to describe multi-layer visual decisions.
+- Model download endpoints showing bytes/progress/speed, verified resume and source-hash provenance.
 
-## Contrato SSE tras endurecimiento P0 (2026-11-05)
+Prompt assembly and authoritative state changes belong to the backend, not the UI.
 
-El endpoint ya implementado `POST /api/v1/stories/{story_id}/generate` mantiene eventos `status`, `delta`, `done` y `error`. Recibe un UUID `request_id` idempotente y no confirma un mensaje por el mero hecho de haber emitido deltas.
+## Hardened SSE and disconnection contract
 
-- La ruta entrega `Request.is_disconnected` al generador. El servidor verifica el estado de conexión antes de generar, entre fragmentos y antes del commit. Si se desconecta el lector, el flujo se abandona sin persistir el texto parcial; el `finally` libera la reserva local de GPU.
-- La escritura de un turno completo y la transición heurística de escenario comparten una transacción SQLite; un fallo del observador visual implica rollback de ambos. El evento `done` solo se emite tras confirmar el turno. Un reintento de `request_id` confirmado se responde sin nueva inferencia.
-- El cierre del generador y las comprobaciones de desconexión están cubiertos por pruebas con proveedor simulado. El tiempo necesario para detener **el cómputo del motor** y liberar pesos en Ollama/KoboldCpp/worker remoto sigue pendiente de certificación física; no prometer cancelación en menos de 250 ms.
-- Descargas GGUF: una respuesta HTTP 206 solo se acepta tras una petición `Range` explícita, verificando inicio, final, longitud total si conocida y longitud real de la respuesta. El modelo se registra únicamente tras comprobaciones de tamaño/hash disponibles.
+For `POST /api/v1/stories/{story_id}/generate`, `request_id` is an idempotent UUID. The request's `is_disconnected` state is checked before inference, between chunks, while waiting for a chunk, and before commit.
 
-Referencias: [TODO](../TODO.md), [QA](QA_Y_ACEPTACION.md), [PROGRESO](PROGRESO.md).
+Disconnect/cancel closes the upstream HTTP stream, releases the managed GPU lease in `finally`, and **does not persist partial text**. A complete turn and its heuristic visual scene transition commit together; a failure rolls both back. Only after COMMIT may `done` emit. Repeating an already committed request ID returns its result without another inference.
 
+These are simulated protocol guarantees; the physical time to stop model computation/free VRAM in Ollama/KoboldCpp/remote workers is not yet certified. Avoid unsupported claims such as sub-250 ms cancellation.
 
-## Cancelación explícita de generación (implementación P0, 2026-11-05)
+GGUF resumable HTTP must validate an explicitly requested 206, exact Range start/end, expected total, and actual bytes before registration.
 
-- `POST /api/v1/stories/{story_id}/generate/{request_id}/cancel`: devuelve `{"request_id":"uuid","cancel_requested":true|false}`. `true` significa que la operación registrada recibió la señal; **no** certifica que los pesos hayan sido descargados ni que el cómputo físico se haya detenido. `false` indica que la operación ya no está en el registro, aún no estaba disponible o ya concluyó.
-- `POST /api/v1/stories/{story_id}/generate` registra la operación antes de abrir el `StreamingResponse`, rechaza el mismo `request_id` simultáneo con HTTP 409 y elimina el registro en `finally`. La señal por otro `request_id` o historia no alcanza una operación distinta.
-- El sondeo de desconexión y cancelación se realiza durante una espera del proveedor sin tokens, con intervalo de ~200 ms para detectar el corte en el servidor. El cierre cancela el siguiente `anext()` y cierra la respuesta HTTP upstream. No se persiste un turno incompleto ni se emite `done` por una solicitud cancelada.
-- Frontend: `AbortController` + señal explícita a este endpoint al presionar Detener, cambiar de historia o regresar a Biblioteca. La señal es de mejor esfuerzo si no existe conexión con el servidor.
-- Pruebas Python de cancelación por solicitud, upstream bloqueado y limpieza del lease aprobadas en [CI #42050811867](https://github.com/Mairon31/novel_ai/actions/runs/42050811867). **La parada inmediata del cómputo en Ollama/KoboldCpp/worker real no está certificada**.
+## Explicit cancel endpoint
 
+`POST /api/v1/stories/{story_id}/generate/{request_id}/cancel` returns:
 
-## Contrato Lorebook de Creator Studio (2026-11-05)
+```json
+{"request_id":"uuid","cancel_requested":true}
+```
 
-Todas las rutas se limitan al UUID de una historia existente. El contenido es privado de la autoría y se inyecta en el mensaje **system**, nunca como turno visible del jugador.
+`true` means a registered operation received the signal; it does **not** prove weights unloaded. `false` means the operation is not currently tracked or has already completed.
 
-- `GET /api/v1/stories/{story_id}/lorebook` → `{entries: LorebookEntry[]}`.
-- `POST /api/v1/stories/{story_id}/lorebook` → 201 + entrada con ID UUID.
-- `PUT /api/v1/stories/{story_id}/lorebook/{entry_id}` → entrada actualizada, 422 si no pertenece a la historia.
-- `DELETE /api/v1/stories/{story_id}/lorebook/{entry_id}` → 204, 404 si no existe en esa historia.
-- `POST /api/v1/stories/{story_id}/lorebook/preview` recibe `{"query":"Entro al bosque","budget_chars":6000}` y devuelve `{entries:[{id,title,priority,content}],context,used_chars,budget_chars,skipped_budget}`. Este preview activa únicamente por la cadena `query` proporcionada; la generación real incluye además cuatro turnos recientes.
+Register the operation before `StreamingResponse`, reject simultaneous duplicate UUIDs with 409, and remove the registration in `finally`. Other story/request IDs must not be affected. Poll disconnection/cancel during silent upstream waits at about 200 ms; close the pending `anext()` and remote response. No canceled turn commits or emits `done`.
 
-Campos de entrada: `title` (2–100), `content` (10–3500), `keys` (hasta 12), `secondary_keys` (hasta 8), `secondary_mode: any|all`, `match_whole_words`, `priority` 0–100, `enabled`, `always_active`. Es obligatorio definir claves primarias salvo con `always_active`; nunca se evalúan regex proporcionadas por el usuario. Los hechos activados respetan prioridad y se omiten completos si superan el límite de 512–6000 caracteres. El fork crea copias con IDs nuevos.
+The frontend combines `AbortController` with best-effort explicit cancellation when stopping, leaving the reader or switching stories. [CI #42050811867](https://github.com/Mairon31/novel_ai/actions/runs/42050811867) exercised Python cancellation under simulated waiting providers.
 
+## Creator Studio Lorebook CRUD and preview
 
-## Estado del mundo y snapshots confirmados (2026-11-05)
+All paths use a valid existing story UUID, and Lorebook contents are private author data inserted into the narrator's **system** context, never a public player turn.
 
-- `GET /api/v1/stories/{story_id}/world-state` → `{story_id, revision, updated_at, state}`. Una historia nueva devuelve revisión 0 y estado vacío, no inventa personajes ni hechos.
-- `PUT /api/v1/stories/{story_id}/world-state` recibe `{expected_revision: número, state: WorldStateInput}` y retorna la siguiente revisión completa. Dos actualizaciones concurrentes con la misma revisión no pueden confirmarse ambas: la posterior responde **409**. Datos inválidos o UUID de NPC ajenos responden 422.
-- `GET /api/v1/stories/{story_id}/world-state/turns/{turn_id}` → `{story_id, turn_id, created_at, canon, state}`. Responde 404 si el snapshot no pertenece a la historia o nunca se registró.
-- `WorldStateInput`: cadenas `location` (0–200), `time_of_day` (0–80), `weather` (0–100); arrays `present_character_ids` (hasta 30 UUID de NPC), `inventory` (hasta 60 objetos de 1–100 caracteres), `relationships` (hasta 30 mapeos UUID→texto 1–160), `flags` (hasta 60 claves booleanas) y `facts` (hasta 120).
-- `WorldFact`: `id` UUID, `text` (10–360), `public` booleano, `witness_character_ids` (hasta 16 UUID). Un hecho privado necesita testigos, todos de esa misma historia.
-- El guardado del turno inserta instantáneamente una fila inmutable de estado y canon bajo la misma transacción SQLite que el texto y escena. Las bifurcaciones en un turno histórico remapean personajes y restauran el canon de ese turno; los snapshots de turnos anteriores a la migración no se reconstruyen con estado futuro.
+| Method | Endpoint | Response |
+|---|---|---|
+| GET | `/api/v1/stories/{id}/lorebook` | `{entries:LorebookEntry[]}` |
+| POST | `/api/v1/stories/{id}/lorebook` | 201 + new UUID entry |
+| PUT | `/api/v1/stories/{id}/lorebook/{entry_id}` | Updated entry; 422 for another story |
+| DELETE | `/api/v1/stories/{id}/lorebook/{entry_id}` | 204; 404 when missing |
+| POST | `/api/v1/stories/{id}/lorebook/preview` | `{entries:[{id,title,priority,content}],context,used_chars,budget_chars,skipped_budget}` |
 
-Estos contratos describen hechos **confirmados por el autor**, no cambios que el narrador pueda ejecutar sin aprobación. El contexto enviado a la IA omite los hechos privados cuyos testigos están ausentes, aunque todavía no garantiza que una IA jamás atribuya mal otro conocimiento.
+Preview example: `{"query":"I enter the forest","budget_chars":6000}`. Preview uses **only the supplied query**; real narration also considers the most recent four turns.
 
+Entry fields: `title` length 2–100; `content` 10–3500; up to 12 primary and 8 secondary keys; `secondary_mode=any|all`, `match_whole_words`, `priority` 0–100, `enabled`, `always_active`. Primary keys required unless always active. User-supplied regular expressions are never executed. Entries that exceed the remaining 512–6000-character budget are omitted whole; forks assign new entry UUIDs.
 
-## Contratos temporales de Lorebook y Creator (2026-11-05)
+## World state and committed snapshots
 
-- `GET /api/v1/stories/{story_id}/lorebook/turns/{turn_id}` → `{story_id,turn_id,created_at,entries:[LorebookEntry,...]}`. Cada entrada incluye el ID original **de esa historia**, claves, contenido y prioridad tal como existían cuando se confirmó el turno. 404 si no hay snapshot o ese turno pertenece a otra historia.
-- `POST /api/v1/stories/{story_id}/fork` con `{"until_turn_id":"<UUID>"}` mantiene el contrato 201 + `Story`; **ahora** selecciona versiones de Lorebook y Creator privadas de ese turno, además del canon y el estado del mundo histórico. Los identificadores de las entradas y NPC cambian por rama; dentro de los snapshots copiados se mantiene estable el nuevo identificador correspondiente. `{"until_turn_id":null}` continúa creando una rama de la historia **actual** completa.
-- `creator_turn_snapshots` registra el blueprint y las fichas NPC al confirmar cada turno; por ahora es una tabla interna transaccional, sin endpoint público para exponer instrucciones privadas del narrador al lector.
-- Los turnos antiguos sin `lorebook_turn_snapshots` o `creator_turn_snapshots` se tratan con **fallback vacío** al bifurcar desde ese punto: copiar valores presentes hoy produciría spoilers imposibles de verificar.
-- El botón «Rebobinar aquí» del lector no llama una acción destructiva: usa `fork` tras confirmación. La historia origen y sus turnos posteriores siguen intactos; la pantalla solo muestra el resumen de instantáneas del Lorebook y del estado del mundo. Sigue pendiente el contrato de una operación destructiva/archivable con undo.
+- `GET /api/v1/stories/{id}/world-state` → `{story_id,revision,updated_at,state}`. New stories report revision zero and empty state.
+- `PUT /api/v1/stories/{id}/world-state` accepts `{expected_revision,state:WorldStateInput}`, returns incremented state; stale concurrent changes 409, invalid/foreign-NPC UUIDs 422.
+- `GET /api/v1/stories/{id}/world-state/turns/{turn_id}` → `{story_id,turn_id,created_at,canon,state}`; 404 for missing or foreign snapshot.
 
-Referencia de pruebas: [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834) con 179 Python y 34 Playwright aprobadas. Esta recuperación temporal no cubre cambios antiguos en imágenes editoriales, referencias visuales y planes de escena.
+`WorldStateInput`: `location` 0–200, `time_of_day` 0–80, `weather` 0–100; `present_character_ids` up to 30 owned NPC UUIDs; `inventory` up to 60 strings length 1–100; `relationships` up to 30 UUID→description mappings length 1–160; `flags` up to 60 booleans; `facts` up to 120.
 
+`WorldFact`: `id` UUID, text length 10–360, `public` boolean, up to 16 `witness_character_ids` all from the same story. Private facts require at least one witness.
 
-## Alcance por testigo de Lorebook — ampliación compatible
+Every committed turn snapshots world state/canon together with text and scene in one SQLite transaction. Historical forks remap NPC/fact IDs and restore only selected-time canon. Legacy turns without snapshots must not be rebuilt from future state.
 
-- `POST/PUT /api/v1/stories/{story_id}/lorebook`: parámetros opcionales `visibility: "world"|"witnesses"` (predeterminado `world` para compatibilidad con entradas existentes) y `witness_character_ids: string[]` (máximo 16 UUID). En modo `witnesses` se exige al menos un NPC propio de la historia; no se admiten repetidos. Modo `world` exige lista de testigos vacía. Los errores de validación responden 422.
-- `POST /api/v1/stories/{story_id}/lorebook/preview`: incluye el campo adicional `skipped_visibility` para entradas privadas descartadas porque los testigos no están presentes. Los hechos privados solo entran en `entries/context` cuando intersectan `GET /world-state` → `state.present_character_ids`; las palabras clave o los nombres mencionados en el texto de consulta no establecen presencia.
-- `GET .../lorebook/turns/{turn_id}` conserva el alcance y testigos exactos del checkpoint; en una rama todos los IDs de testigos y de entradas se remapean a su destino, sin consultar NPC actuales de la historia original.
-- Este filtrado gobierna únicamente la selección de entradas Lorebook hacia el prompt y no restringe el acceso administrativo a su editor. No evita por sí solo que el LLM genere una revelación incorrecta desde otros contextos.
+## Time-scoped Lorebook and Creator data
 
+- `GET /api/v1/stories/{id}/lorebook/turns/{turn_id}` → `{story_id,turn_id,created_at,entries:[LorebookEntry]}`. Returns exactly what was saved at that turn; missing/foreign snapshots 404.
+- `POST /api/v1/stories/{id}/fork` with `{"until_turn_id":"uuid"}` restores contemporaneous Lorebook entries, NPC profiles, private creator blueprint, world state and canon. A complete present-day fork uses `{"until_turn_id":null}`.
+- `creator_turn_snapshots` remains an internal table. Never expose its private blueprint in public reader/API surfaces.
+- Legacy turns without snapshots take an **empty fallback** when forking historically, rather than importing future spoilers.
+- **Rewind here** in reader is non-destructive: confirm then create a new fork, leaving existing turns untouched.
 
-**Verificación de la extensión:** [CI #42097953216](https://github.com/Mairon31/novel_ai/actions/runs/42097953216) — 193 Python + 36 Playwright PASS. La semántica de `visibility=world` y las rutas existentes no cambiaron.
+## Character-scoped Lorebook entries
 
+New optional fields `visibility:"world"|"witnesses"` and `witness_character_ids:string[]` (max 16, story-owned IDs). Private witnessed Lorebook content activates only when at least one associated character is present in the **confirmed** current world state; `always_active` does not bypass this. Public entries are unchanged.
 
-## Exportación HTML ilustrada (P1)
+Forks remap witness UUIDs via the destination NPC mappings; a missing witness does not silently turn the entry into world knowledge. The server filters prompt data; it cannot guarantee what a probabilistic LLM will infer from other context.
 
-`GET /api/v1/stories/{story_id}/export.html` → `200 text/html; charset=utf-8`, `Content-Disposition: attachment; filename="noble-story.html"`, `Cache-Control: no-store` y `X-Content-Type-Options: nosniff`; `404` si no existe la historia. HTML autocontenido con portada cuando existe, intervenciones/diálogos y escenas ilustradas según snapshots visuales guardados. Escapa contenido textual antes de emitir HTML. Solo incluye datos de la rama solicitada, sin el árbol completo ni contextos privados de Creator.
+## HTML and EPUB3 exports
 
+- `GET /api/v1/stories/{id}/export.html` → `200 text/html; charset=utf-8`, attachment `noble-story.html`, `Cache-Control:no-store`, `X-Content-Type-Options:nosniff`.
+- `GET /api/v1/stories/{id}/export.epub` → `200 application/epub+zip`, attachment `noble-story.epub`, same no-store/nosniff behavior.
+- Missing story 404. Both are self-contained for the requested branch, include historical visual snapshots where safe, and omit private Creator prompts.
+- Exports escape narrative text and do not include remote image requests.
+- Evidence: [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352): **217 Python / 42 Playwright PASS**.
 
-## Memoria episódica de intervenciones del jugador
+## Episodic search and narrator context inspector
 
-`GET /api/v1/stories/{story_id}/memory/search?q=<texto>&limit=6` → `{episodes:[{turn_id,story_id,mode,input_text,created_at,matched_terms},...],fts5:boolean,source:"player_input"}`. `q` exige 2–500 caracteres; `limit` 1–12. Error 404 para historia desconocida. Las búsquedas se limitan al proyecto solicitado y **no** exponen `assistant_text`, secretos del creador ni Lorebooks. Un índice FTS5 está disponible cuando lo soporta SQLite; el fallback léxico es local y no requiere modelos IA.
+- `GET /api/v1/stories/{id}/memory/search?q=<text>&limit=6` → `{episodes:[{turn_id,story_id,mode,input_text,created_at,matched_terms}],fts5:boolean,source:"player_input"}`. Query 2–500 characters, limit 1–12; 404 unknown story. Only player input of that story is indexed, no assistant prose/Creator secrets; lexical fallback when FTS5 unavailable.
+- `POST /api/v1/stories/{id}/context/preview` accepts `{input_text:string(0–3000),mode:"do"|"say"|"story"|"continue"}`; input required except `continue`.
+- Response includes `story_id,messages:[{role,content}],sections:[{name,characters,approx_tokens}],total_characters,estimated_prompt_tokens,reserved_output_tokens,context_window_tokens,estimated_total_tokens,estimated_overflow,token_counts_exact:false,token_estimate_method,runtime_kv_cache_measured:false`.
+- No model inference or DB writes. Preview may disclose private creator instructions and therefore belongs to an **author-only** surface.
 
+## Family ZIP archive and independent copy import
 
-## Inspector de contexto del narrador
+`GET /api/v1/stories/{id}/archive.noble.zip` → application/zip attachment `noble-family.noble.zip`. 404 unknown story; 422 corrupt/limit. `manifest.json` contains:
 
-`POST /api/v1/stories/{story_id}/context/preview` con `{input_text: string (0–3000), mode: "do"|"say"|"story"|"continue"}` (entrada obligatoria salvo `continue`) → `{story_id,messages:[{role,content}],sections:[{name,characters,approx_tokens}],total_characters,estimated_prompt_tokens,reserved_output_tokens,context_window_tokens,estimated_total_tokens,estimated_overflow,token_counts_exact:false,token_estimate_method,runtime_kv_cache_measured:false}`. `404` historia inexistente; `422` solicitud inválida. Sin inferencia ni persistencia. Los mensajes contienen material privado del creador: interfaz solo para el autor.
+```json
+{"format":"noble-story-family","version":1,"root_story_id":"<uuid>","tables":{},"files":[{"path":"story-assets/<uuid>/images/<uuid>.webp","size":1234,"sha256":"<sha256>"}]}
+```
 
+`POST /api/v1/stories/archive/import` multipart `file=...noble.zip` → 201 `{root_story_id,restored_stories,restored_files,story_ids}`. Existing conflicts 409 by default; malformed ZIP/hashes/fields/paths 422. All content is validated before transactional restoration.
 
-## EPUB3
+Explicit `?as_copy=true` remaps every family story/turn/scene/NPC/media/fact and structured JSON reference, preserving chronology, existing data, and logical tree. Response adds `imported_as_copy,original_root_story_id,story_id_map`. Default `as_copy=false` retains source UUIDs, refusing conflicts.
 
-`GET /api/v1/stories/{story_id}/export.epub` → `200 application/epub+zip`, `Content-Disposition: attachment; filename="noble-story.epub"`, `Cache-Control:no-store`, `X-Content-Type-Options:nosniff`; `404` si la historia no existe. EPUB3 autónomo con archivos XML/OPF, índice `nav.xhtml`, portada y WebP de snapshots por turno, restringidos a la rama indicada.
+## Branch graph
 
+`GET /api/v1/stories/{story_id}/branches` → `{root_story_id,selected_story_id,branches:[{id,title,protagonist_name,origin_story_id,origin_turn_id,depth,turn_count,created_at,updated_at,is_selected}]}`. Root and descendants in parent-before-child order, max 64 nodes, 404 unknown, 422 cycles/bad data.
 
-**Gate de exportación, memoria e inspector:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) — 217 Python + 42 Playwright PASS. Las nuevas rutas son de lectura; no exponen instrucciones privadas en los archivos HTML/EPUB.
+Evidence: [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293): **226 Python / 46 Playwright PASS**; [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384): **231 Python / 52 Playwright**, including JSON UUID keys remapping and deep links.
 
+## Frontend hash routes (not REST endpoints)
 
-## Respaldo/restauración del árbol de historias (.noble.zip v1)
+Existing `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creator/{id}`, `#/creator`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico`, and `#/infraestructura` are browser hash routes. UUIDs are validated; navigation/reload never generates turns. Keep these stable even when English labels are displayed.
 
-`GET /api/v1/stories/{story_id}/archive.noble.zip` → `200 application/zip`, `Content-Disposition: attachment; filename="noble-family.noble.zip"`; `404` si no existe la historia; `422` en caso de límite o datos corruptos. El ZIP contiene `manifest.json` con `{format:"noble-story-family",version:1,root_story_id,tables,files:[{path,size,sha256}]}` y archivos administrados `story-assets/<uuid>/...`. Incluye el árbol conectado de historias y ramas, sin configuración global ni claves secretas.
+## Deterministic visual director
 
-`POST /api/v1/stories/archive/import` con multipart `file=...noble.zip` → `201 {root_story_id,restored_stories,restored_files,story_ids}`. `409` ante historias/carpetas/identificadores ya existentes, sin sobrescritura. `422` ante ZIP inválido, checksum fallido, esquema inesperado o contenido externo. Se validan todos los miembros antes de la restauración transaccional.
+- `POST /api/v1/stories/{id}/visual-director/preview` with `{intent:"auto"|"background"|"emotion"|"event"}` (default auto) → `{scene_id,context:{location,time_of_day,weather,shot,lighting},cache_key,action,background_asset_id,background_url,background_cached,reason,inference_used:false,generation_started:false}`.
+- Actions: `REUSE_BACKGROUND`, `UPDATE_SPRITE_EMOTION`, `GENERATE_NEW_BACKGROUND`, `GENERATE_EVENT_CG`. Preview is a plan; no LLM, ComfyUI or TTS job.
+- `POST /api/v1/stories/{id}/visual-director/backgrounds/{asset_id}` with `{expected_cache_key:"noble-bg-v1:<sha256>"}` registers an owned manual gallery asset. Invalid/foreign asset or original render signature → 422; changed context → 409.
+- `POST /api/v1/stories/{id}/visual-director/apply` with `{asset_id,expected_cache_key}` selects a previously registered background, returning `{selected_asset_id,action:"REUSE_BACKGROUND",inference_used:false,generation_started:false,background_cached:true,scene_id}`; changed context/version 409, invalid file 422.
 
+[CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317) covered cache keys, archive/fork and local application: **239 Python / 58 Playwright / Vite PASS**.
 
-## Árbol de rutas de una historia
+## Sprite assets and reader compositor
 
-`GET /api/v1/stories/{story_id}/branches` → `200 {root_story_id,selected_story_id,branches:[{id,title,protagonist_name,origin_story_id,origin_turn_id,depth,turn_count,created_at,updated_at,is_selected}]}`. Incluye raíz y todos los descendientes relacionados, en orden padre-antes-de-hijos. La ruta es de solo lectura, máximo 64 nodos, error 404 si la historia no existe, 422 si el árbol es cíclico/inválido.
+- `POST /api/v1/stories/{id}/creator/assets` multipart `kind,label,caption,character_id,file`, optional `expression=neutral|joy|anger|sadness|surprise`, and `pose` of 1–32 ASCII alphanumeric/hyphen/underscore characters (default `standing`). Non-neutral expression/pose applies only to `foreground`. Invalid 422.
+- `PUT /api/v1/stories/{id}/creator/assets/{asset_id}` updates `label,caption` and optional `expression,pose`; omitted optional fields remain unchanged; no file rewrite.
+- `GET /api/v1/stories/{id}/creator/assets/scene` retains `background,foreground,selection,context_excerpt,generated:false` and adds `sprites:[{...asset,expression_target,speaker}]` (0–3) and `speaker_character_id` (UUID or null). Speaking requires **explicit attribution**; list order is not proof of the last speaker.
+- Rows, turn snapshots, forks and v1 archives preserve expression/pose. Old archives missing them default to `neutral/standing`; extra schema fields remain prohibited.
+- Selecting/crossfading sprites is local and does not start a GPU job.
 
+Evidence: [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723): **247 Python / 60 Playwright / Vite PASS**.
 
-**Validación de contratos de backups/ramas:** [CI #42115183293](https://github.com/Mairon31/novel_ai/actions/runs/42115183293): 226 Python + 46 Playwright PASS. El backup importado en un espacio distinto preserva el árbol de historias y la indexación de intervenciones sin tocar la instalación origen.
+## Character visual DNA and expression-sheet import
 
+- `POST/PUT /api/v1/stories/{id}/creator/characters[/{npc_id}]` accepts `visual_dna:{tags:string[],seed:number|null,lora_name:string|null,lora_strength:number}`. Defaults `[]/null/null/0.8`; up to 16 casefold-unique tags length 2–64; seed 0–4294967295; LoRA path-free `.safetensors` filename; strength 0–2. Invalid or attempts to overwrite locked tags/seed 422. Legacy PUT omitting the field preserves existing DNA.
+- `POST /api/v1/stories/{id}/creator/characters/{npc_id}/expression-sheet` multipart `caption,pose,layout=horizontal|vertical,file` (PNG/WebP max 12 MiB). Requires exactly five equally sized **transparent** cells in order `neutral,joy,anger,sadness,surprise`, nonempty. 201 `{assets:[x5],count:5}`; 415 MIME, 413 size, 422 ownership/layout/pose. Entire import is transactional and cleans new files on failure.
+- Results are regular story-owned `creator_media_assets` visible through list/scene selection. No model inference or implicit GPU use.
 
-## Importar respaldos de historias como copia
+## Visual DNA prompt composition
 
-`POST /api/v1/stories/archive/import?as_copy=false` (valor predeterminado) mantiene restauración con UUID originales y devuelve `409` ante colisiones. `?as_copy=true` asigna nuevos UUID a toda la familia, incluidos turnos, escenas, personajes, medios, hechos y referencias de snapshots; conserva recursos y cronología, sin alterar historia existente. Respuesta `201 {root_story_id,restored_stories,restored_files,story_ids,imported_as_copy,original_root_story_id,story_id_map}`, donde `story_id_map` mapea cada ID de historia original al nuevo. ZIP corrupto/incompatible → `422` también en modo copia. El cliente debe activar el modo explícitamente.
+- `GET /api/v1/stories/{id}/creator/characters` adds `visual_character_id`, a story-owned identity mapping.
+- `POST /api/v1/stories/{id}/scene-plan/preview` and `/illustration-prompt` share `ScenePlanner.prompt` when a plan is present. Without a plan, `VisualState.enriched_prompt` adds DNA tags only for uniquely named present NPCs; with plan, only UUID-linked cast in `visible_character_ids`.
+- `POST /api/v1/stories/{id}/illustrate` uses the same prompt/cache signature. Render seed is independently selected; DNA does not silently add a LoRA or change the seed. `apply_character_loras` is opt-in.
 
-## Contrato de enlaces de la interfaz
+## Optional ComfyUI LoRAs and render provenance
 
-Los enlaces `#/biblioteca`, `#/historia/{id}`, `#/historia/{id}/leer`, `#/creator/{id}`, `#/creator`, `#/modelos`, `#/descargas`, `#/configuracion`, `#/diagnostico` y `#/infraestructura` son rutas de **frontend** (hash), no llamadas HTTP de API. Los IDs se validan como UUID. Navegar o recargar no genera ni modifica turnos.
+- `GET /api/v1/images/loras` probes only a connected local ComfyUI `/models/loras` when requested; returns `{online,loras,error}`, without downloading/loading.
+- `POST /api/v1/stories/{id}/illustrate` accepts `apply_character_loras:boolean=false`. When true, load at most three distinct story-owned NPC LoRAs after validating ComfyUI inventory and `/object_info/LoraLoader` required inputs `model,clip,lora_name,strength_model,strength_clip`. Missing/incompatible → 422, offline catalog → 503, **no /prompt**.
+- Response reports `applied_loras:[{character_name,lora_name,strength}]`.
+- `visual_assets.render_details_json` stores `{workflow_version,loras}`, exposed as `render_details`. Cache signature changes with LoRA selection/strength. Legacy/manual values default to `{}`; forks and archives preserve compatible metadata. Reject unsafe JSON, paths, non-finite strengths or more than three LoRAs.
 
+## Reviewable AI sprite drafts
 
-**Validación de remapeos y rutas:** [CI #42120432384](https://github.com/Mairon31/novel_ai/actions/runs/42120432384) **231 Python y 52 Playwright PASS**. El importador remapea UUID tanto en campos y valores como en **claves** JSON usadas por relaciones del mundo; el frontend conserva una ruta válida durante el onboarding inicial.
+- `POST /api/v1/stories/{story}/creator/characters/{npc}/sprite-drafts` accepts `{caption,pose,style,seed?,reference_asset_id?,use_lora?,denoise?}`; returns 201 `SpriteDraft`. This stores the editorial snapshot (prefer DNA seed), with **no ComfyUI call**.
+- `GET /api/v1/stories/{story}/creator/sprite-drafts` → `{drafts:[SpriteDraft]}`; GET by draft ID returns its slots `neutral|joy|anger|sadness|surprise` and `ready,preview_url,quality,ready_count` plus model/seed/pose/NPC/date/reference.
+- `POST /api/v1/stories/{story}/creator/sprite-drafts/{draft}/expressions/{expression}` with `{allow_low_vram:false}` starts **one** ComfyUI generation through shared lock/preflight. A valid transparent PNG preview is saved; on failure prior preview remains. Not published yet.
+- `GET /api/v1/stories/{story}/creator/sprite-drafts/{draft}/expressions/{expression}/preview`: owned PNG, `Cache-Control:no-store`.
+- `POST /api/v1/stories/{story}/creator/sprite-drafts/{draft}/approve`: requires all five; publishes transactionally, returns `{approved:true,count:5,assets:[...]}`.
+- Reject invalid/foreign IDs and path traversal, enforce three-draft cap and expiry. Draft media is excluded from reader and archive until approval. See [Sprite drafts](COMFY_SPRITE_DRAFTS.md).
 
+## IPAdapter reference and alignment
 
-## Director visual determinista
+- `GET /api/v1/images/identity-adapter/status` probes `/object_info/IPAdapterUnifiedLoader`, `/object_info/IPAdapter`, `/models/ipadapter`, `/models/clip_vision` on explicit request, returning `{available,presets,model_count,clip_vision_count,error}` without inference.
+- Sprite draft create accepts **either** `reference_asset_id` (owned gallery) or `reference_sprite_asset_id` (approved sprite of same NPC), not both. `reference_mode:"img2img"|"ipadapter"` defaults to img2img; IPAdapter requires a source.
+- `ipadapter_preset`: `STANDARD|PLUS|PLUS FACE`; `ipadapter_weight` 0.1–1.5. The draft persists choice without starting GPU.
+- On expression generation, img2img uses `VAEEncode`; IPAdapter normalizes an RGB letterboxed reference into `LoadImage → IPAdapter` while keeping a fresh `EmptyLatentImage`. Required nodes/weights and original reference SHA-256 are checked. This is not FaceID or spatial masking.
+- Provenance supports `comfy-sprite-v2-ipadapter` with adapter preset/strength and reference hash; earlier v1 media remain valid. Alpha bbox center/scale drift may block approval until explicit `accept_alignment_warnings=true`. The inspector does not perform facial recognition.
 
-`POST /api/v1/stories/{story_id}/visual-director/preview` con `{intent:"auto"|"background"|"emotion"|"event"}` (predeterminado auto) → `200 {scene_id,context:{location,time_of_day,weather,shot,lighting},cache_key,action,background_asset_id,background_url,background_cached,reason,inference_used:false,generation_started:false}`. Posibles decisiones: `REUSE_BACKGROUND`, `UPDATE_SPRITE_EMOTION`, `GENERATE_NEW_BACKGROUND`, `GENERATE_EVENT_CG`. El director es una consulta de planificación; no lanza ComfyUI, TTS ni LLM.
+## Neural sprite cutout
 
-`POST /api/v1/stories/{story_id}/visual-director/backgrounds/{asset_id}` con `{expected_cache_key:"noble-bg-v1:<sha256>"}` registra explícitamente un asset manual de la misma historia para reutilizarlo; responde con nueva previsualización. `422` para recurso ajeno, inexistente, firma ComfyUI original o archivo no confiable. `409` si cambió el contexto.
+- `GET /api/v1/images/matting/status` returns `{neural_available,modes:[{mode,model,node,ready,reason}]}`. `chroma_green` is always supported; `neural_rmbg2`, `neural_birefnet_portrait`, `neural_birefnet_matting` require corresponding ComfyUI-RMBG node schemas and installed model files.
+- Create draft accepts `cutout_mode` with those values (default `chroma_green`) and persists it; may combine with supported LoRA/IPAdapter/img2img references.
+- Expression render with neural mode rejects missing nodes/models with 422 **before** `/prompt`. One job must return processed `SaveImage[7]` and mask `SaveImage[25]`; missing/unsafe output → 502, unusable mask/quality → 422. Keep earlier preview and do not silently use chroma.
+- `generation_json` supports `comfy-sprite-v3-matting` and `comfy-sprite-v4-matting-ipadapter` with `matting:{mode,model}`, `quality.method=neural_rmbg|neural_birefnet`. Validate compatibility between method/model/workflow. v1/v2/manual assets remain readable.
 
-`POST /api/v1/stories/{story_id}/visual-director/apply` con `{asset_id,expected_cache_key}` selecciona un fondo previamente registrado tras validar contexto, clave, versión e historia. Retorna `{selected_asset_id,action:"REUSE_BACKGROUND",inference_used:false,generation_started:false,background_cached:true,scene_id}`, `409` si cambió la escena o la versión de fondo; `422` si el asset no es válido. La aplicación no crea una ilustración nueva.
+## Local Story Hub v1
 
-**Gate:** [CI #42127083317](https://github.com/Mairon31/novel_ai/actions/runs/42127083317): 239 Python + 58 Playwright y build Vite PASS, incluyendo backup/restore/as_copy de firmas de caché.
+- `GET /api/v1/story-hub` → `{packs,source:"bundled-original",community_online:false}`, public-only fields, NPC names, counts and `has_images=false` (no private plot/reminders/Lorebooks).
+- `GET /api/v1/story-hub/{pack_id}` → public pack detail or 404.
+- `POST /api/v1/story-hub/{pack_id}/install` with optional `{"protagonist_name":"Alex"}` → 201 `{story,package_id,version,characters_installed,lore_installed,openings_installed}`. Transactional new story/NPC/Lorebook IDs. Unknown ID 404, invalid fields 422.
+- `POST /api/v1/stories/{story_id}/creator/opening` persists the selected opening **without an LLM**, rejecting a second opening after a story has started.
 
+This is not a hosted community publishing registry. See [Story Hub](STORY_HUB.md).
 
-## Sprites y compositor multicapa del lector
+## Checkpoint, Piper and ComfyUI runtime contracts
 
-- `POST /api/v1/stories/{story_id}/creator/assets` (form-data): junto a `kind`, `label`, `caption`, `character_id` y `file`, acepta `expression=neutral|joy|anger|sadness|surprise` y `pose` (1–32 caracteres alfanuméricos ASCII, `-` o `_`; por defecto `standing`). Solo `foreground` puede tener valores no neutros. Responde recurso con `expression` y `pose`; datos inválidos → 422.
-- `PUT /api/v1/stories/{story_id}/creator/assets/{asset_id}` (JSON): `label` y `caption` con `expression` y `pose` opcionales. Omitirlos mantiene los valores anteriores. No cambia bytes PNG ni UUID.
-- `GET /api/v1/stories/{story_id}/creator/assets/scene`: conserva `background`, `foreground`, `selection`, `context_excerpt`, `generated:false`, añade `sprites:[{...asset,expression_target,speaker}]` (0–3 objetos) y `speaker_character_id` (UUID o null). `speaker` solo es true con atribución de habla explícita; el orden no garantiza que el personaje haya hablado si `speaker_character_id=null`.
-- Persistencia: `creator_media_assets.expression/pose` en filas actuales, instantáneas, forks y backup. Importador v1 admite antiguas filas sin ambos campos y asigna `neutral/standing`; no admite campos no definidos.
-- **Sin GPU implícita**: elegir variante, mostrar sprites y realizar crossfade son operaciones locales. `GET /scene` no llama ComfyUI. [CI #42136052387](https://github.com/Mairon31/novel_ai/actions/runs/42136052387) documenta la primera gate 247 Python / 60 Playwright, y la CI final [CI #42137444723](https://github.com/Mairon31/novel_ai/actions/runs/42137444723) confirmó también crossfade, formulario de autor y aislamiento de fondos.
+The later installer/runtime endpoints were documented separately to keep their limitations clear:
 
-## `visual_dna` y hojas de expresiones de Creator (2026-11-05/06)
+- [Image checkpoint installation](CHECKPOINTS_IMAGEN.md): Hugging Face lookup/installed/download job/start/pause/resume/cancel, verified root-level `.safetensors`.
+- [Managed ComfyUI](COMFY_UI_INTEGRACION.md): existing-runtime config, validate, start/stop/status/logs and local model-path YAML. **It does not install ComfyUI itself.**
+- [Piper voices](PIPER_VOICES.md): explicit catalog/download/preview/voice synthesis; model ONNX+JSON and runtime prerequisites.
+- [Image controls](CONTROLES_IMAGEN.md): KSampler options and presets, persisted sampling controls.
 
-- `POST /api/v1/stories/{story_id}/creator/characters` y `PUT /api/v1/stories/{story_id}/creator/characters/{character_id}` aceptan `visual_dna:{tags:string[],seed:number|null,lora_name:string|null,lora_strength:number}`. Los valores opcionales por defecto son `[]/null/null/0.8`; etiquetas de 2–64 caracteres, máximo 16, sin duplicados Unicode casefold; semilla 0..4294967295; LoRA como **nombre de archivo** `*.safetensors` sin separadores ni URL; peso 0..2. `422` ante datos incorrectos, o si se intenta sustituir una lista de etiquetas no vacía o semilla ya fijada. Un PUT legacy que omite el campo conserva el ADN existente. `GET /creator/characters` normaliza registros legacy antes de responder.
-- `POST /api/v1/stories/{story_id}/creator/characters/{character_id}/expression-sheet` recibe multipart `caption`, `pose=standing`, `layout=horizontal|vertical`, `file` (PNG/WebP, máximo 12 MiB). La hoja requiere **exactamente 5 celdas iguales** con fondo transparente y contenido visible, en este orden: `neutral,joy,anger,sadness,surprise`. `201 {assets:[CreatorMediaAsset x5],count:5}`. Devuelve `415` para MIME ajeno, `413` para tamaño excesivo, `422` para hoja, pose o propietario inválido. No sobrescribe assets previos ni ejecuta inferencia; inserta todas las filas con una transacción y borra todos los archivos nuevos ante fallo de inserción.
-- Los cinco PNG se indexan usando el contrato preexistente `creator_media_assets`, por lo que son visibles mediante `GET /creator/assets` y `GET /creator/assets/scene`, tienen UUID propios y siguen las reglas actuales de snapshot, fork y respaldo. El API no promete orden cronológico fijo en `assets`: usar el campo `expression` para identificarlos. No hay generación de hojas por ComfyUI ni consumo de LoRA en este endpoint.
-
-## Composición de etiquetas `visual_dna` en prompts (2026-11-05/06)
-
-- `GET /api/v1/stories/{id}/creator/characters` incluye `visual_character_id`; Creator Studio permite elegir una ficha existente de `GET /visual-state` para enlazarla, y `POST|PUT /creator/characters` verifica que su UUID pertenezca a la historia.
-- `POST /api/v1/stories/{id}/scene-plan/preview` y `POST /api/v1/stories/{id}/illustration-prompt` ya comparten `ScenePlanner.prompt` cuando está disponible. Sin plan, `VisualState.enriched_prompt` añade etiquetas de `visual_dna` solo a NPC mencionados por nombre completo; con plan explícito, las añade solo a fichas `visual_character_id` incluidas en `visible_character_ids`. No se adjuntan personajes de otra historia, nombres duplicados ambiguos, LoRAs ni semillas individuales.
-- `POST /api/v1/stories/{id}/illustrate` usa el mismo prompt compuesto; la firma SHA256 de caché cambia si una identidad se establece entre renders. La semilla de render sigue siendo la solicitada por el usuario (o una aleatoria). La carga de LoRA está desactivada por defecto y solo se aplica mediante el parámetro `apply_character_loras=true`; no hay descarga automática.
-
-## Contratos LoRA de ComfyUI y procedencia visual (2026-11-05/06)
-
-- `GET /api/v1/images/loras` consulta el endpoint local `/models/loras` únicamente a petición; responde `{online,loras,error}`. No descarga modelos ni inicia generación.
-- `POST /api/v1/stories/{id}/illustrate` acepta `apply_character_loras:boolean=false`. Si es `true`, selecciona LoRAs solo para el elenco propio, verifica que existan en ComfyUI y que `/object_info/LoraLoader` soporte los campos `model,clip,lora_name,strength_model,strength_clip`. Rechaza selección vacía, LoRA ausente o nodos incompatibles con 422 y falla con 503 si el catálogo no responde, sin enviar `/prompt`. Máximo 3 LoRAs distintos. El resultado añade `applied_loras:[{character_name,lora_name,strength}]`.
-- `visual_assets.render_details_json` guarda `{workflow_version,loras}` para renders nuevos (o `{}` en antiguas/manuales). `GET /visual-state` proporciona `assets[].render_details`. `render_signature` cambia con los LoRAs y sus intensidades; un render clásico conserva su antigua firma de caché. La migración SQLite agrega columna con `DEFAULT '{}'`, los forks y archivos `.noble.zip` la conservan y respaldos v1 anteriores reciben `{}`. Importación rechaza objetos visuales con JSON inseguro, rutas LoRA inválidas, intensidades no finitas y más de tres modelos.
-
-## Generación de expresiones IA con revisión explícita
-
-- `POST /api/v1/stories/{story}/creator/characters/{npc}/sprite-drafts` acepta `{caption,pose,style,seed?,reference_asset_id?,use_lora?,denoise?}`; `201 SpriteDraft`. Creación guarda snapshot editorial (semilla prioriza `visual_dna.seed`) y no contacta ComfyUI.
-- `GET /api/v1/stories/{story}/creator/sprite-drafts` devuelve `{drafts:[SpriteDraft]}`; `GET /.../sprite-drafts/{draft}` recupera un borrador. Cada `SpriteDraft` expone `slots.neutral|joy|anger|sadness|surprise` con `ready,preview_url,quality`, `ready_count`, checkpoint/seed, pose, NPC, fecha y referencia opcional; el backend valida que story/draft pertenezcan al mismo proyecto.
-- `POST /api/v1/stories/{story}/creator/sprite-drafts/{draft}/expressions/{neutral|joy|anger|sadness|surprise}` acepta `{allow_low_vram:false}`; retorna estado actualizado. Una única petición inicia **una sola** generación ComfyUI con candado GPU compartido, checkpoint preflight, LoRA y referencia opcionales validadas. El render se acepta solo si puede convertirse a PNG RGBA con fondo transparente y calidad básica; en fallo se conserva el preview anterior y no se publica nada.
-- `GET /api/v1/stories/{story}/creator/sprite-drafts/{draft}/expressions/{expression}/preview` sirve PNG de vista previa con `Cache-Control:no-store`; no admite UUID ajenos ni rutas arbitrarias.
-- `POST /api/v1/stories/{story}/creator/sprite-drafts/{draft}/approve` requiere las cinco expresiones, responde `{approved:true,count:5,assets:[...5]}` y publica el conjunto mediante el importador transaccional anterior. Si falla un archivo/DB, conserva el borrador para reintentar. `DELETE /api/v1/stories/{story}/creator/sprite-drafts/{draft}` descarta borrador sin tocar la biblioteca.
-- `creator_media_assets.source` es `manual|ai_reviewed` y `generation_json` almacena procedencia normalizada de expresiones IA con checkpoint, seed, LoRA opcional, hash del prompt, método de recorte, cobertura y confirmación del autor. `GET /creator/assets` expone `source` y `generation_details`; migraciones y backups v1 anteriores reciben `manual/{ }` (objeto vacío). No se descargan pesos; los borradores no entran en backups hasta aprobarse.
-
-## Referencias IPAdapter y alineación de sprites
-
-- `GET /api/v1/images/identity-adapter/status` consulta **solo cuando se solicita** nodos locales `/object_info/IPAdapterUnifiedLoader` y `/object_info/IPAdapter` y los inventarios `/models/ipadapter`, `/models/clip_vision`; devuelve `{available,presets,model_count,clip_vision_count,error}`. No realiza inferencia, instalación ni descarga.
-- `POST /api/v1/stories/{story}/creator/characters/{npc}/sprite-drafts` admite `reference_asset_id?` (imagen Galería) **o** `reference_sprite_asset_id?` (sprite editor `foreground` ya publicado, propiedad del mismo `npc`), pero nunca ambos. Añade `reference_mode:'img2img'|'ipadapter'` (por defecto `img2img`), `ipadapter_preset` (lista cerrada STANDARD/PLUS/PLUS FACE) y `ipadapter_weight` [0.1,1.5] por borrador. IPAdapter exige una referencia; guardado no contacta ComfyUI. Cada GET de borrador añade modo, preset, fuerza, UUID de referencia si existe.
-- `POST /sprite-drafts/{draft}/expressions/{expression}`: en `img2img`, la referencia es el origen de `VAEEncode`; en `ipadapter`, se sube como RGB con *letterbox* y entra a `LoadImage → IPAdapter` por puerto IMAGE, mientras el muestreador usa `EmptyLatentImage`. Los nodos cargadores se validan por estructura/archivos antes del trabajo. La referencia debe conservar el SHA256 y seguir siendo accesible dentro del mismo proyecto/NPC. El modo IPAdapter no es FaceID, ni implica máscara espacial.
-- `creator_media_assets.generation_json` mantiene los registros antiguos `comfy-sprite-v1` y admite el nuevo `comfy-sprite-v2-ipadapter` con `adapter:{preset,weight,reference_sha256,reference_kind:'gallery'|'sprite'}` validado. Export/fork/restore conservan la procedencia y rechazan variantes alteradas.
-- Los borradores presentan `alignment_warnings:string[]` y `alignment_review_needed:boolean`, derivados de diferencias relativas de siluetas alfa (no del rostro). `POST /sprite-drafts/{draft}/approve` acepta `{accept_alignment_warnings?:false}`. Si hay variaciones grandes y no se reconoce haberlas revisado, devuelve 409 sin publicar; al aceptar sigue usando el importador transaccional. Los PNG temporales con SHA256 grabado que se modificaron después de generar también se rechazan con 409.
-
-## Recorte neuronal de fondos en borradores de sprites
-
-- `GET /api/v1/images/matting/status` (sondeo explícito) devuelve `{neural_available:boolean,modes:[{mode,model,node,ready,reason}]}`; `chroma_green` aparece siempre listo, `neural_rmbg2`, `neural_birefnet_portrait`, `neural_birefnet_matting` exigen esquema de nodos y lista de ficheros instalados en `/models/rmbg`. Sin inferencia, descargas ni `/prompt`.
-- `POST /api/v1/stories/{story}/creator/characters/{npc}/sprite-drafts` admite `cutout_mode:'chroma_green'|'neural_rmbg2'|'neural_birefnet_portrait'|'neural_birefnet_matting'` con predeterminado `chroma_green`. Se guarda en `settings_json` y en `GET .../sprite-drafts`; puede combinarse con IPAdapter, LoRA o img2img. La creación no usa ComfyUI.
-- `POST /api/v1/stories/{story}/creator/sprite-drafts/{draft}/expressions/{expression}`: si es neuronal, rechaza `422` por nodo/modelo ausente **antes** de `/prompt`. Cada ejecución produce dos outputs del mismo ID de generación (`SaveImage[7]` procesado y `SaveImage[25]` máscara), que se descargan/validan como conjunto. Ausencia o ruta de máscara inválida retorna 502; máscara o composición de calidad insuficiente retorna 422 y conserva el slot anterior. No existe fallback automático a croma.
-- `creator_media_assets.generation_json` admite `comfy-sprite-v3-matting` y `comfy-sprite-v4-matting-ipadapter`, con `matting:{mode,model}` y `quality.method='neural_rmbg'|'neural_birefnet'`. Exportación/restauración valida par de valores, versión y si IPAdapter está presente. Formatos existentes v1/v2 y activos manuales no cambian.
-
-
-## Story Hub local (v1)
-
-- `GET /api/v1/story-hub` devuelve `{packs,source:"bundled-original",community_online:false}`; solo muestra campos públicos, nombres de NPC, previews, recuentos y `has_images=false`. No divulga `ai_plot`, recordatorios, diálogos de personalidad ni contenido Lorebook.
-- `GET /api/v1/story-hub/{pack_id}` devuelve ficha pública o 404.
-- `POST /api/v1/story-hub/{pack_id}/install` con `{"protagonist_name":"Alex"}` opcional devuelve 201 con `{story,package_id,version,characters_installed,lore_installed,openings_installed}`. Valida y crea claves UUID independientes en `BEGIN IMMEDIATE`; un fallo de INSERT revierte historia, personajes y lore. Id desconocido da 404, parámetros inválidos dan 422.
-- Inicio: `POST /api/v1/stories/{story_id}/creator/opening` guarda la escena seleccionada sin modelo y rechaza sobrescribirla.
-- No hay API de registro remoto ni importación de paquetes de autores en esta versión. [Guía](STORY_HUB.md).
+**API compatibility rule:** do not rename existing Spanish-looking hash-route IDs or story pack identifiers as a side effect of translating UI/documentation. Add English labels without breaking saved links, media references, or tests.
