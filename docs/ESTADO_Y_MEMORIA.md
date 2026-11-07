@@ -1,175 +1,182 @@
-# Estado, memoria y coherencia narrativa
+# Narrative state, memory, and consistency
 
-Estado: diseño v0.1.
+**Status:** evolving design and implemented P1 features. This document distinguishes shipped persistence from future semantic memory and cognitive-isolation guarantees.
 
-## Problema que resolvemos
+## The problem
 
-Una novela visual de IA puede generar diálogos brillantes y, 40 turnos después, olvidar una promesa, mover un personaje a un lugar imposible o cambiar la ropa entre imágenes. Noble AI no delega todo el canon a una ventana de contexto: registra hechos estructurados y versiones.
+An AI visual novel can produce convincing dialogue but, 40 turns later, forget a promise, teleport a character, or silently change their outfit. Noble AI does not delegate all canon to a single context window: structured facts, revisions, and branch-specific state must be persisted.
 
-## Agregados de dominio
+## Domain aggregates
 
-| Agregado | Propiedades importantes |
+| Aggregate | Important properties |
 |---|---|
-| Story | `id`, título, premisa, idioma, estilo, reglas, fecha de creación |
+| Story | `id`, title, premise, language, style, rules, creation date |
 | Branch | `id`, `story_id`, `parent_branch_id`, `fork_turn_id`, `head_revision`, `active` |
-| Turn | `id`, parent, input mode, input text, narration/dialogue, provider config, commit status |
-| Event | `id`, `branch_id`, ordinal, tipo, actor, source_turn_id, payload JSON, timestamp |
-| Character | `id`, roles, bio y reglas de conocimiento, canon visual por versión |
-| Relationship | from/to + estado/revisión + hechos que la justifican |
-| Location | `id`, geografía lógica, ocupantes, visual keys |
-| Scene | estado derivado de sucesos; lugar, momento, reparto y revision |
-| Memory | recuerdos confirmados, resúmenes derivados, importancia, procedencia |
-| Asset | hash, tipo, versión de apariencia, prompt/workflow/model, estado y scene revision |
-| Job | tipo, prioridad, idempotencia, provider, retry/cancel/lease |
+| Turn | `id`, parent, input mode, player input, narration/dialogue, provider settings, commit status |
+| Event | `id`, `branch_id`, ordinal, type, actor, source turn, JSON payload, time |
+| Character | Stable ID, roles, biography, knowledge permissions, versioned visual canon |
+| Relationship | From/to, state/revision, supporting events |
+| Location | ID, logical geography, occupants, visual keys |
+| Scene | Derived state: location, time, cast, revision |
+| Memory | Confirmed facts, derived summaries, importance, provenance |
+| Asset | Hash, kind, appearance revision, prompt/workflow/model, status, scene revision |
+| Job | Kind, priority, idempotency, provider, retry/cancel/lease |
 
-**Fuente de verdad:** turnos y eventos confirmados por rama. Fichas y resúmenes son índices/materializaciones que pueden reconstruirse.
+**Source of truth:** branch-confirmed turns and events. Profiles and summaries are recoverable indexes/materializations, not an excuse to overwrite historical facts.
 
-## Ensamblaje de contexto
+## Per-turn context assembly
 
-Orden recomendado por turno:
-1. Reglas del proyecto (no suplantar la decisión del jugador, idioma, contratos).
-2. Premisa/mundo; reglas particulares de la historia.
-3. Personajes activos: identidad, motivaciones, relación, conocimientos accesibles.
-4. Estado actual: tiempo, lugar, inventario, heridas, objetivos, situación.
-5. Hechos relevantes de canon recuperados por `story_id`, rama y relevancia (filtro temporal).
-6. Últimos N turnos íntegros; resumen de episodios antiguos si hay presión de tokens.
-7. Comando del jugador.
+Recommended priority:
 
-Presupuesto de tokens por perfil; no suponer contexto 128k libre de costo de KV. Medir con tokenizador de proveedor. Si excede, conservar canon+entrada reciente; comprimir pasado. Registrar qué memorias fueron inyectadas para depuración.
+1. Core project rules: player agency, output language, and API contracts.
+2. Premise, world, and story-specific rules.
+3. Active characters: identities, motivations, relationships, and what they may know.
+4. Current state: in-world time, location, inventory, injuries, objectives, and conditions.
+5. Canon facts retrieved for story, branch, temporal relevance, and permissions.
+6. Recent full turns, then relevant earlier episodic summaries within the budget.
+7. The current player's input, preserved without reinterpretation as a settings command.
 
-## Actualización de hechos
+Budget tokens by provider/model. Do not assume 128k context is free of KV-cache cost. Use a provider tokenizer where available. When full, preserve current user input and confirmed canon; compact older context. Report inserted memories for debugging.
 
-A partir de texto propuesto, un paso de extracción devuelve **propuestas** de eventos tipados: `character_entered`, `character_left`, `item_acquired`, `item_removed`, `relationship_changed`, `time_advanced`, `location_changed`, `fact_learned`, `appearance_changed`, `quest_updated`. Aplicar validaciones de tipo, IDs existentes, coherencia temporal y autorización narrativa.
+## Structured fact updates
 
-Eventos de editor/jugador tienen prioridad explícita sobre inferencias de modelo. Si el modelo contradice canon, presentar narración sin aplicar estado conflictivo o regenerar una vez. Nunca crear hechos irreversibles sin enlazar turno fuente.
+A future extraction stage may propose typed events such as `character_entered`, `character_left`, `item_acquired`, `item_removed`, `relationship_changed`, `time_advanced`, `location_changed`, `fact_learned`, `appearance_changed`, and `quest_updated`. Validate type, IDs, timeline consistency, and authority before applying any changes.
 
-## Branching: reintentar y editar
+Confirmed player/editor changes take precedence over speculative model-generated events. If an LLM contradicts canon, reject the conflicting state delta or carefully retry narration. Never create irreversible facts without linking a source turn.
 
+## Branching: retry and edit
+
+```text
+main: turn1 -> turn2 -> turn3
+                \
+                 retry-2: turn2b -> turn3b
 ```
-rama main: turno1 -> turno2 -> turno3
-                    \
-                     retry-2: turno2b -> turno3b
-```
 
-Cada rama conserva su historial hasta el punto de bifurcación. Revisiones optimistas; `parent_branch_id` y `fork_turn_id` son obligatorios. La UI distingue rama activa y pasadas. No editar el texto de un evento ya committeado in situ.
+Each branch preserves its own timeline from the fork point. Use optimistic revisions and explicit parent/fork references. Show current and historical branches distinctly; do not mutate a committed turn's event text in place.
 
-Si se edita turno 2, los resúmenes desde turno 2, el estado derivado y las imágenes de escena antigua quedan obsoletos **solo en la nueva rama**. Assets antiguos continúan referenciados por la rama original. Evitar borrado automático sin GC con conteo de referencias.
+Editing turn 2 should invalidate relevant summaries, derived state, and scene artwork **only on the new branch**. The original branch retains its assets and references. Do not delete shared files without ownership/reference-counted garbage collection.
 
-## Memoria estructurada vs semántica
+## Structured versus semantic memory
 
-- P0/P1: SQLite, JSON de canon y búsqueda por tags/FTS5; esto basta para pocas historias.
-- P2: resúmenes por ventana/episodio y recuperación top-k con relevancia temporal.
-- Futuro: embeddings locales para recordar hechos remotos, pero no se anteponen a canon explícito.
-- Los resúmenes reciben `source_event_range`, versión de prompt/modelo y `stale` para permitir recalcular.
+- **P0/P1:** SQLite canon JSON, keys/tags, and FTS5 for smaller story libraries.
+- **P2 target:** episode/window summaries, temporally filtered top-k retrieval.
+- **Later:** optional local embeddings to recall distant events. They must never override explicit canon.
+- Summaries should contain `source_event_range`, prompt/model revision, and `stale` for reproducible refresh.
 
-## Pruebas narrativas obligatorias
+## Required narrative QA
 
-- Un secreto no revelado no se atribuye a un personaje que lo desconoce.
-- Cambiar objeto de dueño refleja inventario, narra consecuencias y persiste.
-- `retry`/edición nunca modifica el original; ambos recargan correctamente después de reinicio.
-- Con 100 turnos, el canon manual y el último estado no se pierden.
-- Narración JSON corrupta no produce alteración de DB; queda registro de diagnóstico.
-- Cambio de vestuario produce nueva `appearance_revision` visual, pero una frase sin cambio conserva el asset.
+- An unrevealed secret must not be attributed to a character who does not know it.
+- An item transfer changes inventory, narrates consequences, and persists.
+- Retrying/editing never alters the original branch; both restore correctly after restart.
+- Across 100 turns, manual canon and the latest state remain available.
+- Corrupt narrative JSON causes no unauthorized DB mutation; diagnostics are retained.
+- An outfit change increments visual `appearance_revision`, whereas an irrelevant phrase reuses existing art.
 
-## Migraciones y copias
+## Migrations and backups
 
-SQLite con migraciones Alembic en cada cambio de esquema. Copia transaccional/SQLite backup API antes de versiones destructivas, export JSON/ZIP con manifest+hash+schema_version, import con IDs mapeados y verificación de integridad.
+Use versioned SQLite schema migrations for schema changes and the SQLite Backup API for safe copies before destructive operations. Portable JSON/ZIP exports should have a manifest, checksums, `schema_version`, remapped IDs, and integrity validation. Do not assume all historical migrations use Alembic; inspect the repository's actual migration runner.
 
-## P1.4 — Canon y bifurcación real disponibles
+## P1.4 — manual canon and independent story forks
 
-**Estado verificado por tests de API/SQLite.** Cada historia posee el campo `canon`, texto editable hasta 5000 caracteres. Se guarda como atributo permanente de la historia, además de la premisa y protagonista. La generación narradora añade este canon al mensaje del sistema para mantener reglas del mundo y hechos confirmados, aunque el historial reciente ya no contenga esos turnos.
+**Implemented and covered by API/SQLite tests.** Each story has an editable `canon` field of up to 5,000 characters, persisted independently of the premise and protagonist. Narration includes it in the system context even after the original turns leave the recent-history window.
 
-- `PATCH /api/v1/stories/{uuid}/canon` recibe `{"canon":"..."}` y retorna la historia.
-- `POST /api/v1/stories/{uuid}/fork` con `{"until_turn_id":"uuid"}` crea una **historia nueva independiente** que copia todos los turnos hasta e incluyendo el indicado. `{}` copia el historial completo. Nunca borra el original.
-- La copia tiene un UUID propio, conserva premisa, protagonista, canon y escena WebP; los turnos reciben IDs y request_id nuevos.
-- Se guardan `origin_story_id` y `origin_turn_id` en SQLite para futura navegación mediante árbol de ramas.
-- UI: **Biblioteca → Historial → Crear rama**; después puedes elegir original o alternativa en la biblioteca.
-- La copia se realiza en una transacción SQLite. Aún no hay árbol visual interactivo, fusión de ramas ni estado automático derivado de los turnos.
-- La memoria de corto plazo sigue usando una ventana de los 16 turnos más recientes. El canon es manual: Noble AI no deduce ni inventa automáticamente eventos canónicos nuevos.
+- `PATCH /api/v1/stories/{uuid}/canon` with `{"canon":"..."}` returns the updated story.
+- `POST /api/v1/stories/{uuid}/fork` with `{"until_turn_id":"uuid"}` creates an **independent story** with history up to and including that turn. `{}` copies all turns.
+- New story/turn/request UUIDs are generated. Premise, protagonist, canon, and compatible scene media are copied without deleting the original.
+- `origin_story_id` and `origin_turn_id` record provenance for a future graphical branch tree.
+- UI: **Library → History → Create branch**.
+- SQLite transaction covers the branch copy; a fully interactive graph, merge operation, and fully automated state derivation are separate work.
+- Short-term context uses the most recent 16 turns. Canon is authored manually; the system does not infer authoritative new facts solely from prose.
 
-**Preparación del motor:** `POST /api/v1/narrative/prepare` ejecuta una generación mínima y explícita para precalentar Ollama/KoboldCpp/worker. No añade capítulos, no actualiza canon y no se activa al abrir la aplicación. OpenRouter no ofrece esta precarga y queda excluido. El botón muestra el tiempo de espera, pero no garantiza que la GPU conserve indefinidamente el modelo cargado.
+**Explicit engine warmup:** `POST /api/v1/narrative/prepare` performs a small warmup for supported Ollama/KoboldCpp/worker providers, without saving a chapter or changing canon. It never runs merely because the app opens. OpenRouter does not support this managed preload. A successful warmup cannot guarantee permanent model residency.
 
-**Futuro:** memoria por escenas, inventario y relaciones, resúmenes semánticos auditables, identificación de cambios de escenario, decisiones visuales, árbol de ramas y control de conflictos.
+## P1.5 — visual timeline separate from narrative canon
 
+Narrative canon remains independently editable. `visual_scenes` represents a location timeline; detecting a transition must not rewrite canon or older scenes. `visual_characters` holds versioned textual appearance data. `visual_assets` persists WebP results and `visual_current` identifies the active version.
 
-## P1.5 — estado visual separado del canon narrativo
+Forking copies eligible scenes, profiles, and media with new owned IDs rather than mutable pointers to the origin. Full semantic scene understanding and a graphical branch tree remain open.
 
-El texto canónico sigue siendo editable; los registros `visual_scenes` representan la línea temporal espacial. Una transición detectada no modifica el canon ni altera retroactivamente escenas antiguas. Las fichas `visual_characters` guardan rasgos coherentes como texto versionado. La galería `visual_assets` vincula escenas con resultados WebP permanentes, y `visual_current` apunta a la versión mostrada. Bifurcar una historia copia sus escenas, personajes y arte aplicable con IDs nuevos; no enlaza mutablemente los archivos con los del origen. El análisis semántico completo y el árbol de ramas siguen pendientes.
+## Argon memory priorities — November 5, 2026
 
-## Prioridades de memoria según auditoría Argon (2026-11-05)
+Existing stories, canon, turns, and forks are persisted, but this foundation **is not yet a complete hybrid memory system or proof of cognitive isolation**. See [TODO AUD-005 / AUD-006 / AUD-014](../TODO.md) and the corresponding sections of the [Argon audit](ARGON_AUDITORIA.md).
 
-Estado: la base actual persiste historias, canon, turnos y clones; **no constituye aún** memoria híbrida con aislamiento cognitivo ni snapshots completos del mundo. Seguir los checkboxes [AUD-005, AUD-006 y AUD-014](../TODO.md), con semántica de la tabla maestra §18.
+1. **Deterministic source of truth:** structured state by story/branch/turn records location, in-world time, present cast, inventory, relationships, flags, witnesses, and related media. LLM narration must not arbitrarily redefine committed state.
+2. **Atomicity:** commit turn, world snapshot, and canon revision together; asynchronous visual assets need their own idempotency protocol. Rewinding must restore the selected point, not borrow present-day state from another branch.
+3. **Four context layers:** stable instructions/canon/characters; bounded key-triggered Lorebooks; relevant witnessed episodic memory; recent FIFO dialogue. Stable prefixes may help provider KV caches, but report cache-hit metrics only when observed.
+4. **Retrieval:** start with FTS5; optional `sqlite-vec` CPU embeddings once installable. Episodes should include `witness_character_ids`, importance, turn range, and provenance. Never inject an unwitnessed secret as an NPC's own memory.
+5. **Budget:** server assigns effective per-block token allowances and output reserve, reports truncation, and exposes breakdown via the creator/context inspector. The audit's 8,192-token example is a baseline profile, not a universal rule.
+6. **Validation:** 100–120-turn stories, recovery of distant facts, witness separation, branch isolation, context limits, and restart persistence. Keep broader milestones open until these tests pass.
 
-1. **Fuente de verdad determinista:** el estado estructurado por `story_id`, `branch_id` y `turn_id` define ubicación, momento, personajes presentes, inventario, relaciones, flags, testigos y vínculos de arte. El LLM redacta la narración; no puede redefinir unilateralmente ese estado.
-2. **Atomicidad y recuperación:** guardar turno, snapshot y cambios canónicos dentro de una unidad transaccional; no mezclar el delta visual asíncrono con el commit narrativo sin un protocolo de idempotencia. El retroceso debe restaurar el estado exacto del nodo, no copiar el estado actual de otra rama.
-3. **Cuatro niveles de contexto:** prefijo fijo (instrucciones/canon/personajes), Lorebooks por claves/regex con límites, memorias episódicas relevantes con testigos y ventana FIFO reciente. El prefijo estable favorece la reutilización de KV-cache; cualquier métrica de acierto debe venir del proveedor.
-4. **Recuperación:** FTS5 primero como fallback ligero; `sqlite-vec` opcional para embeddings CPU cuando sea instalable. Los episodios deben registrar `witness_character_ids`, `importance`, rango de turnos y procedencia; nunca inyectar a un personaje un secreto que no presenció.
-5. **Presupuesto:** el servidor decide la asignación efectiva de tokens por bloque, conserva reserva de salida, informa el truncamiento y presenta un desglose al inspector en `NarrativeSettings.tsx`. El ejemplo 8192 tokens de la auditoría es un perfil inicial, no una regla universal.
-6. **Validación:** historias simuladas de 100–120 turnos, hecho remoto recuperado, aislamiento de testigos, ramas sin contaminación, límite de contexto respetado y persistencia tras reinicio. Sin esta evidencia las tareas quedan abiertas.
+## P1 — conditional local Lorebook (November 5, 2026)
 
-Referencias: [auditoría §§09–10, 14, 19, 21](ARGON_AUDITORIA.md), [arquitectura](ARQUITECTURA.md), [roadmap](ROADMAP.md).
+Creator API supports `GET/POST/PUT/DELETE /api/v1/stories/{uuid}/lorebook` and `POST .../lorebook/preview`. Entries store private author text, primary/secondary triggers, an `any/all` secondary matching mode, whole-word escaped matching using `re.escape` (never arbitrary user regex), enabled/always-on flags, and priority 0–100.
 
+Entry text is limited to **3,500 characters**; total activated content to **6,000 characters**. Entries are included whole or omitted if they do not fit. These are **character**, not exact token, limits.
 
-## Implementación P1: Lorebook local condicionado (2026-11-05)
+Narration checks the current action and last four turns, **not the hidden `ai_plot`**, for trigger matches. Matching private context is inserted into the narrator's system prompt, not displayed as a player reply. `NarrativeService.fork_story` creates independent Lorebook UUIDs on the new branch.
 
-El creador dispone de `GET/POST/PUT/DELETE /api/v1/stories/{uuid}/lorebook` y `POST .../lorebook/preview`. Cada entrada conserva contenido autoral privado, palabras clave primarias y secundarias, modo `any/all` para secundarias, coincidencia de palabra completa con `re.escape` (nunca regex arbitraria), estado habilitado o siempre activo, y prioridad de 0–100. Se limita el contenido por entrada (3500 caracteres) y el contexto activado (6000 caracteres). Los hechos se incluyen íntegros o se omiten si no caben. Es un límite por **caracteres**, no por tokens.
+A 110-turn scenario was checked: a distant Lorebook fact stayed inactive until the current action again contained its trigger. Creator Studio has a separate Lorebook editor and exact-context preview. Tests: `tests/test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220) reported **151 Python / 30 Playwright PASS**.
 
-La activación del narrador analiza la intervención presente y los últimos cuatro turnos (sin utilizar `ai_plot` oculto como disparador), y añade los hechos pertinentes al mensaje de sistema sin enseñarlos como respuesta al jugador. `NarrativeService.fork_story` copia las entradas en filas UUID nuevas para poder editar ramas sin alterar la historia origen. Se ha comprobado una historia de 110 turnos: un hecho escrito previamente en Lorebook no se inyecta de forma omnipresente, pero vuelve a entrar cuando la acción actual contiene su clave.
+Further goals include comprehensive witness isolation, semantic episodic memory, bounded regex options, Lorebook recursion, and provider-tokenizer-aware budgets. Partial witness and snapshots described below were subsequently implemented; do not confuse them with complete cognitive guarantees.
 
-La interfaz Creator Studio incluye pestaña propia de Lorebook con editor, prioridades, activadores y previsualización del texto exacto añadido. API y pruebas `tests/test_lorebook.py`; [CI #42069895220](https://github.com/Mairon31/novel_ai/actions/runs/42069895220): **151 Python + 30 Playwright PASS**.
+## P1 — structured per-turn world state and witnesses
 
-**No implementado todavía:** scopes de personaje/testigos (control de omnisciencia), recuperación semántica de memorias episódicas, regex con timeout, recursión de Lorebooks y reparto del contexto con tokenizador del runtime. Los snapshots de canon, Lorebook y NPC ahora existen y se documentan abajo. Estas tareas siguen abiertas en [TODO](../TODO.md).
+Noble AI includes `world_state.py` and Creator Studio's **World State** panel. Authors explicitly confirm `location`, `time_of_day`, `weather`, `present_character_ids`, `inventory`, `relationships`, `flags`, and `facts`. A fact has a persistent UUID, text, `public` flag, and `witness_character_ids`.
 
+The API validates ownership of present/witness/relationship NPC IDs, at least one witness for private facts, duplicate restrictions, and field lengths. `PUT /api/v1/stories/{uuid}/world-state` accepts `expected_revision`; stale concurrent edits return **409** instead of overwriting another author's work. `world_state_edits` retains confirmed revisions. The LLM does **not** independently infer and apply these changes from free-form narrative text.
 
-## Implementación P1: estado estructurado por turno, rama y testigos (2026-11-05)
+At each turn, `NarrativeService.append` stores the dialogue, spatial transition, and `world_turn_snapshots` row containing the state and exact canonical text **in one SQLite transaction**. `GET .../world-state/turns/{turn_id}` retrieves an earlier state.
 
-Noble AI integra `world_state.py` y una pestaña **Estado del mundo** en Creator Studio. El autor confirma explícitamente `location`, `time_of_day`, `weather`, `present_character_ids`, `inventory`, `relationships`, `flags` y `facts`. Un hecho contiene texto, UUID persistente, `public` y `witness_character_ids`. El servidor valida que cada NPC de presencia, testimonio y relación pertenezca a la historia, que los hechos privados tengan al menos un testigo, que no haya duplicados y que los límites de longitud se respeten.
+A fork at a selected turn copies only historical snapshots, restores the selected state/canon, and remaps character/fact UUIDs. Older turns predating snapshot support may not have one: Noble AI must **not fabricate** a past snapshot from later knowledge.
 
-Las ediciones usan `PUT /api/v1/stories/{uuid}/world-state` con `expected_revision`; un cambio concurrente con versión obsoleta devuelve **409** y no sobrescribe el trabajo ajeno. `world_state_edits` conserva revisiones confirmadas; los cambios no se deducen de frases narrativas ni se incorporan automáticamente por la IA.
+`WorldStateService.context` omits private facts from the model when none of their witnesses is present. When witnesses are present, the prompt specifies who knows the fact and asks the narrator not to attribute it to anyone else. This is a verifiable **input filter**, not proof that the LLM will honor every knowledge boundary. Global Lorebooks and past dialogue need further isolation controls.
 
-Al persistir cada turno, `NarrativeService.append` graba **en la misma transacción SQLite** el texto, la transición espacial y una fila en `world_turn_snapshots` con el estado y el **canon textual exacto** de ese momento. La consulta `GET .../world-state/turns/{turn_id}` permite visualizar el pasado. Una rama creada desde un turno copia únicamente sus snapshots históricos, restaura el estado y el canon del punto seleccionado y remapea los UUID de personajes y hechos en esa rama, sin mezclar con cambios futuros. Turnos preexistentes antes de las migraciones pueden carecer de snapshot: en ese caso no se inventa uno ni se copia el canon futuro.
+The interface edits location/time/weather, inventory, NPC relationships, booleans, and public/private facts with witness selection; it uses revision-controlled saves and an inspector for historical turn states.
 
-Para evitar omnisciencia directa, `WorldStateService.context` **no envía los hechos privados al modelo si ninguno de sus testigos está presente**. Si sí hay testigos, el contexto identifica quién conoce cada hecho y pide que el narrador no lo atribuya a otros. Es un filtro de entrada verificable, **no una prueba de que el LLM vaya a respetar todas las restricciones**. El Lorebook de historia global y los mensajes de episodios anteriores todavía necesitan controles cognitivos adicionales.
+`tests/test_world_state.py` covers transactions/rollback, historical canon, migration, independent forks, and witness filtering. [CI #42074620459](https://github.com/Mairon31/novel_ai/actions/runs/42074620459) reported **162 Python / 32 Playwright PASS** using real SQLite and desktop/mobile flows.
 
-La UI incluye posición, momento, clima, inventario, relaciones por NPC, indicadores booleanos, hechos públicos/privados con selección de testigos, guardado manual con control de revisiones y un inspector de snapshots por turno. `tests/test_world_state.py` comprueba transacciones, confirmación/rollback, canon histórico, migraciones, independencia de ramas y filtrado de testigos. [CI #42074620459](https://github.com/Mairon31/novel_ai/actions/runs/42074620459): **162 pruebas Python y 32 pruebas Playwright aprobadas**, con cobertura escritorio/móvil y SQLite real, además de conflictos de revisión bajo concurrencia.
+**Remaining:** safe destructive rewind, model-proposed validated state updates, isolation of knowledge across global Lorebooks and earlier dialogue, and power-loss durability tests. Time/weather/presence remain author-confirmed, not reliably inferred.
 
-**Pendiente:** rebobinado destructivo completo, actualización automática del estado mediante propuesta validada, aislamiento de conocimiento entre Lorebooks/diálogos y durabilidad de archivos ante corte eléctrico. El estado de tiempo/clima y presencia es confirmado por el autor, no detectado automáticamente con fiabilidad por el LLM.
+## P1 — safe historical Lorebook, creator instructions, and NPC rewind
 
+**Fixed bug:** forking from an older turn copied the **current** Lorebook, private creator instructions, and NPC profiles—even if they contained future spoilers. This violated timeline isolation.
 
-## P1: Lorebooks, instrucciones de autor y NPC históricos — rebobinado seguro (2026-11-05)
+Each `NarrativeService.append` now stores snapshots in the same transaction as the turn, scene, and world:
 
-**Problema corregido:** una rama creada desde un turno antiguo clonaba el Lorebook, las instrucciones internas del creador y las fichas de NPC tal como estaban *hoy*, incluso cuando contenían secretos escritos o descubiertos en turnos posteriores. Esto contradecía la independencia temporal del canon.
+- `lorebook_turn_snapshots`: full JSON of contemporary Lorebook entries, triggers, priority, enabled state. Editing/deleting an entry later does **not** rewrite history.
+- `creator_turn_snapshots`: the creator blueprint (`ai_plot`, guidelines, reminders) and NPC records from that turn.
+- `world_turn_snapshots`: location, witnesses, and exact contemporaneous canon.
 
-**Solución:** cada `NarrativeService.append` escribe, dentro de la misma transacción SQLite del turno, escena y mundo:
+Forking with `until_turn_id` restores precisely those selected versions, remaps Lorebook/NPC IDs to new branch-owned IDs, and uses the same new mappings across copied snapshots. Forking **at the present** copies current state.
 
-- `lorebook_turn_snapshots`: copia JSON íntegra de las entradas en ese instante (incluye activadores, prioridades y estado). Actualizar o eliminar una entrada después **no** reescribe el pasado.
-- `creator_turn_snapshots`: versión del blueprint de autor (incluye `ai_plot`, directrices y recordatorios) y las fichas de NPC tal como existían en el turno.
-- Las tablas existentes `world_turn_snapshots` continúan proporcionando lugar, testigos y canon textual con la misma fecha lógica.
+For legacy turns **without snapshots**, the safe default is to copy **no invented historical** Lorebook/NPC data that might reveal future knowledge.
 
-Una bifurcación con `until_turn_id` toma exactamente las versiones del turno seleccionado, vuelve a asignar IDs propios de Lorebook y NPC y conserva los mismos IDs nuevos a lo largo de las instantáneas copiadas. Una bifurcación **desde el presente** continúa copiando el estado actual. Para los turnos antiguos **sin snapshots** porque preceden a esta función, el sistema adopta el criterio seguro: **no inventa** entradas ni personajes históricos a partir de datos actuales que podrían revelar hechos futuros.
+**UI:** History → **Rewind here** opens a confirmation showing selected turn, number of later turns preserved on the original branch, and available snapshots. **Create path from this turn** uses the existing transactional fork; **Stay here** changes nothing. Rewind is **non-destructive**.
 
-**Interfaz:** Historial → **Rebobinar aquí** abre una confirmación. Muestra el turno de corte, el número de turnos posteriores que permanecerán en la historia original y las instantáneas disponibles de Lorebook/estado. «Crear ruta desde este turno» crea una rama mediante el `fork_story` transaccional existente y continúa en ella. «Mantenerme aquí» no altera datos. Es un **rebobinado no destructivo**: no borra ni archiva la línea original.
+Evidence: `tests/test_lorebook_timeline.py` validates earlier revisions, edit/delete after turns, restart, story isolation, legacy fallback, and transaction rollback. `tests/test_creator_timeline.py` tests historical private author/NPC content, stable remapping, no future spoilers, and rollback. `apps/web/tests/story-rewind.spec.ts` checks desktop/mobile cancel/confirm/fork against the real API. [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834): **179 Python / 34 Playwright PASS**.
 
-**Evidencia:** `tests/test_lorebook_timeline.py` verifica versiones antiguas, edición/eliminación posterior, recuperación de datos al reiniciar, ausencia de filtraciones entre historias, fallback seguro de migración y rollback de turno. `tests/test_creator_timeline.py` verifica NPC/instrucciones históricas, remapeo estable de IDs, versiones antiguas sin revelaciones futuras y rollback. `apps/web/tests/story-rewind.spec.ts` prueba confirmación/cancelación/ramificación contra API real en escritorio y móvil. [CI #42084535834](https://github.com/Mairon31/novel_ai/actions/runs/42084535834): **179 Python + 34 Playwright PASS**.
+**Limits:** exact time restoration for all later-edited editorial images, references, and visual scene plans is not universally guaranteed. There is no complete episodic FTS5/vector knowledge reconstruction or safe destructive rewind. Historical NPC records are not proof of full cognitive isolation.
 
-**Límites:** las ilustraciones editoriales, estados de referencia visual y planes de composición todavía no garantizan una reconstrucción temporal exacta ante ediciones posteriores. Tampoco hay recuperación de conocimiento episódico con FTS5/embeddings ni rebobinado destructivo seguro. No confundir «fichas de NPC históricas» con aislamiento cognitivo absoluto del modelo.
+## P1 — character-scoped Lorebook memory
 
+Lorebook entries can have world-wide or explicit private-witness scope. The engine compares witnesses against NPC presence from **author-confirmed structured state**. If no character who knows the entry is present, omit it even when keywords match or the entry is always active. Do not infer presence from free text.
 
-## P1 — alcance de memoria de Lorebooks por personaje
+Branch snapshots preserve independent remapped private IDs. Older entries default to `visibility=world`.
 
-La entrada de Lorebook admite alcance general o privado por testigos explícitos. El motor contrasta los testigos con el conjunto de NPC presentes del estado estructurado **confirmado** por el autor. Si nadie que conoce la entrada está presente, se omite del prompt aunque coincidan las palabras clave o sea siempre activa; el narrador no deduce presencia de texto libre. Los checkpoints y ramas conservan IDs privados remapeados, evitando que un personaje en otra historia herede el secreto.
+This reduces Lorebook-based leaks but **does not guarantee semantic knowledge isolation**: episodic facts, dialogue, private blueprint content, and model speculation still need scrutiny.
 
-El mecanismo reduce filtraciones por recuperación de Lorebook pero **no equivale a una garantía semántica de conocimiento**: aún deben aislarse episodios, diálogos, blueprint y las inferencias del modelo antes de afirmar separación cognitiva total. El campo `visibility=world` se aplica por defecto a entradas anteriores.
+## Older player interventions and FTS5
 
+Episodic index entries are based exclusively on **player input** from story turns—not generated dialogue or private creator secrets. Turn persistence and indexing share a transaction. Forks inherit only copied turns with new IDs.
 
-## Intervenciones antiguas y FTS5
+Manual search and bounded automatic retrieval can recover **up to three** older player actions beyond the most recent 16 turns. Recovered actions enter the context as historical `user` messages; they do not establish NPC knowledge or override verified world state.
 
-La memoria episódica indexa exclusivamente los textos ingresados por el jugador a la historia, no el diálogo generado por el modelo ni los secretos del creador. Cada turno y su índice se confirman en la misma transacción. Las ramas heredan solo los turnos copiados con IDs nuevos. La búsqueda manual y una recuperación automática limitada (máximo 3 recuerdos fuera de la ventana reciente de 16 turnos) permiten referenciar acciones antiguas como mensajes históricos de tipo `user`. Las acciones recordadas no confirman por sí mismas el conocimiento de ningún NPC ni reemplazan el estado del mundo verificado. SQLite FTS5 funciona si está presente; si falta, se mantiene una búsqueda léxica con límites de escaneo.
+Use SQLite FTS5 when available, with a bounded lexical scan fallback when it is absent.
 
+## Context inspector — provenance of each block
 
-## Inspector del contexto — origen de cada bloque
+Without generating or saving a new turn, the inspector can show the exact messages that **would** be passed to the narrator adapter for a proposed input. It groups canon, witness-filtered Lorebook, world state, recovered older actions, and recent history, reporting exact character counts and **estimated** tokens with `token_counts_exact=false`.
 
-El sistema permite consultar, sin generar ni persistir turnos, exactamente qué mensajes pasaría al adaptador narrativo ante una nueva intervención. Agrupa canon, Lorebook activo sujeto a testigos, estado del mundo, acciones episódicas recuperadas y ventana reciente; reporta caracteres exactos y **tokens aproximados**, dejando `token_counts_exact=false`. Las alertas de exceso son estimadas y no significan que Ollama, KoboldCpp o workers hayan confirmado el truncamiento. El inspector muestra instrucciones de autor y por eso se ubica en Configuración, no en el lector exportado.
+Budget warnings are estimates, not confirmation of actual truncation by Ollama, KoboldCpp, or remote workers. Private author instructions can appear in the inspector, so it belongs in Settings/Creator tools rather than a public or exported reader surface.
 
-
-**Suite integrada de memoria y contexto:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) aprobó recuperación después de 115 turnos, bifurcación aislada, rollback de índice y panel de contexto privado. La búsqueda permanece léxica y la contabilidad de tokens es estimativa.
+**Combined memory/context evidence:** [CI #42107613352](https://github.com/Mairon31/novel_ai/actions/runs/42107613352) passed recovery after 115 turns, fork isolation, index rollback, and private context inspector. Retrieval remains lexical and token counts approximate.
