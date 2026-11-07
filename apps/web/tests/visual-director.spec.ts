@@ -30,7 +30,7 @@ test('visual director registers and reuses existing background without ComfyUI',
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
-      await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+      await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await expect(page.locator('.noble-reader-chapter')).toContainText(title);
 
     await page.getByRole('button', { name: 'Open story details' }).click();

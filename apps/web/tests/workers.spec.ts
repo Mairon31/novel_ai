@@ -65,7 +65,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await expect(setup).toBeHidden();
   }
   if (test.info().project.name === 'mobile') {

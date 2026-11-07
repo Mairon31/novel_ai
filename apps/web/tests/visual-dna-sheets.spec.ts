@@ -24,11 +24,11 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
-      await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+      await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await page.getByRole('button', { name: /Characters \(0\)/ }).click();
-    await page.getByLabel('Name de NPC').fill('Aira');
+    await page.getByLabel('NPC name').fill('Aira');
     await page.getByLabel('Ficha visual del NPC').selectOption(visual.id);
-    await page.getByLabel('Descripción de NPC').fill(
+    await page.getByLabel('NPC description').fill(
       'Aira protege las llaves del castillo antiguo de cristal.');
     await page.getByLabel('Etiquetas visuales').fill('cabello negro, ojos verdes');
     await page.getByLabel('Semilla visual').fill('6789');

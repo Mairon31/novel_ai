@@ -5,7 +5,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
@@ -21,13 +21,13 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await expect(dialog).toBeHidden();
 
   await page.getByRole('button', { name: /Characters \(0\)/ }).click();
-  await page.getByLabel('Name de NPC').fill('Aira');
-  await page.getByLabel('Descripción de NPC').fill(
+  await page.getByLabel('NPC name').fill('Aira');
+  await page.getByLabel('NPC description').fill(
     'Aira es la protectora del faro que conoce los secretos de la ciudad.');
   await page.getByRole('button', { name: 'Add character' }).click();
   await expect(page.getByRole('button', { name: /Characters \(1\)/ })).toBeVisible();
-  await page.getByLabel('Name de NPC').fill('Beto');
-  await page.getByLabel('Descripción de NPC').fill(
+  await page.getByLabel('NPC name').fill('Beto');
+  await page.getByLabel('NPC description').fill(
     'Beto es un viajero que se encuentra por primera vez con la guardiana.');
   await page.getByRole('button', { name: 'Add character' }).click();
   await expect(page.getByRole('button', { name: /Characters \(2\)/ })).toBeVisible();
@@ -38,7 +38,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByLabel('Clima del mundo').fill('Lluvia intensa');
   await page.getByLabel('Inventario del mundo').fill('Mapa del faro\nLlave oxidada');
   await page.getByRole('checkbox', { name: 'Presente Aira' }).check();
-  await page.getByLabel('Relación con Aira').fill('Aliada de Luna');
+  await page.getByLabel('Relationship with Aira').fill('Aliada de Luna');
 
   await page.getByLabel('New flag name').fill('faro_encendido');
   await page.getByRole('button', { name: 'Añadir indicador' }).click();

@@ -5,7 +5,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
 
   const title = 'La línea temporal del faro ' + test.info().project.name;
   const created = await page.request.post('/api/v1/stories', {

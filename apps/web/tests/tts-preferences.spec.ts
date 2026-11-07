@@ -45,7 +45,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await welcome.isVisible()) {
-      await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+      await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
     }
     if (test.info().project.name === 'mobile') {
       await page.getByRole('button', { name: 'Open menu' }).click();
@@ -58,7 +58,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await openSettings();
   await page.getByLabel('Default Piper voice').selectOption('voice-b.onnx');
   await page.getByRole('button', { name: 'Guardar voz predeterminada' }).click();
-  await expect(page.getByText('Voz predeterminada guardada para el lector.')).toBeVisible();
+  await expect(page.getByText('Default reader voice saved.')).toBeVisible();
   expect(writes).toBe(1);
   expect(selected).toBe('voice-b.onnx');
   await page.reload();
@@ -71,14 +71,14 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await page.getByLabel('Piper voice noise').fill('0.75');
   await page.getByLabel('Ruido de fonemas Piper').fill('0.95');
   await expect(page.getByRole('button', { name: 'Preview selected voice' })).toBeDisabled();
-  await expect(page.getByText('Guarda los parámetros nuevos antes de probar la voz.')).toBeVisible();
+  await expect(page.getByText('Save the updated settings before testing the voice.')).toBeVisible();
   await page.getByRole('button', { name: 'Save Piper settings' }).click();
-  await expect(page.getByText('Parámetros Piper guardados para las próximas síntesis.')).toBeVisible();
+  await expect(page.getByText('Piper settings saved for future synthesis.')).toBeVisible();
   expect(parameterWrites).toBe(1);
   expect(synthesis).toEqual({ length_scale: 0.85, noise_scale: 0.75, noise_w: 0.95 });
   await page.getByRole('button', { name: 'Preview selected voice' }).click();
   await expect(page.getByLabel('Play voice preview')).toBeVisible();
-  await expect(page.getByText('Muestra generada. Pulsa Reproducir para escucharla.')).toBeVisible();
+  await expect(page.getByText('Sample generated. Press Play to listen.')).toBeVisible();
   expect(previewCalls).toBe(1);
   await page.reload();
   await openSettings();
