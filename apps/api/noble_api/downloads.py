@@ -44,14 +44,14 @@ class DownloadManager:
                 validate_variant(job["revision"], job["filename"])
                 root = self.store.models_dir.resolve()
                 if not root.is_relative_to(self.store.root.resolve()):
-                    raise ValueError("Directorio de modelos fuera del espacio administrado")
+                    raise ValueError("Model directory is outside managed storage")
                 target = root / "hf" / job["repo_id"] / job["revision"] / job["filename"]
                 part = Path(str(target) + ".part")
                 # Never mutate a symlink, a path outside root, or an unrelated
                 # installed file. The known DB job is the only discovery input.
                 if any(p.is_symlink() or not p.resolve().is_relative_to(root)
                        for p in (target, part)):
-                    raise ValueError("Ruta de recuperación no confiable")
+                    raise ValueError("Untrusted recovery path")
                 if not target.exists():
                     report["skipped"] += 1
                     continue
@@ -59,16 +59,16 @@ class DownloadManager:
                     raise ValueError("Conflicto entre GGUF final, parcial o modelo ya instalado")
                 if self.store.restore_orphaned_download(job["id"], target, part):
                     report["recovered"] += 1
-                    LOG.info("Recuperada descarga interrumpida %s para verificar", job["id"])
+                    LOG.info("Recovered interrupted download %s for verification", job["id"])
                 else:
                     report["skipped"] += 1
             except (ValueError, OSError) as exc:
                 report["conflicts"] += 1
                 self.store.transition_download(
                     job["id"], ("paused", "failed"), "failed",
-                    error=("Recuperación segura pendiente: " + str(exc))[:600],
+                    error=("Safe recovery pending: " + str(exc))[:600],
                 )
-                LOG.warning("No se recuperó descarga %s: %s", job["id"], exc)
+                LOG.warning("Could not recover download %s: %s", job["id"], exc)
         return report
 
     def shutdown(self):
@@ -76,7 +76,7 @@ class DownloadManager:
         for job in self.store.downloads():
             self.store.transition_download(
                 job["id"], ("queued", "downloading", "verifying"), "paused",
-                error="Descarga pausada al cerrar",
+                error="Download paused on shutdown",
             )
         self.pool.shutdown(wait=False, cancel_futures=True)
 
@@ -85,15 +85,15 @@ class DownloadManager:
         validate_variant(revision, filename)
         info = self.catalog.details(repo_id)
         if info["revision"] != revision:
-            raise CatalogError(409, "El repositorio cambió de revisión. Actualiza el detalle del modelo.")
+            raise CatalogError(409, "Repository revision changed. Refresh model details.")
         if info["gated"]:
             raise CatalogError(403, "Este modelo requiere acceso en Hugging Face.")
         variant = next((v for v in info["variants"] if v["filename"] == filename), None)
         if variant is None or not variant["supported"]:
-            raise CatalogError(400, "Variante no disponible o GGUF dividido no soportado")
+            raise CatalogError(400, "Variant unavailable or split GGUF unsupported")
         size = variant["size_bytes"]
         if size is not None and (not isinstance(size, int) or size < 0 or size > MAX_FILE_BYTES):
-            raise CatalogError(400, "Tamaño de archivo inválido")
+            raise CatalogError(400, "Invalid file size")
         job, created = self.store.enqueue(repo_id, revision, filename, size, variant["sha256"])
         if created:
             self._start(job["id"])
@@ -110,7 +110,7 @@ class DownloadManager:
             except RuntimeError:
                 # The controller is shutting down; the job can resume next run.
                 self.store.update_download(job_id, status="paused",
-                                           error="La aplicación se está cerrando")
+                                           error="Application is shutting down")
                 return
         # Register after releasing the lock: a finished future invokes callbacks
         # immediately, which otherwise risks reentrant deadlock.
@@ -126,14 +126,14 @@ class DownloadManager:
     def control(self, job_id: str, action: str):
         job = self.store.download(job_id)
         if not job:
-            raise CatalogError(404, "No existe esa descarga")
+            raise CatalogError(404, "Download not found")
         transitions = {
             "pause": (("queued", "downloading", "verifying"), "paused"),
             "cancel": (("queued", "downloading", "verifying", "paused", "failed"), "cancelled"),
             "resume": (("paused", "failed", "cancelled"), "queued"),
         }
         if action not in transitions:
-            raise CatalogError(400, "Acción de descarga desconocida")
+            raise CatalogError(400, "Unknown download action")
         permitted, destination = transitions[action]
         changed = self.store.transition_download(
             job_id, permitted, destination,
@@ -142,7 +142,7 @@ class DownloadManager:
         if not changed:
             actual = self.store.download(job_id)
             raise CatalogError(409,
-                "No se puede " + action + " desde el estado " +
+                "Cannot " + action + " from state " +
                 (actual["status"] if actual else "inexistente"))
         if action == "resume":
             self._start(job_id)
@@ -159,17 +159,17 @@ class DownloadManager:
             validate_variant(job["revision"], job["filename"])
             root = self.store.models_dir.resolve()
             if not root.is_relative_to(self.store.root.resolve()):
-                raise RuntimeError("Directorio de modelos fuera del espacio administrado")
+                raise RuntimeError("Model directory is outside managed storage")
             target = (root / "hf" / job["repo_id"] /
                       job["revision"] / job["filename"])
             part = Path(str(target) + ".part")
             for file in (target, part):
                 if file.is_symlink() or not file.resolve().is_relative_to(root):
-                    raise RuntimeError("Ruta de descarga fuera del directorio de modelos")
+                    raise RuntimeError("Download path is outside model directory")
             target.parent.mkdir(parents=True, exist_ok=True)
             # Check again after mkdir in case the path already existed as a link.
             if not target.parent.resolve().is_relative_to(root):
-                raise RuntimeError("Directorio de descarga no confiable")
+                raise RuntimeError("Untrusted download directory")
             # A failed crash-reconciliation conflict must not be bypassed by
             # manually pressing Resume: never overwrite the existing final.
             if target.exists() or target.is_symlink():
@@ -180,7 +180,7 @@ class DownloadManager:
             offset = part.stat().st_size if part.exists() else 0
             expected_size = job["expected_size"]
             if expected_size is not None and offset > expected_size:
-                raise RuntimeError("Archivo parcial excede el tamaño publicado")
+                raise RuntimeError("Partial file exceeds published size")
             # A fully transferred .part paused while hashing must be verified
             # directly. Asking HTTP for Range bytes=<EOF>- would return 416.
             ready_for_verification = (expected_size is not None and
@@ -196,7 +196,7 @@ class DownloadManager:
                 with self.catalog.client.stream("GET", url, headers=headers,
                                                 timeout=httpx.Timeout(180, connect=15)) as response:
                     if response.status_code in (401, 403):
-                        raise RuntimeError("Acceso denegado; revisa los permisos del modelo")
+                        raise RuntimeError("Access denied; check model permissions")
                     # Size-unreported uploads can be complete when interrupted
                     # during hashing. RFC 9110 uses 416 + "bytes */N" to
                     # describe the current length when Range begins at EOF.
@@ -206,18 +206,18 @@ class DownloadManager:
                         match = re.fullmatch(r"bytes \*/(\d+)", content_range)
                         if (match is None or int(match[1]) != offset or
                                 offset > MAX_FILE_BYTES):
-                            raise RuntimeError("HTTP 416 no confirma que el archivo parcial esté completo")
+                            raise RuntimeError("HTTP 416 does not confirm that the partial file is complete")
                         complete_at_eof = True
                     if not complete_at_eof:
                         response.raise_for_status()
                         if response.status_code not in (200, 206):
-                            raise RuntimeError("Respuesta HTTP no válida para un archivo GGUF")
+                            raise RuntimeError("Invalid HTTP response for a GGUF file")
                         if response.headers.get("content-encoding", "identity").lower() != "identity":
-                            raise RuntimeError("El servidor comprimió una respuesta binaria GGUF")
+                            raise RuntimeError("Server compressed a binary GGUF response")
                     if not complete_at_eof:
                         continued = offset > 0 and response.status_code == 206
                         if response.status_code == 206 and not continued:
-                            raise RuntimeError("Respuesta HTTP 206 inesperada sin petición Range")
+                            raise RuntimeError("Unexpected HTTP 206 response without a Range request")
                         expected_chunk_bytes = None
                         if response.status_code == 206:
                             # A bare prefix check ("bytes 20-") is insufficient: a
@@ -226,7 +226,7 @@ class DownloadManager:
                             match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+|\*)", content_range)
                             expected_offset = offset if continued else 0
                             if not match:
-                                raise RuntimeError("Content-Range ausente o con formato inválido")
+                                raise RuntimeError("Missing or malformed Content-Range")
                             start, end = int(match[1]), int(match[2])
                             total = None if match[3] == "*" else int(match[3])
                             # The response must carry the entire remaining tail.
@@ -238,12 +238,12 @@ class DownloadManager:
                                      total != job["expected_size"]) or
                                     (total is None and job["expected_size"] is None) or
                                     (total is None and end != job["expected_size"] - 1)):
-                                raise RuntimeError("La respuesta de reanudación tiene un rango incorrecto")
+                                raise RuntimeError("Resume response has an incorrect range")
                             expected_chunk_bytes = end - start + 1
                             length = response.headers.get("content-length")
                             if length is not None and (not length.isdigit() or
                                                        int(length) != expected_chunk_bytes):
-                                raise RuntimeError("Content-Length no coincide con Content-Range")
+                                raise RuntimeError("Content-Length does not match Content-Range")
                         else:
                             # Server may ignore Range with HTTP 200; restart cleanly.
                             offset = 0
@@ -252,7 +252,7 @@ class DownloadManager:
                             declared = response.headers.get("content-length")
                             if declared is not None:
                                 if not declared.isdigit() or int(declared) > MAX_FILE_BYTES:
-                                    raise RuntimeError("Content-Length GGUF inválido")
+                                    raise RuntimeError("Invalid GGUF Content-Length")
                                 declared_total = int(declared)
                         mode = "ab" if continued else "wb"
                         received = offset
@@ -265,16 +265,16 @@ class DownloadManager:
                                 if chunk:
                                     received += len(chunk)
                                     if received > MAX_FILE_BYTES:
-                                        raise RuntimeError("Archivo supera el límite de seguridad")
+                                        raise RuntimeError("File exceeds the safety size limit")
                                     output.write(chunk)
                                 if time.monotonic() - last_reported >= .35:
                                     self.store.update_download(job_id, received_bytes=received)
                                     last_reported = time.monotonic()
                         if (expected_chunk_bytes is not None and
                                 received - offset != expected_chunk_bytes):
-                            raise RuntimeError("El servidor entregó un fragmento Range incompleto")
+                            raise RuntimeError("Server returned an incomplete Range chunk")
                         if declared_total is not None and received != declared_total:
-                            raise RuntimeError("El servidor entregó un archivo GGUF incompleto")
+                            raise RuntimeError("Server returned an incomplete GGUF file")
                         self.store.update_download(job_id, received_bytes=received)
                     else:
                         # Do not modify the complete partial file: rehash it.
@@ -284,12 +284,12 @@ class DownloadManager:
                 return
             expected_size = job["expected_size"]
             if expected_size is not None and part.stat().st_size != expected_size:
-                raise RuntimeError("Tamaño incorrecto: descarga incompleta o variante modificada")
+                raise RuntimeError("Incorrect size: incomplete download or modified variant")
             # The extension is not evidence of GGUF content. Reject empty
             # responses and HTML/JSON error pages before registering a model.
             with part.open("rb") as probe:
                 if probe.read(4) != b"GGUF":
-                    raise RuntimeError("Contenido GGUF inválido o archivo vacío")
+                    raise RuntimeError("Invalid GGUF content or empty file")
             digest = hashlib.sha256()
             last_check = 0.0
             with part.open("rb") as stream:

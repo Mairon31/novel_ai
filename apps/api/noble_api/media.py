@@ -25,34 +25,34 @@ def mount_media_routes(app, narrative: NarrativeService):
     @app.patch("/api/v1/stories/{story_id}/protagonist")
     def set_protagonist(story_id: uuid.UUID, body: ProtagonistName):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia no encontrada")
+            raise HTTPException(404, "Story not found")
         return narrative.set_protagonist(str(story_id), body.name)
 
     @app.post("/api/v1/stories/{story_id}/scene-image")
     async def upload_scene(story_id: uuid.UUID, file: UploadFile = File(...)):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia no encontrada")
+            raise HTTPException(404, "Story not found")
         if file.content_type not in {"image/png", "image/jpeg", "image/webp"}:
-            raise HTTPException(415, "Solo se aceptan imágenes PNG, JPEG o WebP")
+            raise HTTPException(415, "Only PNG, JPEG, or WebP images are accepted")
         data = await file.read(MAX_IMAGE_BYTES + 1)
         if not data or len(data) > MAX_IMAGE_BYTES:
-            raise HTTPException(413, "La ilustración supera el límite de 12 MB")
+            raise HTTPException(413, "Illustration exceeds the 12 MB limit")
         try:
             narrative.visual.publish(str(story_id), data, origin="manual")
         except ValueError as exc:
-            raise HTTPException(422, "No se pudo procesar la imagen enviada: " + str(exc)[:150]) from exc
+            raise HTTPException(422, "Could not process uploaded image: " + str(exc)[:150]) from exc
         return narrative.get_story(str(story_id))
 
     @app.get("/api/v1/stories/{story_id}/scene-image")
     def get_scene(story_id: uuid.UUID):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia no encontrada")
+            raise HTTPException(404, "Story not found")
         try:
             target = narrative.visual.legacy_path(str(story_id))
         except ValueError as exc:
-            raise HTTPException(404, "La ruta de ilustración no es válida") from exc
+            raise HTTPException(404, "Illustration path is invalid") from exc
         if not target.is_file():
-            raise HTTPException(404, "La historia todavía no tiene ilustración")
+            raise HTTPException(404, "Story has no illustration yet")
         return FileResponse(target, media_type="image/webp",
                             headers={"Cache-Control": "no-store",
                                      "X-Content-Type-Options": "nosniff"})

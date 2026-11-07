@@ -69,7 +69,7 @@ class LorebookService:
 
     def _check_story(self, story_id: str) -> None:
         if self.narrative.get_story(story_id) is None:
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
 
     @staticmethod
     def _clean(body: LorebookEntryInput) -> dict:
@@ -77,24 +77,24 @@ class LorebookService:
         payload["title"] = body.title.strip()
         payload["content"] = body.content.strip()
         if len(payload["title"]) < 2 or len(payload["content"]) < 10:
-            raise ValueError("El título y el contenido de Lorebook no pueden estar vacíos")
+            raise ValueError("Lorebook title and content cannot be empty")
         for field in ("keys", "secondary_keys"):
             cleaned = [value.strip() for value in payload[field]]
             if any(not 2 <= len(value) <= 80 for value in cleaned):
-                raise ValueError("Cada palabra activadora debe tener entre 2 y 80 caracteres")
+                raise ValueError("Each trigger word must contain 2–80 characters")
             if len({value.casefold() for value in cleaned}) != len(cleaned):
-                raise ValueError("No se admiten palabras activadoras duplicadas")
+                raise ValueError("Duplicate trigger words are not allowed")
             payload[field] = cleaned
         if not body.always_active and not payload["keys"]:
             raise ValueError("Define palabras activadoras o marca Siempre activo")
         witnesses = payload["witness_character_ids"]
         if len(witnesses) != len(set(witnesses)):
-            raise ValueError("Los testigos del Lorebook no pueden repetirse")
+            raise ValueError("Lorebook witnesses cannot be duplicated")
         if payload["visibility"] == "witnesses":
             if not witnesses:
-                raise ValueError("Una entrada privada requiere personajes que la conozcan")
+                raise ValueError("A private entry requires characters who know it")
         elif witnesses:
-            raise ValueError("El conocimiento general no debe tener testigos privados")
+            raise ValueError("General knowledge must not have private witnesses")
         return payload
 
     def entries(self, story_id: str) -> list[dict]:
@@ -121,7 +121,7 @@ class LorebookService:
                     "SELECT id FROM creator_characters WHERE story_id=?", (story_id,)
                 )}
                 if not set(payload["witness_character_ids"]).issubset(owned):
-                    raise ValueError("Los testigos deben pertenecer a esta historia")
+                    raise ValueError("Witnesses must belong to this story")
             if entry_id:
                 updated = db.execute(
                     "UPDATE lorebook_entries SET entry_json=?,updated_at=? "
@@ -129,7 +129,7 @@ class LorebookService:
                     (json.dumps(payload, ensure_ascii=False), now, entry_id, story_id),
                 )
                 if updated.rowcount != 1:
-                    raise ValueError("Entrada de Lorebook inexistente en esta historia")
+                    raise ValueError("Lorebook entry not found in this story")
                 ident = entry_id
             else:
                 total = db.execute(
@@ -137,7 +137,7 @@ class LorebookService:
                     (story_id,)
                 ).fetchone()[0]
                 if total >= self.MAX_ENTRIES:
-                    raise ValueError("Máximo de 200 entradas por historia")
+                    raise ValueError("Maximum 200 entries per story")
                 ident = str(uuid.uuid4())
                 db.execute(
                     "INSERT INTO lorebook_entries VALUES (?,?,?,?,?)",
@@ -153,7 +153,7 @@ class LorebookService:
                 (entry_id, story_id),
             )
             if result.rowcount != 1:
-                raise ValueError("Entrada de Lorebook inexistente en esta historia")
+                raise ValueError("Lorebook entry not found in this story")
 
     @staticmethod
     def _contains(text: str, needle: str, whole_words: bool) -> bool:
@@ -267,7 +267,7 @@ class LorebookService:
                 "WHERE story_id=? AND turn_id=?", (story_id, turn_id)
             ).fetchone()
         if row is None:
-            raise ValueError("Sin instantánea de Lorebook para ese turno")
+            raise ValueError("No Lorebook snapshot for that turn")
         entries = json.loads(row["entries_json"])
         return {
             "story_id": story_id, "turn_id": turn_id,

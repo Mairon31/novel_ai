@@ -136,13 +136,13 @@ def resized_reference_png(raw: bytes, width: int, height: int) -> bytes:
 
 def save_webp(data: bytes, target) -> None:
     if not data or len(data) > MAX_IMAGE_BYTES:
-        raise ValueError("La imagen obtenida excede el límite de 12 MB")
+        raise ValueError("Fetched image exceeds the 12 MB limit")
     try:
         with Image.open(io.BytesIO(data)) as original:
             if original.format not in {"PNG", "JPEG", "WEBP"}:
-                raise ValueError("ComfyUI devolvió una imagen no admitida")
+                raise ValueError("ComfyUI returned an unsupported image")
             if original.width * original.height > MAX_IMAGE_PIXELS:
-                raise ValueError("Demasiados píxeles")
+                raise ValueError("Too many pixels")
             original.load()
             image = ImageOps.exif_transpose(original).convert("RGB")
             image.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
@@ -154,7 +154,7 @@ def save_webp(data: bytes, target) -> None:
             finally:
                 temporary.unlink(missing_ok=True)
     except (UnidentifiedImageError, Image.DecompressionBombError, OSError) as exc:
-        raise ValueError("La respuesta no contiene una imagen válida") from exc
+        raise ValueError("Response does not contain a valid image") from exc
 
 
 class SceneImageService:
@@ -178,11 +178,11 @@ class SceneImageService:
 
     def configure(self, settings: ImageSettings) -> dict:
         if settings.provider != "comfyui":
-            raise ValueError("Proveedor de imagen no admitido")
+            raise ValueError("Unsupported image provider")
         data = settings.model_dump()
         data["base_url"] = validate_endpoint(data["base_url"])
         if data["width"] * data["height"] > 1_572_864:
-            raise ValueError("La resolución excede el presupuesto de esta versión")
+            raise ValueError("Resolution exceeds this version's resource budget")
         with self.narrative.store._conn() as conn:
             conn.execute("UPDATE image_preferences SET config_json=? WHERE id=1",
                          (json.dumps(data),))
@@ -198,7 +198,7 @@ class SceneImageService:
                 response.raise_for_status()
                 values = response.json()
             if not isinstance(values, list) or not all(isinstance(x, str) for x in values):
-                raise ValueError("Catálogo de checkpoints inválido")
+                raise ValueError("Invalid checkpoint catalog")
             return {"online": True, "provider": "comfyui",
                     "checkpoints": values[:300], "error": None}
         except (httpx.HTTPError, ValueError) as exc:
@@ -219,7 +219,7 @@ class SceneImageService:
             required = (node.get("input", {}).get("required")
                         if isinstance(node, dict) else None)
             if not isinstance(required, dict):
-                raise ValueError("ComfyUI no expone KSampler")
+                raise ValueError("ComfyUI does not expose KSampler")
             result = {}
             for field, allowlist in (("sampler_name", SAMPLER_NAMES),
                                      ("scheduler", SCHEDULER_NAMES)):
@@ -227,12 +227,12 @@ class SceneImageService:
                 if (not isinstance(choices, list) or not choices or
                         not isinstance(choices[0], list) or
                         not all(isinstance(value, str) for value in choices[0])):
-                    raise ValueError("ComfyUI devolvió opciones inválidas para " + field)
+                    raise ValueError("ComfyUI returned invalid options for " + field)
                 # Restrict the presentation to settings whose semantics our
                 # standard workflow has been tested to support.
                 result[field] = [x for x in allowlist if x in choices[0]]
                 if not result[field]:
-                    raise ValueError("No hay métodos admitidos para " + field)
+                    raise ValueError("No supported methods available for " + field)
             return {"online": True, **result, "error": None}
         except (httpx.HTTPError, ValueError) as exc:
             return {"online": False, "sampler_name": [], "scheduler": [],
@@ -245,12 +245,12 @@ class SceneImageService:
             return
         inventory = await self.sampler_options()
         if not inventory["online"]:
-            raise HTTPException(422, "No se pudo comprobar KSampler: " +
-                                (inventory["error"] or "ComfyUI sin respuesta"))
+            raise HTTPException(422, "Could not verify KSampler: " +
+                                (inventory["error"] or "ComfyUI did not respond"))
         for field, label in (("sampler_name", "Muestreador"),
                              ("scheduler", "Planificador")):
             if config[field] not in inventory[field]:
-                raise HTTPException(422, label + " no disponible en ComfyUI: " +
+                raise HTTPException(422, label + " unavailable in ComfyUI: " +
                                     config[field])
 
     async def lora_status(self) -> dict:
@@ -281,23 +281,23 @@ class SceneImageService:
                             if isinstance(node, dict) else None)
                 expected = {"model", "clip", "lora_name", "strength_model", "strength_clip"}
                 if not isinstance(required, dict) or not expected.issubset(required):
-                    raise ValueError("Nodo ComfyUI LoraLoader no disponible o incompatible")
+                    raise ValueError("ComfyUI LoraLoader node is missing or incompatible")
         except (httpx.HTTPError, ValueError) as exc:
-            raise HTTPException(422, "No se pudo validar LoraLoader: " +
+            raise HTTPException(422, "Could not validate LoraLoader: " +
                                 str(exc)[:160]) from exc
 
     async def illustrate(self, story_id: str, request: SceneIllustration) -> dict:
         story = self.narrative.get_story(story_id)
         if not story:
-            raise HTTPException(404, "Historia no encontrada")
+            raise HTTPException(404, "Story not found")
         if self.lock.locked():
-            raise HTTPException(409, "ComfyUI ya está generando una ilustración")
+            raise HTTPException(409, "ComfyUI is already generating an illustration")
         await self.lock.acquire()
         lease = False
         try:
             config = self.config()
             if not config["checkpoint"]:
-                raise HTTPException(422, "Selecciona un checkpoint ComfyUI en Ajustes de imagen")
+                raise HTTPException(422, "Select a ComfyUI checkpoint in Image Settings")
             seed = request.seed if request.seed is not None else secrets.randbelow(2**53)
             planner = self.narrative.visual.planner
             visual_prompt = (planner.prompt(story_id, request.prompt)
@@ -324,7 +324,7 @@ class SceneImageService:
                     raise HTTPException(422, str(exc)) from exc
                 if not lora_stack:
                     raise HTTPException(422,
-                        "No hay LoRAs configurados para los personajes presentes")
+                        "No LoRAs are configured for the present characters")
             active_scene = self.narrative.visual.scene(story_id)
             signature_parts = {
                 "scene_id": active_scene["id"], "prompt": visual_prompt,
@@ -361,21 +361,21 @@ class SceneImageService:
                 lease = await self.resources.claim_local_gpu("ComfyUI")
             connected = await self.status()
             if not connected["online"]:
-                raise HTTPException(503, "ComfyUI no está disponible")
+                raise HTTPException(503, "ComfyUI is unavailable")
             if config["checkpoint"] not in connected["checkpoints"]:
-                raise HTTPException(422, "El checkpoint seleccionado ya no está disponible")
+                raise HTTPException(422, "Selected checkpoint is no longer available")
             await self.validate_sampler_settings(config)
             if lora_stack:
                 installed = await self.lora_status()
                 if not installed["online"]:
                     raise HTTPException(503,
-                        "No se pudo consultar LoRAs instalados en ComfyUI: " +
+                        "Could not list installed LoRAs in ComfyUI: " +
                         str(installed["error"]))
                 missing = [entry["lora_name"] for entry in lora_stack
                            if entry["lora_name"] not in installed["loras"]]
                 if missing:
                     raise HTTPException(422,
-                        "LoRA no instalado en ComfyUI: " + ", ".join(missing))
+                        "LoRA not installed in ComfyUI: " + ", ".join(missing))
                 await self.validate_lora_nodes()
             async with httpx.AsyncClient(
                     transport=self.transport, trust_env=False,
@@ -394,7 +394,7 @@ class SceneImageService:
                     reference_name = meta.get("name") if isinstance(meta, dict) else None
                     if not isinstance(reference_name, str) or not re.fullmatch(
                             r"[a-zA-Z0-9_.-]{1,180}", reference_name):
-                        raise HTTPException(502, "ComfyUI devolvió una referencia de imagen inválida")
+                        raise HTTPException(502, "ComfyUI returned an invalid image reference")
                 image_bytes = await render_comfy(client, config["base_url"],
                     workflow(config, visual_prompt, seed, reference_name,
                              request.denoise, lora_stack))
@@ -415,7 +415,7 @@ class SceneImageService:
                     "duration_ms": round((time.monotonic() - started) * 1000, 1),
                     "cached": False}
         except (httpx.HTTPError, ValueError) as exc:
-            raise HTTPException(502, "Error de ComfyUI: " + str(exc)[:180]) from exc
+            raise HTTPException(502, "ComfyUI error: " + str(exc)[:180]) from exc
         finally:
             if self.resources is not None:
                 self.resources.release_local_gpu(lease)

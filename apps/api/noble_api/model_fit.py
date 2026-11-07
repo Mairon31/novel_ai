@@ -142,7 +142,7 @@ def assess_variants(detail: dict, hardware: dict, context: int = 4096,
             variants.append({"filename":variant.get("filename"),"quantization":quant,
                              "fit":"unknown","estimated_required_bytes":None,
                              "estimated_kv_bytes":kv,"gpu_share":0,
-                             "disk_ok":None,"note":"No se conoce el tamaño del archivo."})
+                             "disk_ok":None,"note":"File size is unknown."})
             continue
         # Additional workspace for runtime, compute, and unknown architectures.
         overhead = max(int(0.55 * GIB), int(file_bytes * 0.09))
@@ -152,22 +152,22 @@ def assess_variants(detail: dict, hardware: dict, context: int = 4096,
         if gpu and required <= available_vram:
             fit = "full_gpu"
             share = 1.0
-            note = "La estimación de pesos, KV y margen cabe en la VRAM libre observada."
+            note = "Estimated weights, KV cache, and headroom fit in observed free VRAM."
         elif gpu and available_vram and required <= available_vram + available_ram:
             fit = "partial_offload"
             share = round(min(1.,available_vram/required),2)
-            note = "Probable descarga parcial a RAM; depende del motor y puede ser lenta."
+            note = "Partial offload to system RAM is likely; performance depends on the engine and may be slow."
         elif required <= available_ram:
             fit = "cpu"
             share = 0
-            note = "Probable ejecución con RAM/CPU; el rendimiento puede ser limitado."
+            note = "Likely RAM/CPU execution; performance may be limited."
         else:
             fit = "too_large"
             share = 0
-            note = "La memoria disponible no parece suficiente para esta estimación."
+            note = "Available memory appears insufficient for this estimate."
         if not variant.get("supported",False):
             fit = "unsupported"
-            note = "Esta variante no está admitida por el descargador actual."
+            note = "This variant is not supported by the current downloader."
         variants.append({
             "filename":variant["filename"],"quantization":quant,
             "fit":fit, "estimated_required_bytes":required,
@@ -192,7 +192,7 @@ def assess_variants(detail: dict, hardware: dict, context: int = 4096,
         "architecture":meta.get("general.architecture"),
         "parameter_count":meta.get("general.parameter_count"),
         "confidence":"measured_capacity_estimated_demand",
-        "warning":"Estimación, no benchmark: contexto, backend, KV-cache, batch y otros procesos cambian la VRAM real.",
+        "warning":"Estimate, not a benchmark: context, backend, KV cache, batch size, and other processes affect actual VRAM use.",
         "recommended_filename":recommendation,
         "variants":variants,
     }

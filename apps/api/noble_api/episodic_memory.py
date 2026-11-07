@@ -81,7 +81,7 @@ class EpisodicMemory:
     def search(self, story_id: str, query: str, limit: int = 6,
                exclude_turn_ids: set[str] | None = None) -> dict:
         if self.narrative.get_story(story_id) is None:
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
         limit = max(1, min(limit, 12))
         words = self.terms(query)
         if not words:

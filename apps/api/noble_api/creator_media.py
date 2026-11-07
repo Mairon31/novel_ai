@@ -53,7 +53,7 @@ class AssetCaption(BaseModel):
 def validate_pose(pose: str) -> str:
     normalized = pose.strip().casefold()
     if not POSE_PATTERN.fullmatch(normalized):
-        raise ValueError("La pose debe usar 1–32 letras ASCII, números, guiones o guion bajo")
+        raise ValueError("Pose must contain 1–32 ASCII letters, digits, hyphens, or underscores")
     return normalized
 
 
@@ -127,13 +127,13 @@ def _score(caption: str, context: str) -> int:
 
 def _safe_image(data: bytes, kind: str) -> tuple[bytes, str]:
     if not 0 < len(data) <= MAX_MEDIA_BYTES:
-        raise ValueError("La imagen debe ocupar entre 1 byte y 12 MiB")
+        raise ValueError("Image must be between 1 byte and 12 MiB")
     try:
         with Image.open(io.BytesIO(data)) as img:
             if img.format not in {"PNG", "JPEG", "WEBP"}:
-                raise ValueError("Formato no admitido")
+                raise ValueError("Unsupported format")
             if img.width < 8 or img.height < 8 or img.width * img.height > MAX_MEDIA_PIXELS:
-                raise ValueError("Resolución de imagen inválida")
+                raise ValueError("Invalid image resolution")
             img.load()
             photo = ImageOps.exif_transpose(img)
             photo.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
@@ -145,7 +145,7 @@ def _safe_image(data: bytes, kind: str) -> tuple[bytes, str]:
             photo.convert("RGB").save(output, "WEBP", quality=88, method=5)
             return output.getvalue(), "image/webp"
     except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
-        raise ValueError("La imagen no pudo decodificarse") from exc
+        raise ValueError("Image could not be decoded") from exc
 
 
 class CreatorMediaService:
@@ -201,7 +201,7 @@ class CreatorMediaService:
 
     def _require_story(self, story_id: str) -> None:
         if not self.narrative.get_story(story_id):
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
 
     def _path(self, story_id: str, asset_id: str, kind: str) -> Path:
         """Resolve only owned UUID assets, never symlinks escaping the data directory.
@@ -211,19 +211,19 @@ class CreatorMediaService:
         """
         try:
             if str(uuid.UUID(story_id)) != story_id or str(uuid.UUID(asset_id)) != asset_id:
-                raise ValueError("UUID no canónico")
+                raise ValueError("Noncanonical UUID")
         except (TypeError, AttributeError, ValueError) as exc:
-            raise ValueError("Identificador de recurso visual inválido") from exc
+            raise ValueError("Invalid visual asset identifier") from exc
         if kind not in {"cover", "background", "foreground"}:
-            raise ValueError("Tipo de recurso visual inválido")
+            raise ValueError("Invalid visual asset type")
         owned_root = self.store.root.resolve()
         assets_root = owned_root / "story-assets"
         if assets_root.is_symlink():
-            raise ValueError("Directorio de recursos visuales no confiable")
+            raise ValueError("Untrusted visual asset directory")
         suffix = ".png" if kind == "foreground" else ".webp"
         target = assets_root / story_id / "creator" / (asset_id + suffix)
         if target.is_symlink() or not target.resolve().is_relative_to(assets_root):
-            raise ValueError("Ruta de recurso visual fuera del directorio administrado")
+            raise ValueError("Visual asset path is outside the managed directory")
         return target
 
     def list(self, story_id: str) -> list[dict]:
@@ -247,7 +247,7 @@ class CreatorMediaService:
             row = db.execute("SELECT * FROM creator_media_assets WHERE story_id=? AND id=?",
                              (story_id, asset_id)).fetchone()
         if not row:
-            raise ValueError("Recurso visual inexistente en esta historia")
+            raise ValueError("Visual asset not found in this story")
         return dict(row)
 
     def add(self, story_id: str, kind: str, label: str, caption: str,
@@ -255,26 +255,26 @@ class CreatorMediaService:
             expression: str = "neutral", pose: str = "standing") -> dict:
         self._require_story(story_id)
         if kind not in ("cover", "background", "foreground"):
-            raise ValueError("El recurso debe ser portada, fondo o primer plano")
+            raise ValueError("Asset must be a cover, background, or foreground")
         if not 1 <= len(label.strip()) <= 100:
-            raise ValueError("El nombre debe tener entre 1 y 100 caracteres")
+            raise ValueError("Name must contain 1–100 characters")
         if not 3 <= len(caption.strip()) <= 220:
-            raise ValueError("La descripción debe tener entre 3 y 220 caracteres")
+            raise ValueError("Description must contain 3–220 characters")
         form = AssetCaption(label=label.strip(), caption=caption.strip())
         if expression not in EXPRESSIONS:
-            raise ValueError("Expresión de personaje no admitida")
+            raise ValueError("Unsupported character expression")
         pose = validate_pose(pose)
         if kind != "foreground" and (expression != "neutral" or pose != "standing"):
             raise ValueError("Solo los sprites admiten expresiones y poses")
         if character_id:
             if kind != "foreground":
-                raise ValueError("Solo los primeros planos pueden asociarse a un personaje")
+                raise ValueError("Only foreground assets can be assigned to a character")
             with self.store._conn() as db:
                 character = db.execute(
                     "SELECT 1 FROM creator_characters WHERE story_id=? AND id=?",
                     (story_id, character_id)).fetchone()
             if not character:
-                raise ValueError("Personaje de otra historia o inexistente")
+                raise ValueError("Character belongs to another story or does not exist")
         processed, media_type = _safe_image(data, kind)
         ident = str(uuid.uuid4())
         file = self._path(story_id, ident, kind)
@@ -306,9 +306,9 @@ class CreatorMediaService:
         pose = validate_pose(pose)
         caption = caption.strip()
         if not 3 <= len(caption) <= 220:
-            raise ValueError("La descripción de la hoja debe tener 3–220 caracteres")
+            raise ValueError("Expression sheet description must contain 3–220 characters")
         if layout not in {"horizontal", "vertical"}:
-            raise ValueError("Distribución de hoja no admitida")
+            raise ValueError("Unsupported expression sheet layout")
         if generation is not None and set(generation) != set(EXPRESSIONS):
             raise ValueError("La procedencia debe describir las cinco expresiones")
         validated = {
@@ -322,10 +322,10 @@ class CreatorMediaService:
         try:
             with Image.open(io.BytesIO(data)) as original:
                 if original.format not in {"PNG", "WEBP"}:
-                    raise ValueError("La hoja debe ser PNG o WebP con transparencia")
+                    raise ValueError("Expression sheet must be a transparent PNG or WebP")
                 if (original.width * original.height > MAX_MEDIA_PIXELS or
                         original.width < 8 or original.height < 8):
-                    raise ValueError("Resolución de hoja inválida")
+                    raise ValueError("Invalid expression sheet resolution")
                 original.load()
                 photo = ImageOps.exif_transpose(original).convert("RGBA")
                 width, height = photo.size
@@ -335,7 +335,7 @@ class CreatorMediaService:
                     raise ValueError("La hoja debe dividirse exactamente en cinco celdas")
                 cell = extent // 5
                 if min(cell, height if horizontal else width) < 8:
-                    raise ValueError("Cada expresión necesita al menos 8 píxeles por lado")
+                    raise ValueError("Each expression must be at least 8 pixels wide and tall")
                 tiles = []
                 for index in range(5):
                     bounds = ((index * cell, 0, (index + 1) * cell, height)
@@ -344,19 +344,19 @@ class CreatorMediaService:
                     tile = photo.crop(bounds)
                     minimum, maximum = tile.getchannel("A").getextrema()
                     if minimum == 255 or maximum == 0:
-                        raise ValueError("Cada celda necesita un personaje visible y fondo transparente")
+                        raise ValueError("Each cell must show a visible character on a transparent background")
                     stream = io.BytesIO()
                     tile.save(stream, "PNG")
                     tiles.append(_safe_image(stream.getvalue(), "foreground")[0])
         except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
-            raise ValueError("La hoja de expresiones no pudo decodificarse") from exc
+            raise ValueError("Expression sheet could not be decoded") from exc
 
         with self.store._conn() as db:
             owner = db.execute(
                 "SELECT config_json FROM creator_characters WHERE story_id=? AND id=?",
                 (story_id, character_id)).fetchone()
         if not owner:
-            raise ValueError("El personaje no pertenece a esta historia")
+            raise ValueError("Character does not belong to this story")
         name = json.loads(owner["config_json"])["name"]
         entries = []
         for index, expression in enumerate(EXPRESSIONS):
@@ -374,7 +374,7 @@ class CreatorMediaService:
                 if not db.execute(
                     "SELECT 1 FROM creator_characters WHERE story_id=? AND id=?",
                     (story_id, character_id)).fetchone():
-                    raise ValueError("Personaje eliminado antes de registrar la hoja")
+                    raise ValueError("Character was deleted before the sheet was registered")
                 for index, (asset_id, filename, expression, _) in enumerate(entries):
                     db.execute(
                         "INSERT INTO creator_media_assets "
@@ -397,7 +397,7 @@ class CreatorMediaService:
 
     def update_caption(self, story_id: str, asset_id: str, form: AssetCaption) -> dict:
         if not form.label.strip() or len(form.caption.strip()) < 3:
-            raise ValueError("El nombre y la descripción no pueden estar vacíos")
+            raise ValueError("Name and description cannot be empty")
         self.get(story_id, asset_id)
         asset = self.get(story_id, asset_id)
         expression = form.expression if form.expression is not None else asset["expression"]
@@ -417,10 +417,10 @@ class CreatorMediaService:
         if asset_id is not None:
             asset = self.get(story_id, asset_id)
             if asset["kind"] != "cover":
-                raise ValueError("Solo una imagen de tipo portada puede ser portada editorial")
+                raise ValueError("Only cover-type assets can be selected as editorial covers")
             path = self._path(story_id, asset_id, "cover")
             if not path.is_file() or path.is_symlink():
-                raise ValueError("El archivo de portada no está disponible")
+                raise ValueError("Cover file is unavailable")
         with self.store._conn() as db:
             db.execute("UPDATE stories SET cover_asset_id=?,updated_at=? WHERE id=?",
                        (asset_id, time.time(), story_id))
@@ -449,7 +449,7 @@ class CreatorMediaService:
         item = self.get(story_id, asset_id)
         file = self._path(story_id, asset_id, item["kind"])
         if not file.is_file() or file.is_symlink():
-            raise HTTPException(404, "Archivo visual ausente")
+            raise HTTPException(404, "Visual asset file is missing")
         return FileResponse(
             file, media_type=item["media_type"],
             headers={"Cache-Control": "private, no-store",
@@ -613,7 +613,7 @@ class CreatorMediaService:
                 source = self._path(source_id, asset["id"], asset["kind"])
                 if not source.is_file() or source.is_symlink():
                     raise ValueError(
-                        "No está disponible un archivo editorial histórico de la historia original")
+                        "A historical editorial file from the original story is unavailable")
                 fresh_id = str(uuid.uuid4())
                 target = self._path(target_id, fresh_id, asset["kind"])
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -683,7 +683,7 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
             raise HTTPException(415, "Solo PNG, JPEG o WebP")
         data = await file.read(MAX_MEDIA_BYTES + 1)
         if len(data) > MAX_MEDIA_BYTES:
-            raise HTTPException(413, "Archivo superior a 12 MiB")
+            raise HTTPException(413, "File exceeds 12 MiB")
         try:
             return media.add(str(story_id), kind, label, caption, data,
                              str(character_id) if character_id else None,
@@ -700,10 +700,10 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
         file: UploadFile = File(...),
     ):
         if file.content_type not in {"image/png", "image/webp"}:
-            raise HTTPException(415, "Solo PNG o WebP para hojas transparentes")
+            raise HTTPException(415, "Transparent sheets must be PNG or WebP")
         data = await file.read(MAX_MEDIA_BYTES + 1)
         if len(data) > MAX_MEDIA_BYTES:
-            raise HTTPException(413, "Archivo superior a 12 MiB")
+            raise HTTPException(413, "File exceeds 12 MiB")
         try:
             assets = media.import_expression_sheet(
                 str(story_id), str(character_id), data, caption, pose, layout)

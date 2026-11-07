@@ -194,7 +194,7 @@ def create_app(
         try:
             changes = body.model_dump(exclude_unset=True)
             if any(v is None for v in changes.values()):
-                raise ValueError("No se puede guardar una configuración nula")
+                raise ValueError("Cannot save a null configuration")
             return {**store.patch_settings(changes), "models_dir": str(store.models_dir)}
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
@@ -267,7 +267,7 @@ def create_app(
         try:
             return {"roles": store.assign(role, body.installed_id),
                     "runtime_connected": False,
-                    "message": "Modelo asignado. La inferencia se integrará en P1."}
+                    "message": "Model assigned. Inference integration is planned for P1."}
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
