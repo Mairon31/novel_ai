@@ -46,9 +46,9 @@ class VisualDNA(BaseModel):
         tags = [value.strip() for value in values]
         if any(not 2 <= len(tag) <= 64 or
                any(ord(c) < 32 or ord(c) == 127 for c in tag) for tag in tags):
-            raise ValueError("Cada etiqueta visual debe tener 2–64 caracteres visibles")
+            raise ValueError("Each visual tag must contain 2–64 visible characters")
         if len({tag.casefold() for tag in tags}) != len(tags):
-            raise ValueError("No repitas etiquetas visuales")
+            raise ValueError("Do not repeat visual tags")
         return tags
 
     @field_validator("lora_name")
@@ -58,7 +58,7 @@ class VisualDNA(BaseModel):
             return None
         # Metadata only. Never accept filesystem paths or download URLs here.
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,146}\.safetensors", name):
-            raise ValueError("LoRA debe ser un archivo .safetensors sin ruta")
+            raise ValueError("LoRA must be a .safetensors filename without a path")
         return name
 
 
@@ -110,7 +110,7 @@ class CreatorService:
 
     def get(self, story_id: str) -> dict:
         if not self.exists(story_id):
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
         with self.store._conn() as db:
             row = db.execute("SELECT config_json,updated_at FROM creator_blueprints WHERE story_id=?",
                              (story_id,)).fetchone()
@@ -122,14 +122,14 @@ class CreatorService:
     def save(self, story_id: str, body: CreatorBlueprint) -> dict:
         self.get(story_id)
         if body.language not in ("es-419","en","ja","ko","pt-BR","fr"):
-            raise ValueError("Idioma de la historia no admitido")
+            raise ValueError("Unsupported story language")
         scenarios = [text.strip() for text in body.opening_scenarios]
         if any(len(text)<15 or len(text)>3000 for text in scenarios):
             raise ValueError("Cada inicio necesita entre 15 y 3000 caracteres")
         if len(set(x.casefold() for x in body.tags)) != len(body.tags):
-            raise ValueError("No repitas etiquetas")
+            raise ValueError("Do not repeat tags")
         if any(not 2<=len(tag.strip())<=35 for tag in body.tags):
-            raise ValueError("Las etiquetas necesitan entre 2 y 35 caracteres")
+            raise ValueError("Tags must contain 2–35 characters")
         form = body.model_copy(update={
             "opening_scenarios":scenarios,
             "tags":[tag.strip() for tag in body.tags],
@@ -161,7 +161,7 @@ class CreatorService:
                     WHERE id=? AND story_id=?""",
                     (str(body.visual_character_id),story_id)).fetchone()
             if not match:
-                raise ValueError("La ficha visual no pertenece a esta historia")
+                raise ValueError("Visual profile does not belong to this story")
         now=time.time()
         ident=character_id or str(uuid.uuid4())
         with self.store._conn() as db:
@@ -169,17 +169,17 @@ class CreatorService:
                 existing=db.execute("""SELECT config_json FROM creator_characters
                     WHERE id=? AND story_id=?""",(ident,story_id)).fetchone()
                 if not existing:
-                    raise ValueError("Personaje narrativo inexistente")
+                    raise ValueError("Narrative character not found")
                 old = CreatorCharacter.model_validate_json(existing["config_json"])
                 # Older clients can update narrative text without clearing an existing DNA.
                 if "visual_dna" not in body.model_fields_set:
                     body = body.model_copy(update={"visual_dna": old.visual_dna})
                 if (old.visual_dna.tags and
                         body.visual_dna.tags != old.visual_dna.tags):
-                    raise ValueError("Las etiquetas de identidad visual ya están fijadas")
+                    raise ValueError("Visual identity tags are already locked")
                 if (old.visual_dna.seed is not None and
                         body.visual_dna.seed != old.visual_dna.seed):
-                    raise ValueError("La semilla visual ya está fijada")
+                    raise ValueError("Visual seed is already locked")
                 db.execute("""UPDATE creator_characters SET config_json=?,updated_at=?
                     WHERE id=? AND story_id=?""",
                     (body.model_dump_json(),now,ident,story_id))
@@ -218,9 +218,9 @@ class CreatorService:
         info=self.get(story_id)
         scenarios=info["opening_scenarios"]
         if index>=len(scenarios):
-            raise ValueError("Inicio no encontrado")
+            raise ValueError("Opening not found")
         if self.narrative.turns(story_id,limit=1):
-            raise ValueError("La historia ya comenzó: no se puede sustituir el inicio")
+            raise ValueError("The story has already started; its opening cannot be replaced")
         name=self.narrative.get_story(story_id).get("protagonist_name","Protagonista")
         content=scenarios[index].replace("{{user}}",name)
         return self.narrative.append(story_id,str(uuid.uuid4()),"story","",

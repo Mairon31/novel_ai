@@ -32,15 +32,15 @@ class CatalogError(Exception):
 def validate_repo(repo: str) -> str:
     parts = repo.split("/")
     if len(parts) != 2 or any(not REPO_PART.fullmatch(p) or ".." in p for p in parts):
-        raise CatalogError(400, "Identificador de repositorio inválido")
+        raise CatalogError(400, "Invalid repository identifier")
     return repo
 
 
 def validate_variant(revision: str, filename: str) -> None:
     if not REVISION.fullmatch(revision):
-        raise CatalogError(400, "Selecciona una revisión SHA completa del repositorio")
+        raise CatalogError(400, "Select a complete repository SHA revision")
     if not FILENAME.fullmatch(filename) or filename.startswith("."):
-        raise CatalogError(400, "Por ahora solo se instalan GGUF individuales en la raíz del repo")
+        raise CatalogError(400, "Only individual GGUF files at the repository root are currently supported")
 
 
 class HfCatalog:
@@ -60,17 +60,17 @@ class HfCatalog:
         try:
             response = self.client.get("https://huggingface.co" + path, params=params)
             if response.status_code == 429:
-                raise CatalogError(429, "Hugging Face limitó las solicitudes. Inténtalo más tarde.")
+                raise CatalogError(429, "Hugging Face rate-limited requests. Try again later.")
             if response.status_code in (401, 403):
-                raise CatalogError(403, "Este modelo requiere acceso o aceptación de condiciones en Hugging Face.")
+                raise CatalogError(403, "This model requires access or acceptance of terms on Hugging Face.")
             if response.status_code == 404:
-                raise CatalogError(404, "No se encontró el modelo en Hugging Face.")
+                raise CatalogError(404, "Model not found on Hugging Face.")
             response.raise_for_status()
             return response.json()
         except CatalogError:
             raise
         except (httpx.HTTPError, ValueError) as exc:
-            raise CatalogError(502, "No se pudo consultar Hugging Face: " + str(exc)) from exc
+            raise CatalogError(502, "Could not query Hugging Face: " + str(exc)) from exc
 
     def _cached(self, key: tuple, call):
         with self._lock:
@@ -85,19 +85,19 @@ class HfCatalog:
     def search(self, query: str, role: str, limit: int = 20,
                sort: str = "downloads") -> dict:
         if role not in ROLES:
-            raise CatalogError(400, "Rol de modelo inválido")
+            raise CatalogError(400, "Invalid model role")
         query = query.strip()[:100]
         if len(query) < 2:
             raise CatalogError(400, "Busca al menos dos caracteres")
         limit = max(1, min(limit, 30))
         if sort not in {"downloads", "likes", "lastModified", "trendingScore"}:
-            raise CatalogError(400, "Orden de catálogo inválido")
+            raise CatalogError(400, "Invalid catalog sort order")
         params = {"search": query, "filter": ROLE_FILTERS[role],
                   "sort": sort, "direction": "-1", "limit": limit}
         data = self._cached(("search", role, query.lower(), limit, sort),
                             lambda: self._get("/api/models", params))
         if not isinstance(data, list):
-            raise CatalogError(502, "Respuesta de catálogo inesperada")
+            raise CatalogError(502, "Unexpected catalog response")
         items = []
         for model in data:
             if not isinstance(model, dict):
@@ -109,7 +109,7 @@ class HfCatalog:
                 continue
             items.append({
                 "repo_id": repo, "revision": model.get("sha"),
-                "description": model.get("pipeline_tag") or "Modelo de Hugging Face",
+                "description": model.get("pipeline_tag") or "Hugging Face model",
                 "downloads": model.get("downloads") or 0,
                 "likes": model.get("likes") or 0,
                 "gated": bool(model.get("gated")),
@@ -153,7 +153,7 @@ class HfCatalog:
         """
         validate_repo(repo_id)
         if not REVISION.fullmatch(revision):
-            raise CatalogError(400, "La ficha requiere una revisión SHA válida")
+            raise CatalogError(400, "Model card requires a valid SHA revision")
         max_bytes = 128 * 1024
         url = ("/" + quote(repo_id, safe="/") + "/resolve/" +
                revision + "/README.md")
@@ -166,9 +166,9 @@ class HfCatalog:
                     if response.status_code == 404:
                         return {"readme": "", "truncated": False, "available": False}
                     if response.status_code in (401, 403):
-                        raise CatalogError(403, "Ficha de modelo de acceso restringido")
+                        raise CatalogError(403, "Restricted-access model card")
                     if response.status_code == 429:
-                        raise CatalogError(429, "Hugging Face limitó la consulta de fichas")
+                        raise CatalogError(429, "Hugging Face rate-limited model card requests")
                     response.raise_for_status()
                     raw = bytearray()
                     truncated = False
@@ -186,7 +186,7 @@ class HfCatalog:
             except CatalogError:
                 raise
             except (httpx.HTTPError, ValueError) as exc:
-                raise CatalogError(502, "No se pudo obtener la ficha del modelo") from exc
+                raise CatalogError(502, "Could not retrieve the model card") from exc
 
         return self._cached(("model_card", repo_id, revision), fetch)
 

@@ -47,7 +47,7 @@ class Preferences(BaseModel):
         }
         for name, options in allowed.items():
             if getattr(self, name) not in options:
-                raise ValueError("Valor no admitido en " + name)
+                raise ValueError("Unsupported value for " + name)
         return self
 
 
@@ -134,7 +134,7 @@ class ControlPlane:
                 response.raise_for_status()
                 source = response.json()
             if not isinstance(source, list):
-                raise ValueError("La respuesta de releases no es una lista")
+                raise ValueError("Release response is not a list")
             selected = []
             for release in source:
                 if not isinstance(release, dict) or release.get("draft"):
@@ -157,12 +157,12 @@ class ControlPlane:
                 # Can't compare source checkout against a packaged release semver.
                 "update_available": False, "check_success": True,
                 "needs_installer": True,
-                "message": "La versión fuente no puede actualizarse automáticamente.",
+                "message": "Source installations cannot be updated automatically.",
             }
         except (httpx.HTTPError, ValueError) as exc:
             result = {"channel": channel, "release": None, "update_available": False,
                       "check_success": False, "needs_installer": True,
-                      "message": "No fue posible consultar GitHub: " + str(exc)[:160]}
+                      "message": "Could not query GitHub: " + str(exc)[:160]}
         with self._lock:
             self._cache[channel] = (time.monotonic(), result)
         return result
@@ -200,5 +200,5 @@ def mount_control_routes(app, control: ControlPlane):
             "remote_workers": "openai_compatible_llm_tunnels",
             "api_key_auth": "not_implemented",
             "cors_management": "not_implemented",
-            "message": "El servidor Noble AI sigue limitado a loopback. Puedes registrar un worker externo HTTPS, pero compartir el workspace por LAN/túnel requiere autenticación propia.",
+            "message": "The Noble AI server remains bound to loopback. You can register an external HTTPS worker, but sharing the workspace over LAN or a tunnel requires separate authentication.",
         }

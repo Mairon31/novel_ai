@@ -27,9 +27,9 @@ def inject_ipadapter(nodes: dict, reference_name: str, preset: str,
     fresh latent and does not require img2img denoise.
     """
     if preset not in PRESETS or not 0.1 <= weight <= 1.5:
-        raise ValueError("Preset o intensidad IPAdapter inválidos")
+        raise ValueError("Invalid IPAdapter preset or weight")
     if not re.fullmatch(r"[A-Za-z0-9_.-]{1,180}", reference_name):
-        raise ValueError("Nombre de imagen de referencia IPAdapter inválido")
+        raise ValueError("Invalid IPAdapter reference image name")
     if any(node in nodes for node in ("20", "21", "22")):
         raise ValueError("IDs de nodos de IPAdapter ocupados")
     model = nodes["5"]["inputs"]["model"]
@@ -47,7 +47,7 @@ def inject_ipadapter(nodes: dict, reference_name: str, preset: str,
 
 def _required(node: object, fields: set[str], name: str) -> dict:
     if not isinstance(node, dict):
-        raise ValueError("Falta el nodo " + name)
+        raise ValueError("Missing node " + name)
     field = node.get("input")
     needed = field.get("required") if isinstance(field, dict) else None
     if not isinstance(needed, dict) or not fields.issubset(needed):
@@ -63,7 +63,7 @@ def validate_identity_adapter_nodes(loader: object, adapter: object) -> list[str
     preset_spec = required["preset"]
     if (not isinstance(preset_spec, list) or not preset_spec
             or not isinstance(preset_spec[0], list)):
-        raise ValueError("Lista de presets IPAdapter inválida")
+        raise ValueError("Invalid IPAdapter preset list")
     return [item for item in PRESETS if item in preset_spec[0]]
 
 
@@ -84,7 +84,7 @@ async def identity_adapter_status(base_url: str, transport=None) -> dict:
                 if isinstance(loader_data, dict) else None,
                 adapter_data.get("IPAdapter") if isinstance(adapter_data, dict) else None)
             if not presets:
-                raise ValueError("La instalación IPAdapter no ofrece presets compatibles")
+                raise ValueError("IPAdapter installation provides no compatible presets")
             counts = {}
             for folder in MODEL_FOLDERS:
                 response = await client.get(base_url + "/models/" + folder,
@@ -93,7 +93,7 @@ async def identity_adapter_status(base_url: str, transport=None) -> dict:
                 names = response.json()
                 if (not isinstance(names, list) or len(names) > 20000 or
                         not all(isinstance(x, str) for x in names)):
-                    raise ValueError("Catálogo IPAdapter inválido: " + folder)
+                    raise ValueError("Invalid IPAdapter catalog: " + folder)
                 counts[folder] = len(names)
             if not all(counts.values()):
                 raise ValueError("Instala modelos IPAdapter y CLIP Vision compatibles")
@@ -108,6 +108,6 @@ async def identity_adapter_status(base_url: str, transport=None) -> dict:
 def require_ipadapter_status(status: dict, preset: str) -> None:
     if not status["available"]:
         raise HTTPException(
-            422, "IPAdapter Plus no está listo: " + (status["error"] or "sin modelos"))
+            422, "IPAdapter Plus is not ready: " + (status["error"] or "no models"))
     if preset not in status["presets"]:
-        raise HTTPException(422, "Preset IPAdapter no disponible: " + preset)
+        raise HTTPException(422, "IPAdapter preset unavailable: " + preset)

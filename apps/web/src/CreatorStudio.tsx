@@ -524,8 +524,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           }}/>
         : !active ? <div className="creator-welcome">
           <Sparkles size={40}/><h2>Select a story to edit</h2>
-          <p>Desde aquí puedes escribir la trama para el jugador, la información
-            interna para el modelo, las fichas de personajes y los distintos inicios.</p>
+          <p>Write the player-facing plot, private model context, character profiles, and story openings here.</p>
           <button className="primary-button" onClick={() => setCreateNew(true)}>
             <Plus size={16}/> Create new story
           </button>
@@ -922,8 +921,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <strong>Significant framing differences detected</strong>
                     <p>{draft.alignment_warnings.join('; ')}</p>
                     <p>This comparison only measures the position and scale of the
-                      silueta: no verifica identidad facial. Regenera las variantes
-                      que se vean distintas, o confirma que las has revisado.</p>
+                      silhouette; it does not verify facial identity. Regenerate visibly different variants or confirm that you have reviewed them.</p>
                     <label>
                       <input type="checkbox"
                         aria-label={'I accepted draft differences for ' + draft.character_name}

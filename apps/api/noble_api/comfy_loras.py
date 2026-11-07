@@ -15,10 +15,10 @@ LORA_FILENAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,146}\.safetensors")
 
 def validate_lora_inventory(payload: object) -> list[str]:
     if not isinstance(payload, list) or len(payload) > 20000:
-        raise ValueError("Inventario de LoRAs no válido")
+        raise ValueError("Invalid LoRA inventory")
     if not all(isinstance(value, str) and 1 <= len(value) <= 240
                for value in payload):
-        raise ValueError("ComfyUI devolvió un inventario de LoRAs inválido")
+        raise ValueError("ComfyUI returned an invalid LoRA inventory")
     return payload
 
 
@@ -62,16 +62,16 @@ def selected_character_loras(visual, story_id: str, prompt: str) -> list[dict]:
         if not filename:
             continue
         if not isinstance(filename, str) or not LORA_FILENAME.fullmatch(filename):
-            raise ValueError("Nombre de LoRA visual inválido")
+            raise ValueError("Invalid visual LoRA name")
         weight = dna.get("lora_strength", 0.8)
         if (not isinstance(weight, (int, float)) or isinstance(weight, bool)
                 or not 0 < weight <= 2):
-            raise ValueError("La intensidad de LoRA debe ser mayor que 0 y hasta 2")
+            raise ValueError("LoRA weight must be greater than 0 and at most 2")
         if filename in used:
-            raise ValueError("La misma LoRA está asignada a más de un NPC presente")
+            raise ValueError("The same LoRA is assigned to multiple present NPCs")
         used.add(filename)
         stack.append({"character_name": name, "lora_name": filename,
                       "strength": float(weight)})
         if len(stack) > MAX_SCENE_LORAS:
-            raise ValueError("Solo se permiten hasta tres LoRAs por ilustración")
+            raise ValueError("At most three LoRAs are allowed per illustration")
     return stack

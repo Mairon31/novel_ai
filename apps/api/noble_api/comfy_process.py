@@ -64,7 +64,7 @@ class ComfyProcessManager:
     def configure(self, config: ComfyLaunchConfig) -> dict:
         with self.lock:
             if self._running():
-                raise HTTPException(409, "Detén ComfyUI antes de cambiar su arranque")
+                raise HTTPException(409, "Stop ComfyUI before changing its launch settings")
             self.validate(config)
             with self.store._conn() as db:
                 db.execute("UPDATE comfy_runtime_preferences SET config_json=? WHERE id=1",
@@ -80,15 +80,15 @@ class ComfyProcessManager:
     @staticmethod
     def _directory(config: ComfyLaunchConfig) -> Path:
         if not config.install_dir:
-            raise HTTPException(422, "Indica la carpeta donde está ComfyUI/main.py")
+            raise HTTPException(422, "Specify the folder containing ComfyUI/main.py")
         original = Path(config.install_dir).expanduser()
         if not original.is_absolute() or original.is_symlink():
-            raise HTTPException(422, "La carpeta ComfyUI debe ser absoluta y no simbólica")
+            raise HTTPException(422, "ComfyUI folder must be an absolute, non-symlink path")
         directory = original.resolve(strict=False)
         if not directory.is_dir() or not all(
                 (directory / file).is_file() and not (directory / file).is_symlink()
                 for file in REQUIRED_COMFY_FILES):
-            raise HTTPException(422, "No parece una instalación ComfyUI completa")
+            raise HTTPException(422, "This does not look like a complete ComfyUI installation")
         return directory
 
     @staticmethod
@@ -97,7 +97,7 @@ class ComfyProcessManager:
         if explicit:
             candidate = Path(explicit).expanduser()
             if not candidate.is_absolute() or not PYTHON_NAME.fullmatch(candidate.name):
-                raise HTTPException(422, "Selecciona la ruta absoluta de un Python válido")
+                raise HTTPException(422, "Select an absolute path to a valid Python executable")
             candidates = [candidate]
         else:
             candidates = [
@@ -113,11 +113,11 @@ class ComfyProcessManager:
                 path = candidate.resolve(strict=False)
                 if path.is_file() and (os.name == "nt" or os.access(path, os.X_OK)):
                     return path
-        raise HTTPException(422, "No se encontró un ejecutable Python para ComfyUI")
+        raise HTTPException(422, "No Python executable found for ComfyUI")
 
     def validate(self, config: ComfyLaunchConfig) -> dict:
         if config.port in RESERVED_PORTS:
-            raise HTTPException(422, "El puerto está reservado para otro servicio de Noble")
+            raise HTTPException(422, "Port reserved for another Noble AI service")
         directory = self._directory(config)
         executable = self._python(config, directory)
         bridge = self.checkpoints.path_config()
@@ -183,11 +183,11 @@ class ComfyProcessManager:
     def start(self) -> dict:
         with self.lock:
             if self._running():
-                raise HTTPException(409, "ComfyUI ya fue iniciado por Noble AI")
+                raise HTTPException(409, "ComfyUI was already launched by Noble AI")
             config = ComfyLaunchConfig.model_validate(self.config())
             values = self.validate(config)
             if not self._port_unused(config.port):
-                raise HTTPException(409, "El puerto ya está ocupado; no se controlará un proceso externo")
+                raise HTTPException(409, "Port is already in use; an external process will not be controlled")
             argv = [
                 values["python_executable"], str(Path(values["install_dir"]) / "main.py"),
                 "--listen", "127.0.0.1", "--port", str(config.port),
@@ -198,11 +198,11 @@ class ComfyProcessManager:
                 argv.append("--" + config.memory_mode)
             logs = self.store.root / "logs"
             if logs.is_symlink():
-                raise HTTPException(409, "Ruta de registros no confiable")
+                raise HTTPException(409, "Untrusted log path")
             logs.mkdir(exist_ok=True)
             logfile = logs / "comfyui.log"
             if logfile.is_symlink():
-                raise HTTPException(409, "No se escribirá en registros simbólicos")
+                raise HTTPException(409, "Symlinked log files will not be written to")
             if self.proc is not None:
                 # The previous process exited naturally; release its log handle
                 # before starting the next one.
@@ -233,7 +233,7 @@ class ComfyProcessManager:
                 self.launched_config = None
                 if isinstance(exc, HTTPException):
                     raise
-                raise HTTPException(502, "No se pudo iniciar ComfyUI: " + str(exc)[:200]) from exc
+                raise HTTPException(502, "Could not start ComfyUI: " + str(exc)[:200]) from exc
             return self.status()
 
     def _stop_process(self):
@@ -249,7 +249,7 @@ class ComfyProcessManager:
     def stop(self) -> dict:
         with self.lock:
             if self.proc is None:
-                raise HTTPException(409, "Noble AI no administra ningún ComfyUI activo")
+                raise HTTPException(409, "Noble AI is not managing a running ComfyUI process")
             self._stop_process()
             if self.log_stream is not None:
                 self.log_stream.close()
@@ -289,7 +289,7 @@ def mount_comfy_process_routes(app, runtime: ComfyProcessManager):
             "http://127.0.0.1:4173", "http://localhost:4173",
         }
         if (origin and origin not in allowed) or request.headers.get("sec-fetch-site") == "cross-site":
-            raise HTTPException(403, "La administración de ComfyUI requiere el origen de Noble AI")
+            raise HTTPException(403, "ComfyUI management requests must originate from Noble AI")
 
     @app.get("/api/v1/images/runtime/config")
     def config():

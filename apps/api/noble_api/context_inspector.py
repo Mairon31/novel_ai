@@ -25,13 +25,13 @@ def _label_system(part: str, index: int) -> str:
         return "Instrucciones, premisa y canon"
     if part.startswith(("Contexto interno de la historia", "Directrices de narración",
                         "NPC controlados por el narrador", "Recordatorio persistente")):
-        return "Creador y personajes"
+        return "Creator and characters"
     if part.startswith("Lorebook activado"):
         return "Lorebook"
     if part.startswith(("Estado estructurado confirmado", "Lugar:", "Momento:",
                         "Clima:", "Personajes presentes:", "Inventario confirmado:",
                         "Indicadores confirmados:")):
-        return "Estado del mundo"
+        return "World state"
     return "Sistema y contexto"
 
 
@@ -42,11 +42,11 @@ def _approx_tokens(text: str) -> int:
 def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
     story = narrative.get_story(story_id)
     if story is None:
-        raise ValueError("Historia inexistente")
+        raise ValueError("Story not found")
     if mode not in {"say", "do", "story", "continue"}:
-        raise ValueError("Modo de interacción inválido")
+        raise ValueError("Invalid interaction mode")
     if mode != "continue" and not text.strip():
-        raise ValueError("Escribe una intervención para inspeccionar el contexto")
+        raise ValueError("Enter a message to inspect the context")
     messages = narrative.messages(story, text.strip(), mode)
     config = narrative.config()
     sections: list[dict] = []
@@ -76,7 +76,7 @@ def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
     for idx, message in enumerate(messages[1:], 1):
         content = message["content"]
         if idx == len(messages) - 1:
-            name = "Intervención actual"
+            name = "Current message"
         elif content.startswith("[Recuerdo de una intervención pasada"):
             name = "Episodios recuperados"
         else:

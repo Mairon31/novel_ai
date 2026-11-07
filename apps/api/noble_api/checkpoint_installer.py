@@ -53,20 +53,20 @@ def verify_safetensors(path: Path) -> None:
             raise ValueError("Checkpoint truncado")
         length = struct.unpack("<Q", start)[0]
         if length < 2 or length > 16 * 1024**2 or length > size - 8:
-            raise ValueError("Cabecera safetensors inválida")
+            raise ValueError("Invalid safetensors header")
         try:
             header = json.loads(stream.read(length))
         except (UnicodeError, ValueError) as exc:
-            raise ValueError("La cabecera safetensors no es JSON válido") from exc
+            raise ValueError("Safetensors header is not valid JSON") from exc
     if not isinstance(header, dict):
-        raise ValueError("Cabecera safetensors sin tensores")
+        raise ValueError("Safetensors header contains no tensors")
     entries = [(name, v) for name, v in header.items() if name != "__metadata__"]
     if not entries:
-        raise ValueError("Checkpoint safetensors vacío")
+        raise ValueError("Empty safetensors checkpoint")
     data_length = size - length - 8
     for name, entry in entries:
         if not isinstance(name, str) or not isinstance(entry, dict):
-            raise ValueError("Tensor safetensors inválido")
+            raise ValueError("Invalid safetensors tensor")
         offsets = entry.get("data_offsets")
         shape = entry.get("shape")
         if (not isinstance(offsets, list) or len(offsets) != 2 or
@@ -75,7 +75,7 @@ def verify_safetensors(path: Path) -> None:
                 not isinstance(entry.get("dtype"), str) or
                 not isinstance(shape, list) or
                 any(type(x) is not int or x < 0 for x in shape)):
-            raise ValueError("Offset o dimensiones de tensor safetensors inválidos")
+            raise ValueError("Invalid safetensors tensor offset or dimensions")
 
 
 class CheckpointInstaller:
@@ -85,10 +85,10 @@ class CheckpointInstaller:
         intended = store.models_dir / "comfyui"
         self.base = intended.resolve()
         if intended.is_symlink() or not self.base.is_relative_to(store.models_dir.resolve()):
-            raise RuntimeError("Ruta de modelos ComfyUI fuera del almacenamiento de Noble")
+            raise RuntimeError("ComfyUI model path is outside Noble AI storage")
         self.root = self.base / "checkpoints"
         if self.root.is_symlink():
-            raise RuntimeError("No se administran carpetas de modelos enlazadas")
+            raise RuntimeError("Linked model directories are not managed")
         self.root.mkdir(parents=True, exist_ok=True)
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="noble-image-checkpoints")
         self.lock = threading.Lock()
@@ -100,28 +100,28 @@ class CheckpointInstaller:
                 received_bytes INTEGER NOT NULL, error TEXT,
                 created_at REAL NOT NULL, updated_at REAL NOT NULL)""")
             db.execute("""UPDATE image_checkpoint_downloads
-                          SET status='paused', error='Interrumpida; reanuda para verificar'
+                          SET status='paused', error='Interrupted; resume to verify'
                           WHERE status IN ('queued','downloading','verifying')""")
 
     def _path(self, repo_id: str, filename: str) -> Path:
         validate_repo(repo_id)
         if not CHECKPOINT.fullmatch(filename) or ".." in filename:
-            raise HTTPException(422, "Solo modelos .safetensors individuales en la raíz del repositorio")
+            raise HTTPException(422, "Only individual .safetensors files at the repository root are supported")
         target = self.root / repo_id / filename
         # A local symlink in an intermediate directory must not redirect a
         # background download or publication outside Noble-owned storage.
         for parent in (self.root, self.root / repo_id.split("/")[0],
                        self.root / repo_id):
             if parent.is_symlink() or not parent.resolve().is_relative_to(self.root.resolve()):
-                raise HTTPException(409, "Ruta de checkpoint no confiable")
+                raise HTTPException(409, "Untrusted checkpoint path")
         if target.is_symlink() or not target.resolve().is_relative_to(self.root.resolve()):
-            raise HTTPException(409, "Ruta de checkpoint no confiable")
+            raise HTTPException(409, "Untrusted checkpoint path")
         return target
 
     def _staging(self, job_id: str) -> Path:
         folder = self.base / (".noble-image-" + str(uuid.UUID(job_id)))
         if folder.is_symlink() or not folder.resolve().is_relative_to(self.base):
-            raise RuntimeError("Ruta temporal no confiable")
+            raise RuntimeError("Untrusted temporary path")
         folder.mkdir(exist_ok=True)
         return folder
 
@@ -159,9 +159,9 @@ class CheckpointInstaller:
         info = self.catalog._get("/api/models/" + quote(repo_id, safe="/"),
                                  {"blobs": "true"})
         if not isinstance(info, dict) or not REVISION.fullmatch(str(info.get("sha", ""))):
-            raise CatalogError(502, "Revisión de Hugging Face inválida")
+            raise CatalogError(502, "Invalid Hugging Face revision")
         if info.get("gated") or info.get("private"):
-            raise CatalogError(403, "El checkpoint es privado o requiere permisos")
+            raise CatalogError(403, "Checkpoint is private or requires access permissions")
         revision = info["sha"]
         models = []
         for item in info.get("siblings") or []:
@@ -187,7 +187,7 @@ class CheckpointInstaller:
             "repo_id": repo_id, "revision": revision,
             "license": (info.get("cardData") or {}).get("license") or "sin verificar",
             "models": models[:40],
-            "note": "Solo archivos safetensors de raíz con SHA-256 publicado. Compatibilidad con ComfyUI no garantizada.",
+            "note": "Only root-level safetensors files with a published SHA-256 are supported. ComfyUI compatibility is not guaranteed.",
         }
 
     def path_config(self) -> dict:
@@ -196,7 +196,7 @@ class CheckpointInstaller:
         # Windows paths; no YAML parser or arbitrary user-supplied paths needed.
         body = "noble_ai:\n  base_path: " + json.dumps(str(self.base)) + "\n  checkpoints: checkpoints\n"
         if config.is_symlink():
-            raise HTTPException(409, "No se modificará un enlace simbólico de configuración")
+            raise HTTPException(409, "Configuration symlinks will not be modified")
         if not config.exists() or config.read_text(encoding="utf-8") != body:
             config.write_text(body, encoding="utf-8")
         return {"model_dir": str(self.root), "config_path": str(config),
@@ -226,17 +226,17 @@ class CheckpointInstaller:
     def start(self, body: CheckpointInstall) -> dict:
         selected = self.inspect(body.repo_id)
         if selected["revision"] != body.revision:
-            raise HTTPException(409, "La revisión del catálogo cambió; vuelve a consultar")
+            raise HTTPException(409, "Catalog revision changed; refresh the catalog")
         file = next((x for x in selected["models"] if x["filename"] == body.filename), None)
         if file is None:
-            raise HTTPException(422, "Modelo sin SHA-256 o tamaño verificable en catálogo")
+            raise HTTPException(422, "Model has no verifiable SHA-256 or size in the catalog")
         target = self._path(body.repo_id, body.filename)
         free_bytes = shutil.disk_usage(self.base).free
         reserve = min(128 * 1024 * 1024, file["size_bytes"] // 20)
         if free_bytes < file["size_bytes"] + reserve:
-            raise HTTPException(507, "Espacio insuficiente para verificar el checkpoint")
+            raise HTTPException(507, "Insufficient space to verify checkpoint")
         if target.is_symlink() or target.exists():
-            raise HTTPException(409, "El checkpoint ya existe y no será sobrescrito")
+            raise HTTPException(409, "Checkpoint already exists and will not be overwritten")
         with self.lock:
             with self.store._conn() as db:
                 active = db.execute("""SELECT id FROM image_checkpoint_downloads
@@ -244,7 +244,7 @@ class CheckpointInstaller:
                     ('queued','downloading','verifying','paused')
                     LIMIT 1""", (body.repo_id, body.filename)).fetchone()
                 if active:
-                    raise HTTPException(409, "Ya existe una descarga activa o pausada")
+                    raise HTTPException(409, "An active or paused download already exists")
                 now, job_id = time.time(), str(uuid.uuid4())
                 db.execute("""INSERT INTO image_checkpoint_downloads VALUES
                            (?,?,?,?,?,?,?,?,?,?,?)""",
@@ -262,11 +262,11 @@ class CheckpointInstaller:
             "cancel": (("queued", "downloading", "verifying", "paused", "failed"), "cancelled"),
         }
         if action not in options:
-            raise HTTPException(422, "Acción de descarga no admitida")
+            raise HTTPException(422, "Unsupported download action")
         allowed, new_status = options[action]
         with self.lock:
             if not self._transition(job_id, allowed, new_status):
-                raise HTTPException(409, "Transición de descarga inválida desde " + job["status"])
+                raise HTTPException(409, "Invalid download state transition from " + job["status"])
             if action == "resume":
                 self.pool.submit(self._run, job_id)
             if action == "cancel":
@@ -282,7 +282,7 @@ class CheckpointInstaller:
 
     def _download(self, job: dict, part: Path):
         if part.is_symlink():
-            raise ValueError("No se escribirá en un enlace simbólico")
+            raise ValueError("Symbolic links will not be written to")
         offset = part.stat().st_size if part.exists() else 0
         size = job["expected_size"]
         if offset > size:
@@ -298,7 +298,7 @@ class CheckpointInstaller:
                     timeout=httpx.Timeout(180, connect=15)) as response:
                 if response.status_code not in (200, 206):
                     response.raise_for_status()
-                    raise ValueError("No se entregó un checkpoint")
+                    raise ValueError("No checkpoint was received")
                 if response.headers.get("content-encoding", "identity").lower() != "identity":
                     raise ValueError("Respuesta binaria comprimida inesperada")
                 append = False
@@ -307,7 +307,7 @@ class CheckpointInstaller:
                                          response.headers.get("content-range", ""))
                     if (match is None or int(match[1]) != offset or
                             int(match[2]) != size - 1 or int(match[3]) != size):
-                        raise ValueError("Content-Range inválido")
+                        raise ValueError("Invalid Content-Range")
                     append = offset > 0
                 else:
                     offset = 0  # Origin ignored Range; rewrite safely.
@@ -318,7 +318,7 @@ class CheckpointInstaller:
                             return
                         transferred += len(chunk)
                         if transferred > size:
-                            raise ValueError("Respuesta excede el tamaño anunciado")
+                            raise ValueError("Response exceeds the advertised size")
                         destination.write(chunk)
                         self._progress(job["id"], transferred)
         if self.get(job["id"])["status"] != "downloading":
@@ -345,7 +345,7 @@ class CheckpointInstaller:
                     digest.update(piece)
             if digest.hexdigest() != job["sha256"].lower():
                 part.unlink(missing_ok=True)
-                raise ValueError("SHA-256 del checkpoint no coincide con Hugging Face")
+                raise ValueError("Checkpoint SHA-256 does not match Hugging Face")
             verify_safetensors(part)
             if not self._transition(job_id, ("downloading",), "verifying"):
                 return
@@ -354,7 +354,7 @@ class CheckpointInstaller:
                     return
                 target = self._path(job["repo_id"], job["filename"])
                 if target.is_symlink() or target.exists():
-                    raise ValueError("Conflicto: el checkpoint ya existe")
+                    raise ValueError("Conflict: checkpoint already exists")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 # Atomic creation that never replaces a file created by
                 # another process between our exists() check and publication.

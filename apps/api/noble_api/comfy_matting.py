@@ -71,31 +71,31 @@ def inject_matte(nodes: dict, mode: str) -> dict:
 
 def _validate_node(info: object, spec: dict) -> None:
     if not isinstance(info, dict):
-        raise ValueError("Falta nodo " + spec["class"])
+        raise ValueError("Missing node " + spec["class"])
     fields = info.get("input")
     if not isinstance(fields, dict):
-        raise ValueError("Esquema de nodo RMBG inválido")
+        raise ValueError("Invalid RMBG node schema")
     required = fields.get("required")
     optional = fields.get("optional")
     if not isinstance(required, dict) or not {"image", "model"} <= set(required):
-        raise ValueError("Entradas principales RMBG no disponibles")
+        raise ValueError("Required RMBG inputs are unavailable")
     if not isinstance(optional, dict) or not {
             "background", "refine_foreground", "unload_model",
             "mask_blur", "mask_offset", "invert_output", "sensitivity"
     } <= set(optional):
-        raise ValueError("Versión de RMBG no compatible con máscaras alfa")
+        raise ValueError("RMBG version does not support alpha masks")
     if spec["class"] == "RMBG" and "process_res" not in optional:
-        raise ValueError("Versión de RMBG sin control de resolución")
+        raise ValueError("RMBG version has no resolution control")
     model_field = required.get("model")
     backgrounds = optional.get("background")
     if (not isinstance(model_field, list) or not model_field
             or not isinstance(model_field[0], list)
             or spec["model"] not in model_field[0]):
-        raise ValueError("Modelo RMBG no ofrecido por el nodo")
+        raise ValueError("RMBG model not offered by the node")
     if (not isinstance(backgrounds, list) or not backgrounds
             or not isinstance(backgrounds[0], list)
             or "Alpha" not in backgrounds[0]):
-        raise ValueError("Nodo RMBG sin salida alfa")
+        raise ValueError("RMBG node has no alpha output")
     
 
 async def matting_status(base_url: str, transport=None) -> dict:
@@ -123,14 +123,14 @@ async def matting_status(base_url: str, transport=None) -> dict:
             file_list = inventory.json()
             if not isinstance(file_list, list) or len(file_list) > 20000 or not all(
                     isinstance(item, str) and len(item) <= 512 for item in file_list):
-                raise ValueError("Inventario RMBG no válido")
+                raise ValueError("Invalid RMBG inventory")
             available = {item.replace("\\", "/").casefold() for item in file_list}
             image_node = node_info["MaskToImage"]
             if not isinstance(image_node, dict) or not isinstance(
                     image_node.get("input"), dict) or not isinstance(
                     image_node["input"].get("required"), dict) or "mask" not in (
                         image_node["input"]["required"]):
-                raise ValueError("ComfyUI no tiene MaskToImage compatible")
+                raise ValueError("ComfyUI has no compatible MaskToImage node")
             for entry, (_, spec) in zip(entries, models):
                 try:
                     _validate_node(node_info[spec["class"]], spec)
@@ -139,7 +139,7 @@ async def matting_status(base_url: str, transport=None) -> dict:
                     missing = sorted(needed - available)
                     if missing:
                         raise ValueError(
-                            "Archivos del modelo no registrados en /models/rmbg: "
+                            "Model files not registered under /models/rmbg: "
                             + ", ".join(missing[:4]))
                     entry["ready"] = True
                 except ValueError as exc:
@@ -156,9 +156,9 @@ def require_matting_mode(status: dict, mode: str) -> None:
     if mode == CHROMA:
         return
     if mode not in MODELS:
-        raise HTTPException(422, "Modo de recorte neuronal inválido")
+        raise HTTPException(422, "Invalid neural cutout mode")
     choice = next((x for x in status["modes"] if x["mode"] == mode), None)
     if choice is None or not choice["ready"]:
         raise HTTPException(
-            422, "Recorte neuronal no disponible: " + (
-                choice["reason"] if choice else "modelo desconocido"))
+            422, "Neural cutout unavailable: " + (
+                choice["reason"] if choice else "unknown model"))
