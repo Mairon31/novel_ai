@@ -283,7 +283,7 @@ export function VoiceSettingsPanel() {
       <p>Automatic reading and background Piper are disabled; a voice downloads only after you request it.</p>
       <button className="secondary-button" disabled={busy}
         onClick={() => void refreshVoiceDownloads().catch((e: Error) => setError(e.message))}>
-        <RefreshCcw size={16}/> Actualizar voces</button>
+        <RefreshCcw size={16}/> Refresh voices</button>
     </div>
   </div>;
 }

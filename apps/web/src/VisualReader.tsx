@@ -957,7 +957,7 @@ export function VisualReader({
               </small>}
               <button disabled={visualBusy || asset.selected}
                 onClick={() => void chooseArtwork(asset.id)}>
-                {asset.selected ? 'En uso' : 'Use this version'}</button>
+                {asset.selected ? 'In use' : 'Use this version'}</button>
             </div>)}
           </div>}
           <button className="secondary-button" disabled={updating}

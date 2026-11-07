@@ -185,21 +185,20 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
         {tab === 'overview' && <div className="workspace-settings-overview">
           <div className="setting-section-intro">
-            <span className="overline">CONTROL DE TU ESTUDIO</span>
+            <span className="overline">STUDIO CONTROLS</span>
             <h2>Your workspace, your way</h2>
-            <p>Configura cada sistema por separado. Las opciones del narrador no se mezclan
-              with visual settings, network or installed models.</p>
+            <p>Configure each system separately. Narrator settings are independent from visuals, networking, and installed models.</p>
           </div>
           <div className="workspace-settings-snapshot">
             <div><Languages size={17}/><small>Narration language</small>
               <strong>{prefs?.target_language === 'es-419' ? 'Latin American Spanish' :
-                prefs?.target_language || 'Consultando...'}</strong></div>
-            <div><Volume2 size={17}/><small>Ilustraciones</small>
-              <strong>{imageMode === 'off' ? 'Desactivadas' :
+                prefs?.target_language || 'Loading...'}</strong></div>
+            <div><Volume2 size={17}/><small>Illustrations</small>
+              <strong>{imageMode === 'off' ? 'Disabled' :
                 imageMode === 'manual' ? 'On demand' : 'Per scene'}</strong></div>
             <div><KeyRound size={17}/><small>OpenRouter</small>
               <strong>{credential?.configured ? 'Key configured' : 'No key'}</strong></div>
-            <div><Cpu size={17}/><small>Version local</small>
+            <div><Cpu size={17}/><small>Local version</small>
               <strong>{about?.version || 'Consultando...'}</strong></div>
           </div>
           <div className="workspace-settings-overview-grid">
@@ -207,7 +206,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               {id:'narration',title:'Narrative engine',summary:'Connect your LLM, context, settings, and model.'},
               {id:'images',title:'Images',summary:'ComfyUI, illustrations, checkpoints, and GPU.'},
               {id:'voice',title:'Voice / TTS',summary:'Piper, voice models, and audio previews.'},
-              {id:'providers',title:'Servicios y claves',summary:'Accesos, proveedores y credenciales externas.'},
+              {id:'providers',title:'Services and keys',summary:'External accounts, providers, and credentials.'},
               {id:'languages',title:'Languages and style',summary:'Latin American Spanish, translation, and narration.'},
               {id:'appearance',title:'Reader appearance',summary:'Theme, visual novel layout, and typography.'},
               {id:'runtimes',title:'Models and executables',summary:'Installed packages and engine diagnostics.'},
