@@ -158,14 +158,14 @@ class WorldStateTests(unittest.TestCase):
         self.assertEqual(self.save(value).status_code, 200)
         story = self.narrative.get_story(self.story_id)
         content = self.narrative.messages(story, "Entro al faro", "do")[0]["content"]
-        self.assertIn("Hecho público confirmado", content)
+        self.assertIn("Confirmed public fact", content)
         self.assertNotIn("El rey guardó el sello", content)
         self.assertIn("Beto", content)
         updated = self.state(present_character_ids=[self.aira, self.beto])
         self.assertEqual(self.save(updated, revision=1).status_code, 200)
         content = self.narrative.messages(story, "Entro al faro", "do")[0]["content"]
         self.assertIn("El rey guardó el sello", content)
-        self.assertIn("conocido únicamente por Aira", content)
+        self.assertIn("known only to Aira", content)
         self.assertNotIn("El rey guardó el sello",
                          self.narrative.messages(story, "Entro al faro", "do")[-1]["content"])
 

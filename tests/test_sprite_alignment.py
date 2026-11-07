@@ -32,8 +32,8 @@ class AlignmentQualityTests(unittest.TestCase):
         small = silhouette_geometry(ellipse(width=45, height=85))
         warnings = alignment_warnings({"neutral": base, "joy": shifted,
                                        "anger": small})
-        self.assertTrue(any("joy: posición" in v for v in warnings), warnings)
-        self.assertTrue(any("anger: escala" in v for v in warnings), warnings)
+        self.assertTrue(any("joy: silhouette position" in v for v in warnings), warnings)
+        self.assertTrue(any("anger: silhouette scale" in v for v in warnings), warnings)
 
     def test_empty_or_missing_geometry_is_safe(self):
         self.assertEqual(alignment_warnings({}), [])

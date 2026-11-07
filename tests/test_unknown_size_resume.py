@@ -109,7 +109,7 @@ class UnknownSizeResumeTests(unittest.TestCase):
             206, content=PAYLOAD[30:60], headers={
                 "Content-Range": f"bytes 30-59/{len(PAYLOAD)}"}))
         self.assert_failed_without_install(state, PAYLOAD[:30])
-        self.assertIn("rango", state["error"])
+        self.assertIn("range", state["error"])
 
     def test_unknown_total_206_does_not_prove_full_transfer(self):
         self.part.write_bytes(PAYLOAD[:30])
@@ -159,7 +159,7 @@ class UnknownSizeResumeTests(unittest.TestCase):
             200, content=short,
             headers={"Content-Length": str(len(PAYLOAD))}))
         self.assertEqual(state["status"], "failed", state)
-        self.assertIn("incompleto", state["error"])
+        self.assertIn("incomplete", state["error"])
         self.assertEqual(self.part.read_bytes(), short)
         self.assertEqual(self.store.installed(), [])
 
@@ -169,7 +169,7 @@ class UnknownSizeResumeTests(unittest.TestCase):
             200, content=gzip.compress(PAYLOAD),
             headers={"Content-Encoding": "gzip"}))
         self.assert_failed_without_install(state, PAYLOAD[:30])
-        self.assertIn("comprimió", state["error"])
+        self.assertIn("compressed", state["error"])
         self.assertEqual(self.requests[0].headers["accept-encoding"], "identity")
 
     def test_416_on_initial_request_without_partial_is_not_accepted(self):

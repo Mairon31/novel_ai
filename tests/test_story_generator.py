@@ -206,7 +206,7 @@ class GeneratorTests(unittest.TestCase):
             if field not in revision:
                 self.assertEqual(changed[field], original[field], field)
         self.assertIn("Aria", observed[1]["content"])
-        self.assertIn("TRAMA ACTUAL QUE PUEDES REESCRIBIR", observed[1]["content"])
+        self.assertIn("CURRENT PLOT YOU MAY REWRITE", observed[1]["content"])
         budget = result.json()["generation_budget"]
         self.assertTrue(budget["estimate_only"])
         self.assertEqual(budget["max_output_tokens"], 3072)
