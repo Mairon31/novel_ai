@@ -13,10 +13,10 @@ def identity_reference_png(raw: bytes, width: int, height: int) -> bytes:
     try:
         with Image.open(io.BytesIO(raw)) as original:
             if original.format not in {"PNG", "WEBP", "JPEG"}:
-                raise ValueError("Formato de referencia no admitido")
+                raise ValueError("Unsupported reference format")
             if original.width < 8 or original.height < 8 or (
                     original.width * original.height > 20_000_000):
-                raise ValueError("Resolución de referencia inválida")
+                raise ValueError("Invalid reference resolution")
             original.load()
             image = ImageOps.exif_transpose(original).convert("RGBA")
             contained = ImageOps.contain(image, (width, height),
@@ -29,4 +29,4 @@ def identity_reference_png(raw: bytes, width: int, height: int) -> bytes:
             canvas.convert("RGB").save(final, "PNG")
             return final.getvalue()
     except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
-        raise ValueError("No se pudo preparar la referencia visual") from exc
+        raise ValueError("Could not prepare visual reference") from exc

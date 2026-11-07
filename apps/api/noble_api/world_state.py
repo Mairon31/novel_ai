@@ -88,7 +88,7 @@ class WorldStateService:
 
     def _exists(self, story_id: str) -> None:
         if self.narrative.get_story(story_id) is None:
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
 
     def current(self, story_id: str) -> dict:
         self._exists(story_id)
@@ -114,41 +114,41 @@ class WorldStateService:
         ):
             result[name] = [value.strip() for value in values]
             if any(not 1 <= len(value) <= length for value in result[name]):
-                raise ValueError("El inventario contiene un elemento inválido")
+                raise ValueError("Inventory contains an invalid item")
             if len(set(v.casefold() for v in result[name])) != len(result[name]):
-                raise ValueError("Elementos repetidos en el inventario")
+                raise ValueError("Duplicate inventory items")
         references = list(result["present_character_ids"])
         if len(set(references)) != len(references):
-            raise ValueError("Personajes presentes duplicados")
+            raise ValueError("Duplicate present characters")
         if len(result["relationships"]) > 30 or len(result["flags"]) > 60:
             raise ValueError("Demasiadas relaciones o indicadores de estado")
         for identity, relation in result["relationships"].items():
             try:
                 clean_id = str(uuid.UUID(identity))
             except ValueError as exc:
-                raise ValueError("Identificador de relación inválido") from exc
+                raise ValueError("Invalid relationship identifier") from exc
             if clean_id != identity or not 1 <= len(relation.strip()) <= 160:
-                raise ValueError("Relación inválida")
+                raise ValueError("Invalid relationship")
         for name in result["flags"]:
             if not 1 <= len(name) <= 70 or not all(
                     char.isalnum() or char in "_-." for char in name):
-                raise ValueError("El identificador del indicador es inválido")
+                raise ValueError("Invalid flag identifier")
         fact_ids: set[str] = set()
         for fact in result["facts"]:
             fact["text"] = fact["text"].strip()
             if len(fact["text"]) < 10:
                 raise ValueError("Texto de hecho demasiado corto")
             if fact["id"] in fact_ids:
-                raise ValueError("Hechos duplicados")
+                raise ValueError("Duplicate facts")
             fact_ids.add(fact["id"])
             if len(set(fact["witness_character_ids"])) != len(fact["witness_character_ids"]):
                 raise ValueError("Testigos duplicados")
             if not fact["public"] and not fact["witness_character_ids"]:
-                raise ValueError("Un hecho privado necesita testigos explícitos")
+                raise ValueError("A private fact requires explicit witnesses")
             references.extend(fact["witness_character_ids"])
         references.extend(result["relationships"])
         if not set(references).issubset(owned_ids):
-            raise ValueError("Un personaje de este estado no pertenece a la historia")
+            raise ValueError("A character in this state does not belong to the story")
         return result
 
     def save(self, story_id: str, body: WorldStateUpdate) -> dict:
@@ -164,7 +164,7 @@ class WorldStateService:
             ).fetchone()
             revision = prior["revision"] if prior else 0
             if body.expected_revision != revision:
-                raise ValueError("Conflicto de revisión: recarga el estado del mundo")
+                raise ValueError("Revision conflict: reload world state")
             next_revision = revision + 1
             now = time.time()
             data = json.dumps(state, ensure_ascii=False, sort_keys=True)
@@ -203,7 +203,7 @@ class WorldStateService:
                 (turn_id, story_id)
             ).fetchone()
         if row is None:
-            raise ValueError("No hay snapshot para ese turno de esta historia")
+            raise ValueError("No snapshot for this turn in this story")
         return {"story_id": story_id, "turn_id": turn_id,
                 "created_at": row["created_at"], "canon": row["canon_text"],
                 "state": json.loads(row["state_json"])}
@@ -302,16 +302,16 @@ class WorldStateService:
                          (story_id,)
                      )}
         if ids:
-            lines.append("Personajes presentes: " +
-                         ", ".join(names.get(identity, "desconocido") for identity in ids))
+            lines.append("Present characters: " +
+                         ", ".join(names.get(identity, "unknown") for identity in ids))
         if state["inventory"]:
-            lines.append("Inventario confirmado: " + "; ".join(state["inventory"]))
+            lines.append("Confirmed inventory: " + "; ".join(state["inventory"]))
         for identity, relation in state["relationships"].items():
             if identity in ids:
-                lines.append(f"Relación con {names.get(identity, 'NPC')}: {relation}")
+                lines.append(f"Relationship with {names.get(identity, 'NPC')}: {relation}")
         if state["flags"]:
-            lines.append("Indicadores confirmados: " + "; ".join(
-                name + "=" + ("sí" if value else "no")
+            lines.append("Confirmed flags: " + "; ".join(
+                name + "=" + ("yes" if value else "no")
                 for name, value in sorted(state["flags"].items())
             ))
         for fact in state["facts"]:
@@ -320,17 +320,17 @@ class WorldStateService:
             if not fact["public"] and not witnesses:
                 continue
             if fact["public"]:
-                line = "Hecho público confirmado: " + fact["text"]
+                line = "Confirmed public fact: " + fact["text"]
             else:
-                line = ("Hecho privado conocido únicamente por " +
+                line = ("Private fact known only to " +
                         ", ".join(names.get(identity, "NPC") for identity in
                                   fact["witness_character_ids"]) + ": " + fact["text"])
             lines.append(line)
         if not lines:
             return ""
-        header = ("Estado estructurado confirmado por el autor. No cambies estos hechos "
-                  "sin confirmación; un NPC no debe hablar de hechos privados "
-                  "que no presenció.")
+        header = ("Structured state confirmed by the author. Do not change these facts "
+                  "without confirmation; an NPC must not discuss private facts "
+                  "they did not witness.")
         result = header
         for line in lines:
             if len(result) + len(line) + 1 > max_chars:
@@ -352,7 +352,7 @@ def mount_world_state_routes(app, world: WorldStateService) -> None:
         try:
             return world.save(str(story_id), body)
         except ValueError as exc:
-            code = 409 if "Conflicto de revisión" in str(exc) else 422
+            code = 409 if "Revision conflict" in str(exc) else 422
             raise HTTPException(code, str(exc)) from exc
 
     @app.get("/api/v1/stories/{story_id}/world-state/turns/{turn_id}")

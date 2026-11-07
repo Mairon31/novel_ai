@@ -51,12 +51,12 @@ TABLES = (
 
 def _uuid(value: object) -> str:
     if not isinstance(value, str) or UUID_PATTERN.fullmatch(value) is None:
-        raise ValueError("UUID no canónico en respaldo")
+        raise ValueError("Noncanonical UUID in backup")
     try:
         if str(uuid.UUID(value)) != value:
-            raise ValueError("UUID no canónico en respaldo")
+            raise ValueError("Noncanonical UUID in backup")
     except (TypeError, ValueError) as exc:
-        raise ValueError("UUID no canónico en respaldo") from exc
+        raise ValueError("Noncanonical UUID in backup") from exc
     return value
 
 
@@ -69,45 +69,45 @@ def _family(db, story_id: str) -> list[dict]:
     all_stories = [dict(row) for row in db.execute("SELECT * FROM stories")]
     by_id = {row["id"]: row for row in all_stories}
     if story_id not in by_id:
-        raise ValueError("Historia inexistente")
+        raise ValueError("Story not found")
     root = story_id
     visited = set()
     while by_id[root].get("origin_story_id") in by_id:
         if root in visited:
-            raise ValueError("Se detectó un ciclo de ramas inválido")
+            raise ValueError("Invalid branch cycle detected")
         visited.add(root)
         root = by_id[root]["origin_story_id"]
     ordered, pending = [], [root]
     while pending:
         current = pending.pop(0)
         if current in {row["id"] for row in ordered}:
-            raise ValueError("Árbol de ramas cíclico")
+            raise ValueError("Cyclic branch tree")
         ordered.append(by_id[current])
         pending.extend(sorted(
             (row["id"] for row in all_stories
              if row.get("origin_story_id") == current), key=str))
         if len(ordered) > MAX_STORIES:
-            raise ValueError("El árbol supera el máximo de 64 historias")
+            raise ValueError("Tree exceeds the maximum of 64 stories")
     return ordered
 
 
 def _owned_file(root: Path, name: str, allowed: set[str]) -> Path:
     match = MEDIA_PATH.fullmatch(name)
     if match is None or _uuid(match.group(1)) not in allowed:
-        raise ValueError("Ruta de recurso no permitida en respaldo")
+        raise ValueError("Disallowed asset path in backup")
     sub = match.group(2)
     if sub.startswith(("creator/", "images/")):
         _uuid(sub.split("/")[1].split(".")[0])
     media = root / "story-assets"
     result = root / PurePosixPath(name)
     if media.is_symlink() or result.is_symlink():
-        raise ValueError("Enlace simbólico fuera de recursos administrados")
+        raise ValueError("Symlink points outside managed assets")
     # Verify every existing path component rather than only the last file.
     for parent in (media, media / match.group(1), result.parent):
         if parent.is_symlink() or (parent.exists() and not parent.is_dir()):
-            raise ValueError("Directorio de recursos no confiable")
+            raise ValueError("Untrusted assets directory")
     if not result.resolve().is_relative_to(media.resolve()):
-        raise ValueError("Ruta de recurso fuera del almacenamiento")
+        raise ValueError("Asset path is outside storage")
     return result
 
 
@@ -117,18 +117,18 @@ def _list_owned_files(narrative, ids: set[str]) -> list[tuple[str, Path]]:
     for story_id in sorted(ids):
         folder = root / "story-assets" / story_id
         if folder.is_symlink():
-            raise ValueError("Carpeta visual enlazada no confiable")
+            raise ValueError("Untrusted linked visual directory")
         if not folder.exists():
             continue
         if not folder.is_dir():
-            raise ValueError("Carpeta visual inválida")
+            raise ValueError("Invalid visual folder")
         for path in sorted(folder.rglob("*")):
             if path.is_symlink():
-                raise ValueError("Enlace simbólico en el directorio visual")
+                raise ValueError("Symlink in visual directory")
             if path.is_dir():
                 continue
             if not path.is_file():
-                raise ValueError("Recurso visual no es archivo regular")
+                raise ValueError("Visual asset is not a regular file")
             relative = path.relative_to(root).as_posix()
             if MEDIA_PATH.fullmatch(relative):
                 verified = _owned_file(root, relative, ids)
@@ -158,7 +158,7 @@ def build_archive(narrative, story_id: str) -> bytes:
             rows[table] = records
             total_rows += len(records)
             if total_rows > MAX_ROWS:
-                raise ValueError("La historia supera el límite de registros")
+                raise ValueError("Story exceeds the record limit")
         names = _list_owned_files(narrative, ids)
         entries: list[tuple[str, bytes]] = []
         files = []
@@ -166,7 +166,7 @@ def build_archive(narrative, story_id: str) -> bytes:
         for name, path in names:
             size = path.stat().st_size
             if size > MAX_FILE_BYTES or total + size > MAX_DATA_BYTES:
-                raise ValueError("Recursos visuales demasiado grandes para el respaldo")
+                raise ValueError("Visual assets are too large for the backup")
             data = path.read_bytes()
             total += len(data)
             files.append({"path": name, "size": len(data),
@@ -189,16 +189,16 @@ def build_archive(narrative, story_id: str) -> bytes:
 
 def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes]], list[dict]]:
     if len(payload) > MAX_UPLOAD_BYTES:
-        raise ValueError("El respaldo supera el tamaño permitido")
+        raise ValueError("Backup exceeds the permitted size")
     try:
         archive = zipfile.ZipFile(io.BytesIO(payload))
     except (OSError, zipfile.BadZipFile) as exc:
-        raise ValueError("El archivo no es un ZIP válido") from exc
+        raise ValueError("File is not a valid ZIP archive") from exc
     with archive as source:
         infos = source.infolist()
         names = [item.filename for item in infos]
         if len(names) != len(set(names)) or not names or names[0] != "manifest.json":
-            raise ValueError("ZIP duplicado o sin manifest inicial")
+            raise ValueError("Duplicate ZIP entry or missing initial manifest")
         if len(names) > MAX_FILES + 1:
             raise ValueError("Demasiados archivos en respaldo")
         head = infos[0]
@@ -207,44 +207,44 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
         try:
             manifest = json.loads(source.read(head))
         except (ValueError, RuntimeError, OSError, zipfile.BadZipFile) as exc:
-            raise ValueError("Manifest inválido o corrupto") from exc
+            raise ValueError("Invalid or corrupted manifest") from exc
         if (not isinstance(manifest, dict)
                 or manifest.get("format") != FORMAT
                 or type(manifest.get("version")) is not int
                 or manifest["version"] != VERSION):
-            raise ValueError("Versión de respaldo incompatible")
+            raise ValueError("Incompatible backup version")
         table_data = manifest.get("tables")
         if not isinstance(table_data, dict) or set(table_data) != set(TABLES):
             raise ValueError("Tablas de respaldo inesperadas o ausentes")
         stories = table_data["stories"]
         if not isinstance(stories, list) or not 1 <= len(stories) <= MAX_STORIES:
-            raise ValueError("Conjunto de historias inválido")
+            raise ValueError("Invalid story set")
         ids = [_uuid(row.get("id")) for row in stories if isinstance(row, dict)]
         if len(ids) != len(stories) or len(ids) != len(set(ids)):
-            raise ValueError("Historias duplicadas o inválidas")
+            raise ValueError("Duplicate or invalid stories")
         allowed = set(ids)
         root_story_id = _uuid(manifest.get("root_story_id"))
         if root_story_id not in allowed:
-            raise ValueError("Raíz de historias inexistente")
+            raise ValueError("Root story not found")
         seen = {root_story_id}
         if stories[0]["id"] != root_story_id:
-            raise ValueError("La primera historia debe ser la raíz")
+            raise ValueError("The first story must be the root")
         # Validate a complete connected tree. No missing parents or cycles.
         if stories[0].get("origin_story_id") is not None:
-            raise ValueError("El origen del árbol no es independiente")
+            raise ValueError("Tree origin is not independent")
         for story in stories[1:]:
             if story.get("origin_story_id") not in seen:
-                raise ValueError("Padre de rama ausente o árbol fuera de orden")
+                raise ValueError("Missing branch parent or out-of-order tree")
             seen.add(story["id"])
         total_rows = 0
         with narrative.store._conn() as db:
             for table in TABLES:
                 records = table_data[table]
                 if not isinstance(records, list):
-                    raise ValueError("Registros de respaldo no válidos")
+                    raise ValueError("Invalid backup records")
                 columns = set(_columns(db, table))
                 if not columns:
-                    raise ValueError("Tabla de respaldo no soportada: " + table)
+                    raise ValueError("Unsupported backup table: " + table)
                 total_rows += len(records)
                 if total_rows > MAX_ROWS:
                     raise ValueError("Demasiadas filas en respaldo")
@@ -270,28 +270,28 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                         normalized_render_details(record["render_details_json"])
                     if table == "creator_media_assets":
                         if record["source"] not in {"manual", "ai_reviewed"}:
-                            raise ValueError("Origen editorial inválido")
+                            raise ValueError("Invalid editorial origin")
                         raw = record["generation_json"]
                         if not isinstance(raw, str) or len(raw) > 4096:
                             raise ValueError("Procedencia de sprite demasiado grande")
                         try:
                             generation = normalize_sprite_generation(json.loads(raw))
                         except (ValueError, TypeError) as exc:
-                            raise ValueError("Procedencia de sprite inválida") from exc
+                            raise ValueError("Invalid sprite provenance") from exc
                         if bool(generation) != (record["source"] == "ai_reviewed"):
-                            raise ValueError("Origen y procedencia de sprite inconsistentes")
+                            raise ValueError("Inconsistent sprite origin and provenance")
                     if table != "stories":
                         if record.get("story_id") not in allowed:
-                            raise ValueError("Registro fuera del árbol de historias")
+                            raise ValueError("Record outside the story tree")
             turns = {row["id"] for row in table_data["story_turns"]}
             for table in TABLES:
                 if table.endswith("_turn_snapshots"):
                     for record in table_data[table]:
                         if record["turn_id"] not in turns:
-                            raise ValueError("Instantánea de turno externo")
+                            raise ValueError("Snapshot belongs to a foreign turn")
             for record in table_data["story_turns"]:
                 if record["story_id"] not in allowed:
-                    raise ValueError("Turno fuera del conjunto de historias")
+                    raise ValueError("Turn outside the story set")
         file_list = manifest.get("files")
         if not isinstance(file_list, list) or len(file_list) != len(names)-1:
             raise ValueError("Listado de archivos incompleto")
@@ -300,22 +300,22 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
         for idx, file in enumerate(file_list, 1):
             if (not isinstance(file, dict) or set(file) != {"path","size","sha256"}
                     or not isinstance(file["path"], str) or file["path"] != names[idx]):
-                raise ValueError("Nombre de archivo no coincide con manifest")
+                raise ValueError("Filename does not match manifest")
             _owned_file(narrative.store.root, file["path"], allowed)
             info = infos[idx]
             if info.is_dir() or info.file_size > MAX_FILE_BYTES:
-                raise ValueError("Entrada ZIP no permitida")
+                raise ValueError("Disallowed ZIP entry")
             total += info.file_size
             if total > MAX_DATA_BYTES or info.file_size != file["size"]:
-                raise ValueError("Tamaño del recurso inconsistente")
+                raise ValueError("Inconsistent asset size")
             if info.external_attr >> 16 & 0o170000 == 0o120000:
-                raise ValueError("Enlaces simbólicos no permitidos")
+                raise ValueError("Symlinks are not allowed")
             try:
                 data = source.read(info)
             except (OSError, RuntimeError, zipfile.BadZipFile) as exc:
-                raise ValueError("Archivo corrupto dentro del respaldo") from exc
+                raise ValueError("Corrupted file in backup") from exc
             if hashlib.sha256(data).hexdigest() != file["sha256"]:
-                raise ValueError("SHA256 del recurso no coincide")
+                raise ValueError("Asset SHA256 mismatch")
             data_files.append((file["path"], data))
     return manifest, data_files, stories
 
@@ -357,7 +357,7 @@ def _copy_archive_ids(manifest: dict, files: list[tuple[str, bytes]]
                     try:
                         visit(json.loads(value))
                     except (TypeError, ValueError) as exc:
-                        raise ValueError("JSON estructurado inválido en respaldo: " + column) from exc
+                        raise ValueError("Invalid structured JSON in backup: " + column) from exc
     for path, _ in files:
         # This path was already canonicalized and SHA-checked by _inspect_zip.
         for match in UUID_PATTERN.finditer(path):
@@ -423,7 +423,7 @@ def restore_archive(narrative, payload: bytes, *, as_copy: bool = False) -> dict
     root = narrative.store.root
     assets_root = root / "story-assets"
     if assets_root.is_symlink():
-        raise ValueError("Almacenamiento visual no confiable")
+        raise ValueError("Untrusted visual storage")
     assets_root.mkdir(parents=True, exist_ok=True)
     stage = narrative._fork_stage_root()
     added_dirs: list[Path] = []
@@ -434,13 +434,13 @@ def restore_archive(narrative, payload: bytes, *, as_copy: bool = False) -> dict
             db.execute("BEGIN IMMEDIATE")
             for sid in ids:
                 if db.execute("SELECT 1 FROM stories WHERE id=?", (sid,)).fetchone():
-                    raise FileExistsError("La historia ya existe: " + sid)
+                    raise FileExistsError("Story already exists: " + sid)
                 folder = assets_root / sid
                 if folder.exists() or folder.is_symlink():
-                    raise FileExistsError("La carpeta de historia ya existe: " + sid)
+                    raise FileExistsError("Story folder already exists: " + sid)
                 marker = stage / (sid + ".pending")
                 if marker.exists() or marker.is_symlink():
-                    raise FileExistsError("Marcador de importación ya presente")
+                    raise FileExistsError("Import marker is already present")
             stage.mkdir(parents=True, exist_ok=True)
             narrative._fsync_directory(stage.parent)
             for sid in ids:
@@ -459,7 +459,7 @@ def restore_archive(narrative, payload: bytes, *, as_copy: bool = False) -> dict
                 path = _owned_file(root, name, set(ids))
                 path.parent.mkdir(parents=True, exist_ok=True)
                 if path.exists() or path.is_symlink():
-                    raise ValueError("Colisión de archivo durante restauración")
+                    raise ValueError("File collision during restore")
                 with path.open("xb") as stream:
                     stream.write(data)
                     stream.flush()
@@ -527,7 +527,7 @@ def mount_story_archive_routes(app, narrative) -> None:
     @app.post("/api/v1/stories/archive/import", status_code=201)
     async def import_family(file: UploadFile = File(...), as_copy: bool = False):
         if not file.filename or not file.filename.endswith(".noble.zip"):
-            raise HTTPException(422, "Se requiere un archivo .noble.zip")
+            raise HTTPException(422, "A .noble.zip file is required")
         raw = await file.read(MAX_UPLOAD_BYTES + 1)
         try:
             return restore_archive(narrative, raw, as_copy=as_copy)

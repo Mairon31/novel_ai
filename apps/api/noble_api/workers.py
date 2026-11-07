@@ -29,9 +29,9 @@ def validate_tunnel(url: str) -> str:
                 or parsed.hostname == ".trycloudflare.com"
                 or parsed.username or parsed.password or parsed.port is not None
                 or parsed.path not in ("", "/") or parsed.query or parsed.fragment):
-            raise ValueError("Enlace de worker inválido")
+            raise ValueError("Invalid worker URL")
     except (ValueError, AttributeError) as exc:
-        raise ValueError("Utiliza https://<nombre>.trycloudflare.com sin rutas ni parámetros") from exc
+        raise ValueError("Use https://<name>.trycloudflare.com with no paths or parameters") from exc
     return "https://" + parsed.hostname.lower()
 
 
@@ -58,7 +58,7 @@ class KeyringVault:
             import keyring
             keyring.set_password(KEYRING_SERVICE, worker_id, token)
         except Exception as exc:
-            raise ValueError("No hay almacén de credenciales del sistema para el token de worker") from exc
+            raise ValueError("No system credential store is available for the worker token") from exc
 
     def delete(self, worker_id: str) -> None:
         try:
@@ -105,7 +105,7 @@ class WorkerRegistry:
 
     def remove(self, identity: str) -> None:
         if not self.info(identity):
-            raise ValueError("Worker no registrado")
+            raise ValueError("Worker not registered")
         with self.store._conn() as db:
             db.execute("DELETE FROM worker_connections WHERE id=?", (identity,))
         self.vault.delete(identity)
@@ -113,11 +113,11 @@ class WorkerRegistry:
     def endpoint(self, worker_id: str) -> tuple[str, str]:
         data = self.info(worker_id)
         if data is None:
-            raise ValueError("Worker inexistente. Regístralo antes de usarlo.")
+            raise ValueError("Worker not found. Register it before using it.")
         url = validate_tunnel(data["url"])
         token = self.vault.get(worker_id)
         if not token:
-            raise ValueError("Falta el token del worker en el almacén de credenciales")
+            raise ValueError("Worker token is missing from the credential store")
         return url, token
 
     async def probe(self, worker_id: str) -> dict:
@@ -142,7 +142,7 @@ class WorkerRegistry:
                     headers={"Authorization": "Bearer " + invalid_token},
                     follow_redirects=False)
                 if forbidden.status_code not in (401, 403):
-                    raise ValueError("El worker no valida credenciales Bearer; configura un proxy autenticado")
+                    raise ValueError("Worker does not validate Bearer credentials; configure an authenticated proxy")
                 data = response.json()
                 models = [row.get("id") for row in data.get("data", [])
                           if isinstance(row, dict) and isinstance(row.get("id"), str)]
@@ -201,17 +201,17 @@ def mount_worker_routes(app, registry: WorkerRegistry, narrative):
         """Explicit, short, non-persistent generation trial against a remote GPU."""
         result = await registry.probe(str(worker_id))
         if not result["online"] or body.model not in result["models"]:
-            raise HTTPException(422, "El worker está desconectado o el modelo ya no existe")
+            raise HTTPException(422, "Worker is disconnected or the model no longer exists")
         from .narrative import DEFAULT_LLM
         config = {**DEFAULT_LLM, "provider": "worker",
                   "worker_id": str(worker_id), "model": body.model,
                   "max_tokens": 128, "temperature": 0.4}
         messages = [
             {"role": "system", "content": (
-                "Eres un narrador. Responde en español latinoamericano, "
-                "con una escena original y breve sin mencionar métricas.")},
+                "You are a narrator. Reply in English with "
+                "a short original scene without mentioning metrics.")},
             {"role": "user", "content": (
-                "Describe en dos oraciones una biblioteca de fantasía al anochecer.")},
+                "Describe a fantasy library at dusk in two sentences.")},
         ]
         start = time.perf_counter()
         first_ms = None
@@ -222,22 +222,22 @@ def mount_worker_routes(app, registry: WorkerRegistry, narrative):
                     first_ms = round((time.perf_counter() - start) * 1000, 1)
                 count += len(chunk)
                 if count > 15000:
-                    raise ValueError("La generación de prueba fue demasiado extensa")
+                    raise ValueError("Test generation was too long")
             duration_ms = round((time.perf_counter() - start) * 1000, 1)
             if count == 0:
                 return {"success": False, "model": body.model,
-                        "error": "El modelo no devolvió texto", "duration_ms": duration_ms,
+                        "error": "Model returned no text", "duration_ms": duration_ms,
                         "ttft_ms": None, "output_characters": 0}
             return {
                 "success": True, "model": body.model, "ttft_ms": first_ms,
                 "duration_ms": duration_ms, "output_characters": count,
                 "gpu": (result.get("health") or {}).get("gpu", []),
-                "note": "Mide un único turno corto en el cliente. No garantiza pico real de VRAM.",
+                "note": "Measures one short client turn. Does not guarantee actual peak VRAM.",
             }
         except (httpx.HTTPError, OSError, ValueError):
             return {
                 "success": False, "model": body.model,
-                "error": "El worker falló durante la generación de prueba",
+                "error": "Worker failed during test generation",
                 "duration_ms": round((time.perf_counter() - start) * 1000, 1),
                 "ttft_ms": first_ms, "output_characters": count,
             }
@@ -253,7 +253,7 @@ def mount_worker_routes(app, registry: WorkerRegistry, narrative):
     async def activate(worker_id: uuid.UUID, body: WorkerModel):
         info = await registry.probe(str(worker_id))
         if not info["online"] or body.model not in info["models"]:
-            raise HTTPException(422, "El modelo elegido no está anunciado por el worker")
+            raise HTTPException(422, "Selected model is not advertised by the worker")
         from .narrative import LlmSettings
         current = narrative.config()
         current.update({

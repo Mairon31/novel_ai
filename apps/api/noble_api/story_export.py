@@ -69,7 +69,7 @@ def _embed_asset(path, limit: dict) -> str | None:
 def render_story_html(narrative, story_id: str) -> bytes:
     story = narrative.get_story(story_id)
     if story is None:
-        raise ValueError("Historia inexistente")
+        raise ValueError("Story not found")
     budget = {"count": 0, "bytes": 0}
     body = []
     with narrative.store._conn() as db:
@@ -94,13 +94,13 @@ def render_story_html(narrative, story_id: str) -> bytes:
                 path = narrative.creator_media._path(story_id, cover["id"], cover["kind"])
                 uri = _embed_asset(path, budget)
                 if uri:
-                    body.append('<figure class="cover"><img alt="Portada de la historia" src="'
+                    body.append('<figure class="cover"><img alt="Story cover" src="'
                                 + uri + '"></figure>')
 
         previous_art = None
         for i, turn in enumerate(turns, 1):
             turn_id = turn["id"]
-            frame = ['<section><h2>Escena ' + str(i) + '</h2>']
+            frame = ['<section><h2>Scene ' + str(i) + '</h2>']
             selected_id = visual.get(turn_id)
             # No fallback to today's selected image if a historical snapshot is
             # absent: a later illustration cannot appear in an earlier scene.
@@ -109,14 +109,14 @@ def render_story_html(narrative, story_id: str) -> bytes:
                 path = narrative.visual._asset_path(story_id, selected_id)
                 uri = _embed_asset(path, budget)
                 if uri:
-                    frame.append('<figure><img alt="Ilustración de la escena '
+                    frame.append('<figure><img alt="Illustration for scene '
                                  + str(i) + '" src="' + uri + '"></figure>')
             previous_art = selected_id
             when = datetime.fromtimestamp(
                 turn["created_at"], tz=timezone.utc).strftime("%Y-%m-%d")
-            mode = {"say":"Diálogo", "do":"Acción",
-                    "story":"Dirección", "continue":"Continuación"}.get(
-                        turn["mode"], "Intervención")
+            mode = {"say":"Dialogue", "do":"Action",
+                    "story":"Direction", "continue":"Continuation"}.get(
+                        turn["mode"], "Message")
             frame.append('<small>' + _safe_text(mode) + ' · '
                          + _safe_text(when) + '</small>')
             if turn["input_text"]:
@@ -132,7 +132,7 @@ def render_story_html(narrative, story_id: str) -> bytes:
     page = ('<!doctype html><html lang="es"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             '<title>' + title + '</title><style>' + STYLES +
-            '</style></head><body><main><header><small>NOBLE AI · EXPORTACIÓN LOCAL'
+            '</style></head><body><main><header><small>NOBLE AI · LOCAL EXPORT'
             + _safe_text(origin) + '</small><h1>' + title +
             '</h1><p>' + coverline + '</p><small>Protagonista: ' +
             protagonist + '</small></header>' + ''.join(body) +
@@ -154,7 +154,7 @@ def render_story_epub(narrative, story_id: str) -> bytes:
     """
     story = narrative.get_story(story_id)
     if story is None:
-        raise ValueError("Historia inexistente")
+        raise ValueError("Story not found")
     budget = {"count": 0, "bytes": 0}
     image_files: list[tuple[str, bytes]] = []
     root = ET.Element("{" + XHTML_NS + "}html", {
@@ -205,12 +205,12 @@ def render_story_epub(narrative, story_id: str) -> bytes:
             if row is not None:
                 cover_filename = image(narrative.creator_media._path(
                     story_id, row["id"], row["kind"]),
-                    "Portada de la historia", cover=True)
+                    "Story cover", cover=True)
         previous_art = None
         for i, turn in enumerate(turns, 1):
             section = ET.SubElement(main, "{" + XHTML_NS + "}section",
                                     {"id": "chapter-" + str(i)})
-            ET.SubElement(section, "{" + XHTML_NS + "}h2").text = "Escena " + str(i)
+            ET.SubElement(section, "{" + XHTML_NS + "}h2").text = "Scene " + str(i)
             selected_id = snapshots.get(turn["id"])
             if selected_id and selected_id in gallery and selected_id != previous_art:
                 uri = _embed_asset(narrative.visual._asset_path(story_id, selected_id), budget)
@@ -219,10 +219,10 @@ def render_story_epub(narrative, story_id: str) -> bytes:
                     image_files.append((name, base64.b64decode(uri.split(",", 1)[1])))
                     fig = ET.SubElement(section, "{" + XHTML_NS + "}figure")
                     ET.SubElement(fig, "{" + XHTML_NS + "}img",
-                                  {"src": name, "alt": "Ilustración de la escena " + str(i)})
+                                  {"src": name, "alt": "Illustration for scene " + str(i)})
             previous_art = selected_id
-            mode = {"say": "Diálogo", "do": "Acción", "story": "Dirección",
-                    "continue": "Continuación"}.get(turn["mode"], "Intervención")
+            mode = {"say": "Dialogue", "do": "Action", "story": "Direction",
+                    "continue": "Continuation"}.get(turn["mode"], "Message")
             ET.SubElement(section, "{" + XHTML_NS + "}small").text = mode
             if turn["input_text"]:
                 ET.SubElement(section, "{" + XHTML_NS + "}p",
@@ -261,12 +261,12 @@ def render_story_epub(narrative, story_id: str) -> bytes:
     nav_body = ET.SubElement(nav, "{" + XHTML_NS + "}body")
     toc = ET.SubElement(nav_body, "{" + XHTML_NS + "}nav",
                         {"{" + EPUB_NS + "}type": "toc"})
-    ET.SubElement(toc, "{" + XHTML_NS + "}h1").text = "Índice"
+    ET.SubElement(toc, "{" + XHTML_NS + "}h1").text = "Contents"
     toc_ol = ET.SubElement(toc, "{" + XHTML_NS + "}ol")
     for i in range(1, len(turns) + 1):
         li = ET.SubElement(toc_ol, "{" + XHTML_NS + "}li")
         ET.SubElement(li, "{" + XHTML_NS + "}a",
-                      {"href": "chapter.xhtml#chapter-" + str(i)}).text = "Escena " + str(i)
+                      {"href": "chapter.xhtml#chapter-" + str(i)}).text = "Scene " + str(i)
 
     out = io.BytesIO()
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as archive:

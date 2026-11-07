@@ -74,7 +74,7 @@ class ResourceController:
 
     def configure(self, config: ResourceConfig) -> dict:
         if config.mode not in {"monitor", "guard"}:
-            raise ValueError("Modo de gestión GPU no disponible")
+            raise ValueError("GPU management mode is unavailable")
         with self.store._conn() as conn:
             conn.execute("UPDATE resource_preferences SET config_json=? WHERE id=1",
                          (config.model_dump_json(),))
@@ -93,10 +93,10 @@ class ResourceController:
         if not self.config()["serialize_local_gpu"]:
             return False
         if self._gpu_lock.locked():
-            current = self._active["kind"] if self._active else "otra operación"
+            current = self._active["kind"] if self._active else "another operation"
             raise HTTPException(409,
-                "GPU local ocupada por " + current +
-                ". Espera a que termine o desactiva la coordinación en Ajustes.")
+                "Local GPU busy with " + current +
+                ". Wait for it to finish or disable coordination in Settings.")
         await self._gpu_lock.acquire()
         self._active = {"kind": kind, "started_at": time.time()}
         return True
@@ -112,16 +112,16 @@ class ResourceController:
         chosen = next((gpu for gpu in devices if gpu["index"] == policy["gpu_index"]), None)
         if not devices:
             status = "unknown"
-            detail = "nvidia-smi no está disponible; no es posible determinar la VRAM."
+            detail = "nvidia-smi is unavailable; VRAM cannot be determined."
         elif chosen is None:
             status = "unknown"
-            detail = "No se encontró la GPU configurada."
+            detail = "Configured GPU was not found."
         elif chosen["free_mib"] < policy["minimum_free_mib"]:
             status = "below_reserve"
-            detail = "La VRAM libre observada está por debajo del mínimo configurado."
+            detail = "Observed free VRAM is below the configured minimum."
         else:
             status = "above_reserve"
-            detail = "La VRAM libre observada supera el mínimo configurado; no garantiza que un checkpoint quepa."
+            detail = "Observed free VRAM exceeds the configured minimum; this does not guarantee that a checkpoint will fit."
         return {
             "policy": policy, "gpus": devices, "selected_gpu": chosen,
             "status": status, "observed_at": time.time(), "message": detail,
@@ -134,9 +134,9 @@ class ResourceController:
         if (state["policy"]["mode"] == "guard" and
                 state["status"] == "below_reserve" and not allow_low_vram):
             raise HTTPException(
-                409, "VRAM libre inferior a la reserva configurada (" +
+                409, "Free VRAM is below the configured reserve (" +
                 str(state["policy"]["minimum_free_mib"]) +
-                " MiB). Libera memoria, modifica Ajustes o permite esta ejecución explícitamente.")
+                " MiB). Free memory, change Settings, or explicitly allow this run.")
         return state
 
 

@@ -28,11 +28,11 @@ from .speech import SpeechService
 REPO = "rhasspy/piper-voices"
 VOICES = {
     "es_MX-ald-medium.onnx": {
-        "name": "Ald · Español mexicano", "language": "es_MX",
+        "name": "Ald · Mexican Spanish", "language": "es_MX",
         "quality": "medium", "path": "es/es_MX/ald/medium",
     },
     "es_MX-claude-high.onnx": {
-        "name": "Claude · Español mexicano", "language": "es_MX",
+        "name": "Claude · Mexican Spanish", "language": "es_MX",
         "quality": "high", "path": "es/es_MX/claude/high",
     },
 }
@@ -60,7 +60,7 @@ class VoiceInstaller:
                 error TEXT, created_at REAL NOT NULL, updated_at REAL NOT NULL
             )""")
             db.execute("""UPDATE tts_downloads SET status='paused',
-                error='Descarga interrumpida; reanuda para verificar'
+                error='Download interrupted; resume to verify'
                 WHERE status IN ('queued','downloading','verifying')""")
 
     def _db(self):
@@ -98,7 +98,7 @@ class VoiceInstaller:
                                        "/tree/main/" + data["path"]}
                        for key, data in VOICES.items()],
             "engine_installed": self.speech.voices()["available"],
-            "note": "Cada voz tiene licencia/model card propia. La instalación no instala el ejecutable Piper.",
+            "note": "Each voice has its own license/model card. Installing a voice does not install the Piper executable.",
         }
 
     def list_jobs(self) -> dict:
@@ -109,22 +109,22 @@ class VoiceInstaller:
     def get(self, job_id: str) -> dict:
         row = self._row(job_id)
         if row is None:
-            raise HTTPException(404, "No existe esa instalación de voz")
+            raise HTTPException(404, "Voice installation not found")
         return row
 
     def _metadata(self, voice_id: str) -> tuple[str, list[dict]]:
         selected = VOICES[voice_id]
         info = self.catalog._get("/api/models/" + REPO)
         if not isinstance(info, dict) or not REVISION.fullmatch(str(info.get("sha", ""))):
-            raise CatalogError(502, "Hugging Face no devolvió una revisión inmutable válida")
+            raise CatalogError(502, "Hugging Face returned no valid immutable revision")
         if info.get("gated"):
-            raise CatalogError(403, "La voz requiere permisos de acceso")
+            raise CatalogError(403, "Voice requires access permissions")
         revision = info["sha"]
         files = self.catalog._get("/api/models/" + REPO + "/tree/" +
                                   revision + "/" + selected["path"],
                                   {"expand": "true"})
         if not isinstance(files, list):
-            raise CatalogError(502, "Listado de archivos Piper inválido")
+            raise CatalogError(502, "Invalid Piper file listing")
         by_path = {item.get("path"): item for item in files if isinstance(item, dict)}
         result = []
         for suffix, maximum, minimum in (("", MAX_MODEL, 1024 * 1024),
@@ -133,10 +133,10 @@ class VoiceInstaller:
             upstream = selected["path"] + "/" + filename
             item = by_path.get(upstream)
             if item is None:
-                raise CatalogError(404, "Falta un archivo de la pareja ONNX/JSON en el catálogo")
+                raise CatalogError(404, "An ONNX/JSON pair file is missing from the catalog")
             size = item.get("size")
             if type(size) is not int or not minimum <= size <= maximum:
-                raise CatalogError(422, "Tamaño del archivo Piper desconocido o no permitido")
+                raise CatalogError(422, "Piper file size is unknown or disallowed")
             lfs = item.get("lfs") or {}
             digest = lfs.get("oid") or item.get("sha256")
             if isinstance(digest, str):
@@ -144,17 +144,17 @@ class VoiceInstaller:
             else:
                 digest = None
             if digest is not None and not HEX_SHA256.fullmatch(digest):
-                raise CatalogError(502, "SHA-256 anunciado por el repositorio es inválido")
+                raise CatalogError(502, "Repository-provided SHA-256 is invalid")
             result.append({"filename": filename, "upstream": upstream,
                            "size": size, "sha256": digest})
         return revision, result
 
     def start(self, voice_id: str) -> dict:
         if voice_id not in VOICES:
-            raise HTTPException(422, "Voz no disponible en el catálogo de Noble")
+            raise HTTPException(422, "Voice not available in Noble AI catalog")
         targets = (self.root / voice_id, self.root / (voice_id + ".json"))
         if any(target.exists() or target.is_symlink() for target in targets):
-            raise HTTPException(409, "Ya existe un archivo de esta voz; no se sobrescribirá")
+            raise HTTPException(409, "Voice file already exists and will not be overwritten")
         # Resolve a pinned commit and both files before queuing any bytes.
         revision, sources = self._metadata(voice_id)
         with self.lock:
@@ -164,7 +164,7 @@ class VoiceInstaller:
                     "status IN ('queued','downloading','verifying','paused') "
                     "ORDER BY created_at DESC LIMIT 1", (voice_id,)).fetchone()
                 if active:
-                    raise HTTPException(409, "La voz tiene una instalación activa o pausada")
+                    raise HTTPException(409, "Voice has an active or paused installation")
                 job_id = str(uuid.uuid4())
                 now = time.time()
                 db.execute("INSERT INTO tts_downloads VALUES (?,?,?,?,?,?,?,?,?,?)",
@@ -183,10 +183,10 @@ class VoiceInstaller:
         elif action == "cancel":
             allowed, target = ("queued", "downloading", "verifying", "paused", "failed"), "cancelled"
         else:
-            raise HTTPException(422, "Acción de instalación desconocida")
+            raise HTTPException(422, "Unknown installation action")
         with self.lock:
             if not self._transition(job_id, allowed, target):
-                raise HTTPException(409, "Transición no permitida desde " + job["status"])
+                raise HTTPException(409, "Disallowed transition from " + job["status"])
             if action == "resume":
                 self.pool.submit(self._run, job_id)
             if action == "cancel":
@@ -203,19 +203,19 @@ class VoiceInstaller:
     def _stage(self, job_id: str) -> Path:
         stage = self.root / (".noble-voice-" + str(uuid.UUID(job_id)))
         if stage.is_symlink() or not stage.resolve().is_relative_to(self.root):
-            raise RuntimeError("Ruta temporal de voz no confiable")
+            raise RuntimeError("Untrusted voice temporary path")
         stage.mkdir(exist_ok=True)
         if stage.is_symlink():
-            raise RuntimeError("Ruta temporal de voz no confiable")
+            raise RuntimeError("Untrusted voice temporary path")
         return stage
 
     def _download_one(self, job: dict, stage: Path, source: dict):
         part = stage / (source["filename"] + ".part")
         if part.is_symlink():
-            raise RuntimeError("Archivo temporal simbólico no permitido")
+            raise RuntimeError("Symlinked temporary file is not allowed")
         offset = part.stat().st_size if part.exists() else 0
         if offset > source["size"]:
-            raise RuntimeError("Descarga parcial mayor que el archivo previsto")
+            raise RuntimeError("Partial download is larger than the expected file")
         if offset < source["size"]:
             headers = {"Accept-Encoding": "identity"}
             if offset:
@@ -226,7 +226,7 @@ class VoiceInstaller:
                     "GET", url, headers=headers, timeout=httpx.Timeout(180, connect=15)) as response:
                 if response.status_code not in (200, 206):
                     response.raise_for_status()
-                    raise RuntimeError("El servidor no entregó un archivo de voz completo")
+                    raise RuntimeError("Server did not deliver a complete voice file")
                 if response.headers.get("content-encoding", "identity").lower() != "identity":
                     raise RuntimeError("Respuesta binaria comprimida inesperadamente")
                 append = offset > 0 and response.status_code == 206
@@ -236,7 +236,7 @@ class VoiceInstaller:
                     if (match is None or int(match[1]) != offset or
                             int(match[2]) != source["size"] - 1 or
                             int(match[3]) != source["size"]):
-                        raise RuntimeError("Content-Range inválido al reanudar")
+                        raise RuntimeError("Invalid Content-Range on resume")
                 else:
                     offset = 0  # HTTP 200 ignores Range: safely redownload.
                 transferred = offset
@@ -246,7 +246,7 @@ class VoiceInstaller:
                             return
                         transferred += len(chunk)
                         if transferred > source["size"]:
-                            raise RuntimeError("Archivo supera el tamaño autorizado")
+                            raise RuntimeError("File exceeds allowed size")
                         output.write(chunk)
                         accumulated = sum(
                             min((stage / (item["filename"] + ".part")).stat().st_size,
@@ -263,24 +263,24 @@ class VoiceInstaller:
         if self.get(job["id"])["status"] != "downloading":
             return
         if part.stat().st_size != source["size"]:
-            raise RuntimeError("Descarga de voz incompleta")
+            raise RuntimeError("Incomplete voice download")
         if source["filename"].endswith(".json"):
             raw = part.read_bytes()
             try:
                 config = json.loads(raw)
             except (ValueError, UnicodeDecodeError) as exc:
                 part.unlink(missing_ok=True)
-                raise RuntimeError("Configuración de Piper no es JSON válido") from exc
+                raise RuntimeError("Piper configuration is not valid JSON") from exc
             lang = (config.get("language") or {}).get("code") if isinstance(config, dict) else None
             if lang != VOICES[job["voice_id"]]["language"]:
                 part.unlink(missing_ok=True)
-                raise RuntimeError("Idioma de Piper no coincide con la voz elegida")
+                raise RuntimeError("Piper language does not match the selected voice")
         else:
             with part.open("rb") as f:
                 prefix = f.read(16).lstrip().lower()
             if prefix.startswith((b"<", b"{", b"[")):
                 part.unlink(missing_ok=True)
-                raise RuntimeError("El modelo ONNX contiene texto o HTML, no pesos")
+                raise RuntimeError("ONNX model contains text or HTML instead of weights")
         sha = hashlib.sha256()
         with part.open("rb") as f:
             for chunk in iter(lambda: f.read(1024 * 1024), b""):
@@ -289,7 +289,7 @@ class VoiceInstaller:
                 sha.update(chunk)
         if source["sha256"] and sha.hexdigest() != source["sha256"].lower():
             part.unlink(missing_ok=True)
-            raise RuntimeError("SHA-256 de voz distinto al catálogo")
+            raise RuntimeError("Voice SHA-256 differs from catalog")
 
     def _run(self, job_id: str):
         job = self.get(job_id)
@@ -312,7 +312,7 @@ class VoiceInstaller:
                 model = self.root / job["voice_id"]
                 config = self.root / (job["voice_id"] + ".json")
                 if any(p.exists() or p.is_symlink() for p in (model, config)):
-                    raise RuntimeError("Existe una voz con ese nombre; no se sobrescribirá")
+                    raise RuntimeError("A voice with this name exists and will not be overwritten")
                 staged_model = stage / (job["voice_id"] + ".part")
                 staged_config = stage / (job["voice_id"] + ".json.part")
                 # Publish sidecar before ONNX: discovery requires both present.

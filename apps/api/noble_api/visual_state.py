@@ -72,13 +72,13 @@ def infer_location(text: str) -> str | None:
 
 def image_bytes_to_webp(raw: bytes) -> bytes:
     if not raw or len(raw) > MAX_BYTES:
-        raise ValueError("Ilustración vacía o superior al límite de 12 MB")
+        raise ValueError("Empty illustration or one exceeding the 12 MB limit")
     try:
         with Image.open(io.BytesIO(raw)) as source:
             if source.format not in {"PNG", "JPEG", "WEBP"}:
-                raise ValueError("Formato no admitido")
+                raise ValueError("Unsupported format")
             if source.width * source.height > MAX_PIXELS:
-                raise ValueError("Demasiados píxeles")
+                raise ValueError("Too many pixels")
             source.load()
             target = ImageOps.exif_transpose(source).convert("RGB")
             target.thumbnail((2048, 2048), Image.Resampling.LANCZOS)
@@ -86,7 +86,7 @@ def image_bytes_to_webp(raw: bytes) -> bytes:
             target.save(output, "WEBP", quality=88, method=5)
             return output.getvalue()
     except (UnidentifiedImageError, Image.DecompressionBombError, OSError) as exc:
-        raise ValueError("No se pudo decodificar la imagen") from exc
+        raise ValueError("Could not decode the image") from exc
 
 
 class SceneChange(BaseModel):
@@ -198,7 +198,7 @@ class VisualState:
 
     def scene(self, story_id: str) -> dict:
         if not self._exists(story_id):
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
         query = """SELECT * FROM visual_scenes WHERE story_id=?
             ORDER BY created_at DESC,id DESC LIMIT 1"""
         with self.store._conn() as conn:
@@ -215,14 +215,14 @@ class VisualState:
                 return dict(last)
             ident, now = str(uuid.uuid4()), time.time()
             conn.execute("INSERT INTO visual_scenes VALUES(?,?,?,?,?,?)",
-                         (ident, story_id, "Escena inicial", None, "initial", now))
+                         (ident, story_id, "Initial scene", None, "initial", now))
             return dict(conn.execute("SELECT * FROM visual_scenes WHERE id=?", (ident,)).fetchone())
 
     def set_scene(self, story_id: str, location: str, source_turn_id: str | None = None,
                   detection: str = "confirmed") -> dict:
         location = " ".join(location.split())[:120]
         if len(location) < 2:
-            raise ValueError("Escenario vacío")
+            raise ValueError("Empty scene")
         prior = self.scene(story_id)
         if prior["location"].casefold() == location.casefold():
             return prior
@@ -249,7 +249,7 @@ class VisualState:
             initial_id = str(uuid.uuid4())
             conn.execute(
                 "INSERT INTO visual_scenes VALUES (?,?,?,?,?,?)",
-                (initial_id, story_id, "Escena inicial", None, "initial", time.time()),
+                (initial_id, story_id, "Initial scene", None, "initial", time.time()),
             )
             current = conn.execute(
                 "SELECT * FROM visual_scenes WHERE id=?", (initial_id,)
@@ -268,7 +268,7 @@ class VisualState:
     def observe_turn(self, story_id: str, turn: dict) -> dict | None:
         """Compatibility wrapper for callers that do not own a transaction."""
         if not self._exists(story_id):
-            raise ValueError("Historia inexistente")
+            raise ValueError("Story not found")
         with self.store._conn() as conn:
             return self.observe_turn_in_transaction(conn, story_id, turn)
 
@@ -290,7 +290,7 @@ class VisualState:
                         "SELECT * FROM visual_characters WHERE story_id=? AND id=?",
                         (story_id, character_id)).fetchone()
                     if not found:
-                        raise ValueError("Personaje inexistente")
+                        raise ValueError("Character not found")
                     conn.execute("""UPDATE visual_characters SET
                         name=?,appearance=?,outfit=?,distinguishing_features=?,
                         revision=revision+1,updated_at=?
@@ -309,7 +309,7 @@ class VisualState:
                 return dict(conn.execute(
                     "SELECT * FROM visual_characters WHERE id=?", (ident,)).fetchone())
         except sqlite3.IntegrityError as exc:
-            raise ValueError("Ya existe un personaje visual con ese nombre") from exc
+            raise ValueError("A visual character with that name already exists") from exc
 
     def set_character_reference(self, story_id: str,
                                 character_id: str, asset_id: str | None) -> dict:
@@ -318,12 +318,12 @@ class VisualState:
             character = db.execute("""SELECT * FROM visual_characters
                 WHERE story_id=? AND id=?""", (story_id, character_id)).fetchone()
             if character is None:
-                raise ValueError("El personaje visual no existe en esta historia")
+                raise ValueError("Visual character does not exist in this story")
             if asset_id:
                 asset = db.execute("""SELECT 1 FROM visual_assets
                     WHERE story_id=? AND id=?""", (story_id, asset_id)).fetchone()
                 if asset is None:
-                    raise ValueError("La imagen de referencia no pertenece a esta historia")
+                    raise ValueError("Reference image does not belong to this story")
                 # Check on-disk integrity before accepting a canonical reference.
                 self.reference_bytes(story_id, asset_id)
             db.execute("""UPDATE visual_characters
@@ -395,9 +395,9 @@ class VisualState:
         identity = self.creator_visual_identity_lines(story_id, prompt)
         # Textual guidance only, not IPAdapter, a LoRA loader or a face lock.
         return ("Escenario actual: " + scene["location"] + ".\n" +
-                ("Fichas visuales canónicas (mantener rasgos, no intercambiarlos):\n" +
+                ("Canonical visual profiles (preserve traits; do not swap them):\n" +
                  "\n".join(appearance) + "\n" if appearance else "") +
-                ("Etiquetas de identidad visual del creador (solo NPC presentes):\n" +
+                ("Creator visual identity tags (present NPCs only):\n" +
                  "\n".join(identity) + "\n" if identity else "") +
                 "Solicitud visual: " + prompt).strip()
 
@@ -505,7 +505,7 @@ class VisualState:
                         continue
                     old_file = self._asset_path(source_id, art["id"])
                     if not old_file.is_file() or old_file.is_symlink():
-                        raise ValueError("Falta una ilustración de la galería de la historia original")
+                        raise ValueError("A gallery illustration is missing from the original story")
                     new_asset = str(uuid.uuid4())
                     new_file = self._asset_path(branch_id, new_asset)
                     new_file.parent.mkdir(parents=True, exist_ok=True)
@@ -596,33 +596,33 @@ class VisualState:
         """Keep all gallery files inside Noble's own UUID-scoped directory."""
         try:
             if str(uuid.UUID(story_id)) != story_id:
-                raise ValueError("UUID no canónico")
+                raise ValueError("Noncanonical UUID")
         except (TypeError, AttributeError, ValueError) as exc:
-            raise ValueError("Identificador de historia inválido") from exc
+            raise ValueError("Invalid story identifier") from exc
         base = self.store.root.resolve() / "story-assets"
         target = base / story_id
         if (base.is_symlink() or target.is_symlink() or
                 not target.resolve().is_relative_to(base)):
-            raise ValueError("Directorio visual fuera del espacio administrado")
+            raise ValueError("Visual directory is outside managed storage")
         return target
 
     def _asset_path(self, story_id: str, asset_id: str) -> Path:
         try:
             if str(uuid.UUID(asset_id)) != asset_id:
-                raise ValueError("UUID no canónico")
+                raise ValueError("Noncanonical UUID")
         except (TypeError, AttributeError, ValueError) as exc:
-            raise ValueError("Identificador de ilustración inválido") from exc
+            raise ValueError("Invalid illustration identifier") from exc
         story_root = self._story_assets_root(story_id)
         asset = story_root / "images" / (asset_id + ".webp")
         if asset.is_symlink() or not asset.resolve().is_relative_to(story_root):
-            raise ValueError("Archivo visual fuera del espacio administrado")
+            raise ValueError("Visual file is outside managed storage")
         return asset
 
     def legacy_path(self, story_id: str) -> Path:
         story_root = self._story_assets_root(story_id)
         legacy = story_root / "scene.webp"
         if legacy.is_symlink() or not legacy.resolve().is_relative_to(story_root):
-            raise ValueError("Ruta de ilustración fuera del espacio administrado")
+            raise ValueError("Illustration path is outside managed storage")
         return legacy
 
     def legacy_copy(self, story_id: str, source: Path) -> None:
@@ -630,7 +630,7 @@ class VisualState:
         legacy.parent.mkdir(parents=True, exist_ok=True)
         temp = legacy.with_suffix(".webp.part")
         if temp.is_symlink() or not temp.resolve().is_relative_to(legacy.parent.resolve()):
-            raise ValueError("Archivo temporal de ilustración no confiable")
+            raise ValueError("Untrusted temporary illustration file")
         try:
             shutil.copyfile(source, temp)
             os.replace(temp, legacy)
@@ -651,7 +651,7 @@ class VisualState:
                 seed: int | None = None, render_signature: str | None = None,
                 render_details: dict | None = None) -> dict:
         if origin not in {"manual", "comfyui"}:
-            raise ValueError("Origen de imagen no admitido")
+            raise ValueError("Unsupported image origin")
         details = normalized_render_details(render_details)
         raw_details = json.dumps(details, ensure_ascii=False,
                                  sort_keys=True, allow_nan=False)
@@ -666,7 +666,7 @@ class VisualState:
         # Version file first, then SQLite commit. No old artwork is deleted.
         tmp = asset.with_suffix(".webp.part")
         if tmp.is_symlink() or not tmp.resolve().is_relative_to(asset.parent.resolve()):
-            raise ValueError("Archivo temporal de galería no confiable")
+            raise ValueError("Untrusted temporary gallery file")
         try:
             tmp.write_bytes(transformed)
             os.replace(tmp, asset)
@@ -703,10 +703,10 @@ class VisualState:
                 "SELECT * FROM visual_assets WHERE story_id=? AND id=?",
                 (story_id, asset_id)).fetchone()
         if not row:
-            raise ValueError("Ilustración inexistente en esta historia")
+            raise ValueError("Illustration not found in this story")
         path = self._asset_path(story_id, asset_id)
         if not path.is_file():
-            raise ValueError("El archivo de ilustración ya no está disponible")
+            raise ValueError("Illustration file is no longer available")
         self.legacy_copy(story_id, path)
         with self.store._conn() as conn:
             conn.execute("""INSERT INTO visual_current(story_id,asset_id)
@@ -721,15 +721,15 @@ class VisualState:
                 "SELECT content_sha256 FROM visual_assets WHERE id=? AND story_id=?",
                 (asset_id, story_id)).fetchone()
         if record is None:
-            raise ValueError("La ilustración de referencia no pertenece a esta historia")
+            raise ValueError("Reference illustration does not belong to this story")
         path = self._asset_path(story_id, asset_id)
         if not path.is_file() or path.is_symlink():
-            raise ValueError("La ilustración de referencia ya no está disponible")
+            raise ValueError("Reference illustration is no longer available")
         data = path.read_bytes()
         if not data or len(data) > MAX_BYTES:
-            raise ValueError("Referencia vacía o demasiado grande")
+            raise ValueError("Empty or oversized reference")
         if hashlib.sha256(data).hexdigest() != record["content_sha256"]:
-            raise ValueError("La ilustración de referencia no pasó su verificación SHA256")
+            raise ValueError("Reference illustration failed SHA256 verification")
         return data, record["content_sha256"]
 
     def asset_response(self, story_id: str, asset_id: str) -> FileResponse:
@@ -737,10 +737,10 @@ class VisualState:
             row = conn.execute("SELECT id FROM visual_assets WHERE story_id=? AND id=?",
                                (story_id, asset_id)).fetchone()
         if not row:
-            raise HTTPException(404, "Ilustración inexistente")
+            raise HTTPException(404, "Illustration not found")
         target = self._asset_path(story_id, asset_id)
         if not target.is_file():
-            raise HTTPException(404, "Archivo de imagen ausente")
+            raise HTTPException(404, "Image file is missing")
         return FileResponse(target, media_type="image/webp",
             headers={"Cache-Control": "private, no-store",
                      "X-Content-Type-Options": "nosniff"})
@@ -790,7 +790,7 @@ def mount_visual_routes(app, visual: VisualState):
         try:
             return visual.asset_response(str(story_id), str(asset_id))
         except ValueError as exc:
-            raise HTTPException(404, "Ruta de ilustración no válida") from exc
+            raise HTTPException(404, "Invalid illustration path") from exc
 
     @app.post("/api/v1/stories/{story_id}/gallery/{asset_id}/select")
     def select(story_id: uuid.UUID, asset_id: uuid.UUID):

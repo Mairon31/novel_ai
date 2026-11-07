@@ -64,22 +64,22 @@ class VisualDirector:
 
     def preview(self, story_id: str, intent: str = "auto") -> dict:
         if intent not in {"auto", "background", "emotion", "event"}:
-            raise ValueError("Intención de director no permitida")
+            raise ValueError("Unsupported director intent")
         info = self.context(story_id)
         found = self.visual.cached(story_id, info["cache_key"])
         asset = found if found and found["origin"] == "manual" else None
         if intent == "event":
             action = "GENERATE_EVENT_CG"
-            reason = "Evento solicitado: ilustración CG nueva, sin reemplazar el fondo."
+            reason = "Requested event: new CG illustration without replacing the background."
         elif intent == "emotion" and asset:
             action = "UPDATE_SPRITE_EMOTION"
-            reason = "Solo cambia la expresión; el fondo registrado se reutiliza."
+            reason = "Only the expression changes; the registered background is reused."
         elif asset:
             action = "REUSE_BACKGROUND"
-            reason = "Fondo manual registrado para el mismo lugar, hora, clima, plano y luz."
+            reason = "Manual background registered for the same location, time, weather, shot, and lighting."
         else:
             action = "GENERATE_NEW_BACKGROUND"
-            reason = "No hay fondo registrado para estas condiciones; requiere imagen explícita."
+            reason = "No background registered for these conditions; explicit image generation is required."
         return {
             **info, "action": action,
             "background_asset_id": asset["id"] if asset else None,
@@ -94,7 +94,7 @@ class VisualDirector:
                  expected_key: str) -> dict:
         info = self.context(story_id)
         if info["cache_key"] != expected_key:
-            raise RuntimeError("La escena cambió: actualiza el director antes de registrar")
+            raise RuntimeError("Scene changed: refresh the director before registering")
         # Atomic update, owner-bound and manual-only. A ComfyUI asset retains
         # its full deterministic generation signature; no cache corruption.
         with self.visual.store._conn() as db:
@@ -103,14 +103,14 @@ class VisualDirector:
                 "SELECT origin,render_signature FROM visual_assets "
                 "WHERE story_id=? AND id=?", (story_id, asset_id)).fetchone()
             if not row:
-                raise ValueError("El recurso visual no pertenece a esta historia")
+                raise ValueError("Visual asset does not belong to this story")
             if row["origin"] != "manual":
                 raise ValueError("Solo se registran fondos importados manualmente")
             if row["render_signature"] and not row["render_signature"].startswith("noble-bg-v1:"):
-                raise ValueError("El recurso tiene una firma de generación que no se puede reemplazar")
+                raise ValueError("Asset has a generation signature that cannot be replaced")
             path = self.visual._asset_path(story_id, asset_id)
             if not path.is_file() or path.is_symlink():
-                raise ValueError("El archivo de fondo no está disponible o no es confiable")
+                raise ValueError("Background file is unavailable or untrusted")
             db.execute(
                 "UPDATE visual_assets SET render_signature=? "
                 "WHERE story_id=? AND id=?", (expected_key, story_id, asset_id))
@@ -120,9 +120,9 @@ class VisualDirector:
               expected_key: str) -> dict:
         info = self.preview(story_id)
         if info["cache_key"] != expected_key:
-            raise RuntimeError("El contexto visual cambió antes de aplicar el fondo")
+            raise RuntimeError("Visual context changed before applying the background")
         if info["background_asset_id"] != asset_id:
-            raise RuntimeError("El fondo disponible cambió: actualiza la vista previa")
+            raise RuntimeError("Available background changed: refresh the preview")
         gallery = self.visual.choose(story_id, asset_id)
         return {"selected_asset_id": gallery["selected_asset_id"],
                 "action": "REUSE_BACKGROUND",

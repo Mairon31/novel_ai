@@ -32,14 +32,14 @@ def validate_upstream(url: str) -> str:
                 or x.query or x.fragment):
             raise ValueError("Upstream fuera de loopback")
     except (ValueError, AttributeError) as exc:
-        raise ValueError("NOBLE_WORKER_UPSTREAM debe ser HTTP local con puerto") from exc
+        raise ValueError("NOBLE_WORKER_UPSTREAM must be a local HTTP URL with a port") from exc
     return url.rstrip("/")
 
 
 def create_worker_app(token: str, upstream: str,
                       transport: httpx.AsyncBaseTransport | None = None) -> FastAPI:
     if len(token) < 24:
-        raise ValueError("NOBLE_WORKER_TOKEN requiere 24 caracteres como mínimo")
+        raise ValueError("NOBLE_WORKER_TOKEN requires at least 24 characters")
     base = validate_upstream(upstream)
     telemetry = WorkerTelemetry()
     service = FastAPI(title="Noble AI Authenticated Worker", version="0.1")
@@ -49,7 +49,7 @@ def create_worker_app(token: str, upstream: str,
         provided = request.headers.get("authorization", "")
         expected = "Bearer " + token
         if not hmac.compare_digest(provided.encode(), expected.encode()):
-            return JSONResponse({"detail": "Token de worker inválido"}, status_code=401)
+            return JSONResponse({"detail": "Invalid worker token"}, status_code=401)
         return await call_next(request)
 
     @service.get("/v1/health")
@@ -81,10 +81,10 @@ def create_worker_app(token: str, upstream: str,
                 result.raise_for_status()
                 data = result.json()
                 if not isinstance(data, dict):
-                    raise ValueError("Catálogo inválido")
+                    raise ValueError("Invalid catalog")
                 return data
         except (ValueError, httpx.HTTPError) as exc:
-            raise HTTPException(502, "Motor local sin respuesta: " + str(exc)[:170]) from exc
+            raise HTTPException(502, "Local engine did not respond: " + str(exc)[:170]) from exc
 
     @service.post("/v1/chat/completions")
     async def completions(request: Request):
@@ -93,14 +93,14 @@ def create_worker_app(token: str, upstream: str,
         async for part in request.stream():
             body.extend(part)
             if len(body) > 1024 * 1024:
-                raise HTTPException(413, "El prompt supera el límite de 1 MB")
+                raise HTTPException(413, "Prompt exceeds the 1 MB limit")
         try:
             payload = json.loads(body)
         except (ValueError, UnicodeError):
-            raise HTTPException(422, "Se espera un JSON válido")
+            raise HTTPException(422, "Valid JSON is required")
         if (not isinstance(payload, dict) or not isinstance(payload.get("model"), str)
                 or not isinstance(payload.get("messages"), list)):
-            raise HTTPException(422, "El modelo y los mensajes son obligatorios")
+            raise HTTPException(422, "Model and messages are required")
         # Remote client cannot override the upstream URL or add arbitrary proxy routes.
         start = telemetry.begin()
         client = httpx.AsyncClient(transport=transport, trust_env=False,
@@ -114,11 +114,11 @@ def create_worker_app(token: str, upstream: str,
                 await response.aclose()
                 await client.aclose()
                 telemetry.finish(start, None, 0, False)
-                raise HTTPException(502, "El motor local respondió HTTP " + str(status))
+                raise HTTPException(502, "Local engine returned HTTP " + str(status))
         except (OSError, httpx.HTTPError) as exc:
             await client.aclose()
             telemetry.finish(start, None, 0, False)
-            raise HTTPException(502, "No se pudo contactar el motor local") from exc
+            raise HTTPException(502, "Could not contact the local engine") from exc
 
         async def relay():
             first_chunk_ms = None
