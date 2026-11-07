@@ -1,6 +1,6 @@
 # Noble AI — Instalación de checkpoints de imagen desde la aplicación
 
-**Estado:** primer flujo publicado en `master`; la validación de CI de la fase se actualizará en [PROGRESO.md](PROGRESO.md). **No es una instalación automática del runtime ComfyUI.**
+**Estado:** primer flujo publicado en `master` y validado por [CI #42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206) (393 Python, 82 Playwright y Vite PASS). Corrección posterior de rutas Windows y publicación atómica todavía con CI final pendiente. **No es una instalación automática del runtime ComfyUI.**
 
 ## Qué hace
 
