@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -121,6 +121,17 @@ export const api = {
     '/images/config', { method: 'PUT', body: JSON.stringify(config) }),
   imageStatus: () => request<ImageStatus>('/images/status'),
   imageSamplerOptions: () => request<ImageSamplerOptions>('/images/sampler-options'),
+  checkpointLookup: (repo_id: string) => request<CheckpointCatalog>(
+    '/images/checkpoints/lookup?repo_id=' + encodeURIComponent(repo_id)),
+  checkpointInstalled: () => request<CheckpointInstalled>('/images/checkpoints/installed'),
+  checkpointDownloads: () => request<{ downloads: CheckpointDownload[] }>(
+    '/images/checkpoints/downloads'),
+  checkpointInstall: (input: {repo_id: string; filename: string; revision: string}) =>
+    request<CheckpointDownload>('/images/checkpoints/install', json(input)),
+  checkpointControl: (jobId: string, action: 'pause' | 'resume' | 'cancel') =>
+    request<CheckpointDownload>('/images/checkpoints/downloads/' +
+      encodeURIComponent(jobId) + '/' + action, { method: 'POST' }),
+
   imageLoras: () => request<LoraStatus>('/images/loras'),
   illustrate: (storyId: string, prompt: string, seed?: number,
                reference_asset_id?: string, denoise?: number,

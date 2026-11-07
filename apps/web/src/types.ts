@@ -223,6 +223,24 @@ export type ImageSettings = {
   scheduler: 'normal' | 'karras' | 'exponential' | 'sgm_uniform' | 'simple';
   style_preset: 'anime_fantasy' | 'anime_cinematic' | 'anime_watercolor' | 'none';
 };
+export type CheckpointCatalog = {
+  repo_id: string; revision: string; license: string; note: string;
+  models: Array<{ filename: string; size_bytes: number; sha256: string;
+    installed: boolean; model_card: string }>;
+};
+export type CheckpointDownload = {
+  id: string; repo_id: string; filename: string; revision: string;
+  expected_size: number; sha256: string;
+  status: 'queued' | 'downloading' | 'verifying' | 'paused' | 'failed' | 'cancelled' | 'completed';
+  received_bytes: number; error: string | null;
+  created_at: number; updated_at: number;
+};
+export type CheckpointInstalled = {
+  models: Array<{ repo_id: string; filename: string; revision: string;
+    size_bytes: number; checkpoint_name: string }>;
+  model_dir: string; config_path: string; comfyui_argument: string[];
+  requires_runtime_restart: boolean;
+};
 export type ImageSamplerOptions = {
   online: boolean; sampler_name: string[]; scheduler: string[]; error: string | null;
 };
