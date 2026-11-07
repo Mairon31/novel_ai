@@ -60,7 +60,7 @@ class EpisodicMemoryTests(unittest.TestCase):
 
         story = self.narrative.get_story(self.story)
         messages = self.narrative.messages(story, "Inspecciono el medallón de cuarzo", "do")
-        self.assertIn("Recuerdo de una intervención pasada del jugador", messages[1]["content"])
+        self.assertIn("Memory of a past player message", messages[1]["content"])
         self.assertIn("medallón de cuarzo", messages[1]["content"])
         self.assertNotIn("secreto prohibido", messages[0]["content"])
         self.assertEqual(messages[1]["role"], "user")

@@ -60,16 +60,16 @@ class MediaCoordinationTests(unittest.TestCase):
     def test_local_lease_blocks_uncached_comfyui_then_recovers(self):
         self.assertTrue(self.client.get("/api/v1/resources/config")
                         .json()["serialize_local_gpu"])
-        acquired=asyncio.run(self.resources.claim_local_gpu("narración local"))
+        acquired=asyncio.run(self.resources.claim_local_gpu("local narration"))
         self.assertTrue(acquired)
         active=self.client.get("/api/v1/resources/active").json()["active"]
-        self.assertEqual(active["kind"],"narración local")
+        self.assertEqual(active["kind"],"local narration")
         blocked=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json={
             "prompt":"La biblioteca iluminada por la luz de la luna"})
         self.assertEqual(blocked.status_code,409,blocked.text)
         self.assertEqual(self.fixture.calls,0)
         self.assertEqual(self.client.get("/api/v1/resources/active")
-                         .json()["active"]["kind"],"narración local")
+                         .json()["active"]["kind"],"local narration")
         self.resources.release_local_gpu(acquired)
         self.assertIsNone(self.client.get("/api/v1/resources/active").json()["active"])
         success=self.client.post(f"/api/v1/stories/{self.story}/illustrate",json={
@@ -79,7 +79,7 @@ class MediaCoordinationTests(unittest.TestCase):
         self.assertIsNone(self.client.get("/api/v1/resources/active").json()["active"])
 
     def test_coordinator_off_does_not_take_or_release_other_lease(self):
-        first=asyncio.run(self.resources.claim_local_gpu("narración local"))
+        first=asyncio.run(self.resources.claim_local_gpu("local narration"))
         try:
             changed=self.client.put("/api/v1/resources/config",json={
                 "mode":"monitor","gpu_index":0,"minimum_free_mib":3072,
@@ -89,7 +89,7 @@ class MediaCoordinationTests(unittest.TestCase):
             self.assertFalse(second)
             self.resources.release_local_gpu(second)
             self.assertEqual(self.client.get("/api/v1/resources/active")
-                .json()["active"]["kind"],"narración local")
+                .json()["active"]["kind"],"local narration")
         finally:
             self.resources.release_local_gpu(first)
         self.assertIsNone(self.client.get("/api/v1/resources/active").json()["active"])
@@ -105,7 +105,7 @@ class MediaCoordinationTests(unittest.TestCase):
                 "request_id":"355f045b-5d48-4495-a130-5b690fa64d77",
                 "mode":"say", "input_text":"¿Quién eres?"})
             self.assertEqual(response.status_code,200)
-            self.assertIn("GPU local ocupada",response.text)
+            self.assertIn("Local GPU busy",response.text)
             self.assertIn("event: error",response.text)
             self.assertEqual(self.client.get(
                 f"/api/v1/stories/{self.story}/turns").json()["turns"],[])

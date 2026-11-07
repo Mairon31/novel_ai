@@ -106,7 +106,7 @@ class MattingWorkflowTests(unittest.TestCase):
                 with self.assertRaises(HTTPException) as context:
                     require_matting_mode(available, "neural_rmbg2")
                 self.assertEqual(context.exception.status_code, 422)
-                self.assertIn("Recorte neuronal", context.exception.detail)
+                self.assertIn("Neural cutout", context.exception.detail)
 
     def test_malformed_inventory_does_not_trigger_generation(self):
         def handler(request):

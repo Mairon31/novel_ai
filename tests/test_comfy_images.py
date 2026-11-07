@@ -295,7 +295,7 @@ class ComfySceneTests(unittest.TestCase):
         self.fixture.missing_lora = True
         missing = self.client.post(endpoint, json=payload)
         self.assertEqual(missing.status_code, 422, missing.text)
-        self.assertIn("LoRA no instalado", missing.text)
+        self.assertIn("LoRA not installed", missing.text)
         self.fixture.missing_lora = False
         self.fixture.lora_nodes_available = False
         absent = self.client.post(endpoint, json=payload)
@@ -329,7 +329,7 @@ class ComfySceneTests(unittest.TestCase):
             "prompt": "Aira y Bel recorren Un castillo al anochecer",
             "apply_character_loras": True})
         self.assertEqual(repeated.status_code, 422, repeated.text)
-        self.assertIn("misma LoRA", repeated.text)
+        self.assertIn("same LoRA", repeated.text)
 
     def test_invalid_or_offline_provider_does_not_replace_previous_art(self):
         self.setup_comfy()
@@ -475,7 +475,7 @@ class ComfySceneTests(unittest.TestCase):
         self.assertEqual(self.fixture.last_workflow["8"]["class_type"],"LoadImage")
         self.assertEqual(self.fixture.last_workflow["9"]["class_type"],"VAEEncode")
         self.assertIn("Luna",self.fixture.last_workflow["2"]["inputs"]["text"])
-        self.assertIn("atardecer",self.fixture.last_workflow["2"]["inputs"]["text"])
+        self.assertIn("sunset",self.fixture.last_workflow["2"]["inputs"]["text"])
         self.assertEqual(len([request for request in self.fixture.requests
                               if request.url.path=="/upload/image"]),1)
 
@@ -544,7 +544,7 @@ class ComfySceneTests(unittest.TestCase):
         rejected = self.client.post(f"/api/v1/stories/{self.story}/illustrate",
                                     json={"prompt": "Un castillo al anochecer"})
         self.assertEqual(rejected.status_code, 422, rejected.text)
-        self.assertIn("Muestreador no disponible", rejected.text)
+        self.assertIn("Sampler unavailable", rejected.text)
         self.assertFalse(any(r.url.path == "/prompt"
                              for r in self.fixture.requests))
         self.fixture.sampler_choices = ["euler", "dpmpp_2m"]
@@ -553,7 +553,7 @@ class ComfySceneTests(unittest.TestCase):
             f"/api/v1/stories/{self.story}/illustrate",
             json={"prompt": "Un castillo al anochecer"})
         self.assertEqual(rejected_scheduler.status_code, 422)
-        self.assertIn("Planificador no disponible", rejected_scheduler.text)
+        self.assertIn("Scheduler unavailable", rejected_scheduler.text)
         self.fixture.invalid_sampler_inventory = True
         broken = self.client.get("/api/v1/images/sampler-options")
         self.assertEqual(broken.status_code, 200)

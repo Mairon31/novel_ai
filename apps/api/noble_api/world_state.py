@@ -290,7 +290,7 @@ class WorldStateService:
         state = self.current(story_id)["state"]
         lines = []
         for label, field in (
-            ("Lugar", "location"), ("Momento", "time_of_day"), ("Clima", "weather"),
+            ("Location", "location"), ("Time", "time_of_day"), ("Weather", "weather"),
         ):
             if state[field]:
                 lines.append(f"{label}: {state[field]}")

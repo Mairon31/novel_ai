@@ -77,7 +77,7 @@ class ModelCardTests(unittest.TestCase):
                 result = client.get("/api/v1/model-cards/demo/model",
                                     params={"revision": SHA})
                 self.assertEqual(result.status_code, 403)
-                self.assertIn("restringido", str(result.json()).lower())
+                self.assertIn("restricted", str(result.json()).lower())
 
 
 if __name__ == "__main__":

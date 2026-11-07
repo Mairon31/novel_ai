@@ -61,7 +61,7 @@ class ContextInspectorTests(unittest.TestCase):
         self.assertFalse(result["runtime_kv_cache_measured"])
         self.assertEqual(sum(x["characters"] for x in result["sections"]),
                          result["total_characters"])
-        self.assertTrue(any(section["name"] == "Creador y personajes"
+        self.assertTrue(any(section["name"] == "Creator and characters"
                             for section in result["sections"]))
         after = self.client.get(f"/api/v1/stories/{self.story}/turns").json()["turns"]
         self.assertEqual(before, after)

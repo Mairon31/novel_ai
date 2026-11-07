@@ -60,9 +60,9 @@ class CreatorMediaTests(unittest.TestCase):
 
     def test_owned_asset_paths_reject_traversal_and_symlinked_directories(self):
         service = self.app.state.creator_media
-        with self.assertRaisesRegex(ValueError, "Identificador"):
+        with self.assertRaisesRegex(ValueError, "Invalid visual asset identifier"):
             service._path("../escape", str(uuid.uuid4()), "background")
-        with self.assertRaisesRegex(ValueError, "Identificador"):
+        with self.assertRaisesRegex(ValueError, "Invalid visual asset identifier"):
             service._path(self.story, "../escape", "background")
         with self.assertRaisesRegex(ValueError, "Tipo"):
             service._path(self.story, str(uuid.uuid4()), "../outside")

@@ -174,7 +174,7 @@ class ForkAtomicityTests(unittest.TestCase):
             self.story, media["id"], media["kind"])
         source.unlink()
         self.assertFalse(source.exists())
-        with self.assertRaisesRegex(ValueError, "archivo editorial"):
+        with self.assertRaisesRegex(ValueError, "editorial file"):
             self.narrative.fork_story(self.story)
         self.assert_unchanged()
 
@@ -257,7 +257,7 @@ class ForkAtomicityTests(unittest.TestCase):
 
         with patch.object(self.narrative, "_sync_fork_files",
                           side_effect=inject_symlink):
-            with self.assertRaisesRegex(ValueError, "simbólico"):
+            with self.assertRaisesRegex(ValueError, "symlink"):
                 self.narrative.fork_story(self.story)
         self.assertEqual(protected.read_bytes(), b"never delete this")
         self.assert_unchanged()

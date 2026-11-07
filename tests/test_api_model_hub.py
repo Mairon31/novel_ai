@@ -157,7 +157,7 @@ class ModelHubApiTests(unittest.TestCase):
                     manager._run(job["id"])
                     state = store.download(job["id"])
                     self.assertEqual(state["status"], "failed", state)
-                    self.assertTrue("rango" in state["error"].lower() or
+                    self.assertTrue("range" in state["error"].lower() or
                                     "content-range" in state["error"].lower(), state)
                     self.assertEqual(part.read_bytes(), PAYLOAD[:30])
                     self.assertEqual(store.installed(), [])
@@ -211,7 +211,7 @@ class ModelHubApiTests(unittest.TestCase):
             manager._run(job["id"])
             state = store.download(job["id"])
             self.assertEqual(state["status"], "failed", state)
-            self.assertIn("incompleto", state["error"])
+            self.assertIn("incomplete", state["error"])
             self.assertEqual(store.installed(), [])
             self.assertEqual(part.read_bytes(), PAYLOAD[:-7])
         finally:
