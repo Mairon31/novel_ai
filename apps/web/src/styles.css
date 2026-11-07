@@ -1429,3 +1429,11 @@
 .noble-voice-preview { display: grid; gap: .6rem; margin: 1rem 0; }
 .noble-voice-preview audio { width: min(100%, 480px); }
 .noble-voice-preview small { opacity: .8; }
+
+/* Noble-managed ComfyUI log excerpts remain legible on mobile. */
+.comfy-runtime-panel .noble-comfy-log { min-width: 0; margin-top: 1rem; }
+.comfy-runtime-panel .noble-comfy-log pre {
+  overflow-x: auto; max-width: 100%; max-height: 16rem; padding: .8rem;
+  white-space: pre-wrap; overflow-wrap: anywhere; font-size: .79rem;
+}
+.comfy-runtime-panel .workspace-pref-field input { min-width: 0; }

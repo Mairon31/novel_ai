@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
 import { ImageCheckpointManager } from './ImageCheckpointManager';
+import { ComfyRuntimePanel } from './ComfyRuntimePanel';
 import type { ImageSettings, ImageStatus, ImageSamplerOptions, Settings, ResourceConfig, ResourceStatus } from './types';
 
 const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
@@ -94,9 +95,14 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     </div>
     {(error || message) && <p role="status" className={error ? 'narrative-error' : 'narrative-saved'}>
       {error || <><Check size={15}/>{message}</>}</p>}
+    <ComfyRuntimePanel onRuntimeStarted={url => {
+      setImage(previous => previous ? { ...previous, base_url: url } : previous);
+      setStatus(null);
+      setMessage('ComfyUI administrado por Noble AI iniciado en ' + url);
+    }}/>
     <div className="workspace-panel">
       <h3><Image size={18}/> Escenas con ComfyUI</h3>
-      <p>Instala y ejecuta ComfyUI por separado. Necesita un checkpoint compatible. El botón «Ilustrar» del lector genera una imagen y sustituye la escena únicamente si finaliza correctamente.</p>
+      <p>Puedes iniciar ComfyUI desde este mismo apartado, o conectar uno externo. Necesita un checkpoint compatible. El botón «Ilustrar» del lector genera una imagen y sustituye la escena únicamente si finaliza correctamente.</p>
       <label className="workspace-pref-field">Política de ilustración
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
