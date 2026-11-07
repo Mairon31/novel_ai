@@ -64,7 +64,7 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
 
     await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('NPC para generar expresiones').selectOption(npc);
-    await page.getByLabel('Contexto de sprites IA').fill('Aira cuidando el castillo');
+    await page.getByLabel('AI sprite context').fill('Aira cuidando el castillo');
     await page.getByLabel('Modo de referencia IA').selectOption('ipadapter');
     await expect(page.getByRole('button', {
       name: 'Preparar borrador de cinco expresiones',

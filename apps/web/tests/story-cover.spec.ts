@@ -32,7 +32,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await page.getByLabel('Tipo de recurso visual').selectOption('cover');
   await page.getByLabel('Image name').fill('La luna sobre la torre');
   await page.getByLabel('Image description').fill('Cubierta con una luna violeta y una torre');
-  await page.getByLabel('Archivo de recurso visual').setInputFiles({
+  await page.getByLabel('Visual asset file').setInputFiles({
     name: 'cover.png', mimeType: 'image/png', buffer: coverPng,
   });
   await page.getByRole('button', { name: 'Import image' }).click();

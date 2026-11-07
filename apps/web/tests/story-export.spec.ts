@@ -20,7 +20,7 @@ test('reader exports its current story as a standalone HTML attachment', async (
   await dialog.getByRole('button', { name: 'Start story' }).click();
   await expect(dialog).toBeHidden();
 
-  const link = page.getByRole('link', { name: 'Exportar historia HTML' });
+  const link = page.getByRole('link', { name: 'Export story as HTML' });
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute('download', 'noble-story.html');
   const href = await link.getAttribute('href');
@@ -37,7 +37,7 @@ test('reader exports its current story as a standalone HTML attachment', async (
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe('noble-story.html');
 
-  const epubLink = page.getByRole('link', { name: 'Exportar historia EPUB' });
+  const epubLink = page.getByRole('link', { name: 'Export story as EPUB' });
   await expect(epubLink).toBeVisible();
   const epubHref = await epubLink.getAttribute('href');
   expect(epubHref).toMatch(/^\/api\/v1\/stories\/[a-f\d-]+\/export\.epub$/);

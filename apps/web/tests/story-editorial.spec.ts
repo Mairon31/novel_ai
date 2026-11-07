@@ -91,6 +91,6 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
 
   await page.getByRole('button', { name: 'Return to library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
-  await expect(detail.getByRole('button', { name: 'Continue historia' })).toBeVisible();
+  await expect(detail.getByRole('button', { name: 'Continue story' })).toBeVisible();
   await expect(detail.getByRole('region', { name: 'Opening scenes' })).toHaveCount(0);
 });

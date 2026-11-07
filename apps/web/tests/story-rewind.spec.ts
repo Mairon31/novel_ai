@@ -67,16 +67,16 @@ test('safe rewind previews historical facts and creates an independent route', a
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).first().click();
-  await page.getByRole('button', { name: 'Continue historia' }).click();
+  await page.getByRole('button', { name: 'Continue story' }).click();
   await page.getByRole('button', { name: 'Open story details' }).click();
   await page.getByRole('button', { name: 'History', exact: true }).click();
   await page.getByRole('button', { name: 'Rewind here' }).click();
 
   const dialog = page.getByRole('dialog', { name: 'Confirm rewind' });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Lorebook histórico: 1 entrada(s)');
+  await expect(dialog).toContainText('Historical Lorebook: 1 entry');
   await expect(dialog).toContainText('World state: Puerto antiguo');
-  await expect(dialog).toContainText('historia original');
+  await expect(dialog).toContainText('original story');
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-rewind-dialog.png',
     fullPage: true,
@@ -90,7 +90,7 @@ test('safe rewind previews historical facts and creates an independent route', a
   expect(stories.stories.filter(item => item.origin_story_id === storyId)).toHaveLength(0);
 
   await page.getByRole('button', { name: 'Rewind here' }).click();
-  await expect(dialog).toContainText('Lorebook histórico: 1 entrada(s)');
+  await expect(dialog).toContainText('Historical Lorebook: 1 entry');
   await dialog.getByRole('button', { name: 'Create branch from this turn' }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator('.noble-reader-chapter')).toContainText('(rama)');

@@ -72,8 +72,8 @@ test('VN, book and chat keep the same scene and persist preference after reload'
     await expect(backlog.getByText('No hay coincidencias en las escenas cargadas.'))
       .toBeVisible();
     await backlog.getByRole('searchbox', { name: 'Search backlog' }).fill('diario violeta');
-    await expect(backlog.getByRole('button', { name: 'Ir a escena' })).toBeVisible();
-    await backlog.getByRole('button', { name: 'Ir a escena' }).click();
+    await expect(backlog.getByRole('button', { name: 'Go to scene' })).toBeVisible();
+    await backlog.getByRole('button', { name: 'Go to scene' }).click();
     await expect(backlog).toBeHidden();
     await expect(reader.locator('.noble-reading-turn')).toHaveCount(1);
   });

@@ -33,7 +33,7 @@ test('Creator Studio stages five AI expressions for author review before approva
       await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('NPC para generar expresiones').selectOption(npc.id);
-    await page.getByLabel('Contexto de sprites IA').fill('Aira castillo de cristal');
+    await page.getByLabel('AI sprite context').fill('Aira castillo de cristal');
     await page.getByLabel('Estilo visual de sprites IA').fill('watercolor anime');
     await expect(page.getByRole('checkbox', {
       name: 'Usar LoRA del NPC para sprites IA',
@@ -78,7 +78,7 @@ test('Creator Studio stages five AI expressions for author review before approva
           use_lora: false, reference_asset_id: null,
           slots, ready_count: generated, updated_at: Date.now() / 1000,
           alignment_warnings: generated === 5
-            ? ['joy: posición de silueta muy distinta'] : [],
+            ? ['joy: silhouette position differs significantly'] : [],
           alignment_review_needed: generated === 5,
         } });
       });
