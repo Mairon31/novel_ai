@@ -272,8 +272,7 @@ export function VoiceSettingsPanel() {
         {previewUrl && <audio aria-label="Play voice preview" controls
           preload="none" src={previewUrl}/>}
         {synthesisDirty && <small role="status">Save the updated settings before testing the voice.</small>}
-        <small>Generate previews only by pressing Preview. Piper and
-          a valid ONNX/JSON voice; preview audio is not added to any story.</small>
+        <small>Preview requires Piper and a valid ONNX/JSON voice. Audio is generated only when you press Preview and is never added to a story.</small>
       </div>
       <label className="workspace-pref-toggle">
         <span>Enable on-demand speech buttons</span>

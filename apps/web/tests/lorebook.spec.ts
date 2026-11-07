@@ -28,12 +28,12 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.getByLabel('Lorebook keys').fill('ruinas, mapa');
   await page.getByLabel('Lorebook priority').fill('95');
   await page.getByRole('button', { name: 'Create Lorebook entry' }).click();
-  await expect(page.getByText(/Entrada de Lorebook guardada/)).toBeVisible();
+  await expect(page.getByText(/Lorebook entry saved/)).toBeVisible();
   await expect(page.getByRole('button', { name: /Lorebook \(1\)/ })).toBeVisible();
 
   await page.getByLabel('Simulate Lorebook activation').fill('Entro en las ruinas.');
   await page.getByRole('button', { name: 'Preview Lorebook' }).click();
-  await expect(page.getByText('1 entrada(s) activada(s)')).toBeVisible();
+  await expect(page.getByText('1 activated entries')).toBeVisible();
   await expect(page.locator('.creator-hint[role="status"]').getByText(
     'Mapa de las ruinas · prioridad 95')).toBeVisible();
   await page.screenshot({
@@ -42,7 +42,7 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
 
   await page.getByLabel('Simulate Lorebook activation').fill('Camino por el puerto.');
   await page.getByRole('button', { name: 'Preview Lorebook' }).click();
-  await expect(page.getByText('0 entrada(s) activada(s)')).toBeVisible();
+  await expect(page.getByText('0 activated entries')).toBeVisible();
 
   await page.reload();
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
@@ -86,14 +86,14 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await page.getByLabel('Lorebook content').fill(
     'La última llave del sello permanece bajo una estatua en el palacio.');
   await page.getByLabel('Lorebook keys').fill('sello');
-  await page.getByLabel('Visibilidad de Lorebook').selectOption('witnesses');
+  await page.getByLabel('Lorebook visibility').selectOption('witnesses');
   await page.getByRole('checkbox', { name: 'Witness Aira' }).check();
   await page.getByRole('button', { name: 'Create Lorebook entry' }).click();
-  await expect(page.getByText(/Entrada de Lorebook guardada/)).toBeVisible();
+  await expect(page.getByText(/Lorebook entry saved/)).toBeVisible();
   await page.getByLabel('Simulate Lorebook activation').fill('Busco el sello con Aira.');
   await page.getByRole('button', { name: 'Preview Lorebook' }).click();
-  await expect(page.getByText('0 entrada(s) activada(s)')).toBeVisible();
-  await expect(page.getByText(/1 sin testigos presentes/)).toBeVisible();
+  await expect(page.getByText('0 activated entries')).toBeVisible();
+  await expect(page.getByText(/1 without present witnesses/)).toBeVisible();
 
   const list = await page.request.get('/api/v1/stories');
   expect(list.ok()).toBeTruthy();
@@ -115,10 +115,10 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   expect(update.ok()).toBeTruthy();
 
   await page.getByRole('button', { name: 'Preview Lorebook' }).click();
-  await expect(page.getByText('1 entrada(s) activada(s)')).toBeVisible();
-  await expect(page.getByText('0 sin testigos presentes')).toBeVisible();
+  await expect(page.getByText('1 activated entries')).toBeVisible();
+  await expect(page.getByText('0 without present witnesses')).toBeVisible();
   await expect(page.locator('.creator-hint[role="status"]').getByText(
-    'El secreto del sello · prioridad 50')).toBeVisible();
+    'El secreto del sello · priority 50')).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-lorebook-witness.png',
     fullPage: true,

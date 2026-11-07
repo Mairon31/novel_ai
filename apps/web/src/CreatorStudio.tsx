@@ -1090,7 +1090,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     · {lorePreview.skipped_budget} excluded by budget
                     · {lorePreview.skipped_visibility} without present witnesses</p>
                   {lorePreview.entries.map(entry => <p key={entry.id}>
-                    {entry.title} · prioridad {entry.priority}</p>)}
+                    {entry.title} · priority {entry.priority}</p>)}
                   {!!lorePreview.context && <details className="creator-lorebook-preview">
                     <summary>View exact context sent to narrator</summary>
                     <pre>{lorePreview.context}</pre>

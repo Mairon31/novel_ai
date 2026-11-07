@@ -60,7 +60,7 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
   await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Latin American Spanish voices' })).toBeVisible();
   expect(downloads).toBe(0);  // opening settings must not trigger a download
-  await page.getByRole('button', { name: 'Instalar voz' }).click();
+  await page.getByRole('button', { name: 'Install voice' }).click();
   await expect(page.getByRole('button', { name: 'Pause download' })).toBeVisible();
   expect(downloads).toBe(1);
   await page.getByRole('button', { name: 'Pause download' }).click();

@@ -6,7 +6,7 @@ import { ComfyRuntimePanel } from './ComfyRuntimePanel';
 import type { ImageSettings, ImageStatus, ImageSamplerOptions, Settings, ResourceConfig, ResourceStatus } from './types';
 
 const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
-  {id: 'euler', label: 'Euler (default compatible)'},
+  {id: 'euler', label: 'Euler (compatible by default)'},
   {id: 'euler_ancestral', label: 'Euler ancestral'},
   {id: 'dpmpp_2m', label: 'DPM++ 2M'},
   {id: 'dpmpp_sde', label: 'DPM++ SDE'},
@@ -15,7 +15,7 @@ const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
   {id: 'uni_pc', label: 'UniPC'},
 ];
 const SCHEDULERS: Array<{id: ImageSettings['scheduler']; label: string}> = [
-  {id: 'normal', label: 'Normal (default compatible)'},
+  {id: 'normal', label: 'Normal (compatible by default)'},
   {id: 'karras', label: 'Karras'},
   {id: 'exponential', label: 'Exponential'},
   {id: 'sgm_uniform', label: 'SGM Uniform'},

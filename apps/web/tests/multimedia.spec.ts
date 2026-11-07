@@ -112,7 +112,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByLabel('Describe the scene to illustrate')
     .fill('La biblioteca iluminada por luciérnagas, estilo anime.');
   await page.getByRole('button', { name: 'Illustrate scene with ComfyUI' }).click();
-  await expect(page.getByRole('img', { name: /Illustration of Multimedia lab/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /Illustration of Laboratorio multimedia/ })).toBeVisible();
   expect(requests).toEqual(['illustrate']);
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-multimedia-reader.png',

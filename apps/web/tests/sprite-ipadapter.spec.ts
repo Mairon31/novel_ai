@@ -70,15 +70,15 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
       name: 'Preparar borrador de cinco expresiones',
     })).toBeDisabled();
     await page.getByLabel('Sprite de referencia IA').selectOption(sprite);
-    await page.getByLabel('Recorte de fondo para sprites IA')
+    await page.getByLabel('AI sprite background removal')
       .selectOption('neural_birefnet_portrait');
     await page.getByRole('button', { name: 'Comprobar modelos de recorte' }).click();
     await expect(page.getByText('BiRefNet-portrait: Ready')).toBeVisible();
     await page.getByLabel('Preset IPAdapter de sprites IA').selectOption(
       'STANDARD (medium strength)');
     await page.getByLabel('Fuerza IPAdapter de sprites IA').fill('0.9');
-    await page.getByRole('button', { name: 'Verificar IPAdapter instalado' }).click();
-    await expect(page.getByText(/IPAdapter disponible · 2 modelos/)).toBeVisible();
+    await page.getByRole('button', { name: 'Check installed IPAdapter' }).click();
+    await expect(page.getByText(/IPAdapter available · 2 models/)).toBeVisible();
     await page.getByRole('button', { name: 'Preparar borrador de cinco expresiones' }).click();
     await expect(page.getByText(/Borrador creado/)).toBeVisible();
     const response = await page.request.get(

@@ -100,5 +100,5 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByText('Turn snapshot history').click();
   await page.getByLabel('Historical world turn').selectOption(turnId);
   await page.getByRole('button', { name: 'View snapshot' }).click();
-  await expect(page.getByText('Lugar: Puerto de niebla')).toBeVisible();
+  await expect(page.getByText('Location: Puerto de niebla')).toBeVisible();
 });

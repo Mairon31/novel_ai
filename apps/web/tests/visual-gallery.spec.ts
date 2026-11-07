@@ -33,9 +33,9 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await expect(page.getByRole('button', { name: /Aira.*Revision 1/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Gallery', exact: true }).click();
-  await page.getByLabel('Lugar actual').fill('Library antigua');
+  await page.getByLabel('Current location').fill('Library antigua');
   await page.getByRole('button', { name: 'Confirm scene' }).click();
-  await expect(page.getByText('Escenas registradas: 2.')).toBeVisible();
+  await expect(page.getByText('Registered scenes: 2.')).toBeVisible();
   await page.getByLabel('Describe the scene to illustrate')
     .fill('Aira en la biblioteca iluminada por velas antiguas');
   await page.getByRole('button', { name: 'View complete prompt and profiles' }).click();
@@ -101,10 +101,10 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
     expect(payload.allow_low_vram).toBe(false);
     expect(payload.apply_character_loras).toBe(true);
     observedReference = true;
-    await route.fulfill({ status: 503, json: { detail: 'Motor ComfyUI no disponible en la prueba' } });
+    await route.fulfill({ status: 503, json: { detail: 'ComfyUI unavailable in test' } });
   });
   await page.getByRole('button', { name: 'Illustrate scene with ComfyUI' }).click();
-  await expect(page.getByRole('alert').getByText(/Motor ComfyUI no disponible/)).toBeVisible();
+  await expect(page.getByRole('alert').getByText(/ComfyUI unavailable/)).toBeVisible();
   expect(observedReference).toBeTruthy();
   await expect(page.getByText('Versioned gallery (2)')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
