@@ -18,7 +18,8 @@ def normalized_render_details(value: dict | str | None) -> dict:
             value = json.loads(value)
         except (TypeError, ValueError) as exc:
             raise ValueError("Metadatos de imagen JSON inválidos") from exc
-    if not isinstance(value, dict) or set(value) - {"workflow_version", "loras"}:
+    if not isinstance(value, dict) or set(value) - {
+            "workflow_version", "loras", "sampler_name", "scheduler", "style_preset"}:
         raise ValueError("Campos de procedencia visual inválidos")
     if not value:
         return {}
@@ -45,4 +46,19 @@ def normalized_render_details(value: dict | str | None) -> dict:
             raise ValueError("Intensidad de LoRA en procedencia inválida")
         clean.append({"character_name": name, "lora_name": filename,
                       "strength": float(strength)})
-    return {"workflow_version": version, "loras": clean}
+    result = {"workflow_version": version, "loras": clean}
+    # Older gallery archives have no sampling metadata; retain their exact
+    # shape rather than fabricating settings. New records preserve real inputs.
+    for field, allowed in (
+        ("sampler_name", {"euler", "euler_ancestral", "dpmpp_2m", "dpmpp_sde",
+                          "dpmpp_2m_sde", "heun", "uni_pc"}),
+        ("scheduler", {"normal", "karras", "exponential", "sgm_uniform", "simple"}),
+        ("style_preset", {"anime_fantasy", "anime_cinematic", "anime_watercolor",
+                          "none"}),
+    ):
+        if field in value:
+            selected = value[field]
+            if not isinstance(selected, str) or selected not in allowed:
+                raise ValueError("Campo de procedencia visual inválido: " + field)
+            result[field] = selected
+    return result
