@@ -1,111 +1,117 @@
-# Noble AI — GDD técnico (v0.1)
+# Noble AI — Technical Game Design Document (v0.1)
 
-Fecha: 2026-11-04 · Estado: **propuesta de diseño; no implementado** · Responsable: proyecto Noble AI. **Enmienda APP-FIRST:** [ADR-002](adr/0002-app-first-model-hub.md) hace del wizard y Model Hub el primer hito ejecutable. El motor narrativo jugable viene después; Colab no es obligatorio.
+**Date:** November 4, 2026. **Status:** initial design proposal; this document is not a claim that all items are implemented. **App-first amendment:** [ADR-0002](adr/0002-app-first-model-hub.md) prioritizes the setup wizard and Model Hub. Colab is optional, not a requirement for the product.
 
-## 1. Visión y diferenciadores
+## 1. Vision and differentiation
 
-Noble AI es un entorno **local-first** para crear y jugar historias interactivas tipo novela visual con IA. Une **narración libre** (el jugador decide qué decir o hacer) y **mundo persistente** (personajes, relaciones, tiempo, objetos, lugares, eventos). Imágenes anime contextualizadas enriquecen las escenas; **no** hay obligación de dibujar un frame por respuesta. Las voces se producen **solo si se solicitan**. Debe funcionar en pantallas de escritorio y móvil dentro de la red local, con un backend portable Colab/Linux ↔ Windows.
+Noble AI is a **local-first** environment for creating and playing AI-driven interactive stories in a visual-novel style. It combines **open-ended player input** (the user chooses their own actions and dialogue) with a **persistent world** (characters, relationships, time, objects, locations, and events). Contextual anime-style images enrich scenes; the application should **not** generate a new image for every response. Voices are generated **on request only**.
 
-No se pretende reproducir código, personajes, interfaz exacta o recursos protegidos de IsekaiZero. Sus capturas sirven para estudiar patrones de UX: sprite central, escena de fondo, modo lectura, diálogo/narración, nombre y comandos continuar/reintentar.
+The application should support desktop and mobile layouts, with portable backend contracts across Windows, Linux, and optional Colab experimentation.
 
-## 2. Alcance
+The project studies Isekai Zero's workflow, such as character selection, scene composition, narration, continue/retry actions, and reading modes. Upstream code, art, trademarks, and proprietary story text must be handled under their actual permissions; user-provided screenshots are UX references, not automatically licensed assets.
 
-**Incluir en el primer vertical slice:** crear historia desde premisa, protagonista y 1–3 personajes; introducir texto (hacer/decir/narrar); continuar; reintentar; editar evento con bifurcación; texto en streaming; capítulos/escenas; historial; memoria de hechos; pantalla VN responsiva; assets placeholder **funcionales y etiquetados como temporales** en desarrollo; generar fondo o sprite solo cuando cambie el escenario o cuando el usuario lo pida; botón de audio opt-in; guardado SQLite; proveedor LLM intercambiable.
+## 2. Scope
 
-**Después del slice:** editor visual de personajes y escenarios, canon/lorebook, múltiples historias, variantes de expresión, model selector, import/export, QA visual, cola avanzada de GPU, acceso móvil controlado, versionado de assets, narración avanzada en capítulos.
+**First end-to-end vertical slice:** create a story from a premise; define a protagonist and 1–3 NPCs; enter player actions/dialogue/narration; continue; retry; edit and branch events; stream text; persist scenes, history, and important facts; responsive visual novel UI; generate optional image assets only on appropriate scene transitions or explicit requests; request speech explicitly; save to SQLite; switch compatible LLM providers.
 
-**Fuera del primer slice:** vídeo generativo en tiempo real; multijugador en línea; marketplace; generación obligatoria de imagen por turno; TTS automático sin consentimiento; clonación de voces ajenas sin derechos.
+Development placeholders must be **functional and clearly identified as temporary**, not passed off as finished media assets.
 
-## 3. Bucle jugable (user journey)
+**Following the slice:** improved world and character editors, canon/Lorebooks, multiple stories, expressions, model selection, import/export, visual QA, GPU scheduling, controlled mobile access, asset versioning, and advanced episodic narration.
 
-1. Biblioteca → crear historia: título, género, premisa, reglas, idioma, estilo de arte.
-2. Crear protagonista: nombre, identidad, motivación, descripción visual y relaciones iniciales.
-3. Comenzar escena: narrador crea situación y contexto; se usa ilustración existente o se solicita una bajo demanda. **Una historia debe arrancar incluso sin servidor de imágenes**.
-4. Jugador escoge **Hacer**, **Decir** o **Narrar** (texto libre); también puede pulsar **Continuar** sin entrada.
-5. LLM redacta bloque de narración + diálogos. Validador propone cambios de estado según evidencia y reglas; backend aplica transacción atómica.
-6. UI reproduce texto en streaming. Si el lugar, personaje, apariencia o composición de escena cambia, el planificador consulta caché y decide crear un **trabajo de imagen**; escena anterior permanece visible mientras tanto.
-7. Jugador puede **Reintentar**, **Editar**, **Retroceder**, **Guardar**, cambiar el modo de lectura o escuchar el texto; cada acción preserva trazabilidad del canon.
-8. En cambios de capítulo, se resume memoria sin borrar acontecimientos originales.
+**Outside the initial scope:** real-time AI video, online multiplayer, a public story marketplace, mandatory illustration per turn, unsolicited TTS, or unauthorized cloning of third-party voices.
 
-## 4. Componentes de experiencia
+## 3. Play loop
 
-**Pantallas:** Inicio/Biblioteca, Creador de mundo, Ficha de personaje, Reproductor VN, Historial/ramas, Galería de assets, Configuración/Proveedores, Diagnóstico de GPU.
+1. In Library, create a story with title, genre, premise, world rules, output language, and visual style.
+2. Set the protagonist's name, identity, motivation, visual description, and initial relationships.
+3. Begin a scene; show an existing illustration or request one on demand. **Story play must work without an image server**.
+4. The player chooses **Act**, **Say**, or **Narrate**, or continues without a typed action if supported.
+5. The LLM drafts narration/dialogue. A separate state validator proposes canon changes supported by the response and world rules; the backend applies updates transactionally.
+6. Stream narrative text. If location, cast, outfit, or composition changes, consult visual cache and decide whether an optional image job is warranted; keep the prior scene visible while work is pending.
+7. Support retry, edit, rewind, save, alternate reader modes, and manual audio playback without silently destroying existing story branches.
+8. Summarize important world events across chapters without deleting the primary event history.
 
-**Reproductor VN:** fondo en capas, sprite(s) con nombre y emoción, panel de texto con contraste y scroll, narración diferenciada de diálogo, botones Continuar/Reintentar/Editar/Historial/Guardar/Escuchar, área Hacer/Decir/Narrar, controles accesibles para móvil (objetivo táctil >=44 px), opción ocultar panel para ver arte completo. Animaciones UI discretas; no parpadeos al cambiar assets.
+## 4. User experience components
 
-**Texto:** español latinoamericano inicial; voces, idioma y tratamientos deben respetar la configuración del mundo. No forzar español peninsular. Diálogos atribuidos al personaje correcto, narrador claramente separado; el modelo puede narrar escenas y NPC pero **no se apropia de decisiones explícitas del jugador**.
+**Screens:** Home/Library, World Creator, Character Detail, VN Reader, History/Branches, Asset Gallery, Settings/Providers, GPU Diagnostics.
 
-**Personajes:** identificador estable; nombre, pronombres, rol, trasfondo, rasgos, metas, estado físico/mental de ficción, relaciones, secretos y hechos conocidos; ficha visual canon (peinado, ropa, colores, rasgos); expresiones/poses seleccionadas según el estado. No regenerar la identidad del personaje por un simple turno de diálogo.
+**VN reader:** layered backgrounds, optional sprites with speaker/emotion, high-contrast narration/dialogue pane, Continue/Retry/Edit/History/Save/Listen controls, Act/Say/Narrate composer, accessible mobile touch targets (~44 px), and hideable text panel for unobstructed art. Transitions should not flicker when images change.
 
-**Mundo:** mapa lógico de localizaciones, tiempo diegético, inventario, eventos, restricciones, hechos conocidos, consecuencias y objetivos activos. El jugador puede permitir modo libre (sin estadísticas rígidas) o reglas RPG opcionales posteriores.
+**Story language:** the application UI defaults to **English**, while narrative output remains **user-selectable**. Latin American Spanish (`es-419`) is an explicit target; do not force Spain-specific Spanish into that mode. Dialogue must be attributed correctly, with narrator separate from NPCs. The model can control NPCs and describe the world but must not appropriate an explicit decision belonging to the player.
 
-## 5. Diseño de narración y canon
+**Characters:** stable IDs, names, pronouns, fictional roles/background, traits, goals, physical/emotional state in the story, relationships, secrets, known facts, visual identity (hair, outfit, palette), and eligible poses/expressions. One dialogue turn must not randomly change a character's identity.
 
-- Separar **texto presentado** de **cambios estructurados de estado**. La prosa no es fuente única de verdad.
-- Política de conocimiento: cada personaje habla solo de hechos que conoce o que pueda inferir.
-- No revivir un personaje o restaurar un objeto destruido sin un evento explícito que lo justifique.
-- Reintentar no borra el pasado: crea nueva rama y activa una revisión.
-- Editar un evento invalida derivados (resúmenes, imágenes y audio posteriores) de la nueva rama, preservando la rama antigua.
-- El usuario puede establecer canon manual; tiene prioridad sobre inferencias del LLM salvo reglas de seguridad/aplicación.
-- Resúmenes como material derivado y regenerable; historial de eventos como fuente primaria.
-- Memoria híbrida: ventana reciente + fichas de mundo + hitos confirmados + resúmenes + recuperación semántica **opcional**, no vector DB obligatoria en P0.
-- Si el modelo devuelve JSON inválido o acciones contradictorias: reintento controlado y/o marcar el cambio como **pendiente de validación** sin corromper DB.
+**World:** logical locations, in-world time, inventory, events, restrictions, knowledge, consequences, and active objectives. Optional RPG rules can be added later without requiring numerical character stats for all stories.
 
-## 6. Imágenes y audio (criterios de diseño)
+## 5. Narration and canon
 
-**Imágenes:** generación progresiva. Disparadores: escena nueva, personaje nuevo, cambio material de fondo/ropa, elección explícita de ilustrar. No generar automáticamente cuando se modifica solo una línea de diálogo. Preferir reusar fondo/sprite/expresión; cola con prioridad, cancelación y caché por firma de escena + identidad + estilo. Primera fase: fondo y sprite. CG compleja después. Revisiones visuales con consistencia de personaje, composición, proporciones y texto ausente.
+- Store **presented prose** separately from **structured world-state updates**. Text is not the sole source of truth.
+- Characters can speak only about facts they know or can plausibly infer.
+- Do not revive a dead character or restore a destroyed item without an explicit fictional event that justifies it.
+- Retry is branch creation, not destruction of the original timeline.
+- Editing an event invalidates derived memories/media for the affected branch while preserving untouched branches.
+- Manually authored canon has precedence over speculative LLM inferences, subject to application safety and consistency checks.
+- Summaries are reproducible derived data; original events and revisions remain primary.
+- Use a hybrid memory budget: recent turns, world records, milestones, summaries, and **optional** semantic retrieval. A vector database is not required for P0.
+- Invalid JSON or contradictory state changes trigger controlled retry or a **pending validation** state, never a corrupted database.
 
-**Audio:** desactivado por defecto y sin precarga de modelos TTS si nadie lo pide. Botón escuchar para línea/fragmento; autolectura solamente por opción explícita. Audio por personaje; caché por voz/modelo/configuración/texto. Si falla, el texto sigue disponible y el capítulo no se bloquea.
+## 6. Image and speech policies
 
-## 7. Requisitos no funcionales
+**Images:** generate progressively when a new scene or character arrives, an outfit/background materially changes, or the user explicitly illustrates. A minor dialogue edit must not generate a new frame. Prefer reusing background/sprite/expression assets. Apply cache signatures based on scene, identity, and style; support priority and cancellation. Start with backgrounds/sprites; more complex CG can follow. Visual QA should inspect identity continuity, composition, anatomy, legibility, and unwanted text artifacts.
 
-- **12 GB VRAM mínimo de diseño; 16 GB recomendado.** No suponer que texto + difusión + TTS caben juntos. LLM siempre atendible con offload CPU si corresponde; cola GPU.
-- Offline tras obtener pesos/dependencias; sin llaves de APIs obligatorias para jugar local.
-- Contratos únicos para Colab/Linux y Windows.
-- Estado persistido y recuperable tras reinicio del navegador/servidor.
-- Servicio local por defecto 127.0.0.1; permitir LAN solo con configuración explícita y protección.
-- No persistir prompts con secretos; no ejecutar comandos derivados del texto del modelo.
-- Observabilidad: ID de turno/trabajo, duración, VRAM/RAM, fallo, caché hit/miss, versiones.
-- Accesibilidad de lectura, tamaños ajustables y controles para teclado/táctil.
+**Speech:** default OFF, with no TTS model preloading. Explicit Listen actions may create a segment; optional future automatic reading needs a separate opt-in. Character-specific audio should be keyed by text, voice, model, and settings. Failure must not block story text or chapter state.
 
-## 8. Criterios de aceptación del primer vertical slice
+## 7. Nonfunctional requirements
 
-1. Crear historia + protagonista + personaje secundario y guardarla; al reiniciar, se recupera íntegra.
-2. Generar 10 turnos de texto mediante **un LLM real** (prueba integrada) con eventos vinculados y sin pérdida de estado.
-3. Reintentar el turno N crea rama, cambia rama activa y no altera el historial de la anterior.
-4. Desconectar ComfyUI no impide escribir ni guardar; imagen queda 'queued/failed' con reintento.
-5. Un diálogo sin cambio visual **no encola imagen**; evento de cambio de escenario sí produce a lo sumo un trabajo deduplicado.
-6. Sin clic/autolectura TTS: **0 llamadas de síntesis**. Con clic: voz generada o error visible sin perder historia.
-7. Capas del VN, lectura, controles de móvil y retorno desde galería comprobados en navegador.
-8. Perfiles 12/16 GB: smoke tests reales separados, VRAM pico registrado; no declarar compatibilidad completa sin medición.
-9. Exportación/recarga de historia respeta IDs, eventos, ramas, canon y recursos.
-10. Fallas de red, timeout y JSON inválido no producen doble turno ni estado inconsistente.
+- Design for 12 GB NVIDIA VRAM minimum and 16 GB recommended, but **do not claim measured compatibility** without real benchmarks. Do not assume LLM, diffusion, and speech all fit in VRAM simultaneously.
+- Work offline after compatible runtimes/weights are installed; local play should not require a paid API key.
+- Preserve storage and API semantics across Windows and Linux/Colab.
+- Recover committed story state after browser/server restarts.
+- Bind local APIs to `127.0.0.1` by default; network access requires deliberate authentication/authorization.
+- Do not log secrets in prompts or execute LLM-generated shell commands.
+- Record job/turn IDs, elapsed time, memory usage where measurable, failures, cache hits, and runtime versions.
+- Support keyboard, touch, adjustable type, and readable dialogue.
 
-## 9. Métricas (objetivos, no resultados)
+## 8. Acceptance criteria for the first vertical slice
 
-- 100 % de eventos aceptados con identificadores, timestamps y rama.
-- 0 llamadas TTS sin petición expresa.
-- 0 generaciones visuales innecesarias en un test de 10 turnos sin cambio de escena.
-- 0 corrupción de DB en reintento/edición concurrente.
-- Latencias de primer token, turno total e imagen registradas como distribuciones p50/p95, **sin prometer valores hasta medir hardware**.
-- QA de fidelidad: pronombres, inventario, conocimiento por personaje, continuidad del vestuario y del lugar; evaluación con rúbrica y casos reproducibles.
+1. Create and persist a story with a protagonist/NPC; restore it without data loss after restart.
+2. Produce ten turns through a **real LLM** with traceable state and no lost events.
+3. Retry turn N into a new branch without mutating the original timeline.
+4. If ComfyUI disconnects, continue saving story text; mark image jobs as pending/failed with retry.
+5. A dialogue-only event creates **zero unnecessary image jobs**; a material scene change creates at most one deduplicated job.
+6. With speech disabled and no explicit Listen, record **zero synthesis calls**. An explicit request produces audio or a visible error without story loss.
+7. Verify reader layers, history, gallery navigation, and responsive touch controls in real browsers.
+8. Measure physical GPU smoke tests separately at 12/16 GB and record peak memory before claiming compatibility.
+9. Export/import preserves IDs, event relationships, branches, canon, and references.
+10. Timeouts, invalid JSON, and network failures do not duplicate turns or corrupt state.
 
-## 10. Entregables técnicos vinculados
+## 9. Quality metrics — targets, not results
 
-Ver [Arquitectura](ARQUITECTURA.md), [Estado y memoria](ESTADO_Y_MEMORIA.md), [Contratos](CONTRATOS_API.md), [QA](QA_Y_ACEPTACION.md), [Roadmap](ROADMAP.md) y [Progreso](PROGRESO.md). Actualizar GDD cuando una decisión implementada difiera del diseño.
+- All accepted events have IDs, timestamps, and branch ownership.
+- Zero unauthorized TTS syntheses.
+- Zero unnecessary illustrations across ten dialogue-only turns.
+- Zero database corruption under concurrent retry/edit simulation.
+- Record first-content, complete-turn, and image latency distributions as p50/p95 **after actual measurement**.
+- Use reproducible quality rubrics for pronouns, inventory, NPC knowledge, clothing, location, and visual continuity.
 
-## 11. Experiencia de instalación, modelos y personalización (ADR-002)
+## 10. Linked technical deliverables
 
-**Requisito de producto incorporado:** Noble AI debe ser una **aplicación** con ajustes visuales, no una secuencia de celdas Colab ni un asistente que exige predescargar pesos. Pantallas obligatorias: Setup/Wizard, Model Hub, Installed/Downloads, Providers, Model Assignments, Performance/Devices, Story Studio, Novel Viewer y Diagnóstico. El navegador local y el futuro shell escritorio usarán los mismos contratos.
+[Architecture](ARQUITECTURA.md), [World state and memory](ESTADO_Y_MEMORIA.md), [API contracts](CONTRATOS_API.md), [QA](QA_Y_ACEPTACION.md), [Roadmap](ROADMAP.md), and [Progress log](PROGRESO.md). Update this design document whenever verified implementation changes invalidate a previous decision.
 
-- **Primer arranque sin pesos:** detectar hardware, escoger carpeta, elegir proveedor, buscar/importar/instalar modelos desde UI, guardar y reanudar wizard. Se puede editar/importar historias sin LLM.
-- **Personalización narrativa:** elegir proveedor (local/remoto), GGUF/quant, contexto, max tokens, temperatura, top-p, top-k, repetition, razonamiento/visión solo si soportado, offload/CPU/GPU, perfil rápido/equilibrado/calidad/personalizado.
-- **Personalización de imágenes:** checkpoint/workflow/LoRA/negative prompt/resolución/seed/steps/CFG/sampler y modo progresivo por escena vs manual. Los modelos comunitarios con etiqueta «uncensored» son opciones de checkpoint y política de contenido del proveedor, **no** un filtro mágico de todo el sistema.
-- **Personalización de voces:** motor TTS, voz y dispositivo CPU/GPU/Auto según soporte real, idioma, velocidad/estilo/emoción y caché. Configurar no equivale a cargar; synth **solo por petición**.
-- **Perfiles globales y por historia** con precedencia explícita, sin cambiar hechos de ramas anteriores al sustituir un modelo.
-- **Estado visible por módulo:** no configurado, descargando, instalado, cargando, listo, incompatible (estimación vs medición), error, sin conexión.
-- **Estética:** visual novel anime para jugar; panel Studio y Model Hub distinguibles; accesibilidad y responsive 390x844/1440x900 obligatorios. Inspiración técnica en Urakatsu/Koharu, no copiar su identidad visual ni assets.
+## 11. App-first installation and personalization (ADR-0002)
 
-**Criterios de aceptación añadidos:** abrir app con 0 modelos; búsqueda HF real; un GGUF pequeño descargado/verificado desde la UI; cambiar modelo sin consola; seleccionar CPU/GPU según compatibilidad; persistir settings; cero cargas TTS no autorizadas; Playwright móvil/desktop y recuperación de descarga fallida.
+**Product requirement:** Noble AI must be an **application with graphical settings**, not a notebook or installer that requires manual model-file downloads before first launch.
 
-Ver [Model Hub](MODEL_HUB.md), [Onboarding](ONBOARDING_Y_UI.md), [Arquitectura de escritorio](DESKTOP_Y_DESPLIEGUE.md).
+Target sections: Setup Wizard, Model Hub, Installed/Downloads, Providers, Model Assignments, Performance/Devices, Creator Studio, Story Reader, and Diagnostics. Browser-local and future desktop-shell modes should share API contracts.
+
+- **First launch without weights:** lightweight hardware discovery, managed storage, provider choice, supported model search/import/install, resumable setup. Library remains available without a narrator.
+- **Narration settings:** local/remote provider, GGUF quantization, context, max tokens, temperature, top-p/top-k, repetition, reasoning/vision if supported, CPU/GPU/offload, and profiles such as Fast/Balanced/Quality/Custom.
+- **Image settings:** checkpoint, workflow, LoRA, negative prompts, resolution, seed, steps, CFG, sampler, and manual/scene-aware rendering. A checkpoint labeled `uncensored` is not a universal application content filter.
+- **Voice settings:** engine, voice, CPU/GPU/Auto only where supported, language, speed/style/emotion, and caching. Configuring speech is not permission to synthesize or preload.
+- **Profiles:** global defaults and optional per-story overrides; switching models never rewrites previously committed branch facts.
+- **Visible states:** unconfigured, downloading, installed, loading, ready, incompatible, error, offline. Clearly distinguish analytical estimates from device measurements.
+- **Experience:** a dedicated immersive reader, distinct Studio and Model Hub, accessibility, and responsive 390×844/1440×900 QA. Reuse compatible open-source components under their actual licenses and attribution requirements.
+
+**Additional acceptance evidence:** start with zero models; real Hugging Face lookup; install/verify a small supported GGUF through UI; change active model without editing a shell command; persist device and provider settings; zero unsolicited TTS loads; browser QA and interrupted-download recovery.
+
+See [Model Hub](MODEL_HUB.md), [Onboarding and UI](ONBOARDING_Y_UI.md), and [Desktop deployment](DESKTOP_Y_DESPLIEGUE.md).
