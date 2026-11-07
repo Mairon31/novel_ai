@@ -27,19 +27,19 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
       await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await page.getByRole('button', { name: /Characters \(0\)/ }).click();
     await page.getByLabel('NPC name').fill('Aira');
-    await page.getByLabel('Ficha visual del NPC').selectOption(visual.id);
+    await page.getByLabel('NPC visual profile').selectOption(visual.id);
     await page.getByLabel('NPC description').fill(
       'Aira protege las llaves del castillo antiguo de cristal.');
     await page.getByLabel('Visual tags').fill('cabello negro, ojos verdes');
     await page.getByLabel('Visual seed').fill('6789');
     await page.getByRole('button', { name: 'Add character' }).click();
-    await expect(page.getByText(/Ficha narrativa del personaje guardada/)).toBeVisible();
+    await expect(page.getByText(/Character narrative profile saved/)).toBeVisible();
     await page.locator('.creator-character-list button').filter({ hasText: 'Aira' }).click();
     await expect(page.getByLabel('Visual tags')).toHaveValue(
       'cabello negro, ojos verdes');
     await expect(page.getByLabel('Visual tags')).toBeDisabled();
     await expect(page.getByLabel('Visual seed')).toHaveValue('6789');
-    await expect(page.getByLabel('Ficha visual del NPC')).toHaveValue(visual.id);
+    await expect(page.getByLabel('NPC visual profile')).toHaveValue(visual.id);
     const cast = await page.request.get('/api/v1/stories/' + story.id + '/creator/characters');
     expect(cast.status()).toBe(200);
     expect((await cast.json()).characters[0].visual_character_id).toBe(visual.id);

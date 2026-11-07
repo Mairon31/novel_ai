@@ -30,15 +30,15 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await page.getByLabel('Narration guidelines').fill(
     'No controles las decisiones de Luna; describe las reacciones de los NPC.');
   await page.getByRole('button',{name:'Save plot and context'}).click();
-  await expect(page.getByText(/Contenido del creador guardado/)).toBeVisible();
+  await expect(page.getByText(/Creator content saved/)).toBeVisible();
 
   await page.getByRole('button',{name:/Characters \(0\)/}).click();
-  await page.getByLabel('Name de NPC').fill('Aira');
+  await page.getByLabel('NPC name').fill('Aira');
   await page.getByLabel('NPC description').fill(
     'Una bibliotecaria dedicada que protege los registros secretos de la ciudad.');
   await page.getByLabel('NPC personality').fill('Sarcástica, reservada y muy observadora.');
   await page.getByRole('button',{name:'Add character'}).click();
-  await expect(page.getByText(/Ficha narrativa del personaje guardada/)).toBeVisible();
+  await expect(page.getByText(/Character narrative profile saved/)).toBeVisible();
   await expect(page.getByRole('button',{name:/Characters \(1\)/})).toBeVisible();
 
   await page.getByRole('button',{name:'Aperturas'}).click();

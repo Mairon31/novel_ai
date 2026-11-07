@@ -35,7 +35,7 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.getByRole('button', { name: 'Preview Lorebook' }).click();
   await expect(page.getByText('1 activated entries')).toBeVisible();
   await expect(page.locator('.creator-hint[role="status"]').getByText(
-    'Mapa de las ruinas · prioridad 95')).toBeVisible();
+    'Mapa de las ruinas · priority 95')).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-lorebook.png', fullPage: true,
   });
@@ -51,7 +51,7 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.locator('.creator-project').filter({ hasText: title }).first().click();
   await page.getByRole('button', { name: /Lorebook \(1\)/ }).click();
-  await expect(page.getByText('Mapa de las ruinas · prioridad 95')).toBeVisible();
+  await expect(page.getByText('Mapa de las ruinas · priority 95')).toBeVisible();
 });
 
 test('Private Lorebook is restricted to present NPC witnesses on desktop and mobile', async ({ page }) => {
@@ -75,7 +75,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await expect(creation).toBeHidden();
 
   await page.getByRole('button', { name: /Characters \(0\)/ }).click();
-  await page.getByLabel('Name de NPC').fill('Aira');
+  await page.getByLabel('NPC name').fill('Aira');
   await page.getByLabel('NPC description').fill(
     'Aira conoce los senderos del reino, aunque evita hablar con viajeros.');
   await page.getByRole('button', { name: 'Add character' }).click();

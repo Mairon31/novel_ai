@@ -64,12 +64,12 @@ test('VN, book and chat keep the same scene and persist preference after reload'
       fullPage: true,
     });
 
-    await page.getByRole('button', { name: 'Abrir backlog' }).click();
+    await page.getByRole('button', { name: 'Open backlog' }).click();
     const backlog = page.getByRole('dialog', { name: 'Story backlog' });
     await expect(backlog).toBeVisible();
     await expect(backlog).toContainText('Mika encuentra un diario violeta');
     await backlog.getByRole('searchbox', { name: 'Search backlog' }).fill('sin coincidencia');
-    await expect(backlog.getByText('No hay coincidencias en las escenas cargadas.'))
+    await expect(backlog.getByText('No matches in the loaded scenes.'))
       .toBeVisible();
     await backlog.getByRole('searchbox', { name: 'Search backlog' }).fill('diario violeta');
     await expect(backlog.getByRole('button', { name: 'Go to scene' })).toBeVisible();
@@ -85,7 +85,7 @@ test('backlog and HUD shortcuts restore controls without changing saved turns',
     await page.locator('.noble-reader-chapter').click();
     await page.keyboard.press('Alt+h');
     await expect(reader).toHaveClass(/is-hud-hidden/);
-    await expect(page.getByRole('button', { name: 'Mostrar interfaz del lector' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show reader interface' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Your input in the story' }))
       .toBeHidden();
     await page.keyboard.press('Alt+h');

@@ -37,7 +37,7 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
     path: 'test-results/' + test.info().project.name + '-story-detail.png', fullPage: true,
   });
 
-  await detail.getByRole('button', { name: 'Editar en Creator Studio' }).click();
+  await detail.getByRole('button', { name: 'Edit in Creator Studio' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByLabel('Reader synopsis'))
     .toHaveValue('Lia descubre el secreto del faro bajo la tormenta.');

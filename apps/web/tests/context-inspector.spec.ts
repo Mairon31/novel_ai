@@ -23,7 +23,7 @@ test('author can inspect full prepared prompt without running an LLM', async ({ 
   await inspector.getByLabel('Input to inspect').fill(
     'Abro un libro escondido en el palacio.');
   await inspector.getByRole('button', { name: 'Inspect context' }).click();
-  await expect(inspector.getByText('Presupuesto estimado del prompt')).toBeVisible();
+  await expect(inspector.getByText('Estimated prompt budget')).toBeVisible();
   await expect(inspector.getByText(/tokens aproximados de entrada/)).toBeVisible();
   await inspector.getByText('View all messages sent to the engine').click();
   await expect(inspector.locator('pre').filter({

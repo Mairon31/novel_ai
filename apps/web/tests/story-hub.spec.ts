@@ -45,7 +45,7 @@ test('story-first bundled hub installs an independent playable world without a m
     await expect(detail.getByText('Sara recoge un fragmento de vidrio')).toBeVisible();
     const openings = detail.locator('.noble-detail-opening');
     await expect(openings).toHaveCount(3);
-    await openings.nth(1).getByRole('button', { name: 'Comenzar con esta apertura' }).click();
+    await openings.nth(1).getByRole('button', { name: 'Start with this opening' }).click();
     await expect(page.locator('.noble-reader-layout')).toBeVisible();
     await expect(page).toHaveURL(new RegExp('#/historia/' + body.story.id + '/leer$'));
     const turns = await page.request.get('/api/v1/stories/' + body.story.id + '/turns');

@@ -77,7 +77,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   await expect(openings.getByText(/Las puertas del observatorio se abren para Nora/)).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
     '-story-editorial.png', fullPage: true });
-  await openings.getByRole('button', { name: 'Comenzar con esta apertura' }).nth(1).click();
+  await openings.getByRole('button', { name: 'Start with this opening' }).nth(1).click();
   await expect(page.locator('.noble-reader-layout')).toBeVisible();
   await expect(page.locator('.noble-reader-layout')).toContainText(
     'Las puertas del observatorio se abren para Nora');

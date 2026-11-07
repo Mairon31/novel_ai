@@ -35,7 +35,7 @@ test('author art library overlays caption-matched background and transparent spr
   await expect(page.getByRole('button', { name: /Images \(1\)/ })).toBeVisible();
   await expect(page.getByText('Castillo soleado')).toBeVisible();
 
-  await page.getByLabel('Tipo de recurso visual').selectOption('foreground');
+  await page.getByLabel('Visual asset type').selectOption('foreground');
   await page.getByLabel('Sprite expression').selectOption('joy');
   await page.getByLabel('Sprite pose').fill('waving');
   await page.getByLabel('Image name').fill('Aira feliz');
