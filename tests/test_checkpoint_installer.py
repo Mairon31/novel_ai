@@ -19,10 +19,12 @@ from noble_api.main import create_app  # noqa: E402
 REPO = "artist/fantasy-checkpoint"
 FILE = "fantasy-anime.safetensors"
 REV = "c" * 40
+TENSOR_BYTES = 512 * 1024
 HEADER = json.dumps({"weight": {
-    "dtype": "F32", "shape": [1], "data_offsets": [0, 4],
+    "dtype": "F32", "shape": [TENSOR_BYTES // 4],
+    "data_offsets": [0, TENSOR_BYTES],
 }}).encode()
-VALID = struct.pack("<Q", len(HEADER)) + HEADER + struct.pack("<f", .4)
+VALID = struct.pack("<Q", len(HEADER)) + HEADER + bytes(TENSOR_BYTES)
 
 
 class FakeCheckpointHF:
@@ -54,7 +56,7 @@ class FakeCheckpointHF:
                     "Content-Range": f"bytes {start}-{len(self.bytes)-1}/{len(self.bytes)}"})
             if self.partial:
                 owner = self
-                first = 28
+                first = 300000
 
                 class Pausable(httpx.SyncByteStream):
                     def __iter__(self):
@@ -167,6 +169,12 @@ class CheckpointInstallerTests(unittest.TestCase):
         self.fake.partial = True
         job_id = self.start()
         self.assertTrue(self.fake.started.wait(3))
+        deadline = time.monotonic() + 4
+        while self.client.get("/api/v1/images/checkpoints/downloads/" + job_id
+                              ).json()["received_bytes"] == 0:
+            if time.monotonic() > deadline:
+                self.fail("Download did not report flushed partial bytes")
+            time.sleep(.02)
         paused = self.client.post(
             "/api/v1/images/checkpoints/downloads/" + job_id + "/pause")
         self.assertEqual(paused.status_code, 200)
