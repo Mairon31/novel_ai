@@ -558,7 +558,7 @@ export default function App() {
                       <span><Download size={13}/> {compactCount(m)}</span>
                       <span>♥ {m.likes.toLocaleString()}</span>
                       <span>{m.gated ? 'Restricted' : 'Public'}</span>
-                      {m.license !== 'unverified' && <span>{m.license}</span>}
+                      {m.license !== 'sin verificar' && <span>{m.license}</span>}
                     </span>
                   </span>
                   <ChevronDown className="hub-model-row-arrow" size={18}/>
