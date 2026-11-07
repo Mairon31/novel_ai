@@ -104,7 +104,7 @@ export function NarrativeSettings() {
     </div>
     {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading settings...</div> : <>
       <div className="narrative-settings-grid">
-        <label>Proveedor
+        <label>Provider
           <select value={config.provider} onChange={e => {
             const provider = e.target.value as NarrativeConfig['provider'];
             setStatus(null);
@@ -130,7 +130,7 @@ export function NarrativeSettings() {
           </datalist>
           {status?.online && <small>Models found: {status.models.length}. Enter or select a model from the local catalog.</small>}
         </label>
-        <label>Temperatura <span className="field-value">{config.temperature.toFixed(2)}</span>
+        <label>Temperature <span className="field-value">{config.temperature.toFixed(2)}</span>
           <input type="range" min={0} max={2} step={0.05} value={config.temperature}
             onChange={e => update('temperature', Number(e.target.value))}/>
         </label>
@@ -148,8 +148,8 @@ export function NarrativeSettings() {
             disabled={config.provider === 'koboldcpp'}
             onChange={e => update('repetition_penalty', Number(e.target.value))}/>
         </label>
-        <label>Razonamiento
-          <select aria-label="Razonamiento del narrador" value={config.reasoning_mode}
+        <label>Reasoning
+          <select aria-label="Narrator reasoning" value={config.reasoning_mode}
             disabled={config.provider !== 'ollama'}
             onChange={e => update('reasoning_mode', e.target.value as NarrativeConfig['reasoning_mode'])}>
             <option value="auto">Automatic / model defaults</option>
@@ -160,13 +160,13 @@ export function NarrativeSettings() {
           <input type="number" min={50} max={2048} value={config.max_tokens}
             onChange={e => update('max_tokens', Number(e.target.value))}/>
         </label>
-        <label>Ventana de contexto
+        <label>Context window
           <select value={config.num_ctx} onChange={e => update('num_ctx', Number(e.target.value))}>
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n.toLocaleString('es-CR')} tokens</option>)}
           </select>
         </label>
-        <label>Dispositivo <span className="field-value">Ollama</span>
-          <select aria-label="Dispositivo narrativo" disabled={config.provider !== 'ollama'} value={config.device}
+        <label>Device <span className="field-value">Ollama</span>
+          <select aria-label="Narrator device" disabled={config.provider !== 'ollama'} value={config.device}
             onChange={e => update('device', e.target.value as NarrativeConfig['device'])}>
             <option value="auto">Automatic — use GPU if available</option>
             <option value="cpu">Solo CPU</option>
@@ -204,8 +204,8 @@ export function NarrativeSettings() {
         Puede tardar en la primera carga. No se aplica a APIs remotas de OpenRouter.</p>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
         need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.</p>
-      <section className="narrative-context-inspector" aria-label="Inspector de contexto narrativo">
-        <h3>Inspector del contexto narrativo</h3>
+      <section className="narrative-context-inspector" aria-label="Narrative context inspector">
+        <h3>Narrative context inspector</h3>
         <p className="narrative-helper">Consulta los mensajes exactos preparados para el
           provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
         {stories.length ? <>
@@ -217,7 +217,7 @@ export function NarrativeSettings() {
               </select>
             </label>
             <label>Input mode
-              <select aria-label="Modo para inspeccionar" value={inspectMode}
+              <select aria-label="Mode to inspect" value={inspectMode}
                 onChange={e => { setInspectMode(e.target.value as typeof inspectMode); setInspectorData(null); }}>
                 <option value="do">Action</option>
                 <option value="say">Dialogue</option>
@@ -236,7 +236,7 @@ export function NarrativeSettings() {
               disabled={inspecting || (inspectMode !== 'continue' && !inspectText.trim())}
               onClick={() => void inspectContext()}>
               {inspecting ? <LoaderCircle size={16} className="rotating"/> : <BookOpen size={16}/>}
-              Inspeccionar contexto
+              Inspect context
             </button>
           </div>
           {inspectorError && <p role="alert" className="narrative-error">{inspectorError}</p>}

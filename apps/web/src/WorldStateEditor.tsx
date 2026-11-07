@@ -126,36 +126,36 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     <section className="world-section">
       <h4>Scene situation</h4>
       <div className="creator-double">
-        <label>Lugar actual
-          <input aria-label="Lugar del mundo" maxLength={200} value={draft.location}
+        <label>Current location
+          <input aria-label="World location" maxLength={200} value={draft.location}
             placeholder="Port de las estrellas..."
             onChange={event => patch({ location: event.target.value })}/>
         </label>
         <label>Time of day
-          <input aria-label="Momento del mundo" maxLength={80} value={draft.time_of_day}
+          <input aria-label="World time of day" maxLength={80} value={draft.time_of_day}
             placeholder="Anochecer, madrugada..."
             onChange={event => patch({ time_of_day: event.target.value })}/>
         </label>
       </div>
-      <label>Clima
-        <input aria-label="Clima del mundo" maxLength={100} value={draft.weather}
+      <label>Weather
+        <input aria-label="World weather" maxLength={100} value={draft.weather}
           placeholder="Lluvia, despejado, tormenta..."
           onChange={event => patch({ weather: event.target.value })}/>
       </label>
       <label>Confirmed inventory (one item per line)
-        <textarea aria-label="Inventario del mundo" rows={4} value={inventoryInput}
+        <textarea aria-label="World inventory" rows={4} value={inventoryInput}
           onChange={event => { setInventoryInput(event.target.value); setNotice(''); }}
           placeholder="Llave de plata\nMapa antiguo"/>
       </label>
     </section>
 
     <section className="world-section">
-      <h4><Users size={17}/> Characters presentes</h4>
+      <h4><Users size={17}/> Present characters</h4>
       <p>Solo los personajes marcados como presentes pueden activar hechos que presenciaron.
         Private text for an absent character is not sent to the narrator.</p>
       <div className="world-npc-grid">
         {characters.map(character => <label className="world-check" key={character.id}>
-          <input type="checkbox" aria-label={'Presente ' + character.name}
+          <input type="checkbox" aria-label={'Present ' + character.name}
             checked={draft.present_character_ids.includes(character.id)}
             onChange={event => patch({ present_character_ids: uniqueList(
               draft.present_character_ids, character.id, event.target.checked) })}/>
@@ -165,7 +165,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           Create characters under Characters before assigning witnesses.</p>}
       </div>
       {!!characters.length && <div className="world-relations">
-        <h4>Relaciones confirmadas</h4>
+        <h4>Confirmed relationships</h4>
         {characters.map(character => <label key={character.id}>
           Relationship of {character.name} with the protagonist
           <input aria-label={'Relationship with ' + character.name} maxLength={160}
@@ -182,17 +182,17 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     </section>
 
     <section className="world-section">
-      <h4>Indicadores persistentes</h4>
+      <h4>Persistent flags</h4>
       <p>Guarda decisiones y condiciones observables, por ejemplo <code>puerta_abierta</code>.</p>
       {Object.entries(draft.flags).map(([name, value]) =>
         <div className="world-flag-row" key={name}>
           <label className="world-check">
-            <input type="checkbox" aria-label={'Indicador ' + name}
+            <input type="checkbox" aria-label={'Flag ' + name}
               checked={value} onChange={event =>
                 patch({ flags: {...draft.flags, [name]: event.target.checked } })}/>
             <span>{name}</span>
           </label>
-          <button className="secondary-button" aria-label={'Eliminar indicador ' + name}
+          <button className="secondary-button" aria-label={'Delete flag ' + name}
             onClick={() => {
               const flags = { ...draft.flags };
               delete flags[name];
@@ -214,19 +214,19 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     </section>
 
     <section className="world-section">
-      <h4><ShieldCheck size={17}/> Hechos y testigos</h4>
+      <h4><ShieldCheck size={17}/> Facts and witnesses</h4>
       <p>Public facts are general knowledge. Private facts enter the narrator's context only when a declared witness is present.</p>
       {draft.facts.map((fact, index) =>
         <div key={fact.id} className="world-fact">
           <div className="world-fact-title">
             <strong>Hecho {index + 1}</strong>
-            <button className="secondary-button" aria-label={'Eliminar hecho ' + (index + 1)}
+            <button className="secondary-button" aria-label={'Delete fact ' + (index + 1)}
               onClick={() => patch({ facts: draft.facts.filter(item => item.id !== fact.id) })}>
               <Trash2 size={15}/>
             </button>
           </div>
-          <label>Contenido confirmado
-            <textarea aria-label={'Texto del hecho ' + (index + 1)} maxLength={360} rows={3}
+          <label>Confirmed content
+            <textarea aria-label={'Fact text ' + (index + 1)} maxLength={360} rows={3}
               value={fact.text} onChange={event =>
                 editFact(index, { text: event.target.value })}/>
           </label>
@@ -239,7 +239,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           {!fact.public && <div className="world-witnesses">
             <strong>Characters que presenciaron este hecho</strong>
             {characters.map(character => <label className="world-check" key={character.id}>
-              <input type="checkbox" aria-label={'Testigo ' + character.name + ' del hecho ' + (index + 1)}
+              <input type="checkbox" aria-label={'Witness ' + character.name + ' for fact ' + (index + 1)}
                 checked={fact.witness_character_ids.includes(character.id)}
                 onChange={event => editFact(index, {
                   witness_character_ids: uniqueList(
@@ -285,7 +285,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
         <strong>State recorded at that turn</strong>
         <span>Lugar: {snapshot.state.location || 'No definido'}</span>
         <span>Momento: {snapshot.state.time_of_day || 'No definido'}</span>
-        <span>Clima: {snapshot.state.weather || 'No definido'}</span>
+        <span>Weather: {snapshot.state.weather || 'No definido'}</span>
         <span>Objetos: {snapshot.state.inventory.join(', ') || 'Ninguno'}</span>
         <span>Hechos registrados: {snapshot.state.facts.length}</span>
         <span>Canon at that turn: {snapshot.canon || 'No confirmed canon'}</span>

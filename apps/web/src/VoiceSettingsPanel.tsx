@@ -174,7 +174,7 @@ export function VoiceSettingsPanel() {
                 View voice license and files</a>
             </div>
             {job && status !== 'installed' && <div className="noble-voice-progress">
-              <progress aria-label={'Progreso de ' + voice.name} value={percent} max={100}/>
+              <progress aria-label={'Progress for ' + voice.name} value={percent} max={100}/>
               <small>{percent}% · {(job.received_bytes / 1024 / 1024).toFixed(1)} /
                 {(job.total_bytes / 1024 / 1024).toFixed(1)} MiB
                 {job.error ? ' · ' + job.error : ''}</small>
@@ -229,7 +229,7 @@ export function VoiceSettingsPanel() {
         <p>These settings affect previews and newly generated speech. They never play audio automatically.</p>
         {synthesisConfig && <>
           <label className="workspace-pref-field">Speed (phoneme duration)
-            <input aria-label="Velocidad Piper" type="number" min={0.5} max={2}
+            <input aria-label="Piper speed" type="number" min={0.5} max={2}
               step={0.05} value={synthesisConfig.length_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('length_scale', Number(e.target.value))}/>
             <small>1.0 is normal speed; lower values produce faster speech.</small>
@@ -240,7 +240,7 @@ export function VoiceSettingsPanel() {
               onChange={e => changePiperParameter('noise_scale', Number(e.target.value))}/>
           </label>
           <label className="workspace-pref-field">Phoneme variation
-            <input aria-label="Ruido de fonemas Piper" type="number" min={0} max={1.5}
+            <input aria-label="Piper phoneme noise" type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_w} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_w', Number(e.target.value))}/>
           </label>

@@ -96,28 +96,28 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
   }
 
   return <div className="workspace-panel comfy-runtime-panel">
-    <h3><Terminal size={18}/> Ejecutar ComfyUI desde Noble AI</h3>
+    <h3><Terminal size={18}/> Run ComfyUI from Noble AI</h3>
     <p>Use an existing ComfyUI installation and its local Python environment. Noble AI manages only the processes it starts, without downloading code or launching ComfyUI just by opening Settings.</p>
     <div className="workspace-field-grid">
-      <label className="workspace-pref-field">Carpeta de ComfyUI
-        <input aria-label="Carpeta local de ComfyUI" value={config.install_dir}
+      <label className="workspace-pref-field">ComfyUI directory
+        <input aria-label="Local ComfyUI directory" value={config.install_dir}
           placeholder="Ruta absoluta hasta ComfyUI/main.py"
           disabled={busy || !!running}
           onChange={e => change('install_dir', e.target.value)}/>
       </label>
-      <label className="workspace-pref-field">Ejecutable Python (opcional)
-        <input aria-label="Python para ComfyUI" value={config.python_executable}
+      <label className="workspace-pref-field">Python executable (optional)
+        <input aria-label="ComfyUI Python" value={config.python_executable}
           placeholder="Leave empty to detect .venv or Python"
           disabled={busy || !!running}
           onChange={e => change('python_executable', e.target.value)}/>
       </label>
-      <label className="workspace-pref-field">Port local
-        <input type="number" aria-label="Port de ComfyUI"
+      <label className="workspace-pref-field">Local port
+        <input type="number" aria-label="ComfyUI port"
           min={1024} max={65535} value={config.port} disabled={busy || !!running}
           onChange={e => change('port', Number(e.target.value))}/>
       </label>
-      <label className="workspace-pref-field">Perfil de memoria
-        <select aria-label="Perfil de VRAM ComfyUI" value={config.memory_mode}
+      <label className="workspace-pref-field">Memory profile
+        <select aria-label="ComfyUI VRAM profile" value={config.memory_mode}
           disabled={busy || !!running}
           onChange={e => change('memory_mode', e.target.value as ComfyLaunchConfig['memory_mode'])}>
           {MODES.map(mode => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
@@ -135,11 +135,11 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
         disabled={busy || !!running || dirty || !saved.install_dir}
         onClick={() => void start()}>
         {busy ? <LoaderCircle size={16} className="rotating"/> : <Play size={16}/>}
-        Iniciar ComfyUI
+        Start ComfyUI
       </button>
       <button type="button" className="secondary-button"
         disabled={busy || !running} onClick={() => void stop()}>
-        <CircleStop size={16}/> Detener ComfyUI
+        <CircleStop size={16}/> Stop ComfyUI
       </button>
       <button type="button" className="secondary-button" disabled={busy}
         onClick={() => void api.comfyRuntimeStatus().then(setStatus).catch(

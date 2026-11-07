@@ -44,7 +44,7 @@ export function StoryDetail({
   const heroArt = story.cover_image_url || story.scene_image_url ||
     media.find(item => item.kind === 'background')?.url || null;
 
-  return <section className="noble-story-detail" aria-label={'Detalle de ' + story.title}>
+  return <section className="noble-story-detail" aria-label={'Details of ' + story.title}>
     <div className="noble-story-detail-cover"
       style={heroArt ? { backgroundImage: 'url("' + heroArt + '")' } : undefined}>
       <div className="noble-story-cover-shade"/>
@@ -75,7 +75,7 @@ export function StoryDetail({
           </button>
           <a className="secondary-button" role="link"
             href={'/api/v1/stories/' + encodeURIComponent(story.id) + '/archive.noble.zip'}
-            download="noble-family.noble.zip" aria-label="Descargar respaldo completo">
+            download="noble-family.noble.zip" aria-label="Download full backup">
             <Download size={16}/> Back up story and branches
           </a>
         </div>
@@ -111,7 +111,7 @@ export function StoryDetail({
           type="button" disabled={branch.is_selected || openingBusy}
           className={'noble-route-node ' + (branch.is_selected ? 'is-selected' : '')}
           style={{ marginLeft: Math.min(branch.depth, 6) * 24 }}
-          aria-label={'Abrir ruta ' + branch.title}
+          aria-label={'Open branch ' + branch.title}
           onClick={() => onChooseBranch(branch.id)}>
           <GitBranch size={18}/>
           <span><strong>{branch.title}</strong><small>
@@ -127,7 +127,7 @@ export function StoryDetail({
       aria-label="Story characters">
       <div className="noble-detail-section-heading">
         <span className="overline"><Users size={15}/> CONOCE AL ELENCO</span>
-        <h2>Characters de este mundo <small>{characters.length}</small></h2>
+        <h2>Characters in this world <small>{characters.length}</small></h2>
         <p>Meet the characters who may accompany you.</p>
       </div>
       <div className="noble-detail-cast-grid">
@@ -148,7 +148,7 @@ export function StoryDetail({
       </div>
     </section>}
     {openings.length > 0 && <section className="noble-detail-section"
-      id="noble-story-openings" aria-label="Escenas de apertura">
+      id="noble-story-openings" aria-label="Opening scenes">
       <div className="noble-detail-section-heading">
         <span className="overline"><Feather size={15}/> YOUR FIRST DECISION</span>
         <h2>Choose how the story begins</h2>
@@ -174,7 +174,7 @@ export function StoryDetail({
       aria-label="Story art gallery">
       <div className="noble-detail-section-heading">
         <span className="overline"><ImageIcon size={15}/> WORLD GALLERY</span>
-        <h2>Escenarios e ilustraciones</h2>
+        <h2>Scenes and illustrations</h2>
       </div>
       <div className="noble-detail-media-strip">
         {media.filter(asset => asset.kind !== 'cover').slice(0, 8).map(asset => <figure key={asset.id}>

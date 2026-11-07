@@ -540,7 +540,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           </div>
           <nav className="creator-editor-tabs" aria-label="Creator tools">
             <button className={section === 'story' ? 'selected' : ''}
-              onClick={() => setSection('story')}><FileText size={17}/> Trama y contexto</button>
+              onClick={() => setSection('story')}><FileText size={17}/> Plot and context</button>
             <button className={section === 'cast' ? 'selected' : ''}
               onClick={() => setSection('cast')}><Users size={17}/> Characters ({characters.length})</button>
             <button className={section === 'lorebook' ? 'selected' : ''}
@@ -943,7 +943,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         draft.ready_count !== 5 ||
                         (!!draft.alignment_review_needed && !alignmentConfirmed[draft.id])}
                       onClick={() => void approveSprites(draft)}>
-                      <Check size={16}/> Aprobar cinco expresiones
+                      <Check size={16}/> Approve five expressions
                     </button>
                     <button className="secondary-button" disabled={working}
                       onClick={() => void discardSprites(draft)}>
@@ -1185,7 +1185,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </option>)}
                 </select>
                 <small>Link this NPC to a Gallery identity so their visual DNA
-                  siga al personaje seleccionado en un plan de escena.</small>
+                  follows the selected character in scene plans.</small>
               </label>
               <label>Background and description
                 <textarea rows={5} maxLength={3000} aria-label="NPC description"
@@ -1193,8 +1193,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     ...v,description:e.target.value,
                   }))}/>
               </label>
-              <label>Personalidad y motivaciones
-                <textarea rows={4} maxLength={1500} aria-label="Personalidad de NPC"
+              <label>Personality and motivations
+                <textarea rows={4} maxLength={1500} aria-label="NPC personality"
                   value={character.personality} onChange={e => setCharacter(v => ({
                     ...v,personality:e.target.value,
                   }))}/>
@@ -1207,21 +1207,21 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </label>
               <div className="creator-media-form">
                 <h4>Canonical visual identity</h4>
-                <p>Las etiquetas de apariencia y la semilla quedan fijadas al guardarlas.
+                <p>Appearance tags and seeds become fixed once saved.
                   A LoRA is an optional reference to a local model file; it does not
-                  activa inferencia ni descarga modelos.</p>
-                <label>Etiquetas de apariencia (separadas por coma)
-                  <input aria-label="Etiquetas visuales" maxLength={1040}
+                  run inference or download models.</p>
+                <label>Appearance tags (comma-separated)
+                  <input aria-label="Visual tags" maxLength={1040}
                     value={dnaTagsInput} disabled={!!editingCharacter &&
                       characters.some(npc => npc.id === editingCharacter &&
                         npc.visual_dna.tags.length > 0)}
                     onChange={e => setDnaTagsInput(e.target.value)}
-                    placeholder="cabello negro, ojos verdes, abrigo azul"/>
+                    placeholder="black hair, green eyes, blue coat"/>
                 </label>
                 <div className="creator-double">
-                  <label>Semilla visual
+                  <label>Visual seed
                     <input type="number" min={0} max={4294967295} step={1}
-                      aria-label="Semilla visual" value={character.visual_dna.seed ?? ''}
+                      aria-label="Visual seed" value={character.visual_dna.seed ?? ''}
                       disabled={!!editingCharacter && characters.some(npc =>
                         npc.id === editingCharacter && npc.visual_dna.seed !== null)}
                       onChange={e => setCharacter(prev => ({...prev, visual_dna: {
@@ -1236,9 +1236,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       }}))} placeholder="character.safetensors"/>
                   </label>
                 </div>
-                <label>Intensidad LoRA (0–2)
+                <label>LoRA strength (0–2)
                   <input type="number" min={0} max={2} step={0.05}
-                    aria-label="Intensidad LoRA" value={character.visual_dna.lora_strength}
+                    aria-label="LoRA strength" value={character.visual_dna.lora_strength}
                     onChange={e => setCharacter(prev => ({...prev, visual_dna: {
                       ...prev.visual_dna, lora_strength: Number(e.target.value),
                     }}))}/>
@@ -1255,9 +1255,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
             </div> : <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Distintas formas de comenzar</h3>
+                <h3>Different ways to begin</h3>
                 <p>Prepare up to six opening scenes. The player can choose
-                  una al iniciar. Puedes usar <code>{'{{user}}'}</code> como referencia al protagonista.</p>
+                  one to begin. You can use <code>{'{{user}}'}</code> to refer to the protagonist.</p>
               </div>
               {blueprint.opening_scenarios.map((opening,index) =>
                 <div className="creator-opening" key={index}>
@@ -1303,7 +1303,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             onClick={() => setCreateNew(false)}><X size={18}/></button></div>
         <h2>Create your next world</h2>
         <p>Create the project first. Dedicated tools are available afterward for
-          la trama, personajes y aperturas.</p>
+          plot, characters, and openings.</p>
         <label className="form-label">Title
           <input value={newTitle} maxLength={100}
             onChange={e => setNewTitle(e.target.value)}/></label>
