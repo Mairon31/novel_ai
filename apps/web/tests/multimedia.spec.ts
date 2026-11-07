@@ -8,6 +8,14 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
       checkpoints: ['story-model.safetensors'], error: null,
     } });
   });
+  let samplingChecks = 0;
+  await page.route('**/api/v1/images/sampler-options', async route => {
+    samplingChecks++;
+    await route.fulfill({ status: 200, json: {
+      online: true, sampler_name: ['euler', 'dpmpp_2m'],
+      scheduler: ['normal', 'karras'], error: null,
+    }});
+  });
   await page.route('**/api/v1/tts/voices', async route => {
     await route.fulfill({ status: 200, json: {
       engine: 'piper', available: true, device: 'cpu', on_demand_only: true,
@@ -52,10 +60,29 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.getByLabel('Activar botones de voz bajo demanda')).toHaveCount(0);
   await page.getByRole('button', { name: 'Buscar checkpoints' }).click();
   await page.getByLabel('Checkpoint').fill('story-model.safetensors');
+  await page.getByRole('button', { name: 'Comprobar muestreo ComfyUI' }).click();
+  expect(samplingChecks).toBe(1);
+  await expect(page.getByText('Compatibilidad KSampler: selección compatible.')).toBeVisible();
+  await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_sde');
+  await expect(page.getByRole('button', { name: 'Guardar ajustes de imagen' })).toBeDisabled();
+  await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_2m');
+  await page.getByLabel('Planificador ComfyUI').selectOption('karras');
+  await page.getByLabel('Estilo de ilustración').selectOption('anime_cinematic');
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
+  const configured = await page.request.get('/api/v1/images/config');
+  expect(configured.ok()).toBeTruthy();
+  const params = await configured.json();
+  expect(params.sampler_name).toBe('dpmpp_2m');
+  expect(params.scheduler).toBe('karras');
+  expect(params.style_preset).toBe('anime_cinematic');
   await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
   await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
+  await page.getByRole('button', { name: 'Imágenes', exact: true }).click();
+  await expect(page.getByLabel('Muestreador ComfyUI')).toHaveValue('dpmpp_2m');
+  await expect(page.getByLabel('Planificador ComfyUI')).toHaveValue('karras');
+  await expect(page.getByLabel('Estilo de ilustración')).toHaveValue('anime_cinematic');
+  await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   await page.getByLabel('Activar botones de voz bajo demanda').check();
   await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeChecked();
