@@ -26,6 +26,20 @@ class SpeechPreferences(BaseModel):
     default_voice_id: str = Field(default="", max_length=180)
 
 
+class PiperSynthesisConfig(BaseModel):
+    """Provider-specific controls supported by both Piper CLI implementations."""
+    model_config = ConfigDict(extra="forbid")
+    length_scale: float = Field(default=1.0, ge=0.5, le=2.0, allow_inf_nan=False)
+    noise_scale: float = Field(default=0.667, ge=0, le=1.5, allow_inf_nan=False)
+    noise_w: float = Field(default=0.8, ge=0, le=1.5, allow_inf_nan=False)
+
+
+def piper_cli_options(settings: dict) -> list[str]:
+    return ["--length_scale", str(settings["length_scale"]),
+            "--noise_scale", str(settings["noise_scale"]),
+            "--noise_w", str(settings["noise_w"])]
+
+
 class SpeechRequest(BaseModel):
     voice_id: str = Field(min_length=1, max_length=180)
     request_source: str = "listen_button"
@@ -49,6 +63,11 @@ class SpeechService:
                 id INTEGER PRIMARY KEY CHECK(id=1), default_voice_id TEXT NOT NULL
             )""")
             conn.execute("INSERT OR IGNORE INTO tts_preferences VALUES(1,'')")
+            conn.execute("""CREATE TABLE IF NOT EXISTS piper_synthesis_config(
+                id INTEGER PRIMARY KEY CHECK(id=1), config_json TEXT NOT NULL
+            )""")
+            conn.execute("INSERT OR IGNORE INTO piper_synthesis_config VALUES(1,?)",
+                         (PiperSynthesisConfig().model_dump_json(),))
 
     def preferences(self) -> dict:
         with self.narrative.store._conn() as db:
@@ -64,6 +83,18 @@ class SpeechService:
         with self.narrative.store._conn() as db:
             db.execute("UPDATE tts_preferences SET default_voice_id=? WHERE id=1", (voice,))
         return self.preferences()
+
+    def synthesis_config(self) -> dict:
+        with self.narrative.store._conn() as db:
+            row = db.execute("SELECT config_json FROM piper_synthesis_config WHERE id=1").fetchone()
+        return PiperSynthesisConfig.model_validate_json(
+            row["config_json"]).model_dump() if row else PiperSynthesisConfig().model_dump()
+
+    def set_synthesis_config(self, data: PiperSynthesisConfig) -> dict:
+        with self.narrative.store._conn() as db:
+            db.execute("UPDATE piper_synthesis_config SET config_json=? WHERE id=1",
+                       (data.model_dump_json(),))
+        return self.synthesis_config()
 
     def voices(self) -> dict:
         detected = []
@@ -94,6 +125,7 @@ class SpeechService:
         if body.request_source != "preview_button" or not body.text.strip():
             raise HTTPException(422, "La prueba de voz requiere una solicitud explícita y texto")
         model = self.voice_path(body.voice_id)
+        synthesis = self.synthesis_config()
         executable = shutil.which("piper")
         if not executable:
             raise HTTPException(503, "Piper no está instalado en PATH")
@@ -105,6 +137,7 @@ class SpeechService:
                 target = Path(directory) / "sample.wav"
                 process = await asyncio.create_subprocess_exec(
                     executable, "--model", str(model), "--output_file", str(target),
+                    *piper_cli_options(synthesis),
                     stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.PIPE)
                 try:
@@ -152,8 +185,10 @@ class SpeechService:
         executable = shutil.which("piper")
         if not executable:
             raise HTTPException(503, "Piper no está instalado en PATH")
+        synthesis = self.synthesis_config()
         signature = f"{model.name}:{model.stat().st_mtime_ns}:{model.stat().st_size}"
-        key = hashlib.sha256((signature + "\n" + text).encode("utf-8")).hexdigest()[:24]
+        key = hashlib.sha256((signature + "\n" + text + "\n" +
+                              json.dumps(synthesis, sort_keys=True)).encode("utf-8")).hexdigest()[:24]
         target = self.narrative.store.root / "story-assets" / story_id / "speech" / f"{turn_id}-{key}.wav"
         target.parent.mkdir(parents=True, exist_ok=True)
         if target.is_file() and target.stat().st_size > 44:
@@ -168,6 +203,7 @@ class SpeechService:
                 try:
                     process = await asyncio.create_subprocess_exec(
                         executable, "--model", str(model), "--output_file", str(tmp),
+                        *piper_cli_options(synthesis),
                         stdin=asyncio.subprocess.PIPE,
                         stdout=asyncio.subprocess.DEVNULL,
                         stderr=asyncio.subprocess.PIPE)
@@ -202,6 +238,14 @@ def mount_speech_routes(app, speech: SpeechService):
     @app.put("/api/v1/tts/config")
     def save_voice_preferences(body: SpeechPreferences):
         return speech.set_preferences(body)
+
+    @app.get("/api/v1/tts/synthesis-config")
+    def get_synthesis_config():
+        return speech.synthesis_config()
+
+    @app.put("/api/v1/tts/synthesis-config")
+    def save_synthesis_config(body: PiperSynthesisConfig):
+        return speech.set_synthesis_config(body)
 
     @app.get("/api/v1/tts/voices")
     def voices():
