@@ -222,7 +222,7 @@ export default function App() {
         setImageMode(s.image_mode);
         setShowSetup(!s.setup_complete);
       })
-      .catch((exc: Error) => { if (live) setError('No se pudo conectar con Noble API: ' + exc.message); })
+      .catch((exc: Error) => { if (live) setError('Could not connect to Noble API: ' + exc.message); })
       .finally(() => { if (live) setReady(true); });
     return () => { live = false; };
   }, []);
@@ -378,9 +378,9 @@ export default function App() {
         repo_id: detail.repo_id, revision: detail.revision, filename: pickedVariant,
       });
       await refreshDownloads();
-      setNotice('Descarga ' + humanStatus(job).toLowerCase() + ': ' + job.filename);
+      setNotice('Download ' + humanStatus(job).toLowerCase() + ': ' + job.filename);
       changePage('descargas');
-      setNotice('Descarga registrada: ' + job.filename);
+      setNotice('Download registered: ' + job.filename);
       setDetail(null);
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
@@ -558,7 +558,7 @@ export default function App() {
                       <span><Download size={13}/> {compactCount(m)}</span>
                       <span>♥ {m.likes.toLocaleString()}</span>
                       <span>{m.gated ? 'Restricted' : 'Public'}</span>
-                      {m.license !== 'sin verificar' && <span>{m.license}</span>}
+                      {m.license !== 'unverified' && <span>{m.license}</span>}
                     </span>
                   </span>
                   <ChevronDown className="hub-model-row-arrow" size={18}/>
@@ -585,7 +585,7 @@ export default function App() {
                   context memory, and runtime headroom. These estimates do not
                   guarantee engine compatibility or performance.</p>
                 <div className="hub-hardware-legend">
-                  <span>Full GPU</span><span>Descarga parcial</span>
+                  <span>Full GPU</span><span>Partial offload</span>
                   <span>CPU</span><span>Insufficient memory</span>
                 </div>
                 <button className="secondary-button" onClick={() => changePage('ajustes')}>
@@ -821,7 +821,7 @@ export default function App() {
                 <div className="hub-selected-fit-foot">
                   <span>{selectedFit.fit === 'full_gpu' ? 'Estimated usable GPU limit' :
                     selectedFit.fit === 'partial_offload' ? 'Combined GPU and RAM limit' :
-                    'Estimated usable RAM limit'}: {memoryBudget ? size(memoryBudget) : 'sin datos'}</span>
+                    'Estimated usable RAM limit'}: {memoryBudget ? size(memoryBudget) : 'no data'}</span>
                   <span>{selectedFit.fit === 'partial_offload' ?
                     'Requires engine-supported offload' :
                     selectedFit.fit === 'full_gpu' ? 'Based on observed free VRAM' :

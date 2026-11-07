@@ -82,7 +82,7 @@ export function StoryStudio({
         if (!alive) return;
         setActive(null);
         setReading(false);
-        setError('No se pudo abrir el enlace de la historia: ' + exc.message);
+        setError('Could not open story link: ' + exc.message);
       });
     }
     return () => { alive = false; };
@@ -140,7 +140,7 @@ export function StoryStudio({
       setReading(false);
       onRouteChange?.(null, false);
       setNotice((result.imported_as_copy ? 'Copia independiente creada: ' : 'Respaldo restaurado: ') +
-        result.restored_stories + ' historias y ' + result.restored_files + ' recursos.');
+        result.restored_stories + ' stories and ' + result.restored_files + ' assets.');
     } catch (e) { setError((e as Error).message); }
     finally { setRestoring(false); }
   }
@@ -153,7 +153,7 @@ export function StoryStudio({
       setStories(previous => [story, ...previous]);
       setActive(story); setReading(true);
       onRouteChange?.(story.id, true);
-      setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice('Historia creada. Puedes comenzar cuando quieras.');
+      setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice('Story created. You can begin when ready.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setLoading(false); }
   }
@@ -292,7 +292,7 @@ export function StoryStudio({
           {'· '.repeat(branch.depth)}{branch.title} ({branch.turn_count} turns)
         </option>)}
       </select>}
-      <button className="noble-reader-settings-link" onClick={onOpenSettings}>Ajustes</button>
+      <button className="noble-reader-settings-link" onClick={onOpenSettings}>Settings</button>
     </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
       characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
       error={error}
@@ -343,7 +343,7 @@ export function StoryStudio({
       }}/>
       <div className="noble-library-section-heading">
         <div><span className="overline">YOUR COLLECTION</span><h2>My stories <small>{stories.length}</small></h2></div>
-        {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> Cargando...</div>}
+        {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> Loading...</div>}
       </div>
       <div className="noble-library-cover-grid">
         {stories.map(s => <button key={s.id} className="noble-library-cover"
@@ -351,7 +351,7 @@ export function StoryStudio({
           <div className="noble-library-cover-art"
             style={s.cover_image_url || s.scene_image_url ? {backgroundImage:'url("'+(s.cover_image_url || s.scene_image_url)+'")'}:undefined}>
             {!(s.cover_image_url || s.scene_image_url) && <BookOpen size={38}/>}
-            <span>{s.origin_story_id ? 'Alternate branch' : 'Historia'}</span>
+            <span>{s.origin_story_id ? 'Alternate branch' : 'Story'}</span>
           </div>
           <div className="noble-library-cover-copy"><strong>{s.title}</strong>
             <small>Protagonist · {s.protagonist_name || 'Unnamed'}</small>
@@ -409,7 +409,7 @@ export function StoryStudio({
         onClick={() => setCreateStep('protagonist')}>
         <ArrowRight size={17}/> Choose protagonist</button> :
         <div className="noble-create-actions">
-          <button className="secondary-button" onClick={() => setCreateStep('story')}>Volver</button>
+          <button className="secondary-button" onClick={() => setCreateStep('story')}>Back</button>
           <button className="primary-button" disabled={loading || !protagonistName.trim()}
             onClick={() => void createStory()}><ArrowRight size={17}/> Start story</button>
         </div>}

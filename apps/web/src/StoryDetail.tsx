@@ -23,13 +23,13 @@ interface Props {
 }
 
 function date(value: number) {
-  if (!value || !Number.isFinite(value)) return 'Sin fecha';
+  if (!value || !Number.isFinite(value)) return 'Date unavailable';
   return new Intl.DateTimeFormat('es-419', { day: 'numeric', month: 'short', year: 'numeric' })
     .format(new Date(value * 1000));
 }
 
 function preview(text: string, protagonist: string) {
-  return text.replace(/\{\{user\}\}/g, protagonist || 'Protagonista');
+  return text.replace(/\{\{user\}\}/g, protagonist || 'Protagonist');
 }
 
 /** Player-facing editorial page. Never display AI-only plot, reminders or dialogue prompts. */
@@ -49,13 +49,13 @@ export function StoryDetail({
       style={heroArt ? { backgroundImage: 'url("' + heroArt + '")' } : undefined}>
       <div className="noble-story-cover-shade"/>
       <button className="noble-story-detail-back" onClick={onBack} disabled={openingBusy}>
-        <ArrowLeft size={18}/> Volver a biblioteca
+        <ArrowLeft size={18}/> Return to library
       </button>
       {!heroArt && <div className="noble-story-cover-empty"><BookOpen size={76}/></div>}
       <div className="noble-story-detail-heading">
         <span className="noble-story-detail-overline">
           {story.origin_story_id ? <GitBranch size={15}/> : <Feather size={15}/>}
-          {story.origin_story_id ? 'RUTA ALTERNATIVA' : 'TU HISTORIA'}
+          {story.origin_story_id ? 'ALTERNATE BRANCH' : 'YOUR STORY'}
         </span>
         <h1>{story.title}</h1>
         {metadata?.genre && <span className="noble-story-genre">{metadata.genre}</span>}
@@ -66,9 +66,9 @@ export function StoryDetail({
         <div className="noble-story-detail-actions">
           {openings.length ? <button className="primary-button" onClick={() =>
             document.getElementById('noble-story-openings')?.scrollIntoView({ behavior: 'smooth' })}>
-            <Play size={17}/> Elegir una apertura <ArrowRight size={16}/>
+            <Play size={17}/> Choose an opening <ArrowRight size={16}/>
           </button> : <button className="primary-button" onClick={onContinue}>
-            <Play size={17}/> {turns.length ? 'Continuar historia' : 'Comenzar historia'} <ArrowRight size={16}/>
+            <Play size={17}/> {turns.length ? 'Continue story' : 'Start story'} <ArrowRight size={16}/>
           </button>}
           <button className="secondary-button" onClick={onEdit}>
             <PencilLine size={16}/> Editar en Creator Studio
@@ -76,7 +76,7 @@ export function StoryDetail({
           <a className="secondary-button" role="link"
             href={'/api/v1/stories/' + encodeURIComponent(story.id) + '/archive.noble.zip'}
             download="noble-family.noble.zip" aria-label="Descargar respaldo completo">
-            <Download size={16}/> Respaldar historia y ramas
+            <Download size={16}/> Back up story and branches
           </a>
         </div>
       </div>
@@ -84,7 +84,7 @@ export function StoryDetail({
     {error && <p className="narrative-error" role="alert">{error}</p>}
     <div className="noble-story-detail-body">
       <div className="noble-story-detail-overview">
-        <div><UserRound size={18}/><span>Protagonista</span><strong>{story.protagonist_name || 'Sin asignar'}</strong></div>
+        <div><UserRound size={18}/><span>Protagonist</span><strong>{story.protagonist_name || 'Not assigned'}</strong></div>
         <div><BookOpen size={18}/><span>Intervenciones</span><strong>{turns.length}</strong></div>
         <div><CalendarDays size={18}/><span>Creada</span><strong>{date(story.created_at)}</strong></div>
         <div><Clock3 size={18}/><span>Actualizada</span><strong>{date(story.updated_at)}</strong></div>
@@ -95,7 +95,7 @@ export function StoryDetail({
         <p>{last ? last.assistant_text.slice(0, 700) :
           preview(publicPlot || story.premise, story.protagonist_name)}</p>
         {last && <button className="noble-story-detail-resume-link" onClick={onContinue}>
-          Retomar desde esta escena <ArrowRight size={16}/>
+          Continue from this scene <ArrowRight size={16}/>
         </button>}
       </article>
     </div>
@@ -104,7 +104,7 @@ export function StoryDetail({
       <div className="noble-detail-section-heading">
         <span className="overline"><GitBranch size={16}/> HISTORIAS CONECTADAS</span>
         <h2>Branch tree <small>{branches.length}</small></h2>
-        <p>Explora las bifurcaciones guardadas sin alterar sus turnos ni decisiones.</p>
+        <p>Explore saved branches without modifying their turns or choices.</p>
       </div>
       <div className="noble-route-list">
         {branches.map(branch => <button key={branch.id}
@@ -115,7 +115,7 @@ export function StoryDetail({
           onClick={() => onChooseBranch(branch.id)}>
           <GitBranch size={18}/>
           <span><strong>{branch.title}</strong><small>
-            {branch.depth === 0 ? 'Historia principal' : 'Ruta alternativa'}
+            {branch.depth === 0 ? 'Main story' : 'Alternate branch'}
             {' · '}{branch.turn_count} escenas guardadas
             {branch.is_selected ? ' · Ruta actual' : ''}
           </small></span>
@@ -124,10 +124,10 @@ export function StoryDetail({
       </div>
     </section>}
     {characters.length > 0 && <section className="noble-detail-section"
-      aria-label="Personajes de la historia">
+      aria-label="Story characters">
       <div className="noble-detail-section-heading">
         <span className="overline"><Users size={15}/> CONOCE AL ELENCO</span>
-        <h2>Personajes de este mundo <small>{characters.length}</small></h2>
+        <h2>Characters de este mundo <small>{characters.length}</small></h2>
         <p>Meet the characters who may accompany you.</p>
       </div>
       <div className="noble-detail-cast-grid">
@@ -153,12 +153,12 @@ export function StoryDetail({
         <span className="overline"><Feather size={15}/> YOUR FIRST DECISION</span>
         <h2>Choose how the story begins</h2>
         <p>Choose an opening scene. It will be saved as
-          el primer turno de esta historia, sin generar texto adicional.</p>
+          the first turn of this story without generating additional text.</p>
       </div>
       <div className="noble-detail-openings-grid">
         {openings.map((opening, index) => <article className="noble-detail-opening" key={index}>
           <div className="noble-detail-opening-label">
-            <span>ESCENA {String(index + 1).padStart(2, '0')}</span>
+            <span>SCENE {String(index + 1).padStart(2, '0')}</span>
             <BookOpen size={18} aria-hidden="true"/>
           </div>
           <p>{preview(opening, story.protagonist_name)}</p>

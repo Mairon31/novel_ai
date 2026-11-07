@@ -111,8 +111,8 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
           disabled={busy || !!running}
           onChange={e => change('python_executable', e.target.value)}/>
       </label>
-      <label className="workspace-pref-field">Puerto local
-        <input type="number" aria-label="Puerto de ComfyUI"
+      <label className="workspace-pref-field">Port local
+        <input type="number" aria-label="Port de ComfyUI"
           min={1024} max={65535} value={config.port} disabled={busy || !!running}
           onChange={e => change('port', Number(e.target.value))}/>
       </label>
@@ -144,18 +144,18 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
       <button type="button" className="secondary-button" disabled={busy}
         onClick={() => void api.comfyRuntimeStatus().then(setStatus).catch(
           (e: Error) => setError(e.message))}>
-        <RefreshCcw size={16}/> Consultar proceso
+        <RefreshCcw size={16}/> Check process
       </button>
       <button type="button" className="secondary-button" disabled={busy}
         onClick={() => void inspectLogs()}>
-        <Terminal size={16}/> Ver registros ComfyUI
+        <Terminal size={16}/> View ComfyUI logs
       </button>
     </div>
     <p role="status">
-      Estado: <strong>{status?.status === 'ready' ? 'Listo' :
+      Status: <strong>{status?.status === 'ready' ? 'Ready' :
         status?.status === 'starting' ? 'Iniciando' :
         status?.status === 'exited' ? 'Finalizado' : 'Detenido'}</strong>.
-      {status?.owns_process ? ' Noble administra este proceso.' :
+      {status?.owns_process ? ' Noble AI manages this process.' :
         ' Noble does not manage any external process.'}
       {status?.pid ? ' PID ' + status.pid + '.' : ''}
     </p>
@@ -163,7 +163,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
       ComfyUI version: {status.diagnostics.comfyui_version || 'desconocida'}.
       {' '}Dispositivos: {status.diagnostics.devices.map(x => x.name).join(', ') || 'no informados'}.
     </p>}
-    {dirty && <p role="status">Hay cambios sin guardar. Guarda antes de iniciar ComfyUI.</p>}
+    {dirty && <p role="status">Unsaved changes. Save before starting ComfyUI.</p>}
     {validation && <p role="status">
       Python: <code>{validation.python_executable}</code>.
       {' '}Modelos Noble: <code>{validation.model_paths_config}</code>.
@@ -176,7 +176,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     {error && <p role="alert" className="narrative-error">{error}</p>}
     {message && <p role="status" className="narrative-saved">{message}</p>}
     <p className="noble-inspector-hint">
-      Arranque local 127.0.0.1, sin shell, con la carpeta de modelos Noble.
+      Local startup on 127.0.0.1 without a shell, using Noble AI's model directory.
       Use Find checkpoints once ComfyUI is ready.
     </p>
   </div>;

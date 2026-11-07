@@ -106,7 +106,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       <label className="workspace-pref-field">Illustration policy
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
-          <option value="manual">Bajo demanda (funcional)</option>
+          <option value="manual">On demand (funcional)</option>
           <option value="scene">Scenes (automatic detection pending; manual button)</option>
           <option value="off">Desactivadas</option>
         </select>
@@ -118,7 +118,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         </label>
         <label className="workspace-pref-field">Checkpoint
           <input list="noble-comfy-checkpoints" value={image.checkpoint} disabled={busy}
-            onChange={e => change('checkpoint', e.target.value)} placeholder="Modelo instalado en ComfyUI"/>
+            onChange={e => change('checkpoint', e.target.value)} placeholder="Model installed in ComfyUI"/>
           <datalist id="noble-comfy-checkpoints">
             {status?.checkpoints.map(model => <option value={model} key={model}/>)}
           </datalist>
@@ -148,7 +148,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             <option value="anime_fantasy">Fantasy anime (default)</option>
             <option value="anime_cinematic">Cinematic anime</option>
             <option value="anime_watercolor">Anime acuarela</option>
-            <option value="none">Sin refuerzo de estilo</option>
+            <option value="none">No additional style guidance</option>
           </select>
         </label>
         <label className="workspace-pref-field">Muestreador ComfyUI
@@ -157,7 +157,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             onChange={e => change('sampler_name', e.target.value as ImageSettings['sampler_name'])}>
             {SAMPLERS.map(sampler => <option key={sampler.id} value={sampler.id}>
               {sampler.label}{samplerOptions?.online &&
-                !samplerOptions.sampler_name.includes(sampler.id) ? ' · no disponible' : ''}
+                !samplerOptions.sampler_name.includes(sampler.id) ? ' · unavailable' : ''}
             </option>)}
           </select>
         </label>
@@ -167,7 +167,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             onChange={e => change('scheduler', e.target.value as ImageSettings['scheduler'])}>
             {SCHEDULERS.map(scheduler => <option key={scheduler.id} value={scheduler.id}>
               {scheduler.label}{samplerOptions?.online &&
-                !samplerOptions.scheduler.includes(scheduler.id) ? ' · no disponible' : ''}
+                !samplerOptions.scheduler.includes(scheduler.id) ? ' · unavailable' : ''}
             </option>)}
           </select>
         </label>
@@ -178,24 +178,24 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       </div> : <div className="loading">Loading settings...</div>}
       <div className="settings-buttons">
         <button className="secondary-button" disabled={busy} onClick={() => void discover()}>
-          <RefreshCcw size={16}/> Buscar checkpoints</button>
+          <RefreshCcw size={16}/> Find checkpoints</button>
         <button className="secondary-button" disabled={busy}
           onClick={() => void inspectSamplerOptions()}>
-          <RefreshCcw size={16}/> Comprobar muestreo ComfyUI</button>
+          <RefreshCcw size={16}/> Check ComfyUI sampling</button>
         <button className="primary-button" disabled={busy || !image ||
           (samplerOptions?.online === true &&
            (!samplerOptions.sampler_name.includes(image.sampler_name) ||
             !samplerOptions.scheduler.includes(image.scheduler)))}
           onClick={() => void save()}>
           {busy ? <LoaderCircle size={16} className="rotating"/> : <Check size={16}/>}
-          Save ajustes de imagen</button>
+          Save image settings</button>
       </div>
       {samplerOptions?.online && image && <p role="status">
         Compatibilidad KSampler: {samplerOptions.sampler_name.includes(image.sampler_name) &&
           samplerOptions.scheduler.includes(image.scheduler)
           ? 'compatible selection' : 'this selection is unavailable in the current ComfyUI instance'}.
       </p>}
-      <p className="noble-inspector-hint">El estilo modifica el prompt real de cada imagen; cambiar el muestreador o planificador modifica el nodo KSampler. Las opciones distintas de Euler/Normal se validan en el motor antes de generar.</p>
+      <p className="noble-inspector-hint">Style affects the actual image prompt; sampler and scheduler settings change KSampler inputs. Non-default choices are verified against ComfyUI before generation.</p>
       {status?.online && <p>Detected checkpoint(s): {status.checkpoints.length}. The model will load when you select Illustrate.</p>}
     </div>
     <ImageCheckpointManager availableInComfy={status?.online ? status.checkpoints : []}

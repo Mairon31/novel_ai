@@ -148,13 +148,13 @@ export function VoiceSettingsPanel() {
 
   return <div className="creative-settings voice-settings-panel">
     <div className="setting-section-intro">
-      <h2>Voz / TTS</h2>
-      <p>Voces instaladas, opciones de lectura y pruebas de audio bajo demanda.</p>
+      <h2>Voice / TTS</h2>
+      <p>Installed voices, reader preferences and on-demand audio previews.</p>
     </div>
     {(error || message) && <p role="status" className={error ? 'narrative-error' : 'narrative-saved'}>
       {error || <><Check size={15}/>{message}</>}</p>}
     <div className="workspace-panel">
-      <h3><Volume2 size={18}/> Voz local con Piper</h3>
+      <h3><Volume2 size={18}/> Local speech with Piper</h3>
       <p>Install a Latin American Spanish voice from the catalog or manually add the <code>.onnx</code> and its configuration <code>.onnx.json</code>. Synthesis runs only when you press Listen.</p>
       <div className="noble-voice-library" aria-label="Piper voice catalog">
         <h4>Latin American Spanish voices</h4>
@@ -169,9 +169,9 @@ export function VoiceSettingsPanel() {
             <div className="noble-voice-main">
               <strong>{voice.name}</strong>
               <span>{voice.language} · {voice.quality} · {status === 'installed' ?
-                'Instalada' : status || 'Disponible para instalar'}</span>
+                'Installed' : status || 'Available to install'}</span>
               <a href={voice.model_card} target="_blank" rel="noopener noreferrer">
-                Consultar licencia y archivos de la voz</a>
+                View voice license and files</a>
             </div>
             {job && status !== 'installed' && <div className="noble-voice-progress">
               <progress aria-label={'Progreso de ' + voice.name} value={percent} max={100}/>
@@ -180,39 +180,39 @@ export function VoiceSettingsPanel() {
                 {job.error ? ' · ' + job.error : ''}</small>
             </div>}
             <div className="settings-buttons">
-              {status === 'installed' ? <span>Lista para seleccionar</span> :
+              {status === 'installed' ? <span>Ready to select</span> :
                 job && active ? <>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'pause')}>
-                    Pause descarga</button>
+                    Pause download</button>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
-                    Cancel descarga</button>
+                    Cancel download</button>
                 </> : job && (status === 'paused' || status === 'failed') ? <>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'resume')}>
-                    Resume descarga</button>
+                    Resume download</button>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
-                    Cancel descarga</button>
+                    Cancel download</button>
                 </> : <button type="button" className="secondary-button"
                     disabled={!!voiceAction || busy} onClick={() => void installVoice(voice.id)}>
-                    {voiceAction === voice.id ? 'Iniciando...' : 'Install voz'}</button>}
+                    {voiceAction === voice.id ? 'Starting...' : 'Install voice'}</button>}
             </div>
           </div>;
         })}
       </div>
-      {voices && <p>Motor: {voices.available ? 'Piper detectado' : 'Piper no instalado en PATH'} ·
-        Voces instaladas: {voices.voices.length} · Carpeta: <code>{voices.models_dir}</code></p>}
+      {voices && <p>Motor: {voices.available ? 'Piper detected' : 'Piper not found in PATH'} ·
+        Installed voices: {voices.voices.length} · Folder: <code>{voices.models_dir}</code></p>}
       {voicePreferences && <div className="workspace-field-grid">
-        <label className="workspace-pref-field">Voz predeterminada del lector
-          <select aria-label="Voz predeterminada de Piper" disabled={busy}
+        <label className="workspace-pref-field">Default reader voice
+          <select aria-label="Default Piper voice" disabled={busy}
             value={voicePreferences.default_voice_id}
             onChange={e => {
               setVoicePreferences({ default_voice_id: e.target.value });
               clearPreview();
             }}>
-            <option value="">Primera voz instalada</option>
+            <option value="">First installed voice</option>
             {voices?.voices.map(voice =>
               <option key={voice.id} value={voice.id}>{voice.name}</option>)}
           </select>
@@ -221,7 +221,7 @@ export function VoiceSettingsPanel() {
           (!!voicePreferences.default_voice_id &&
            !voices?.voices.some(v => v.id === voicePreferences.default_voice_id))}
           onClick={() => void saveDefaultVoice()} type="button">
-          <Check size={16}/> Save voz predeterminada
+          <Check size={16}/> Save default voice
         </button>
       </div>}
       <div className="noble-voice-synthesis workspace-field-grid">
@@ -235,7 +235,7 @@ export function VoiceSettingsPanel() {
             <small>1.0 is normal speed; lower values produce faster speech.</small>
           </label>
           <label className="workspace-pref-field">Voice variation
-            <input aria-label="Ruido de voz Piper" type="number" min={0} max={1.5}
+            <input aria-label="Piper voice noise" type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_scale', Number(e.target.value))}/>
           </label>
@@ -257,8 +257,8 @@ export function VoiceSettingsPanel() {
         </>}
       </div>
       <div className="noble-voice-preview">
-        <label className="workspace-pref-field">Texto para probar voz
-          <input aria-label="Texto de muestra de voz" maxLength={400}
+        <label className="workspace-pref-field">Voice preview text
+          <input aria-label="Voice sample text" maxLength={400}
             value={previewText} disabled={previewBusy}
             onChange={e => { setPreviewText(e.target.value); clearPreview(); }}/>
         </label>
@@ -267,20 +267,20 @@ export function VoiceSettingsPanel() {
             previewText.trim().length < 10}
           onClick={() => void previewPiper()}>
           {previewBusy ? <LoaderCircle size={16} className="rotating"/> : <Volume2 size={16}/>}
-          {previewBusy ? 'Generando prueba...' : 'Probar voz seleccionada'}
+          {previewBusy ? 'Generating preview...' : 'Preview selected voice'}
         </button>
-        {previewUrl && <audio aria-label="Reproducir prueba de voz" controls
+        {previewUrl && <audio aria-label="Play voice preview" controls
           preload="none" src={previewUrl}/>}
         {synthesisDirty && <small role="status">Save the updated settings before testing the voice.</small>}
-        <small>Solo genera la muestra al pulsar Probar. Necesita Piper instalado y
+        <small>Generate previews only by pressing Preview. Piper and
           a valid ONNX/JSON voice; preview audio is not added to any story.</small>
       </div>
       <label className="workspace-pref-toggle">
-        <span>Activar botones de voz bajo demanda</span>
+        <span>Enable on-demand speech buttons</span>
         <input type="checkbox" checked={setup?.tts_enabled || false} disabled={busy || !setup}
           onChange={e => void toggleSpeech(e.target.checked)}/>
       </label>
-      <p>No se activa autolectura ni Piper en segundo plano; solo se descarga una voz tras solicitarla.</p>
+      <p>Automatic reading and background Piper are disabled; a voice downloads only after you request it.</p>
       <button className="secondary-button" disabled={busy}
         onClick={() => void refreshVoiceDownloads().catch((e: Error) => setError(e.message))}>
         <RefreshCcw size={16}/> Actualizar voces</button>

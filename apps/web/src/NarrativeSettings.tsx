@@ -21,7 +21,7 @@ export function NarrativeSettings() {
   const [stories, setStories] = useState<Story[]>([]);
   const [inspectStory, setInspectStory] = useState('');
   const [inspectMode, setInspectMode] = useState<'do'|'say'|'story'|'continue'>('do');
-  const [inspectText, setInspectText] = useState('Observo la escena.');
+  const [inspectText, setInspectText] = useState('I observe the scene.');
   const [inspecting, setInspecting] = useState(false);
   const [inspectorData, setInspectorData] = useState<ContextPreview | null>(null);
   const [inspectorError, setInspectorError] = useState('');
@@ -88,8 +88,8 @@ export function NarrativeSettings() {
     try {
       await api.saveNarrativeConfig(config);
       const result = await api.prepareNarrator();
-      setSaved('Modelo preparado: ' + result.model + ' · ' +
-        (result.duration_ms / 1000).toFixed(1) + ' s. Puedes comenzar tu historia.');
+      setSaved('Model prepared: ' + result.model + ' · ' +
+        (result.duration_ms / 1000).toFixed(1) + ' s. You can begin your story.');
     } catch (exc) { setError((exc as Error).message); }
     finally {
       window.clearInterval(ticker); setPreparing(false); setWorking(false);
@@ -122,9 +122,9 @@ export function NarrativeSettings() {
             readOnly={config.provider === "openrouter" || config.provider === "worker"}
             onChange={e => update('base_url', e.target.value)} spellCheck={false}/>
         </label>
-        <label className="settings-span">Modelo del motor
-          <input list="noble-local-models" value={config.model} placeholder="Conecta y elige un modelo"
-            aria-label="Modelo narrativo del motor" onChange={e => update('model', e.target.value)}/>
+        <label className="settings-span">Runtime model
+          <input list="noble-local-models" value={config.model} placeholder="Connect and choose a model"
+            aria-label="Runtime narrator model" onChange={e => update('model', e.target.value)}/>
           <datalist id="noble-local-models">
             {status?.models.map(item => <option key={item} value={item}/>)}
           </datalist>
@@ -196,10 +196,10 @@ export function NarrativeSettings() {
           disabled={working || !config.model || config.provider === 'openrouter'}
           onClick={() => void prepare()}>
           {preparing ? <LoaderCircle size={16} className="rotating"/> : <Cpu size={16}/>}
-          {preparing ? 'Preparando modelo… ' + prepareElapsed + ' s' : 'Preparar modelo ahora'}
+          {preparing ? 'Preparing model… ' + prepareElapsed + ' s' : 'Prepare model now'}
         </button>
       </div>
-      <p className="narrative-helper">«Preparar modelo ahora» hace una inferencia corta
+      <p className="narrative-helper">«Prepare model now» hace una inferencia corta
         only when you press the button; no turn is added to story history.
         Puede tardar en la primera carga. No se aplica a APIs remotas de OpenRouter.</p>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
@@ -210,8 +210,8 @@ export function NarrativeSettings() {
           provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
         {stories.length ? <>
           <div className="narrative-settings-grid">
-            <label>Historia a inspeccionar
-              <select aria-label="Historia para inspeccionar" value={inspectStory}
+            <label>Story to inspect
+              <select aria-label="Story to inspect" value={inspectStory}
                 onChange={e => { setInspectStory(e.target.value); setInspectorData(null); }}>
                 {stories.map(story => <option value={story.id} key={story.id}>{story.title}</option>)}
               </select>
@@ -249,16 +249,16 @@ export function NarrativeSettings() {
               Posible desbordamiento: entrada + salida estimadas superan la ventana.
             </p>}
             <p>Los tokens se estiman por caracteres, no mediante el tokenizador
-              del modelo. No se mide KV-cache ni se garantiza la longitud admitida
+              of the model. KV cache is not measured and the supported length is not guaranteed
               por el proveedor.</p>
             <details>
-              <summary>Ver desglose por bloques</summary>
+              <summary>View section breakdown</summary>
               <ul>{inspectorData.sections.map((block, i) => <li key={i}>
                 {block.name}: {block.characters} caracteres · ~{block.approx_tokens} tokens
               </li>)}</ul>
             </details>
             <details>
-              <summary>Ver todos los mensajes enviados al motor</summary>
+              <summary>View all messages sent to the engine</summary>
               {inspectorData.messages.map((message, i) => <div key={i}>
                 <strong>{i + 1}. {message.role}</strong>
                 <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
@@ -267,7 +267,7 @@ export function NarrativeSettings() {
               </div>)}
             </details>
           </div>}
-        </> : <p className="narrative-helper">Crea una historia para inspeccionar
+        </> : <p className="narrative-helper">Create a story to inspect
           su contexto narrativo.</p>}
       </section>
     </>}

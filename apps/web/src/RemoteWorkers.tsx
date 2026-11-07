@@ -106,8 +106,8 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     <p>Connect another PC or an eligible Colab session through a protected Cloudflare tunnel. Remote GPU inference handles narrative generation while story history stays on this computer.</p>
 
     <div className="noble-worker-form">
-      <label className="workspace-pref-field">Nombre
-        <input aria-label="Nombre del worker" placeholder="Mi GPU de Colab" value={name}
+      <label className="workspace-pref-field">Name
+        <input aria-label="Worker name" placeholder="My Colab GPU" value={name}
           onChange={e => setName(e.target.value)} maxLength={80}/></label>
       <label className="workspace-pref-field">URL Cloudflare HTTPS
         <input aria-label="URL del worker" placeholder="https://mi-gpu.trycloudflare.com"
@@ -123,7 +123,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     </div>
     <div className="noble-worker-controls">
       <label className="workspace-pref-field">Worker registrado
-        <select aria-label="Seleccionar worker" value={selected} disabled={busy || loading}
+        <select aria-label="Select worker" value={selected} disabled={busy || loading}
           onChange={e => { setSelected(e.target.value); setProbe(null); setModel(''); }}>
           <option value="">Selecciona un worker</option>
           {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -142,13 +142,13 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     </div>}
     {probe?.online && <div className="noble-worker-select-model">
       <div className="narrative-connect connected"><CheckCircle2 size={16}/>
-        Worker disponible y autenticado</div>
-      <label className="workspace-pref-field">Modelo remoto
-        <select aria-label="Modelo remoto" value={model} onChange={e => setModel(e.target.value)}>
+        Worker available and authenticated</div>
+      <label className="workspace-pref-field">Remote model
+        <select aria-label="Remote model" value={model} onChange={e => setModel(e.target.value)}>
           {probe.models.map(m => <option key={m} value={m}>{m}</option>)}
         </select></label>
       <button className="primary-button" disabled={busy || !model} onClick={() => void activate()}>
-        <Cpu size={16}/> Usar modelo remoto como narrador</button>
+        <Cpu size={16}/> Use remote model as narrator</button>
       <button className="secondary-button" disabled={busy || !model}
         onClick={() => void measure()}>
         {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCw size={16}/>}
@@ -156,7 +156,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       {benchmark && <div className="noble-worker-benchmark" role="status">
         <strong>{benchmark.success ? 'Generation test completed' : 'Test failed'}</strong>
         <span>Primer texto: {benchmark.ttft_ms == null
-          ? 'Sin datos' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
+          ? 'No data' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
         <span>Total duration: {benchmark.duration_ms.toFixed(0)} ms</span>
         <span>Caracteres de salida: {benchmark.output_characters}</span>
         <small>This is one test request. For p50/p95 latency and sampled VRAM
@@ -165,20 +165,20 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
 
     </div>}
     {probe?.online && <div className="noble-worker-health">
-      <h4>Estado del worker remoto</h4>
+      <h4>Remote worker status</h4>
       <div className="noble-worker-health-stats">
         <div><span>Connection</span><strong>{probe.latency_ms === undefined
-          ? 'No disponible' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
+          ? 'Unavailable' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
         <div><span>Motor</span><strong>{probe.health?.engine_status === 'ready'
-          ? 'Disponible' : probe.health?.engine_status === 'unavailable'
+          ? 'Available' : probe.health?.engine_status === 'unavailable'
             ? 'No response' : 'No telemetry'}</strong></div>
-        <div><span>Tiempo hasta primer byte</span><strong>
+        <div><span>Time to first byte</span><strong>
           {probe.health?.last_ttft_ms == null
-            ? 'Sin datos' : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
+            ? 'No data' : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
         </strong></div>
         <div><span>Solicitudes completadas / fallidas</span><strong>
           {probe.health ? probe.health.completed_requests + ' / ' +
-            probe.health.failed_requests : 'Sin datos'}
+            probe.health.failed_requests : 'No data'}
         </strong></div>
       </div>
       {probe.health?.gpu?.map(gpu => <div className="noble-worker-gpu" key={gpu.index}>
@@ -200,6 +200,6 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     <p className="noble-worker-guide"><Server size={15}/> Worker setup: run Noble AI's authenticated proxy on the GPU computer and expose only that proxy
       con cloudflared. <a target="_blank" rel="noreferrer"
         href="https://github.com/Mairon31/novel_ai/blob/master/docs/WORKERS.md">
-        Ver instrucciones <RefreshCw size={13}/></a></p>
+        View instructions <RefreshCw size={13}/></a></p>
   </div>;
 }

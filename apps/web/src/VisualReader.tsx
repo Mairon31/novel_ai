@@ -128,14 +128,14 @@ export function VisualReader({
   const audioUrl = useRef<string | null>(null);
   const mediaRevision = useRef(0);
   const visualLoadRevision = useRef(0);
-  const [name, setName] = useState(active?.protagonist_name || 'Protagonista');
+  const [name, setName] = useState(active?.protagonist_name || 'Protagonist');
   const [canon, setCanon] = useState(active?.canon || '');
   const [shortcuts, setShortcuts] = useState(true);
   const pendingReaderShortcut = useRef<WorkspacePreferences['reader_layout'] | null>(null);
   const [prefs, setPrefs] = useState<WorkspacePreferences | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const tail = useRef<HTMLDivElement | null>(null);
-  useEffect(() => { setName(active?.protagonist_name || 'Protagonista'); }, [active?.id, active?.protagonist_name]);
+  useEffect(() => { setName(active?.protagonist_name || 'Protagonist'); }, [active?.id, active?.protagonist_name]);
   useEffect(() => { setCanon(active?.canon || ''); }, [active?.id, active?.canon]);
   useEffect(() => {
     setBacklogOpen(false);
@@ -705,7 +705,7 @@ export function VisualReader({
       <div className="noble-inspector-body">
         {tab === 'summary' && <>
           <h4>Summary</h4><p>{active.premise}</p>
-          <h4>Protagonista</h4>
+          <h4>Protagonist</h4>
           <div className="noble-protagonist-card">
             <div className="noble-protagonist-avatar">{active.protagonist_name.slice(0, 1).toUpperCase()}</div>
             <div><strong>{active.protagonist_name}</strong><small>Player character</small></div>
@@ -722,7 +722,7 @@ export function VisualReader({
               placeholder="Example: Aira knows the castle's secret. Nobody else knows yet."/></label>
           <button className="secondary-button" disabled={updating || canon === (active.canon || '')}
             onClick={() => void saveCanon()}><Check size={15}/> Save canon</button>
-          <h4>Estado</h4>
+          <h4>Status</h4>
           <p>{turns.length} saved scenes · latest model: {turns.at(-1)?.model || 'Not started'}</p>
           <h4>Visual identity profiles</h4>
           <p>Set consistent appearance and outfit details for ComfyUI prompts.</p>
@@ -732,7 +732,7 @@ export function VisualReader({
               <span>{person.name}</span><small>Revision {person.revision} · Edit</small>
             </button>)}
           <label className="noble-inspector-field">Character name
-            <input value={character.name} maxLength={80} aria-label="Nombre visual"
+            <input value={character.name} maxLength={80} aria-label="Visual name"
               onChange={e => setCharacter(x => ({ ...x, name: e.target.value }))}/></label>
           <label className="noble-inspector-field">Consistent appearance
             <textarea value={character.appearance} maxLength={1500} rows={4}
@@ -812,7 +812,7 @@ export function VisualReader({
                 <strong>{turn.input_text || 'Automatic continuation'}</strong><ChevronRight size={15}/>
               </button>
               <button className="noble-inspector-branch" disabled={generating || updating}
-                title="Rebobinar de forma segura sin modificar la historia original"
+                title="Safely rewind without changing the original story"
                 onClick={() => setRewindTurn(turn)}><RotateCcw size={14}/> Rewind here</button>
             </div>) : <p>No scenes have been generated yet.</p>}
         </>}
@@ -830,11 +830,11 @@ export function VisualReader({
           <button className="secondary-button" disabled={visualBusy || sceneLocation.trim().length < 2}
             onClick={() => void saveSceneLocation()}><Check size={15}/> Confirm scene</button>
           <h4>Illustration plan</h4>
-          <p className="noble-inspector-hint">Puedes planificar cada escena antes de solicitar
-            una imagen. El reparto seleccionado se conserva por escenario.</p>
+          <p className="noble-inspector-hint">Plan each scene before requesting
+            an image. The selected cast is saved for each scene.</p>
           {scenePlan && <>
             <label className="noble-inspector-field">Tipo de plano
-              <select aria-label="Plano de escena" value={scenePlan.shot}
+              <select aria-label="Scene shot" value={scenePlan.shot}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, shot: e.target.value as ScenePlan['shot'],
                 } : plan)}>
@@ -844,7 +844,7 @@ export function VisualReader({
               </select>
             </label>
             <label className="noble-inspector-field">Scene lighting
-              <select aria-label="Luz de escena" value={scenePlan.lighting}
+              <select aria-label="Scene lighting" value={scenePlan.lighting}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, lighting: e.target.value as ScenePlan['lighting'],
                 } : plan)}>
@@ -1079,7 +1079,7 @@ export function VisualReader({
           <div><span className="overline"><History size={15}/> READING HISTORY</span>
             <h2>Story backlog</h2>
             <p>{turns.length} escenas cargadas de esta ruta. Turns from other branches are not mixed in.</p></div>
-          <button className="icon-button" aria-label="Cerrar backlog"
+          <button className="icon-button" aria-label="Close backlog"
             onClick={() => setBacklogOpen(false)}><X size={19}/></button>
         </header>
         <label className="noble-backlog-search">Search loaded scenes
@@ -1147,7 +1147,7 @@ export function VisualReader({
               setRewindTurn(null);
               setInspectorOpen(false);
               onFork(selected);
-            }}><GitBranch size={16}/> Crear ruta desde este turno</button>
+            }}><GitBranch size={16}/> Create branch from this turn</button>
         </div>
       </section>
     </div>}

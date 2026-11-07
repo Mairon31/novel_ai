@@ -103,9 +103,9 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     finally { setBusy(false); }
   }
 
-  if (loading) return <div className="loading">Cargando estado confirmado del mundo...</div>;
+  if (loading) return <div className="loading">Loading confirmed world state...</div>;
   if (!draft || !document) return <div role="alert" className="narrative-error">
-    {error || 'No se pudo cargar el estado del mundo.'}
+    {error || 'Could not load world state.'}
     <button className="secondary-button" onClick={() => void reload()}>
       <RotateCcw size={15}/> Reintentar</button>
   </div>;
@@ -113,9 +113,9 @@ export function WorldStateEditor({ storyId, characters }: Props) {
   const canSave = draft.facts.every(fact =>
     fact.text.trim().length >= 10 && (fact.public || fact.witness_character_ids.length > 0));
 
-  return <div className="creator-fields world-state-editor" aria-label="Estado del mundo">
+  return <div className="creator-fields world-state-editor" aria-label="World state">
     <div className="creator-section-intro">
-      <h3>Estado confirmado del mundo</h3>
+      <h3>Confirmed world state</h3>
       <p>Explicitly update location, present characters, inventory, and facts. The narrator cannot silently promote assumptions into canon. Each turn stores a snapshot for restoring branches.</p>
       <small>Saved revision: {document.revision} · Changes are validated before saving</small>
     </div>
@@ -128,7 +128,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <div className="creator-double">
         <label>Lugar actual
           <input aria-label="Lugar del mundo" maxLength={200} value={draft.location}
-            placeholder="Puerto de las estrellas..."
+            placeholder="Port de las estrellas..."
             onChange={event => patch({ location: event.target.value })}/>
         </label>
         <label>Time of day
@@ -150,7 +150,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     </section>
 
     <section className="world-section">
-      <h4><Users size={17}/> Personajes presentes</h4>
+      <h4><Users size={17}/> Characters presentes</h4>
       <p>Solo los personajes marcados como presentes pueden activar hechos que presenciaron.
         Private text for an absent character is not sent to the narrator.</p>
       <div className="world-npc-grid">
@@ -200,7 +200,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
             }}><Trash2 size={14}/></button>
         </div>)}
       <div className="world-add-row">
-        <input aria-label="Nombre de indicador nuevo" maxLength={70}
+        <input aria-label="New flag name" maxLength={70}
           value={flagName} onChange={event => setFlagName(event.target.value)}
           placeholder="puerta_abierta"/>
         <button className="secondary-button"
@@ -237,7 +237,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
             <span>Public · everyone may know this</span>
           </label>
           {!fact.public && <div className="world-witnesses">
-            <strong>Personajes que presenciaron este hecho</strong>
+            <strong>Characters que presenciaron este hecho</strong>
             {characters.map(character => <label className="world-check" key={character.id}>
               <input type="checkbox" aria-label={'Testigo ' + character.name + ' del hecho ' + (index + 1)}
                 checked={fact.witness_character_ids.includes(character.id)}
@@ -259,7 +259,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     <div className="creator-actions">
       <button className="primary-button" disabled={busy || !canSave}
         onClick={() => void save()}><Save size={16}/>
-        {busy ? 'Guardando...' : 'Save estado del mundo'}</button>
+        {busy ? 'Saving...' : 'Save world state'}</button>
       <button className="secondary-button" disabled={busy}
         onClick={() => void reload()}><RotateCcw size={16}/> Recargar desde disco</button>
     </div>
@@ -269,12 +269,12 @@ export function WorldStateEditor({ storyId, characters }: Props) {
 
     <details className="world-history">
       <summary><History size={16}/> Turn snapshot history</summary>
-      <p>Selecciona un turno para consultar su estado original, incluso si la historia
+      <p>Select a turn to review its original state, even if the story
         has since changed. Turns before this feature may not have snapshots.</p>
       <div className="world-add-row">
         <select aria-label="Historical world turn" value={turnId}
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>
-          <option value="">Seleccionar turno</option>
+          <option value="">Select turn</option>
           {turns.map((turn, index) =>
             <option key={turn.id} value={turn.id}>Turno {index + 1}: {turn.input_text.slice(0, 65)}</option>)}
         </select>
@@ -282,13 +282,13 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           onClick={() => void inspectSnapshot()}><BookOpen size={16}/> View snapshot</button>
       </div>
       {snapshot && <div className="world-snapshot" role="status">
-        <strong>Estado registrado en ese turno</strong>
+        <strong>State recorded at that turn</strong>
         <span>Lugar: {snapshot.state.location || 'No definido'}</span>
         <span>Momento: {snapshot.state.time_of_day || 'No definido'}</span>
         <span>Clima: {snapshot.state.weather || 'No definido'}</span>
         <span>Objetos: {snapshot.state.inventory.join(', ') || 'Ninguno'}</span>
         <span>Hechos registrados: {snapshot.state.facts.length}</span>
-        <span>Canon de ese turno: {snapshot.canon || 'Sin canon confirmado'}</span>
+        <span>Canon at that turn: {snapshot.canon || 'No confirmed canon'}</span>
       </div>}
     </details>
   </div>;

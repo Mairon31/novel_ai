@@ -144,16 +144,16 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           the proposal, then decide whether to save it.</p>
       </div>
       <button className="secondary-button" onClick={onCancel} disabled={!!busy}
-        type="button"><X size={16}/> Cerrar</button>
+        type="button"><X size={16}/> Close</button>
     </div>
     <div className="creator-ai-fields">
-      <label>Idea para la historia
+      <label>Story idea
         <textarea aria-label="Story idea" rows={5} maxLength={2500}
           placeholder="Describe el conflicto, el mundo, sus reglas, el tipo de decisiones y los personajes que imaginas..."
           value={idea} onChange={e => { setIdea(e.target.value); reset(); }}/>
       </label>
       <div className="creator-ai-row">
-        <label>Protagonista
+        <label>Protagonist
           <input aria-label="AI story protagonist" maxLength={60}
             value={protagonist} onChange={e => { setProtagonist(e.target.value); reset(); }}/>
         </label>
@@ -176,7 +176,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             <Sparkles size={16}/>}
           {busy === 'draft' ? 'Generando trama, reparto y Lorebook...' : 'Generar propuesta'}
         </button>
-        <small>Utiliza el narrador configurado en Ajustes. No descarga modelos ni guarda
+        <small>Use the configured narrator in Settings. This does not download models or save
           nothing during generation. Illustrations and voices can be added afterward.</small>
       </div>
     </div>
@@ -186,7 +186,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <div className="creator-ai-preview-head">
         <span className="overline"><Check size={14}/> TRES ETAPAS TERMINADAS</span>
         <h3>Revisa el mundo antes de crearlo</h3>
-        <small>Modelo: {model} · not saved yet</small>
+        <small>Model: {model} · not saved yet</small>
       </div>
       <label>Draft title
         <input aria-label="Editable generated title" maxLength={100} value={draft.title}
@@ -198,7 +198,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             updateDraft({ ...draft, synopsis: e.target.value })}/>
       </label>
       <div className="creator-ai-row">
-        <label>Protagonista del mundo
+        <label>Protagonist del mundo
           <input aria-label="Draft protagonist" maxLength={60}
             value={draft.protagonist_name} onChange={e =>
               updateDraft({ ...draft, protagonist_name: e.target.value })}/>
@@ -242,12 +242,12 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       </div>
       <div className="creator-ai-review-grid">
         <div>
-          <h4><Users size={15}/> Personajes ({draft.characters.length})</h4>
+          <h4><Users size={15}/> Characters ({draft.characters.length})</h4>
           {draft.characters.map((npc, index) => <details key={index}
             className="creator-ai-editable-item">
-            <summary>{npc.name || 'Personaje ' + (index + 1)} · Editar ficha</summary>
-            <label>Nombre
-              <input aria-label={'Nombre NPC ' + (index + 1)}
+            <summary>{npc.name || 'Character ' + (index + 1)} · Edit profile</summary>
+            <label>Name
+              <input aria-label={'NPC name ' + (index + 1)}
                 maxLength={80} value={npc.name}
                 onChange={e => editCharacter(index, 'name', e.target.value)}/>
             </label>
@@ -306,7 +306,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       </div>
       <div className="creator-ai-regenerate">
         <h4><Sparkles size={16}/> Regenerate one section</h4>
-        <p>Conserva el resto del borrador, incluidos tus cambios manuales.
+        <p>Keep the rest of the draft, including your manual edits.
           Review the new version before installing it.</p>
         <label>Section
           <select aria-label="Section to regenerate" value={regenerationSection}
@@ -345,15 +345,15 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           Estimaciones, no consumos medidos por el proveedor.
         </small>}
       </div>
-      <p className="creator-ai-private-note">Estos datos quedan en tu biblioteca local.
+      <p className="creator-ai-private-note">These data remain in your local library.
         You can edit every field later in Creator Studio.
-        No se ha creado portada, imagen ni voz.</p>
+        No cover, image, or speech asset has been generated.</p>
       <button className="primary-button" type="button" disabled={!!busy ||
         draft.title.trim().length < 2 || draft.synopsis.trim().length < 25}
         onClick={() => void install()}>
         {busy === 'install' ? <LoaderCircle size={16} className="rotating"/> :
           <Check size={16}/>}
-        {busy === 'install' ? 'Guardando mundo...' : 'Crear historia con esta propuesta'}
+        {busy === 'install' ? 'Saving world...' : 'Create story from this draft'}
       </button>
     </div>}
   </section>;

@@ -168,7 +168,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setActive(saved); setSection('story'); setCreateNew(false);
       onStoryChange?.(saved.id);
       setNewTitle(''); setNewPremise(''); setNewProtagonist('');
-      setNotice('Historia creada. Puedes preparar su contenido antes de jugarla.');
+      setNotice('Story created. You can prepare its content before playing.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -213,7 +213,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       }, editingCharacter || undefined);
       setCharacters((await api.creatorCharacters(active.id)).characters);
       setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
-      setNotice('Ficha narrativa del personaje guardada.');
+      setNotice('Character narrative profile saved.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -227,7 +227,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       });
       setAssets((await api.creatorAssets(active.id)).assets);
       setSheetFile(null);
-      setNotice('Se importaron ' + result.count + ' expresiones para el personaje.');
+      setNotice('Imported ' + result.count + ' character expressions.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -330,7 +330,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       await api.discardSpriteDraft(storyId, draft.id);
       if (storyGuard.current === storyId) {
         setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
-        setNotice('Borrador descartado. No se han cambiado los sprites publicados.');
+        setNotice('Draft discarded. Published sprites are unchanged.');
       }
     } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -404,7 +404,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setWorking(true); setError(''); setNotice('');
     try {
       rememberStory(await api.setStoryCover(active.id, assetId));
-      setNotice(assetId ? 'Portada editorial seleccionada para la biblioteca.' :
+      setNotice(assetId ? 'Editorial cover selected for the library.' :
         'Editorial cover removed. The story remains intact.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -431,7 +431,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           mediaCaption.trim(), mediaKind === 'foreground' ? mediaExpression : undefined,
           mediaKind === 'foreground' ? mediaPose.trim() : undefined);
       } else {
-        if (!mediaFile) throw new Error('Selecciona un archivo de imagen.');
+        if (!mediaFile) throw new Error('Select an image file.');
         const imported = await api.uploadCreatorAsset(active.id, {
           kind: mediaKind, label: mediaLabel.trim(), caption: mediaCaption.trim(),
           character_id: mediaKind === 'foreground' ? (mediaCharacter || undefined) : undefined,
@@ -444,7 +444,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setAssets((await api.creatorAssets(active.id)).assets);
       resetMediaEditor();
       setNotice(mediaKind === 'cover' && !editingAsset ?
-        'Portada editorial guardada y seleccionada para la biblioteca.' :
+        'Editorial cover saved and selected for the library.' :
         'Visual asset saved for selection during reading.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -477,23 +477,23 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   return <section className="creator-studio" aria-label="Story creation studio">
     <div className="creator-heading">
       <button className="creator-return" onClick={onOpenLibrary}>
-        <ArrowLeft size={16}/> Biblioteca
+        <ArrowLeft size={16}/> Library
       </button>
       <span className="overline"><Feather size={15}/> NOBLE CREATOR STUDIO</span>
       <h1>Build stories with purpose.</h1>
       <p>Separa lo que ve el jugador de lo que conoce el narrador. Define personajes,
-        reglas, escenas de apertura y el tono de tu mundo sin mezclarlos con la lectura.</p>
+        rules, opening scenes, and the tone of your world without mixing editing with reading.</p>
     </div>
 
     <div className="creator-layout">
-      <aside className="creator-projects" aria-label="Historias para crear">
+      <aside className="creator-projects" aria-label="Stories to create">
         <div className="creator-projects-head">
           <div><span className="overline">TUS MUNDOS</span><strong>Proyectos</strong></div>
           <button title="New project" aria-label="Create project" onClick={() => setCreateNew(true)}>
             <Plus size={18}/>
           </button>
         </div>
-        {loading && !active && <p className="creator-placeholder"><LoaderCircle size={15} className="rotating"/> Cargando...</p>}
+        {loading && !active && <p className="creator-placeholder"><LoaderCircle size={15} className="rotating"/> Loading...</p>}
         {stories.map(story => <button className={'creator-project ' +
           (active?.id === story.id ? 'is-selected' : '')} key={story.id}
           onClick={() => {
@@ -501,7 +501,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             onStoryChange?.(story.id);
           }}>
           <BookOpen size={18}/><span><strong>{story.title}</strong>
-          <small>{story.protagonist_name || 'Protagonista'}</small></span><ChevronRight size={15}/>
+          <small>{story.protagonist_name || 'Protagonist'}</small></span><ChevronRight size={15}/>
         </button>)}
         {!stories.length && !loading && <p className="creator-placeholder">
           No stories yet. Create your first project to build its world.</p>}
@@ -524,7 +524,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             onStoryChange?.(saved.id);
           }}/>
         : !active ? <div className="creator-welcome">
-          <Sparkles size={40}/><h2>Selecciona una historia para editarla</h2>
+          <Sparkles size={40}/><h2>Select a story to edit</h2>
           <p>Desde aquí puedes escribir la trama para el jugador, la información
             interna para el modelo, las fichas de personajes y los distintos inicios.</p>
           <button className="primary-button" onClick={() => setCreateNew(true)}>
@@ -534,9 +534,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           <div className="creator-editor-title">
             <div><span className="overline">EDITANDO PROYECTO</span>
               <h2>{active.title}</h2>
-              <small>El jugador controla a {active.protagonist_name || 'Protagonista'}.</small></div>
+              <small>El jugador controla a {active.protagonist_name || 'Protagonist'}.</small></div>
             <button className="secondary-button" onClick={onOpenLibrary}>
-              <BookOpen size={15}/> Ir a Biblioteca
+              <BookOpen size={15}/> Go to Library
             </button>
           </div>
           <nav className="creator-editor-tabs" aria-label="Creator tools">
@@ -547,20 +547,20 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             <button className={section === 'lorebook' ? 'selected' : ''}
               onClick={() => setSection('lorebook')}><BookKey size={17}/> Lorebook ({lorebookEntries.length})</button>
             <button className={section === 'world' ? 'selected' : ''}
-              onClick={() => setSection('world')}><Globe2 size={17}/> Estado del mundo</button>
+              onClick={() => setSection('world')}><Globe2 size={17}/> World state</button>
             <button className={section === 'openings' ? 'selected' : ''}
               onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
             <button className={section === 'media' ? 'selected' : ''}
               onClick={() => setSection('media')}><ImageIcon size={17}/> Images ({assets.length})</button>
           </nav>
 
-          {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Cargando contenido...</div> :
+          {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Loading content...</div> :
             section === 'world' ? <WorldStateEditor
               storyId={active.id} characters={characters}/> :
             section === 'media' ? <div className="creator-fields creator-media-library">
               <div className="creator-section-intro">
                 <h3>Portadas, escenarios y personajes</h3>
-                <p>Elige una portada fija para la biblioteca, prepara fondos de escenarios
+                <p>Choose a fixed library cover and prepare scene backgrounds
                   y retratos transparentes para las escenas narrativas.
                   Images are not generated automatically.</p>
               </div>
@@ -571,10 +571,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <BookOpen size={42} aria-hidden="true"/>}
                 </div>
                 <div className="creator-cover-preview-copy">
-                  <span className="overline">PORTADA DE LA HISTORIA</span>
-                  <strong>{active.cover_image_url ? 'Portada personalizada' : 'Sin portada personalizada'}</strong>
-                  <p>Se muestra en Biblioteca y en el detalle de la historia.
-                    No cambia cuando avanzas o generas una nueva escena.</p>
+                  <span className="overline">STORY COVER</span>
+                  <strong>{active.cover_image_url ? 'Custom cover' : 'No custom cover'}</strong>
+                  <p>Shown in Library and story details.
+                    It does not change when you continue or generate a scene.</p>
                   {active.cover_asset_id && <button className="secondary-button" disabled={working}
                     onClick={() => void chooseCover(null)}>Quitar portada</button>}
                 </div>
@@ -618,11 +618,11 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       onChange={e => setMediaKind(e.target.value as CreatorMediaAsset['kind'])}>
                       <option value="cover">Portada editorial</option>
                       <option value="background">Fondo de escenario</option>
-                      <option value="foreground">Personaje / primer plano</option>
+                      <option value="foreground">Character / foreground</option>
                     </select>
                   </label>
-                  {mediaKind === 'foreground' && <label>Personaje vinculado (opcional)
-                    <select aria-label="Personaje de la imagen" value={mediaCharacter}
+                  {mediaKind === 'foreground' && <label>Linked character (optional)
+                    <select aria-label="Image character" value={mediaCharacter}
                       onChange={e => setMediaCharacter(e.target.value)}>
                       <option value="">Ninguno</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
@@ -682,8 +682,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <h4>Import expression sheet</h4>
                 <p>A grid of five transparent cells in this order: neutral, joy, anger, sadness, surprise. The reader reuses each PNG without generating images when advancing.</p>
                 <div className="creator-double">
-                  <label>Personaje de la hoja
-                    <select aria-label="Personaje de hoja de expresiones"
+                  <label>Sheet character
+                    <select aria-label="Expression-sheet character"
                       value={sheetCharacter} onChange={e => setSheetCharacter(e.target.value)}>
                       <option value="">Selecciona un personaje</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
@@ -727,7 +727,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   intenta quitar el fondo verde; si el recorte no es fiable se rechaza.
                   Los resultados son borradores hasta que apruebes las cinco vistas previas.</p>
                 <div className="creator-double">
-                  <label>Personaje para IA
+                  <label>Character para IA
                     <select aria-label="NPC para generar expresiones" value={draftCharacter}
                       onChange={event => {
                         setDraftCharacter(event.target.value);
@@ -853,10 +853,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </div>
                 </div>
                 {mattingStatus && <div className="creator-hint" role="status"
-                    aria-label="Estado de los modelos de recorte">
+                    aria-label="Status de los modelos de recorte">
                   {mattingStatus.modes.filter(item => item.mode !== 'chroma_green')
                     .map(item => <p key={item.mode}>
-                      {item.model}: {item.ready ? 'Listo' : item.reason || 'No disponible'}
+                      {item.model}: {item.ready ? 'Ready' : item.reason || 'Unavailable'}
                     </p>)}
                 </div>}
                 <p className="creator-hint">
@@ -1094,7 +1094,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-media-form">
                 <h4>Comprobar activaciones antes de jugar</h4>
                 <p>Enter an action or phrase to preview which entries the narrator would receive and the actual character budget used (maximum 6,000 characters).
-                  La prueba usa los personajes presentes guardados en Estado del mundo.</p>
+                  La prueba usa los personajes presentes guardados en World state.</p>
                 <label>Simulate an action
                   <textarea rows={3} aria-label="Simulate Lorebook activation"
                     maxLength={3000} value={loreQuery}
@@ -1331,7 +1331,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         <label className="form-label">Premisa del mundo
           <textarea rows={4} maxLength={4000} value={newPremise}
             onChange={e => setNewPremise(e.target.value)}/></label>
-        <label className="form-label">Protagonista
+        <label className="form-label">Protagonist
           <input value={newProtagonist} maxLength={60}
             onChange={e => setNewProtagonist(e.target.value)}/></label>
         {error && <p role="alert" className="narrative-error">{error}</p>}

@@ -62,27 +62,27 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
   }
 
   const running = status && ['starting', 'ready'].includes(status.status);
-  const label = status?.status === 'ready' ? 'Modelo listo' :
-    status?.status === 'starting' ? 'Cargando modelo...' :
+  const label = status?.status === 'ready' ? 'Model ready' :
+    status?.status === 'starting' ? 'Loading model...' :
     status?.status === 'exited' ? 'Process exited' : 'Detenido';
 
   return <section className="narrative-settings kobold-manager">
     <div className="narrative-section-title"><span className="setting-icon"><Cpu size={22}/></span>
       <div><h2>KoboldCpp administrado</h2>
-        <p>Inicia directamente un GGUF instalado desde Noble AI. Controla la carga en GPU o CPU.</p></div></div>
+        <p>Start a registered GGUF from Noble AI and control GPU or CPU loading.</p></div></div>
     <div className="runtime-indicator">
       <span className={'runtime-led ' + (status?.status === 'ready' ? 'runtime-green' : '')}/>
       <strong>{label}</strong>
-      {status?.owns_process && <small>Proceso {status.pid} · Puerto {status.port} · {status.model_filename}</small>}
-      <button className="icon-button" title="Actualizar estado" aria-label="Actualizar KoboldCpp"
+      {status?.owns_process && <small>Process {status.pid} · Port {status.port} · {status.model_filename}</small>}
+      <button className="icon-button" title="Refresh status" aria-label="Refresh KoboldCpp"
         onClick={() => void refresh()}><RefreshCw size={17}/></button>
     </div>
     {!running && <>
       <div className="narrative-settings-grid">
-        <label className="settings-span"><span><HardDrive size={14}/> Modelo GGUF registrado</span>
+        <label className="settings-span"><span><HardDrive size={14}/> Registered GGUF model</span>
           <select aria-label="GGUF para ejecutar" value={installedId}
             onChange={e => setInstalledId(e.target.value)}>
-            <option value="">Seleccionar modelo...</option>
+            <option value="">Select model...</option>
             {models.map(model => <option key={model.id} value={model.id}>
               {model.filename} — {size(model.size_bytes)}</option>)}
           </select>
@@ -106,8 +106,8 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n} tokens</option>)}
           </select>
         </label>
-        <label>Puerto local (loopback)
-          <input aria-label="Puerto KoboldCpp" type="number" min={1024} max={65535}
+        <label>Port local (loopback)
+          <input aria-label="Port KoboldCpp" type="number" min={1024} max={65535}
             value={port} onChange={e => setPort(Number(e.target.value))}/>
         </label>
       </div>
@@ -118,7 +118,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     {message && <p className="narrative-saved" role="status"><CheckCircle2 size={15}/> {message}</p>}
     <div className="settings-buttons">
       {!running && <button className="primary-button" disabled={busy || !installedId || !executable.trim()}
-        onClick={() => void start()}><Play size={17}/> Iniciar modelo</button>}
+        onClick={() => void start()}><Play size={17}/> Start model</button>}
       {running && <button className="secondary-button" disabled={busy} onClick={() => void stop()}>
         <Power size={16}/> Detener motor</button>}
       {status?.status === 'ready' && <button className="primary-button" disabled={busy}

@@ -179,7 +179,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         </div>)}
       </nav>
       <div className="workspace-settings-body">
-        {!prefs && <div className="loading"><LoaderCircle className="rotating" size={18}/> Cargando preferencias...</div>}
+        {!prefs && <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading preferences...</div>}
         {error && <p className="narrative-error" role="alert">{error}</p>}
         {feedback && <p className="narrative-saved" role="status"><Check size={16}/>{feedback}</p>}
 
@@ -188,7 +188,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <span className="overline">CONTROL DE TU ESTUDIO</span>
             <h2>Tu espacio de trabajo, a tu manera</h2>
             <p>Configura cada sistema por separado. Las opciones del narrador no se mezclan
-              con los ajustes visuales, la red ni los modelos instalados.</p>
+              with visual settings, network or installed models.</p>
           </div>
           <div className="workspace-settings-snapshot">
             <div><Languages size={17}/><small>Narration language</small>
@@ -196,9 +196,9 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
                 prefs?.target_language || 'Consultando...'}</strong></div>
             <div><Volume2 size={17}/><small>Ilustraciones</small>
               <strong>{imageMode === 'off' ? 'Desactivadas' :
-                imageMode === 'manual' ? 'Bajo demanda' : 'Por escena'}</strong></div>
+                imageMode === 'manual' ? 'On demand' : 'Per scene'}</strong></div>
             <div><KeyRound size={17}/><small>OpenRouter</small>
-              <strong>{credential?.configured ? 'Clave configurada' : 'Sin clave'}</strong></div>
+              <strong>{credential?.configured ? 'Key configured' : 'No key'}</strong></div>
             <div><Cpu size={17}/><small>Version local</small>
               <strong>{about?.version || 'Consultando...'}</strong></div>
           </div>
@@ -246,11 +246,11 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="setting-section-intro"><h2>Language and translation</h2>
             <p>This preference applies to the narrator prompt on each turn; it is not a separate translation engine.</p></div>
           <div className="workspace-panel workspace-field-grid">
-            {option('Idioma de salida', prefs.target_language, [
+            {option('Output language', prefs.target_language, [
               ['es-419', 'Latin American Spanish'], ['en', 'English'], ['ja', '日本語'],
               ['ko', '한국어'], ['pt-BR', 'Português brasileiro'], ['fr', 'Français'],
             ], v => void update('target_language', v))}
-            {option('Idioma del contenido entrante', prefs.source_language, [
+            {option('Incoming content language', prefs.source_language, [
               ['auto', 'Detect automatically'], ['es', 'Español'], ['en', 'English'],
               ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['fr', 'French'],
             ], v => void update('source_language', v))}
@@ -272,7 +272,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <div className="workspace-provider-head"><span className="provider-icon">OR</span><div>
               <h3>OpenRouter</h3><p>Cloud language models with provider-specific billing.</p></div>
               <span className={credential?.configured ? 'provider-ready' : 'provider-missing'}>
-                {credential?.configured ? 'Configurado' : 'Sin clave'}</span></div>
+                {credential?.configured ? 'Configured' : 'No key'}</span></div>
             <p>The key is kept in the system credential store, never in story history or SQLite.</p>
             <label className="workspace-pref-field">Clave de API
               <input type="password" value={keyDraft} autoComplete="off" placeholder="Introduce tu clave OpenRouter"
@@ -283,7 +283,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               {credential?.configured && credential.storage !== 'environment' && <button className="secondary-button"
                 disabled={busy} onClick={() => void changeKey(true)}><Trash2 size={16}/> Quitar clave</button>}
               <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noreferrer"
-                className="workspace-external">Crear clave <ArrowUpRight size={15}/></a>
+                className="workspace-external">Create key <ArrowUpRight size={15}/></a>
             </div>
           </div>
           <div className="workspace-panel">
@@ -324,7 +324,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               <h3><Cpu size={17}/> Paquetes Python</h3>
               <div className="workspace-diagnostics-list">
                 {Object.entries(diagnostics.python_packages).map(([name, version]) =>
-                  <div key={name}><span>{name}</span><code>{version || 'No instalado'}</code></div>)}
+                  <div key={name}><span>{name}</span><code>{version || 'Not installed'}</code></div>)}
               </div>
               <h3>Ejecutables detectados</h3>
               <div className="workspace-diagnostics-list">
@@ -333,7 +333,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               </div>
               <p>Runtime updates are not implemented. This read-only panel does not install or replace system binaries.</p>
               <button className="secondary-button" onClick={() => void api.runtimeDiagnostics().then(setDiagnostics)}>
-                <RefreshCcw size={16}/> Actualizar inventario</button>
+                <RefreshCcw size={16}/> Refresh inventory</button>
             </> : <div className="loading"><LoaderCircle className="rotating" size={18}/> Consultando runtimes...</div>}
           </div>
         </>}
@@ -344,7 +344,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-panel">
             {toggle('Activar atajos de teclado', prefs.shortcuts_enabled, v => void update('shortcuts_enabled', v))}
             {[
-              ['Ctrl / ⌘ + 1', 'Biblioteca'], ['Ctrl / ⌘ + 2', 'Model Hub'],
+              ['Ctrl / ⌘ + 1', 'Library'], ['Ctrl / ⌘ + 2', 'Model Hub'],
               ['Ctrl / ⌘ + 3', 'Settings'], ['Ctrl / ⌘ + Enter', 'Submit reader input'],
               ['Alt + Enter', 'Continue story'], ['Esc', 'Close panels'],
             ].map(([combo, action]) => <div className="workspace-shortcut-row" key={combo}>
@@ -354,13 +354,13 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
 
         {tab === 'network' && <>
           <div className="setting-section-intro"><h2>Red, dispositivos y workers</h2>
-            <p>Arquitectura prevista para conectar GPUs remotas o compartir Noble AI con otros dispositivos.</p></div>
+            <p>Architecture for connecting remote GPUs or sharing Noble AI with other devices.</p></div>
           <div className="workspace-panel">
-            <h3><LockKeyhole size={17}/> Estado de la red</h3>
+            <h3><LockKeyhole size={17}/> Network status</h3>
             {network ? <p>{network.message}</p> : <p>Consultando disponibilidad...</p>}
             <div className="workspace-service-row"><strong>Servidor local</strong><span>127.0.0.1:8000</span><b>Activo</b></div>
             <div className="workspace-service-row"><strong>Mobile LAN access</strong><span>Authentication and TLS pending</span><b>Blocked</b></div>
-            <div className="workspace-service-row"><strong>Workers Colab / otras PC</strong><span>LLM remoto compatible con OpenAI</span><b>Registro disponible</b></div>
+            <div className="workspace-service-row"><strong>Colab / other PC workers</strong><span>OpenAI-compatible remote LLM</span><b>Registration available</b></div>
             <div className="workspace-service-row"><strong>Cloudflare Tunnel</strong><span>Bearer-authenticated external tunnels</span><b>Connectable</b></div>
             <div className="workspace-note"><ShieldCheck size={17}/> The main server remains local. Only a bearer-protected worker proxy may be connected; publishing the entire workspace online is disabled.</div>
           </div>
