@@ -89,7 +89,7 @@ def parse_json(text: str) -> dict:
     except json.JSONDecodeError as exc:
         raise ValueError("Model did not return valid JSON") from exc
     if not isinstance(value, dict):
-        raise ValueError("Se esperaba un objeto JSON")
+        raise ValueError("Expected a JSON object")
     return value
 
 

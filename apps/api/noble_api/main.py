@@ -243,7 +243,7 @@ def create_app(
     def download_one(job_id: str):
         job = store.download(job_id)
         if job is None:
-            raise HTTPException(404, "Descarga inexistente")
+            raise HTTPException(404, "Download not found")
         return job
 
     @service.post("/api/v1/downloads/{job_id}/pause")

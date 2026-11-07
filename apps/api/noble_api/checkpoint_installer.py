@@ -134,7 +134,7 @@ class CheckpointInstaller:
     def get(self, job_id: str) -> dict:
         item = self._row(job_id)
         if item is None:
-            raise HTTPException(404, "Descarga de checkpoint desconocida")
+            raise HTTPException(404, "Unknown checkpoint download")
         return item
 
     def _transition(self, job_id: str, allowed: tuple[str, ...],
@@ -286,7 +286,7 @@ class CheckpointInstaller:
         offset = part.stat().st_size if part.exists() else 0
         size = job["expected_size"]
         if offset > size:
-            raise ValueError("La descarga parcial es demasiado grande")
+            raise ValueError("Partial download is too large")
         if offset < size:
             headers = {"Accept-Encoding": "identity"}
             if offset:
@@ -324,7 +324,7 @@ class CheckpointInstaller:
         if self.get(job["id"])["status"] != "downloading":
             return
         if part.stat().st_size != size:
-            raise ValueError("Descarga de checkpoint incompleta")
+            raise ValueError("Incomplete checkpoint download")
 
     def _run(self, job_id: str):
         if not self._transition(job_id, ("queued",), "downloading"):
@@ -376,7 +376,7 @@ class CheckpointInstaller:
     def shutdown(self):
         with self.store._conn() as db:
             db.execute("""UPDATE image_checkpoint_downloads SET
-                          status='paused', error='Descarga pausada al cerrar'
+                          status='paused', error='Download paused on shutdown'
                           WHERE status IN ('queued','downloading','verifying')""")
         self.pool.shutdown(wait=False, cancel_futures=False)
 

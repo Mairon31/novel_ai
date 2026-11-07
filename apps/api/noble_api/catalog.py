@@ -88,7 +88,7 @@ class HfCatalog:
             raise CatalogError(400, "Invalid model role")
         query = query.strip()[:100]
         if len(query) < 2:
-            raise CatalogError(400, "Busca al menos dos caracteres")
+            raise CatalogError(400, "Enter at least two characters")
         limit = max(1, min(limit, 30))
         if sort not in {"downloads", "likes", "lastModified", "trendingScore"}:
             raise CatalogError(400, "Invalid catalog sort order")

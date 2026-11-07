@@ -265,7 +265,7 @@ class CreatorMediaService:
             raise ValueError("Unsupported character expression")
         pose = validate_pose(pose)
         if kind != "foreground" and (expression != "neutral" or pose != "standing"):
-            raise ValueError("Solo los sprites admiten expresiones y poses")
+            raise ValueError("Only sprites support expressions and poses")
         if character_id:
             if kind != "foreground":
                 raise ValueError("Only foreground assets can be assigned to a character")
@@ -310,7 +310,7 @@ class CreatorMediaService:
         if layout not in {"horizontal", "vertical"}:
             raise ValueError("Unsupported expression sheet layout")
         if generation is not None and set(generation) != set(EXPRESSIONS):
-            raise ValueError("La procedencia debe describir las cinco expresiones")
+            raise ValueError("Provenance must describe all five expressions")
         validated = {
             expression: normalize_sprite_generation(details)
             for expression, details in (generation or {}).items()
@@ -318,7 +318,7 @@ class CreatorMediaService:
         if generation is not None and any(not item for item in validated.values()):
             raise ValueError("Procedencia generativa incompleta")
         if not 0 < len(data) <= MAX_MEDIA_BYTES:
-            raise ValueError("La hoja debe ocupar entre 1 byte y 12 MiB")
+            raise ValueError("Sheet must be between 1 byte and 12 MiB")
         try:
             with Image.open(io.BytesIO(data)) as original:
                 if original.format not in {"PNG", "WEBP"}:
@@ -332,7 +332,7 @@ class CreatorMediaService:
                 horizontal = layout == "horizontal"
                 extent = width if horizontal else height
                 if extent % 5:
-                    raise ValueError("La hoja debe dividirse exactamente en cinco celdas")
+                    raise ValueError("Sheet must divide into exactly five cells")
                 cell = extent // 5
                 if min(cell, height if horizontal else width) < 8:
                     raise ValueError("Each expression must be at least 8 pixels wide and tall")
@@ -403,7 +403,7 @@ class CreatorMediaService:
         expression = form.expression if form.expression is not None else asset["expression"]
         pose = validate_pose(form.pose) if form.pose is not None else asset["pose"]
         if asset["kind"] != "foreground" and (expression != "neutral" or pose != "standing"):
-            raise ValueError("Solo los sprites admiten expresiones y poses")
+            raise ValueError("Only sprites support expressions and poses")
         with self.store._conn() as db:
             db.execute("UPDATE creator_media_assets "
                        "SET label=?,caption=?,expression=?,pose=? "
@@ -680,7 +680,7 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
                            pose: str = Form("standing"),
                            file: UploadFile = File(...)):
         if file.content_type not in {"image/png", "image/jpeg", "image/webp"}:
-            raise HTTPException(415, "Solo PNG, JPEG o WebP")
+            raise HTTPException(415, "Only PNG, JPEG, or WebP")
         data = await file.read(MAX_MEDIA_BYTES + 1)
         if len(data) > MAX_MEDIA_BYTES:
             raise HTTPException(413, "File exceeds 12 MiB")

@@ -116,7 +116,7 @@ class SpriteDraftService:
         dest = story_dir / draft_id
         if (base.is_symlink() or story_dir.is_symlink() or dest.is_symlink()
                 or not dest.resolve().is_relative_to(root)):
-            raise ValueError("Directorio temporal de sprites no confiable")
+            raise ValueError("Untrusted sprite temporary directory")
         return dest
 
     def _file(self, story_id: str, draft_id: str, expression: str, name: str) -> Path:
@@ -448,7 +448,7 @@ class SpriteDraftService:
                     transparent_sprite(raw) if raw_mask is None else
                     transparent_sprite_from_matte(raw, raw_mask, cutout_mode))
             except ValueError as exc:
-                raise HTTPException(422, "Recorte no aceptado: " + str(exc)) from exc
+                raise HTTPException(422, "Cutout rejected: " + str(exc)) from exc
             geometry = geometry_from_png(png)
             file_sha256 = hashlib.sha256(png).hexdigest()
             new_name = expression + "-" + str(uuid.uuid4()) + ".png"
@@ -501,7 +501,7 @@ class SpriteDraftService:
         file = self._file(story_id, draft_id, expression,
                           entries[expression]["file"])
         if not file.is_file():
-            raise ValueError("Falta un sprite de vista previa")
+            raise ValueError("Preview sprite is missing")
         return FileResponse(file, media_type="image/png",
                             headers={"Cache-Control": "no-store",
                                      "X-Content-Type-Options": "nosniff"})

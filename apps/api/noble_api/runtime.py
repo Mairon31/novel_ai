@@ -82,7 +82,7 @@ class KoboldManager:
                 raise RuntimeFailure("Invalid port or one reserved for Noble AI")
             model = self.store.installed_one(installed_id)
             if model is None:
-                raise RuntimeFailure("Debes seleccionar un modelo registrado por Noble AI")
+                raise RuntimeFailure("Select a model registered by Noble AI")
             filepath = Path(model["filepath"]).resolve(strict=False)
             if not filepath.is_relative_to(self.store.models_dir.resolve()):
                 raise RuntimeFailure("Model is outside the managed library")
@@ -138,7 +138,7 @@ class KoboldManager:
                 model_id = next((v.get("id") for v in available if isinstance(v, dict)
                                  and isinstance(v.get("id"), str)), None)
                 if not model_id:
-                    raise RuntimeFailure("KoboldCpp no informa un modelo activo")
+                    raise RuntimeFailure("KoboldCpp does not report an active model")
         except (httpx.HTTPError, ValueError) as exc:
             raise RuntimeFailure("Could not read the model loaded in KoboldCpp") from exc
         return {"provider": "koboldcpp", "base_url": state["base_url"],

@@ -56,7 +56,7 @@ class DownloadManager:
                     report["skipped"] += 1
                     continue
                 if not target.is_file() or part.exists() or self.store.installed_for_job(job):
-                    raise ValueError("Conflicto entre GGUF final, parcial o modelo ya instalado")
+                    raise ValueError("Conflict between final GGUF, partial file, or already installed model")
                 if self.store.restore_orphaned_download(job["id"], target, part):
                     report["recovered"] += 1
                     LOG.info("Recovered interrupted download %s for verification", job["id"])
@@ -87,7 +87,7 @@ class DownloadManager:
         if info["revision"] != revision:
             raise CatalogError(409, "Repository revision changed. Refresh model details.")
         if info["gated"]:
-            raise CatalogError(403, "Este modelo requiere acceso en Hugging Face.")
+            raise CatalogError(403, "This model requires access on Hugging Face.")
         variant = next((v for v in info["variants"] if v["filename"] == filename), None)
         if variant is None or not variant["supported"]:
             raise CatalogError(400, "Variant unavailable or split GGUF unsupported")
@@ -304,7 +304,7 @@ class DownloadManager:
             actual = digest.hexdigest()
             expected_sha = job["expected_sha256"]
             if expected_sha and actual.lower() != expected_sha.lower():
-                raise RuntimeError("SHA-256 diferente al anunciado por Hugging Face")
+                raise RuntimeError("SHA-256 differs from the one published by Hugging Face")
             self.store.complete_download(
                 job, part, target, actual,
                 "sha256_verified" if expected_sha else "local_hash_only",

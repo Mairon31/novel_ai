@@ -28,7 +28,7 @@ def normalized_render_details(value: dict | str | None) -> dict:
         raise ValueError("Invalid workflow version")
     loras = value.get("loras", [])
     if not isinstance(loras, list) or len(loras) > 3:
-        raise ValueError("Demasiados LoRAs en la procedencia visual")
+        raise ValueError("Too many LoRAs in visual provenance")
     clean = []
     for row in loras:
         if not isinstance(row, dict) or set(row) != {
