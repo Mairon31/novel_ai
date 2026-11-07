@@ -29,7 +29,7 @@ Noble AI queries Hugging Face and presents results, model metadata and GGUF file
 | `unsupported` | The current Noble installer cannot handle this file |
 | `unknown` | Not enough information (e.g. missing file size) |
 
-**Scope:** Current downloader supports **single-file GGUF narrators** only. Search for image and TTS models remains discovery-only until their installer manifests and runtime compatibility are implemented. Sharded GGUF and multipart repositories are not misleadingly labeled installed.
+**Scope:** Current downloader supports **single-file GGUF narrators** only. Image checkpoints now have a **separate, limited installer** in Images settings; speech has a separate Piper voice installer. Generic image/TTS search in the GGUF Model Hub does not imply installation or runtime compatibility. Sharded GGUF and multipart repositories are not misleadingly labeled installed.
 
 Adapted with MIT attribution from Urakatsu; see [Third-party notices](THIRD_PARTY_NOTICES.md).
 
@@ -37,94 +37,72 @@ Adapted with MIT attribution from Urakatsu; see [Third-party notices](THIRD_PART
 
 `tests/test_model_hardware_fit.py` tests synthetic GGUF header fields, 16GiB GPU and CPU fallback, API detail, and unknown file safety. These are analytical unit tests, not empirical performance measurements. GPU tests with actual checkpoint/driver belong to the later batch benchmark notebook.
 
-## Comparación visual de cuantizaciones
+## Visual comparison of quantizations
 
-La ficha de un GGUF muestra una medición de VRAM libre observada y demanda de memoria estimada. La persona puede elegir 2K–32K tokens y filtrar variantes: Todas / GPU / GPU + RAM / CPU. La cuantización recomendada es una sugerencia calculada por memoria, no una prueba empírica.
+The GGUF details page distinguishes **observed free VRAM** from **estimated memory requirements**. Users can select a 2K–32K context and filter models by All / GPU / GPU + RAM / CPU. A recommended quantization is a memory-based estimate, not a measured benchmark.
 
-La barra de comparación distingue presupuesto de GPU, memoria combinada o RAM según el tipo de ejecución. El resultado no predice velocidad ni descarga modelos para comprobarlos. Imágenes y TTS siguen en modalidad de catálogo hasta incorporar instaladores compatibles por motor.
+Comparison bars describe the GPU, combined GPU+RAM, or RAM-only budget according to expected execution mode. They cannot predict speed or prove checkpoint compatibility. Image models and TTS engines have independent installation and runtime contracts.
 
+## Full upstream model cards
 
-## Fichas de autor completas
+The **Read full model card** action requests the exact-revision Hugging Face `README.md` on demand. Noble AI displays at most 128 KiB as plain text without rendering arbitrary embedded HTML or running repository code. Users can close the card while retaining model and quantization selections.
 
-La ficha de modelo ofrece un botón **Leer ficha completa** que consulta bajo demanda el `README.md` publicado en Hugging Face para el commit SHA del modelo. Noble AI lee hasta 128 KiB y muestra el contenido como texto plano; no interpreta HTML incrustado ni ejecuta scripts publicados por el repositorio. El usuario puede ocultarla sin perder la variante seleccionada o la comparativa de hardware.
+API: `GET /api/v1/model-cards/{namespace}/{model}?revision={sha40}`. The server validates identifiers and revision hashes, restricts upstream hosts to Hugging Face, and bounds network reads and responses. A missing README returns `available:false`; gated or private repositories return the applicable access error.
 
-Ruta: `GET /api/v1/model-cards/{namespace}/{model}?revision={sha40}`. El servidor valida los identificadores, utiliza únicamente el host de Hugging Face y limita tanto la lectura de red como la respuesta. Un repositorio sin README devuelve `available:false`; un modelo restringido informa el error correspondiente.
+Accessibility metadata also includes estimated weight and KV-cache memory and approximate GPU/offload fractions, adapted from Urakatsu's `FitCell` concept (MIT). It does not claim measured CUDA compatibility or tokens/s.
 
-El indicador de compatibilidad también expone la memoria estimada del archivo, la memoria KV asociada al contexto y el porcentaje aproximado de descarga GPU/RAM en su información accesible. Implementado mediante adaptación de `FitCell` del componente `ModelsPage.tsx` de Urakatsu (MIT). No se afirma compatibilidad empírica de CUDA ni medición de tokens por segundo.
+## Registered local model storage
 
-## Almacenamiento local registrado (API y UI reales)
+The **Installed** tab shows a real disk-space inventory inspired by Urakatsu `ModelsStorage.tsx` and `UsageBar`, implemented using Noble AI's SQLite and managed model paths.
 
-La pestaña **Instalados** muestra ahora un inventario de disco inspirado en
-`ModelsStorage.tsx` y `UsageBar` de Urakatsu. Es una implementación adaptada
-al almacenamiento SQLite propio de Noble AI, sin depender de las rutas y
-componentes de Urakatsu.
+- `GET /api/v1/models/storage` uses `shutil.disk_usage` to obtain total, used, and free capacity from the model volume.
+- Count the **actual bytes** of registered model files that reside inside the managed storage root. External paths and symbolic links are not counted as owned storage.
+- Include incomplete jobs only through their existing `.part` bytes; do not claim they are installed.
+- Mark missing registered files as unavailable, and prevent selecting them as active narrators.
+- Allow inspection of registered sizes without silently moving or deleting files.
 
-- Ruta: `GET /api/v1/models/storage`.
-- Se obtiene capacidad usada, total y libre con `shutil.disk_usage` sobre
-  la carpeta de modelos. El espacio utilizado por el sistema puede incluir
-  ficheros no administrados por Noble AI y, en Linux, bloques reservados.
-- Los modelos registrados se contabilizan por tamaño **real** del archivo
-  cuando se encuentra dentro de la raíz administrada. Los enlaces simbólicos
-  y las rutas externas no suman almacenamiento.
-- Los trabajos incompletos se contabilizan por sus archivos `.part`
-  existentes, sin confundirlos con modelos instalados.
-- Si un archivo registrado ya no está presente, el Model Hub muestra su
-  estado y no permite elegirlo como narrador desde esa lista.
-- La lista de archivos permite inspeccionar los tamaños registrados; el
-  panel no borra ni mueve ficheros silenciosamente.
+The disk inventory does not attempt to measure all unregistered content or model peak VRAM; it is independent of GGUF fit estimates.
 
-El inventario no pretende medir todo el contenido no registrado de la carpeta
-ni calcula la capacidad GPU necesaria para cargar cada archivo. Es independiente
-del estimador de GGUF y del consumo real de VRAM.
+## Desktop master/detail and mobile modal
 
-## Master/detail en escritorio y modal móvil
+On desktop, a model detail inspector opens alongside the interactive model list. On mobile, it opens in a modal. Searches and recent model-card results are temporarily cached for the current session, adapting the Urakatsu MIT `recentSearches` and `recentDetails` pattern. Hardware-fit cache TTL is short because free VRAM can change.
 
-En escritorio, la ficha del modelo se presenta a la derecha manteniendo la
-lista interactiva. En móvil continúa como un panel modal. Las búsquedas
-y fichas recientes se conservan de forma temporal dentro de la sesión
-(adaptación directa del patrón `recentSearches`/`recentDetails` de
-Urakatsu MIT). Los ajustes de compatibilidad tienen un TTL corto porque la
-VRAM libre es variable.
+Automated checks cover inspector opening, variant recommendations and filters, caching, full cards, storage inventory, external-path rejection, and mobile controls.
 
-Las pruebas funcionales comprueban apertura de ficha, sugerencia de GGUF,
-filtro, caché, descripción extendida del modelo, inventario de disco, rutas
-ajenas a la instalación y controles móviles.
+## Argon audit — Model Hub V2 and resources (2026-11-05)
 
-## Auditoría Argon: Model Hub V2 y recursos (2026-11-05)
+Verified on the referenced `master`: Hugging Face catalog, single-file GGUF detail pages, local estimator, resumable `.part` jobs, revision pinning, SHA-256 verification **only when a trusted hash is published**, disk inventory, and `nvidia-smi` monitoring. Estimated fit is not measured speed, and it is not a guarantee of co-residency with ComfyUI.
 
-Estado confirmado en `master`: catálogo HF, fichas GGUF de archivo único, estimador local, persistencia de descargas `.part`, validación de revisión y SHA-256 **condicional al checksum publicado**, medidor físico de almacenamiento y monitor GPU con `nvidia-smi`. No confundir la métrica de *ajuste estimado* con velocidad medida ni con garantía de carga simultánea con ComfyUI.
+**Ordered remaining work** (see [TODO](../TODO.md)):
 
-**Próximos entregables, por orden de dependencia (ver [TODO](../TODO.md)):**
+1. Validate real paths at every download/copy/delete operation. Test symlinks, deceptive names, invalid Range responses, and checksum errors.
+2. Extend quantization comparisons (Q4/Q5/Q6/Q8/IQ) with actual file sizes, estimated weights and 8k/16k KV cache, headroom, and explicit **Optimal / Hybrid / Not feasible** categories and uncertainty.
+3. Separate narrator/image/voice roles and offer capability-grounded VRAM policy modes (**Exclusive / Shared / Sequential**). The existing `asyncio.Lock` serializes recognized requests, but cannot unload external runtime weights.
+4. Expand the technical detail page and visible download queue with throughput, precise progress, pause/resume, and actionable diagnostics for desktop/mobile.
+5. Run actual LLM + ComfyUI transition benchmarks on 16 GB GPUs and on lower-capacity fallback hardware. Never present inferred tokens/s as experimental measurements.
 
-1. Proteger la ruta efectiva de toda operación de descarga/copia/borrado y probar enlaces simbólicos, nombres falsos, Range incorrecto y fallos de checksum.
-2. Completar la comparación por cuantización (Q4/Q5/Q6/Q8/IQ) con tamaño físico, memoria estimada de pesos y KV a 8k/16k, margen de seguridad y clasificación **Óptimo / Híbrido / Inviable**. Mostrar fuente y grado de incertidumbre de los cálculos.
-3. Exponer roles separados de narrador, imagen y voz; políticas de VRAM **Exclusivo / Compartido / Secuencial** y el runtime responsable de descargar pesos *propios* antes de ComfyUI. El `asyncio.Lock` actual serializa solicitudes pero no libera pesos del motor ya cargado.
-4. Ficha técnica ampliada y detalle sin perder la búsqueda, cola visible con MB/s, progreso exacto, pausa/reanudación y diagnóstico al usuario, escritorio y móvil.
-5. Benchmarks reales de ciclo LLM+ComfyUI sobre 16 GB y fallback para equipos inferiores; ninguna cifra de TPS inferida debe presentarse como resultado experimental.
+For copied/adapted Urakatsu interface/code under MIT, document the exact files, upstream revision, and license in [Third-party notices](THIRD_PARTY_NOTICES.md). See the [audit](ARGON_AUDITORIA.md) and [GPU policy](RECURSOS_GPU.md).
 
-Para reutilizar UI y lógica de Urakatsu bajo MIT, documentar los archivos copiados, su revisión y licencia en [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md). Referencias: [auditoría §§11, 18–19](ARGON_AUDITORIA.md), [gestión GPU](RECURSOS_GPU.md).
+## SHA verification and cancellation integrity (2026-11-05)
 
+- The download manager uses **conditional SQLite state transitions**. A late pause/cancel must not overwrite `completed` based on an outdated snapshot. Pause and cancel also work during `verifying`, with periodic checks during hashing.
+- When `.part` already has the full expected size, resume proceeds to SHA verification without an EOF Range request that might return HTTP 416. With unknown remote length, HTTP 416 is accepted only when `Content-Range: bytes */N` confirms the exact partial size.
+- After hash validation, the file and database registration are published using an SQLite `BEGIN IMMEDIATE` section and a compensating rename when possible. Power loss between file operations and database commit is handled by a targeted startup reconciliation, **not a universal solution to physical disk corruption**.
+- `sha256_verified` requires a published upstream SHA-256. `local_hash_only` is not cryptographic proof of authenticity.
+- `tests/test_api_model_hub.py` exercises cancellation during `hashlib.update`, resume without a redundant GET, and simulated registration failure. [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678) reported 121 Python tests passing.
 
-## Integridad en verificaciones SHA y cancelaciones (2026-11-05)
+## Crash recovery between file publication and registration (2026-11-05)
 
-- El gestor de descargas utiliza ahora **transiciones condicionales en SQLite**: una pausa/cancelación no puede sobrescribir un `completed` por una lectura de estado obsoleta. Se admite pausar y cancelar tanto en `downloading` como en `verifying`, con consulta periódica del estado durante el hashing.
-- Si el `.part` ya tiene exactamente el tamaño esperado, `resume` continúa directamente desde la verificación SHA sin solicitar un `HTTP Range` desde el EOF; ese caso devolvería HTTP 416. Con longitud remota desconocida, el sistema ahora acepta HTTP 416 solo si `Content-Range: bytes */N` confirma exactamente el tamaño del `.part`; sin esa prueba mantiene el archivo y marca fallo. Consultar el bloque 2026-11-05 de abajo.
-- Al completar SHA, archivo y registro de modelo se publican bajo un bloqueo `BEGIN IMMEDIATE` de SQLite. Si un error de SQL ocurre después del renombrado, se intenta revertir el fichero a su extensión `.part`. Un cierre eléctrico inesperado no se resuelve solo con esa compensación; el arranque ya incluye reconciliación específica del intervalo entre rename y commit, documentada abajo, pero no equivale a recuperación universal ante corrupción física.
-- La etiqueta `sha256_verified` requiere hash publicado por el proveedor. `local_hash_only` no equivale a autenticidad verificada.
-- Pruebas de cancelación en medio de `hashlib.update`, reanudación sin segundo GET y fallo de registro simulado en `tests/test_api_model_hub.py`; [CI #42052817678](https://github.com/Mairon31/novel_ai/actions/runs/42052817678), **121 Python PASS**. Ver [TODO](../TODO.md) para lo que falta.
+On startup, `DownloadManager` inspects persisted `paused`/`failed` jobs without automatically downloading. If it finds a final GGUF that is not registered and no `.part`, it can move that file back to a partial state under a write transaction, retain the byte count, and require explicit resume and SHA validation. **An existing final file alone never proves installation.**
 
+If a final GGUF and `.part` both exist, a path points outside the managed root, or a model is already marked installed, the manager leaves the files untouched and records a conflict. Retry cannot overwrite an existing final file. `recovery_report` counts `recovered/conflicts/skipped`; per-job details remain in `downloads.error`.
 
-## Recuperación sin pérdida tras interrupción entre fichero y registro (2026-11-05)
+`tests/test_download_recovery.py` covers real local files and SQLite without network transport. [CI #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624) reported 127 Python tests passing. Remaining: recovery when `expected_size` is absent, actual power-loss experiments, and adversarial concurrent path replacements.
 
-Al iniciar, `DownloadManager` consulta todos los jobs `paused/failed` que conoce SQLite y no hace descargas automáticas. Si encuentra un GGUF final no registrado y no hay `.part`, lo devuelve a parcial bajo una transacción de escritura, conserva su tamaño y solicita reanudación. Al reanudar, se verifica SHA-256; el archivo recuperado **nunca se considera instalado solo por existir**.
+## Robust resume for unknown-size GGUF downloads (2026-11-05)
 
-Si encuentra el GGUF final junto a `.part`, una ruta enlazada fuera del almacén o un modelo registrado en `installed`, **no toca ninguno de esos archivos** y marca un conflicto. El reintento no puede sobrescribir el final. `recovery_report` contiene contadores `recovered/conflicts/skipped`; el detalle por job permanece en `downloads.error`.
+When Hugging Face omits `size_bytes`, a completed partial file may trigger `Range: bytes=N-` and HTTP 416 with `Content-Range: bytes */N`. Noble AI compares both N values before continuing directly to SHA verification; otherwise it retains the partial and marks the job failed.
 
-Pruebas: `tests/test_download_recovery.py` sobre SQLite y archivos reales con transporte sin red, [GitHub Actions #42062222624](https://github.com/Mairon31/novel_ai/actions/runs/42062222624), 127 Python PASS. Quedan pendientes recuperación sin `expected_size`, cortes eléctricos físicos y reemplazo malicioso concurrente de rutas.
+HTTP 206 must contain exactly the required remaining bytes and advertised length. HTTP 200 is checked against `Content-Length` when present. HTTP 204, compressed responses, false GGUF headers, and invalid byte counts are rejected. Without upstream SHA-256, use `local_hash_only`.
 
-
-## Reanudación robusta de GGUF de tamaño desconocido (2026-11-05)
-
-Si Hugging Face no publica `size_bytes` y el fichero `.part` está completo, una solicitud `Range: bytes=N-` puede devolver 416 con `Content-Range: bytes */N`. Noble AI comprueba que ambos N coinciden antes de reanudar directamente la fase SHA; si no coinciden, conserva el parcial y marca el job como fallido. Una respuesta 206 debe contener exactamente la parte restante y su longitud declarada. Las respuestas 200 se validan contra `Content-Length` cuando el servidor lo proporciona, y se rechazan 204, respuestas comprimidas y archivos sin cabecera GGUF. Sin checksum upstream el resultado conserva estado `local_hash_only`.
-
-Se añadieron pruebas offline con cabeceras HTTP válidas/malformadas, datos truncados, cabecera GGUF falsa, 416 engañoso y hash incorrecto en `tests/test_unknown_size_resume.py`. [CI #42068338409](https://github.com/Mairon31/novel_ai/actions/runs/42068338409): **142 Python + 28 Playwright PASS**. No equivale a descarga de pesos reales ni recuperación de un CDN incapaz de informar el tamaño total.
+`tests/test_unknown_size_resume.py` covers correct and malformed HTTP headers, truncated responses, invalid GGUF headers, deceptive HTTP 416, and incorrect hashes. [CI #42068338409](https://github.com/Mairon31/novel_ai/actions/runs/42068338409) reported 142 Python and 28 Playwright tests passing. These were offline tests, not a real multi-GB CDN download.
