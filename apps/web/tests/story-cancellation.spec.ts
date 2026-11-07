@@ -5,7 +5,7 @@ test('Stop signals the backend for the exact story and request without committin
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
@@ -55,11 +55,11 @@ test('Stop signals the backend for the exact story and request without committin
 
   await page.getByRole('textbox', { name: 'Your input in the story' })
     .fill('Inspecciono el libro que hay sobre la mesa.');
-  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Detener generación' })).toBeVisible();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Stop generación' })).toBeVisible();
   await expect.poll(() => requestId).toMatch(/^[a-f0-9-]{36}$/);
 
-  await page.getByRole('button', { name: 'Detener generación' }).click();
+  await page.getByRole('button', { name: 'Stop generación' }).click();
   await expect.poll(() => cancelledRequestId).toBe(requestId);
   expect(cancelledStoryId).toBe(storyId);
   await expect(page.getByText(/Cancelación solicitada/)).toBeVisible();

@@ -30,7 +30,7 @@ test('Creator Studio stages five AI expressions for author review before approva
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
-      await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+      await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
     await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('NPC para generar expresiones').selectOption(npc.id);
     await page.getByLabel('Contexto de sprites IA').fill('Aira castillo de cristal');
@@ -85,7 +85,7 @@ test('Creator Studio stages five AI expressions for author review before approva
 
     const section = page.getByRole('region', { name: 'Borrador de sprites Aira' });
     await expect(section.getByRole('button', { name: 'Aprobar cinco expresiones' })).toBeDisabled();
-    await section.getByRole('button', { name: 'Generar expresiones faltantes' }).click();
+    await section.getByRole('button', { name: 'Generate missing expressions' }).click();
     await expect(section.getByText('Aira · 5/5 expresiones')).toBeVisible();
     await expect(section.locator('img')).toHaveCount(5);
     expect(generated).toBe(5);

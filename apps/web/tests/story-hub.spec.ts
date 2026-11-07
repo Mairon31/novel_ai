@@ -6,7 +6,7 @@ test('story-first bundled hub installs an independent playable world without a m
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
-      await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+      await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
 
     const hub = page.getByRole('region', { name: 'Discover playable stories' });
     await expect(hub.getByRole('heading', { name: 'Discover a world to play' })).toBeVisible();
@@ -40,7 +40,7 @@ test('story-first bundled hub installs an independent playable world without a m
 
     const detail = page.getByRole('region', { name: 'Detalle de Las mareas de vidrio' });
     await expect(detail).toBeVisible();
-    await expect(detail.getByRole('heading', { name: /Personajes de este mundo/ })).toBeVisible();
+    await expect(detail.getByRole('heading', { name: /Characters de este mundo/ })).toBeVisible();
     await expect(detail.getByRole('heading', { name: 'Elige cómo empieza la historia' })).toBeVisible();
     await expect(detail.getByText('Sara recoge un fragmento de vidrio')).toBeVisible();
     const openings = detail.locator('.noble-detail-opening');
@@ -63,7 +63,7 @@ test('Discover Stories has its own shareable route and installs into the library
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
     const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await welcome.isVisible())
-      await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+      await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
     await expect(page).toHaveURL(/#\/descubrir$/);
     await expect(page.getByRole('region', { name: 'Catálogo de historias' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Playable stories' })).toBeVisible();

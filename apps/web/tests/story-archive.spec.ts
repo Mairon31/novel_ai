@@ -12,7 +12,7 @@ test('library exports an archive and rejects duplicate restoration without losin
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Library', exact: true }).click();

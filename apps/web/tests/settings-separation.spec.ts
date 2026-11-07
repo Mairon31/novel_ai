@@ -20,7 +20,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   const nav = page.getByRole('navigation', { name: 'Settings sections' });
   await expect(nav.getByRole('button', { name: 'Images', exact: true })).toBeVisible();
@@ -29,7 +29,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await expect(nav.getByRole('button', { name: 'Updates', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toBeVisible();
-  await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveCount(0);
+  await expect(page.getByLabel('Default Piper voice')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sobre y actualizaciones' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Images y voz' })).toHaveCount(0);
   expect(imageRequests).toBeGreaterThan(0);
@@ -43,7 +43,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await nav.getByRole('button', { name: 'Voz / TTS' }).click();
   await expect(page).toHaveURL(/#\/configuracion\/voice$/);
   await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
-  await expect(page.getByLabel('Voz predeterminada de Piper')).toBeVisible();
+  await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   expect(voiceRequests).toBeGreaterThan(0);
   expect(downloadActions).toBe(0);
@@ -54,7 +54,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   const imagesBeforeReload = imageRequests;
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
-  await expect(page.getByLabel('Voz predeterminada de Piper')).toBeVisible();
+  await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   expect(imageRequests).toBe(imagesBeforeReload);
   await page.goBack();
   await expect(page).toHaveURL(/#\/configuracion\/images$/);
@@ -88,9 +88,9 @@ test('legacy combined multimedia deep link opens images without displaying TTS',
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toBeVisible();
-  await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveCount(0);
+  await expect(page.getByLabel('Default Piper voice')).toHaveCount(0);
 });

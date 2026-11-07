@@ -8,7 +8,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible()) {
-    await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await wizard.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   const title = 'La biblioteca de las constelaciones ' + test.info().project.name;
   const created = await page.request.post('/api/v1/stories', {
@@ -30,7 +30,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   const section = page.locator('.creator-media-library');
   await expect(section.getByText('Sin portada personalizada')).toBeVisible();
   await page.getByLabel('Tipo de recurso visual').selectOption('cover');
-  await page.getByLabel('Nombre de imagen').fill('La luna sobre la torre');
+  await page.getByLabel('Image name').fill('La luna sobre la torre');
   await page.getByLabel('Image description').fill('Cubierta con una luna violeta y una torre');
   await page.getByLabel('Archivo de recurso visual').setInputFiles({
     name: 'cover.png', mimeType: 'image/png', buffer: coverPng,

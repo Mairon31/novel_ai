@@ -31,7 +31,7 @@ async function openIllustratedReader(page: import('@playwright/test').Page, proj
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   await expect(page.locator('.noble-reader-chapter')).toContainText(title);
   await expect(page.locator('.noble-reading-turn')).toHaveCount(1);
   return { title, id: story.id };
@@ -45,7 +45,7 @@ test('VN, book and chat keep the same scene and persist preference after reload'
     await page.getByRole('button', { name: 'Open story details' }).click();
     const inspector = page.locator('.noble-reader-inspector.is-open');
     await inspector.getByRole('button', { name: 'UI/UX' }).click();
-    await inspector.getByRole('button', { name: 'Libro', exact: true }).click();
+    await inspector.getByRole('button', { name: 'Book', exact: true }).click();
     await expect(reader).toHaveAttribute('data-reader-mode', 'classic');
     await expect(reader.locator('.noble-scene-panel')).toBeHidden();
     await inspector.getByRole('button', { name: 'Chat', exact: true }).click();
@@ -65,13 +65,13 @@ test('VN, book and chat keep the same scene and persist preference after reload'
     });
 
     await page.getByRole('button', { name: 'Abrir backlog' }).click();
-    const backlog = page.getByRole('dialog', { name: 'Backlog de historia' });
+    const backlog = page.getByRole('dialog', { name: 'Story backlog' });
     await expect(backlog).toBeVisible();
     await expect(backlog).toContainText('Mika encuentra un diario violeta');
-    await backlog.getByRole('searchbox', { name: 'Buscar en backlog' }).fill('sin coincidencia');
+    await backlog.getByRole('searchbox', { name: 'Search backlog' }).fill('sin coincidencia');
     await expect(backlog.getByText('No hay coincidencias en las escenas cargadas.'))
       .toBeVisible();
-    await backlog.getByRole('searchbox', { name: 'Buscar en backlog' }).fill('diario violeta');
+    await backlog.getByRole('searchbox', { name: 'Search backlog' }).fill('diario violeta');
     await expect(backlog.getByRole('button', { name: 'Ir a escena' })).toBeVisible();
     await backlog.getByRole('button', { name: 'Ir a escena' }).click();
     await expect(backlog).toBeHidden();
@@ -93,7 +93,7 @@ test('backlog and HUD shortcuts restore controls without changing saved turns',
     await expect(page.getByRole('textbox', { name: 'Your input in the story' }))
       .toBeVisible();
     await page.keyboard.press('Alt+b');
-    const backlog = page.getByRole('dialog', { name: 'Backlog de historia' });
+    const backlog = page.getByRole('dialog', { name: 'Story backlog' });
     await expect(backlog).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(backlog).toBeHidden();

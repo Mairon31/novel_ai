@@ -51,7 +51,7 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
@@ -70,6 +70,6 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
   status = 'completed'; installed = true;
   await page.getByRole('button', { name: 'Refresh voces' }).click();
   await expect(page.getByText('Lista para seleccionar')).toBeVisible();
-  await page.getByLabel('Voz predeterminada de Piper').selectOption(voice);
+  await page.getByLabel('Default Piper voice').selectOption(voice);
   expect(downloads).toBe(1);
 });

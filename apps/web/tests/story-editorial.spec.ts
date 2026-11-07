@@ -10,7 +10,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible())
-    await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await wizard.getByRole('button', { name: /Continue al Model Hub/ }).click();
 
   const title = 'El observatorio editorial ' + test.info().project.name;
   const created = await page.request.post('/api/v1/stories', {
@@ -68,7 +68,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   await expect(detail).toBeVisible();
   await expect(detail.getByText('Dos caminos llevan al antiguo observatorio.')).toBeVisible();
   await expect(detail.getByText('Nora llega a la ciudad durante una tormenta de nieve.')).toBeVisible();
-  await expect(detail.getByRole('heading', { name: 'Personajes de este mundo' })).toBeVisible();
+  await expect(detail.getByRole('heading', { name: 'Characters de este mundo' })).toBeVisible();
   await expect(detail.getByRole('img', { name: 'Retrato de Iria' })).toBeVisible();
   await expect(detail.getByRole('img', { name: 'Observatorio nevado' })).toBeVisible();
   await expect(detail.getByText(/El guardia oculta un secreto/)).toHaveCount(0);
@@ -91,6 +91,6 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
 
   await page.getByRole('button', { name: 'Return to library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
-  await expect(detail.getByRole('button', { name: 'Continuar historia' })).toBeVisible();
+  await expect(detail.getByRole('button', { name: 'Continue historia' })).toBeVisible();
   await expect(detail.getByRole('region', { name: 'Escenas de apertura' })).toHaveCount(0);
 });
