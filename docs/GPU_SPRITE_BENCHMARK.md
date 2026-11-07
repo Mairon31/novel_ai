@@ -1,87 +1,87 @@
-# Benchmark físico de sprites (ComfyUI / RMBG / BiRefNet)
+# Physical sprite benchmark — ComfyUI, RMBG, and BiRefNet
 
-Esta herramienta **no ejecuta benchmarks en CI**. Es un ensayo opcional, local y reproducible para comparar tiempos de generación, transparencias y lecturas de VRAM de las expresiones del mismo personaje. Usa la API de Noble AI y ComfyUI **ya instalados**. No modifica ajustes del proyecto, no instala modelos y **no aprueba ni publica imágenes**. Los 5 resultados por método permanecen como borradores revisables en Creator Studio, salvo que solicites borrarlos explícitamente.
+This optional local tool compares elapsed time, alpha transparency, and sampled VRAM for multiple expressions of the same NPC. It uses **already installed** Noble AI and ComfyUI services. **It does not run physical benchmarks in CI**, edit application preferences, install model weights, or automatically approve/publish generated images.
 
-Código: [`tools/sprite_gpu_benchmark.py`](../tools/sprite_gpu_benchmark.py). Pruebas automáticas: `tests/test_sprite_gpu_benchmark.py` (con HTTP y telemetría simulados, sin uso físico de GPU).
+Source: [`tools/sprite_gpu_benchmark.py`](../tools/sprite_gpu_benchmark.py). Contract tests: `tests/test_sprite_gpu_benchmark.py`, with mocked HTTP and GPU telemetry.
 
-## Requisitos
+## Prerequisites
 
-1. Arranca Noble AI desde su entorno virtual con la API en `http://127.0.0.1:8000` y ComfyUI local según **Ajustes → Imágenes y voz**. Selecciona allí un checkpoint existente y la resolución/steps/CFG que quieres comparar. El benchmark **no cambia** la configuración ni descarga pesos.
-2. Crea una historia y un NPC en Creator Studio. Elige una semilla constante para todas las pruebas.
-3. Si quieres probar RMBG o BiRefNet, instala antes [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG) y sus pesos/modelos compatibles. Es necesario que Noble pueda consultar `/models/rmbg` y los nodos instalados. Si quieres combinar con IPAdapter y/o LoRA, debes haber preparado esos recursos y un asset de referencia.
-4. Para registrar VRAM en NVIDIA, `nvidia-smi` debe estar disponible desde la misma terminal/host. Si está ausente o ComfyUI usa otra GPU/servidor, el resultado carecerá de telemetría fiable y dejará métricas GPU en `null`, en lugar de inventarlas.
+1. Start Noble AI at `http://127.0.0.1:8000` and an existing local ComfyUI installation. Use **Settings → Images** to choose the checkpoint, resolution, steps, and CFG to compare. This benchmark does not change them.
+2. Create a story and NPC in Creator Studio; choose a common seed across comparisons.
+3. For RMBG/BiRefNet, install [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG) and compatible models. Noble AI must be able to query `/models/rmbg` and the corresponding nodes. IPAdapter and LoRA require their own installed models and a suitable reference asset.
+4. For NVIDIA VRAM sampling, `nvidia-smi` must be accessible on the same host/terminal. If the service uses another GPU or machine, report unavailable telemetry as `null`; never invent numbers.
 
-## Uso paso a paso — Windows PowerShell
+## Windows PowerShell
 
-Desde la raíz del repositorio:
+Run from the repository root:
 
 ```powershell
-# 1) Descubrir los UUID locales de historias (solo lectura)
+# 1. Read local story IDs
 .\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --list-stories
 
-# 2) Descubrir los NPC de la historia escogida (solo lectura)
-.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --list-characters UUID_DE_HISTORIA
+# 2. Read NPC IDs for the chosen story
+.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --list-characters STORY_UUID
 
-# 3) Comprobar modelos/nodos/compatibilidad, sin generar ni ocupar GPU
-.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --story-id UUID_DE_HISTORIA --character-id UUID_DEL_NPC --modes chroma_green,neural_rmbg2,neural_birefnet_portrait --check-only --out reports\sprites-preflight
+# 3. Validate models/nodes without starting GPU work
+.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --story-id STORY_UUID --character-id NPC_UUID --modes chroma_green,neural_rmbg2,neural_birefnet_portrait --check-only --out reports\sprite-preflight
 
-# 4) Comparar los 3 métodos bajo el MISMO checkpoint, semilla y configuración
-.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --story-id UUID_DE_HISTORIA --character-id UUID_DEL_NPC --modes chroma_green,neural_rmbg2,neural_birefnet_portrait --seed 1407 --out reports\sprites-comparativa
+# 4. Compare three modes using the SAME checkpoint, seed and settings
+.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --story-id STORY_UUID --character-id NPC_UUID --modes chroma_green,neural_rmbg2,neural_birefnet_portrait --seed 1407 --out reports\sprite-comparison
 ```
 
-Reemplaza los dos `UUID_` por los identificadores listados. El ejemplo compara **hasta 15 imágenes** (3 métodos × 5 expresiones) y puede consumir tiempo de inferencia considerable; no hay límite de duración predicho. Puedes comenzar más pequeño con `--expressions neutral,joy`. Si algunos métodos carecen de pesos instalados, quedarán explícitamente `skipped` y no se iniciará su inferencia.
+Replace `STORY_UUID` and `NPC_UUID` with IDs returned by the listing commands. Three modes with five expressions can create **up to 15 images**. To start smaller, use `--expressions neutral,joy`. Unavailable modes are explicitly `skipped` and do not start inference.
 
-Para comparar **los cuatro modos** sin dejar cuatro borradores abiertos, añade `--discard-after` y cambia `--modes`:
+To compare all four cutout methods and remove only drafts created by this benchmark after exporting previews/reports, pass `--discard-after`:
 
 ```powershell
-.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --story-id UUID_DE_HISTORIA --character-id UUID_DEL_NPC --modes chroma_green,neural_rmbg2,neural_birefnet_portrait,neural_birefnet_matting --seed 1407 --discard-after --out reports\sprites-cuatro-modelos
+.\.venv\Scripts\python.exe tools\sprite_gpu_benchmark.py --story-id STORY_UUID --character-id NPC_UUID --modes chroma_green,neural_rmbg2,neural_birefnet_portrait,neural_birefnet_matting --seed 1407 --discard-after --out reports\sprites-all-four
 ```
 
-Este último comando **sí elimina los borradores que creó el propio ensayo**, después de guardar sus PNG e informes en `--out`. Nunca elimina sprites ya publicados ni borradores anteriores de otros proyectos. Si omites `--discard-after`, los borradores del ensayo permanecen en Creator Studio para revisión, pero Noble AI limita la cantidad a tres borradores por historia. Puedes borrarlos desde la interfaz cuando termines.
+Without `--discard-after`, test drafts remain reviewable in Creator Studio. Noble AI limits active drafts to three per story; remove unused drafts through the UI. The cleanup option **never deletes published sprites or unrelated drafts**.
 
 ## Linux/macOS
 
-Sustituye el ejecutable de Windows por `.venv/bin/python`. Ejemplo:
+Use `.venv/bin/python` instead:
 
 ```bash
 .venv/bin/python tools/sprite_gpu_benchmark.py --list-stories
-.venv/bin/python tools/sprite_gpu_benchmark.py --story-id UUID_DE_HISTORIA --character-id UUID_DEL_NPC --modes chroma_green,neural_birefnet_matting --seed 1407 --out reports/sprites
+.venv/bin/python tools/sprite_gpu_benchmark.py --story-id STORY_UUID --character-id NPC_UUID --modes chroma_green,neural_birefnet_matting --seed 1407 --out reports/sprites
 ```
 
-## Referencia visual, LoRA y recursos de GPU
+## References, LoRA, and GPU options
 
-Para probar identidad con IPAdapter, añade `--reference-mode ipadapter` y **uno solo** entre `--reference-asset-id UUID` (Galería) y `--reference-sprite-asset-id UUID` (sprite aprobado del mismo NPC). El preset predeterminado es `PLUS FACE (portraits)`; se puede modificar con `--ipadapter-preset` y `--ipadapter-weight`. `--use-lora` aplica el LoRA guardado en el ADN visual del NPC cuando existe y está instalado. Las pruebas nunca garantizan que el rostro o el vestuario permanezcan idénticos.
+For IPAdapter identity conditioning, use `--reference-mode ipadapter` and **exactly one** of `--reference-asset-id UUID` (Gallery) or `--reference-sprite-asset-id UUID` (approved sprite for the same NPC). The default preset is `PLUS FACE (portraits)`; override using `--ipadapter-preset` and `--ipadapter-weight`. `--use-lora` applies the NPC's configured compatible LoRA when present. Neither conditioning method guarantees face/outfit consistency.
 
-El benchmark usa `--gpu-index 0` por defecto para `nvidia-smi`. Con varias tarjetas, elige el índice real de la GPU usada por ComfyUI. `--timeout 360` establece el límite del cliente por solicitud; el propio backend tiene también su límite de historial. `--allow-low-vram` únicamente habilita la política explícita del gestor de recursos, no crea memoria adicional.
+The default NVIDIA telemetry target is `--gpu-index 0`; select the GPU actually used by ComfyUI on multi-GPU machines. `--timeout 360` controls the client request timeout; the backend has separate limits. `--allow-low-vram` overrides an admission policy for the benchmark, **not** the physical VRAM budget.
 
-## Salidas generadas
+## Output artifacts
 
-La carpeta `--out` contiene:
-
-| Archivo | Contenido |
+| File | Content |
 |---|---|
-| `report.json` | Estado por modo/expresión, checkpoint y parámetros consultados, latencias medidas por solicitud, método de alfa y métricas de geometría/transparencia, estado de preflight, datos GPU muestreados si existen, fallos y descartes |
-| `review.html` | Comparativa visual local en cuadrícula con fondo tipo tablero para ver transparencia, neutral/alegría/enojo/tristeza/sorpresa y controles visuales orientativos |
-| `review.csv` | Hoja para rellenar **manualmente** calidad de cabello/bordes, coherencia de rostro y vestuario y notas por variante |
-| `<modo>-<expresión>.png` | PNG RGBA del preview existente, generado solo si el servidor lo entregó y el análisis del archivo pasó |
+| `report.json` | Per-mode/expression status, observed settings and checkpoint, request latency, alpha/geometry metrics, preflight state, sampled GPU metrics, failures, cleanup |
+| `review.html` | Local visual grid with checkerboard transparency, five expressions and visual inspection aids |
+| `review.csv` | Manual quality assessment for hair/edges, face/outfit consistency and notes |
+| `<mode>-<expression>.png` | A valid RGBA preview returned by the server, if generated |
 
-`report.json` se actualiza tras cada expresión, para conservar avances si un proceso se interrumpe. El documento HTML y el CSV se construyen al terminar. El informe no copia texto del NPC, del argumento, de los prompts ni los UUID de la historia o personaje. Los previews PNG, por supuesto, **sí contienen el arte generado**: compártelos solo si deseas que otra persona lo inspeccione.
+`report.json` is updated after each expression to preserve partial results during interruptions; HTML/CSV are finalized at the end. Reports omit NPC text, story plots, prompts, and story/character UUIDs. **PNG previews do contain generated artwork**; share them only when appropriate.
 
-El reporte marca `simulated=true` únicamente en pruebas con transporte HTTP inyectado, y `false` al ejecutar con HTTP real; esto **no prueba por sí solo** que ComfyUI haya utilizado hardware dedicado. Los valores de `nvidia-smi` son muestras temporales del **host**, no una medición perfecta del consumo atribuible al proceso: pueden incluir otra aplicación y no capturar picos breves.
+`simulated=true` marks injected/mock HTTP tests; real HTTP mode uses `false` but does not alone prove GPU execution. `nvidia-smi` samples include system-wide activity and can miss short peaks.
 
-### Interpretación y criterios
+## Interpretation
 
-- **Tiempo/latencia:** segundos o milisegundos transcurridos desde la solicitud HTTP de generar hasta la descarga y validación del preview; incluye overhead API/ComfyUI. No es tiempo puro de GPU. Medir repetidamente en ejecuciones separadas ayuda a distinguir cold-start de cacheo, pero cada run utiliza la política de ComfyUI existente y puede cachear nodos.
-- **VRAM:** máximo observado en `nvidia-smi` durante las muestras; `null` cuando no existe. Sin muestras no se puede afirmar que cupo en 16 GB ni que hubo cero OOM.
-- **Fracción de alfa suave / cobertura / bounding box:** geometría verificable de imágenes PNG, no calidad de segmentación ni consistencia facial. Una máscara blanca constante, por ejemplo, puede dar valores numéricos altos pero ser visualmente mala; el servidor rechaza varias formas de máscaras inválidas, pero la revisión humana continúa obligatoria.
-- **Comparación visual:** abre `review.html`, anota decisiones en `review.csv` y examina zonas críticas: bordes de pelo, accesorios, mangas, transparencia interior, ojos, proporciones, paleta y vestuario. No son datos que el benchmark pueda certificar automáticamente.
+- **Latency:** from the HTTP generation request through preview download and validation, including API/ComfyUI overhead; not pure GPU execution time. Separate cold starts from repeated warm requests.
+- **VRAM:** the maximum sampled `nvidia-smi` reading, or `null` if unavailable. No samples means no validated fit/OOM conclusion.
+- **Soft alpha, bounding box, coverage:** objective PNG geometry indicators, **not** proof of good segmentation or consistent character identity.
+- **Visual review:** open `review.html`, record decisions in `review.csv`, and inspect hair edges, accessories, clothing, transparency, eyes, anatomy, and pose.
 
-## Fallos seguros y privacidad
+## Safe failure handling and privacy
 
-El cliente solo acepta `http://127.0.0.1:<puerto>`, `http://localhost:<puerto>` o `http://[::1]:<puerto>`, sin credenciales, rutas externas ni redirecciones. No usa proxies de entorno ni contacta APIs externas. Ante modelo ausente, error de una expresión, timeout o máscara de baja calidad, registra el fallo, no genera las expresiones restantes de ese modo y no publica activos; las imágenes ya obtenidas se conservan. El ensayo `--check-only` sale con código no cero si los modos requeridos no están listos. En ejecuciones reales puede haber descargas automáticas propias de plugins de ComfyUI ajenos a Noble cuando **otros** workflows los activan: administra tus pesos y extensiones desde ComfyUI.
+The client allows only loopback HTTP URLs (`127.0.0.1`, `localhost`, `[::1]`) with a port, no embedded credentials, redirects, or arbitrary routes. It does not use environment proxies or contact third-party APIs. Missing weights, faulty masks, individual generation errors, or timeouts produce explicit report failures. Existing previews are preserved; unvalidated assets are never published. `--check-only` returns a nonzero exit when requested modes are unavailable.
 
-La integración se prueba en CI con transporte HTTP simulado y NVIDIA simulado. **La validación real de checkpoints, familias SD/SDXL/Illustrious/Flux, latencia, VRAM, calidad visual y peso compatible exige ejecutar estos comandos localmente** y revisar sus archivos.
+ComfyUI third-party plugins may have their own download behavior when invoked outside this workflow; install and administer those resources separately.
 
-## Estado de aceptación
+## Evidence and current acceptance status
 
-La implementación y su emulación HTTP/NVIDIA pasaron [CI #42161285281](https://github.com/Mairon31/novel_ai/actions/runs/42161285281): **337 Python + 66 Playwright + Vite build**. Las carpetas `reports/` y `sprite-benchmark/` están en `.gitignore` para evitar publicar imágenes y telemetría local por accidente. La **prueba física GPU aún no se ha realizado**: generar y revisar los artefactos con el checkpoint del usuario es el siguiente paso para evaluar compatibilidad y fidelidad visual.
+[CI #42161285281](https://github.com/Mairon31/novel_ai/actions/runs/42161285281) reported **337 Python / 66 Playwright / Vite PASS** for the mocked implementation. Local `reports/` and `sprite-benchmark/` outputs are gitignored to prevent accidentally committing generated art/telemetry.
+
+**The physical GPU benchmark is still pending**. Real checkpoints (SD/SDXL/Illustrious/Flux), VRAM, model-family compatibility, transparency quality, and character identity must be assessed by running this utility with an actual ComfyUI installation and inspecting its outputs.

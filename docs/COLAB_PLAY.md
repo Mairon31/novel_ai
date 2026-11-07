@@ -1,80 +1,80 @@
-# Noble AI — Google Colab todo en uno
+# Noble AI — all-in-one Google Colab launch
 
-**Notebook:** [Abrir Noble AI en Colab](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_play.ipynb)
+**Notebook:** [Open Noble AI in Colab](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_ai_colab_play.ipynb)  
+**Source:** [Notebook](../notebooks/noble_ai_colab_play.ipynb) · [Versioned launcher](../tools/colab_launch.py)
 
-Repositorio: [`notebooks/noble_ai_colab_play.ipynb`](../notebooks/noble_ai_colab_play.ipynb) · Instalador versionado: [`tools/colab_launch.py`](../tools/colab_launch.py).
+Google Colab is an **optional remote environment**. The local web application is the primary product workflow.
 
-## Inicio sin configuración técnica
+## Launch without manual commands
 
-1. Abre el enlace del notebook en Google Colab y conecta un entorno de ejecución. Selecciona **GPU T4/L4** si está disponible; sin GPU todavía puedes ejecutar la narración en CPU, con rendimiento inferior. No es obligatorio conectar Drive.
-2. Pulsa **Ejecutar la única celda de código** o **Entorno de ejecución → Ejecutar todas**. No tienes que copiar comandos, archivos ni tokens.
-3. La instalación muestra logs y un mensaje cada cierto tiempo mientras instala paquetes/descarga modelos. Al completarse aparece **Abrir Noble AI en una pestaña** y un marco incrustado en la salida.
-4. Abre **Biblioteca → La estación de la última luna** para probar la historia de ejemplo, creada solo cuando la biblioteca estaba vacía. En bibliotecas que ya contienen historias, no se añade otra. Desde allí también puedes crear tu historia y sus personajes.
+1. Open the notebook and connect a Colab runtime. Select T4/L4 GPU if offered. The text-oriented app can still run on CPU at lower performance. Google Drive is optional.
+2. Select **Run the single code cell** or **Runtime → Run all**. The launcher manages commands and downloads without asking the user to paste their own tokens.
+3. The cell prints stage logs and periodic progress updates. Once the app is available, it shows **Open Noble AI in a new tab** and an embedded view.
+4. Use **Library → La estación de la última luna** for the bundled demonstration story, installed only when the library was previously empty. Existing stories are never overwritten.
 
-**No necesitas que termine la descarga de los modelos de imagen para empezar a leer.** Tras instalar la API y comprobar Ollama, el notebook abre la interfaz y después continúa preparando ComfyUI si elegiste imágenes. Mientras tanto puedes crear o abrir historias desde la UI.
+**You do not have to wait for optional image model downloads to finish to use the reader.** When the API and Ollama are ready, the UI becomes available while selected ComfyUI setup continues.
 
-El enlace a la interfaz usa **el proxy del kernel autenticado de la misma sesión Colab**. No se inicia Cloudflare Tunnel, ngrok ni una URL pública. Si tu navegador bloquea la pestaña o cookies de terceros, usa la vista incrustada; los enlaces del proxy dejan de ser válidos al desconectar Colab.
+The UI is accessed through the **authenticated Colab kernel proxy**, not a public Cloudflare/ngrok tunnel. If browser pop-up or third-party-cookie policies block the new tab, try the embedded view. Session-proxy links expire with the runtime.
 
-## Qué se instala automáticamente
+## Automated setup
 
-| Componente | Configuración |
+| Component | What the launcher does |
 |---|---|
-| Código Noble AI | `git clone/fetch` de `Mairon31/novel_ai` y verificación del commit exacto |
-| API | Python y dependencias reales desde `apps/api/requirements.txt`; FastAPI/Uvicorn en `127.0.0.1:8000` |
-| Frontend | Node.js compatible con Vite, `npm ci` si existe lockfile o `npm install`, `npm run build` |
-| Acceso web | React estático servido **por el mismo puerto** de FastAPI, bajo el proxy Colab |
-| Narración | Ollama local en `127.0.0.1:11434`; descarga un modelo y lo registra en `/api/v1/narrative/config`; después llama a `/api/v1/narrative/prepare` para confirmar inferencia real sin generar ningún turno |
-| Historia de ejemplo | Solo si la biblioteca está vacía; no elimina ni sobrescribe historias previas |
-| Ilustraciones (modo `auto`) | Si existe GPU NVIDIA, intenta instalar ComfyUI, su API loopback `8188` y un checkpoint de demostración **Stable Diffusion 1.5 FP16**. Configura `/api/v1/images/config` únicamente si todavía no había un checkpoint elegido |
-| Copia Drive (opt-in) | Copia historias/medios a Drive mediante respaldo periódico con API `sqlite3.Connection.backup`; no copia modelos GPU pesados |
+| Noble AI source | `git clone/fetch` from `Mairon31/novel_ai`, with exact commit verification |
+| API | Install Python dependencies from `apps/api/requirements.txt`, run FastAPI/Uvicorn on `127.0.0.1:8000` |
+| Frontend | Install compatible Node/Vite dependencies using `npm ci` if a lockfile exists, otherwise `npm install`; build React |
+| Web access | Serve built React assets through the **same FastAPI port** via Colab's session proxy |
+| Narrator | Install/start local Ollama on `127.0.0.1:11434`, select/download a model, save `/api/v1/narrative/config`, call `/api/v1/narrative/prepare` to verify real inference without committing a turn |
+| Demo story | Install only into an empty library |
+| Images (`auto`) | On available NVIDIA GPU, attempt ComfyUI installation and a test **Stable Diffusion 1.5 FP16** checkpoint on loopback port 8188, without replacing an already selected checkpoint |
+| Drive backup (opt-in) | Back up story SQLite using `sqlite3.Connection.backup` and media files, not multi-GB model weights |
 
-ComfyUI puede instalarse sin RMBG/LoRA/IPAdapter. Los recursos avanzados **necesitan** los plugins y pesos correspondientes. El checkpoint de ejemplo no es un modelo artístico especializado de nivel producción y no garantiza consistencia facial. Las ilustraciones siguen siendo **bajo demanda**, no se generan automáticamente durante cada diálogo.
+ComfyUI may be installed without optional RMBG, LoRA, or IPAdapter extensions. Those require separately installed plugins/models. The test checkpoint is not a production anime model and does not guarantee character identity. Illustration generation stays on demand, not once per dialogue response.
 
-El instalador verifica que el checkpoint de prueba descargado corresponde al SHA256 publicado en Hugging Face: [Comfy-Org/stable-diffusion-1.5 FP16](https://huggingface.co/Comfy-Org/stable-diffusion-1.5/blob/main/v1-5-pruned-emaonly-fp16.safetensors) (alrededor de 2,13 GB). Ollama usa [Qwen3 4B Instruct](https://ollama.com/library/qwen3/tags) cuando se detectan al menos 11.000 MiB de VRAM NVIDIA; en CPU/GPU más pequeña, `qwen3:1.7b`. **Esto es una elección de inicio, no un benchmark ni una garantía de calidad.**
+For the demo checkpoint, the launcher compares the download with the published SHA-256 of [Comfy-Org stable-diffusion-1.5 FP16](https://huggingface.co/Comfy-Org/stable-diffusion-1.5/blob/main/v1-5-pruned-emaonly-fp16.safetensors) (approximately 2.13 GB). With at least 11,000 MiB observed NVIDIA VRAM, the initial Ollama selection uses a [Qwen3 4B Instruct](https://ollama.com/library/qwen3/tags) variant; smaller/CPU environments use `qwen3:1.7b`. This is a setup default, **not a benchmark or output-quality guarantee**.
 
-## Ajustes al inicio (opcionales)
+## Optional notebook configuration
 
-La única celda tiene cuatro campos:
+The single notebook cell provides four settings:
 
-- **`REVISION="master"`**: el notebook resuelve primero el HEAD de `master`, fija su SHA y descarga **el instalador de ese mismo commit**, evitando instalar una mezcla accidental de revisiones. En otra sesión, `master` buscará el código más reciente; puedes fijar un SHA completo de 40 caracteres para repetir una versión anterior.
-- **`MODELO="auto"`**: selecciona automáticamente un modelo o escribe un tag instalado/disponible de Ollama (por ejemplo `qwen3:4b-instruct`, `qwen3.5:2b` u otros futuros tags válidos). El script pasa argumentos a subprocess como lista, no a un shell interpolado.
-- **`IMAGENES="auto"`**: en GPU intenta instalar ComfyUI y un checkpoint de prueba; `off` inicia solo narración y frontend; `on` intenta instalar imágenes incluso sin NVIDIA, con consumo potencialmente elevado de RAM/CPU.
-- **`COPIA_EN_DRIVE=False`**: cuando se cambia a `True`, Colab solicitará permiso de Drive. Los datos se restauran en disco local al iniciar; después se copian periódicamente a `Mi unidad/NobleAI-Colab/data`. La copia de la base de datos se hace online por SQLite, mientras que los medios se copian por archivos. **No es una transacción atómica global** y las modificaciones de los últimos minutos pueden perderse ante una interrupción súbita de Colab.
+- **`REVISION="master"`**: resolve the branch's current HEAD SHA first and fetch the launcher from **that exact commit**. Set a full 40-character SHA to reproduce an older revision. This avoids mixing script and application versions.
+- **`MODELO="auto"`**: choose an Ollama model based on available resources or specify an installed/available valid Ollama tag such as `qwen3:4b-instruct` or `qwen3.5:2b`. Launcher subprocess commands use an argument list, not interpolated shell text.
+- **`IMAGENES="auto"`**: attempt ComfyUI and demo checkpoint on an NVIDIA GPU. `off` uses narration/frontend only; `on` attempts images even without NVIDIA (potentially expensive in CPU/RAM).
+- **`COPIA_EN_DRIVE=False`**: explicitly set True to ask for Drive authorization. The launcher restores available data to local storage and periodically backs it up under `My Drive/NobleAI-Colab/data`. SQLite backup is online, while media are copied as files; **the combined backup is not globally atomic**, and a sudden disconnect can lose the last minutes of unbacked-up changes.
 
-**El instalador conserva los ajustes de narración e imagen previamente guardados** si existen y son válidos. La carpeta de datos `/content/noble-ai-colab/data` queda **fuera** del checkout Git, por lo que actualizar `master` no ejecuta un reset sobre tus historias. Si termina el runtime de Colab sin Drive activado, esa carpeta desaparece junto con la sesión temporal. Puedes seguir usando el respaldo portátil `.noble.zip` desde la Biblioteca para exportar historias.
+The launcher preserves previously saved, valid narrator/image settings. User data live at `/content/noble-ai-colab/data`, **outside** the Git checkout, so updating `master` must not reset story data. Without Drive backup, this directory expires with the temporary Colab runtime. Users can also export portable `.noble.zip` archives through the Library.
 
-## Logs y resolución de problemas
+## Logs and troubleshooting
 
-Carpeta: `/content/noble-ai-colab/logs/`.
+Log directory: `/content/noble-ai-colab/logs/`.
 
-| Archivo | Qué revisar |
+| File | What it records |
 |---|---|
-| `git.log` | Revisión descargada, conflictos de red y fetch del SHA |
-| `python-deps.log` | Dependencias FastAPI |
-| `npm-ci.log` o `npm-install.log` | Dependencias web actuales |
-| `vite-build.log` | Compilación de React/TypeScript |
-| `noble-api.log` | Errores del servidor FastAPI/SQLite |
-| `ollama-install.log`, `ollama-pull.log`, `ollama.log` | Instalar, descargar y ejecutar LLM |
-| `comfy-git.log`, `comfy-deps.log`, `comfyui.log` | Instalación e inicio de ComfyUI |
-| `launch_state.json` | Commit ejecutado, GPU observada, modelo configurado y resultado del calentamiento |
+| `git.log` | Revision and fetch/network errors |
+| `python-deps.log` | FastAPI dependencies |
+| `npm-ci.log` / `npm-install.log` | Frontend installation |
+| `vite-build.log` | React/TypeScript build |
+| `noble-api.log` | FastAPI and SQLite errors |
+| `ollama-install.log`, `ollama-pull.log`, `ollama.log` | LLM installation, download, execution |
+| `comfy-git.log`, `comfy-deps.log`, `comfyui.log` | ComfyUI installation/startup |
+| `launch_state.json` | Exact revision, observed GPU, model choice, warmup result |
 
-Si Ollama no puede descargar/generar, el notebook muestra el error y mantiene la UI disponible. Si ComfyUI falla, sigue accesible el lector y el narrador; no se reporta como instalada una generación de imágenes que no inició. El instalador no ejecuta un bucle anti-AFK: Colab puede cerrar sesiones por límites/cuotas y no existe garantía de duración continua.
+Ollama installation/inference failures should be reported while preserving the UI. If ComfyUI fails, readers and the narrator remain accessible; the launcher must not report image generation as installed when no runtime started.
 
-**Rendimiento:** la primera ejecución puede descargar varios GB; los modelos y el frontend se preparan dentro de Colab. La imagen IA opcional puede competir con Ollama por VRAM en T4, y no se promete 16 GB libres, duración ni calidad estable sin un benchmark real. No se expone el servidor local a `0.0.0.0`.
+The launcher does not use anti-idle loops. Colab can terminate sessions under its quota and usage policies. Large model downloads, warmups, and image inference can consume significant time, disk, and VRAM; there is no performance guarantee without physical runtime measurements. The local app is not bound to `0.0.0.0`.
 
-## Compatibilidad futura y pruebas
+## Portability and test contracts
 
-Cada ejecución sobre `master` obtiene las dependencias Python y el frontend de la revisión seleccionada; el instalador admite otros tags seguros de Ollama sin modificar el notebook. Los controles de configuración se mantienen en el frontend actualizado. No se suponen rutas/nodos de una versión futura de ComfyUI: si una versión de Noble deja de ser compatible, el registro debe mostrar el error, no cambiar silenciosamente el proveedor.
+The launcher checks out the selected revision and installs that revision's Python/frontend dependencies. Future Ollama tags can be selected through validated model names. Do not silently assume ComfyUI nodes or paths exist after upstream changes; report actionable errors.
 
-- `tests/test_colab_play.py`: integridad del JSON/AST, única celda obligatoria, revisión fijada, seguridad del proxy y URL de clone, selección de modelo, conservación de ajustes, historia demo idempotente, prueba de inferencia y respaldo SQLite/medios.
-- **CI GitHub** usa simulaciones: verifica estructura/contratos y build, **no ejecuta realmente Google Colab, Ollama, downloads de 2+ GB, ni genera una imagen GPU**.
-- Cuando pruebes el notebook en un runtime Colab verdadero, sus logs y `launch_state.json` permitirán cerrar el gate de instalación física con evidencia de GPU/modelo y eventuales errores.
+- `tests/test_colab_play.py`: notebook JSON/AST, one executable cell, pinned revision, proxy safety, checkout URL, model choice, persisted settings, idempotent demo story, explicit inference check, and SQLite/media backup.
+- GitHub Actions uses simulated external providers, verifies syntax/contracts/build, but **does not actually run Colab, download multi-GB weights, or render on GPU**.
+- Real Colab validation should preserve stage logs and `launch_state.json` to prove device/runtime behavior.
 
-### Reinicio seguro cuando cambia `master`
+## Safe restart when `master` changes
 
-El instalador almacena el PID de Uvicorn que inició. Si vuelves a ejecutar el notebook mientras una versión anterior sigue activa, compara el SHA guardado con el nuevo; cuando difieren, comprueba en `/proc/<PID>/cmdline` que el proceso pertenece a `noble_api.main:app` bajo la carpeta del proyecto y en el puerto `127.0.0.1:8000`. Solo entonces envía `SIGTERM` a ese Uvicorn para cargar el código nuevo y ejecutar migraciones SQLite. Si la comprobación no coincide, **no mata procesos ajenos** y detiene la actualización con un diagnóstico. Historias y medios siguen fuera del checkout Git. ComfyUI y Ollama se reutilizan si están activos y saludables.
+The launcher records the Uvicorn PID it starts. On a later run with a different commit SHA, it checks `/proc/<PID>/cmdline` for the exact Noble `noble_api.main:app` process, project directory, and loopback port `8000` before sending SIGTERM to restart and apply SQLite migrations. A mismatch prevents termination and produces diagnostics; unrelated processes are not killed. Story and media data remain outside the source checkout. Existing healthy ComfyUI and Ollama services are reused when appropriate.
 
+## Enriched demonstration story
 
-## Historia de ejemplo enriquecida desde el Story Hub
-
-En una biblioteca nueva, `ensure_demo_story()` instala «La estación de la última luna» desde `POST /api/v1/story-hub/ultima-luna/install` y confirma 4 NPC, 3 entradas Lorebook y 3 aperturas. No se modifica ninguna historia ya creada: si tu Colab contiene la demo simple anterior, entra a **Biblioteca → Descubre un mundo para jugar** para instalar el nuevo paquete como otra historia. Todavía no trae imágenes preinstaladas. [Guía](STORY_HUB.md).
+On a fresh library, `ensure_demo_story()` installs **La estación de la última luna** through `POST /api/v1/story-hub/ultima-luna/install`, verifying four NPCs, three Lorebook entries, and three alternative openings. The launcher does not modify any existing story. A previous simple demo remains intact; use **Library → Discover Stories** to add the richer pack separately. The pack contains no preinstalled illustrations. See [Story Hub](STORY_HUB.md).
