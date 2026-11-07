@@ -14,7 +14,7 @@ test('Stop signals the backend for the exact story and request without committin
   await page.getByRole('button', { name: 'New story' }).click();
 
   const creator = page.getByRole('dialog', { name: 'Create a new story' });
-  await creator.getByLabel('Título').fill('Cancelación del narrador ' + test.info().project.name);
+  await creator.getByLabel('Title').fill('Cancelación del narrador ' + test.info().project.name);
   await creator.getByLabel('World premise').fill(
     'Una biblioteca encantada custodia manuscritos y puertas a mundos lejanos.'
   );

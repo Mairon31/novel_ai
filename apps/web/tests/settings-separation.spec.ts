@@ -24,7 +24,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   }
   const nav = page.getByRole('navigation', { name: 'Settings sections' });
   await expect(nav.getByRole('button', { name: 'Images', exact: true })).toBeVisible();
-  await expect(nav.getByRole('button', { name: 'Voz / TTS' })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Voice / TTS' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'About Noble AI' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Updates', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
@@ -40,9 +40,9 @@ test('four settings panels are independent, deep-linkable and responsive', async
     fullPage: true,
   });
 
-  await nav.getByRole('button', { name: 'Voz / TTS' }).click();
+  await nav.getByRole('button', { name: 'Voice / TTS' }).click();
   await expect(page).toHaveURL(/#\/configuracion\/voice$/);
-  await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();
   await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   expect(voiceRequests).toBeGreaterThan(0);
@@ -53,7 +53,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   });
   const imagesBeforeReload = imageRequests;
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();
   await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   expect(imageRequests).toBe(imagesBeforeReload);
   await page.goBack();

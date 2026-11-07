@@ -44,7 +44,7 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
 
   await page.getByRole('button', { name: 'Ir a Library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
-  await page.getByRole('button', { name: 'Comenzar historia' }).click();
+  await page.getByRole('button', { name: 'Start story' }).click();
   await expect(page.locator('.noble-reader-layout')).toBeVisible();
   await expect(page.locator('.noble-library-cover-grid')).toHaveCount(0);
   await page.getByRole('button', { name: 'Return to library' }).click();

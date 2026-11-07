@@ -12,7 +12,7 @@ test('reader exports its current story as a standalone HTML attachment', async (
   await page.getByRole('button', { name: 'New story' }).click();
   const dialog = page.getByRole('dialog', { name: 'Create a new story' });
   const title = 'HTML portátil ' + test.info().project.name;
-  await dialog.getByLabel('Título').fill(title);
+  await dialog.getByLabel('Title').fill(title);
   await dialog.getByLabel('World premise').fill(
     'Una exploradora descubre un reino antiguo y escribe sus recuerdos en un libro.');
   await dialog.getByRole('button', { name: 'Choose protagonist' }).click();

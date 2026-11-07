@@ -28,7 +28,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await page.locator('.creator-project').filter({ hasText: title }).click();
   await page.getByRole('button', { name: /Images \(0\)/ }).click();
   const section = page.locator('.creator-media-library');
-  await expect(section.getByText('Sin portada personalizada')).toBeVisible();
+  await expect(section.getByText('No custom cover')).toBeVisible();
   await page.getByLabel('Tipo de recurso visual').selectOption('cover');
   await page.getByLabel('Image name').fill('La luna sobre la torre');
   await page.getByLabel('Image description').fill('Cubierta con una luna violeta y una torre');
@@ -36,7 +36,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
     name: 'cover.png', mimeType: 'image/png', buffer: coverPng,
   });
   await page.getByRole('button', { name: 'Import image' }).click();
-  await expect(section.getByText('Portada personalizada')).toBeVisible();
+  await expect(section.getByText('Custom cover')).toBeVisible();
   await expect(section.getByRole('img', { name: 'Portada de ' + title })).toBeVisible();
 
   const story = await page.request.get('/api/v1/stories/' + storyId);
@@ -61,7 +61,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await page.getByRole('button', { name: 'Editar en Creator Studio' }).click();
   await page.getByRole('button', { name: /Images \(1\)/ }).click();
   await page.getByRole('button', { name: 'Quitar portada' }).click();
-  await expect(page.getByText('Sin portada personalizada')).toBeVisible();
+  await expect(page.getByText('No custom cover')).toBeVisible();
   const updated = await page.request.get('/api/v1/stories/' + storyId);
   expect((await updated.json() as { cover_asset_id: string | null }).cover_asset_id).toBeNull();
   await page.getByRole('button', { name: 'Ir a Library' }).click();
