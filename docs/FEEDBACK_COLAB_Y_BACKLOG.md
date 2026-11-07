@@ -1,139 +1,145 @@
-# Noble AI — Retroalimentación de Colab y plan de producto centrado en historias
+# Noble AI — Colab feedback and story-first product backlog
 
-**Origen:** prueba de Noble AI por el propietario en un runtime de Google Colab, 5 de noviembre de 2026.  
-**Estado:** **backlog solicitado; NO implementado ni validado por esta documentación**.  
-**Alcance:** funcionalidades del producto, experiencia de usuario, arquitectura, estabilidad en hardware y distribución de historias.  
-**Seguimiento:** [TODO.md](../TODO.md) y [PROGRESO.md](PROGRESO.md). Se desarrolla en \`master\` y solo se marca [x] después de pruebas y evidencia.
+**Source:** owner testing Noble AI in Google Colab on November 5, 2026.  
+**Status:** requested backlog; **this document is not evidence of implementation or validation**.  
+**Scope:** features, usability, architecture, hardware stability, and story distribution.  
+**Tracking:** [TODO](../TODO.md) and [Progress](PROGRESO.md). Implementation targets `master`; mark a task complete only after code and verifiable tests.
 
-## Principio de producto
+## Product principle
 
-**Noble AI debe abrir mostrando historias para jugar y herramientas para crearlas.** El Model Hub, los runtimes, la descarga de pesos y la administración técnica deben ser herramientas claramente separadas, accesibles al necesitarlas, no el centro permanente de la aplicación.
+**Noble AI should open with stories to play and tools to create them.** Model Hub, runtimes, downloads, and technical management must be separate tools accessed as needed—not the permanent center of the product.
 
-La experiencia objetivo tiene tres recorridos independientes:
+Three independent journeys:
 
-1. **Jugador:** Descubrir historias → revisar sinopsis, personajes, etiquetas, portada y requisitos → instalar/cargar mundo → elegir protagonista e inicio → jugar/leer con continuidad.
-2. **Creador:** Describir idea → asistente IA propone mundo, trama, secretos, personajes, primeras escenas y plan de imágenes → revisar/editar cada elemento → generar o importar recursos → probar historia → publicar un paquete versionado si lo desea.
-3. **Administrador técnico:** Explorar/instalar/asignar modelos de narración, imagen y TTS → configurar motores y presupuesto GPU → probar inferencia → inspeccionar descargas/logs/salud de proveedores.
+1. **Player:** Discover stories → inspect synopsis, cast, tags, cover, prerequisites → install/open world → choose protagonist and opening → play/read with continuity.
+2. **Creator:** Describe an idea → AI assistant proposes world, public/private plot, secrets, characters, scenes, and image plans → review/edit each field → generate/import media → test the story → optionally publish a versioned package.
+3. **Technical administrator:** Find/install/assign narrator, image, and speech models → configure engines and GPU budgets → test inference → inspect downloads, logs, and provider health.
 
-No presentar una función como terminada porque exista un botón o un mock. Esta visión describe **trabajo pendiente**.
+Do not present a feature as complete merely because a button or mock exists.
 
-## Secuencia propuesta y criterios de aceptación
+## Proposed sequence and acceptance criteria
 
-### P0 — Hacer el producto realmente utilizable desde la interfaz
+### P0 — Make the product truly usable through the interface
 
-**N-01 · Instalador de modelos de imagen integrado**
+**N-01 — Integrated image model installer**
 
-- Catálogo real de checkpoints/LoRA/ControlNet/VAEs y recursos necesarios según la familia de workflow; verificación de compatibilidad ComfyUI/nodos. Mostrar autor, licencia, formato, tamaño, familia, VRAM estimada *como aproximación* y requisitos.
-- Instalar desde la UI con descarga reanudable, progreso y cancelación, hash cuando exista fuente fiable, nombres/rutas controladas, disco libre, aceptación de licencias/condiciones y detección de modelos que requieren autorización. No cargar ni ejecutar código arbitrario desde una ficha de modelo.
-- Elegir modelo predeterminado por perfil, probar una imagen en el runtime realmente conectado, conservar generaciones previas ante fallo. Limpiar/desinstalar solamente archivos registrados y no referenciados; no eliminar archivos ajenos.
-- **Gate:** descarga interrumpida/reanudada + hash + inventario ComfyUI + render físico 1 imagen real por familia admitida. Nunca declarar Flux/Illustrious soportado solo por aparecer en catálogo.
+- Real catalog of compatible checkpoints, LoRAs, ControlNet, VAEs, and workflow-family dependencies. Detect supported ComfyUI nodes. Show author, license, model family, format, size, approximate VRAM, and prerequisites.
+- Install explicitly through UI with resumable download, progress/cancel, trusted hash checks when published, safe storage paths, free-disk checks, license/terms review, and authentication-aware error handling. Never run arbitrary downloaded code.
+- Choose profile defaults, render one real image on the connected runtime, preserve old images when rendering fails. Delete only unused, verified Noble-owned model files.
+- **Acceptance:** interrupted/resumed transfer + integrity + ComfyUI inventory + **one actual render per supported family**. Catalog visibility alone does not prove Flux/Illustrious compatibility.
+- **Partial implementation since request:** individual public Hugging Face root-level `.safetensors` checkpoints and an existing-ComfyUI runtime manager. Full N-01 remains open.
 
-**N-02 · Instalador de TTS y biblioteca de voces**
+**N-02 — TTS installer and voice library**
 
-- Catálogo de voces compatibles con Piper con idioma/acento, tamaño, muestras de voz de procedencia y calidad documentada; descarga de ambos archivos \`.onnx\` y \`.onnx.json\`, validación de compatibilidad, par de archivos y hash disponible.
-- Progreso/pausa/reintento desde UI, asignación de voz general y por NPC, velocidades/pausas y prueba controlada «Escuchar muestra». Preferir voces español latinoamericano naturales; no inferir calidad solo por etiqueta \`es-MX\`.
-- Retener la opción bajo demanda, no activar reproducción automática a escondidas; soportar colas y cancelación, y preservar preferencias tras reinicio.
-- **Gate:** instalación desde UI → voz visible → síntesis WAV real → reproducir/pausar/detener en navegador → persistencia, multivoz, cancelación y desconexión.
+- Catalog compatible Piper voices with language/accent, size, source samples, and documented model provenance. Install both `.onnx` and `.onnx.json` with pair/hash validation.
+- UI progress, pause, retry, default and per-NPC voice assignment, pace/pauses, and controlled **Listen to sample** preview. Prioritize natural Latin American Spanish when that narrative language is chosen; `es-MX` metadata alone does not certify quality.
+- Keep speech on demand and default OFF. Support cancellation/queues and settings persistence.
+- **Acceptance:** UI install → visible voice → real WAV synthesis → play/pause/stop in browser → persistence, multi-voice, cancellation, and disconnect recovery.
+- **Partial implementation:** limited Piper voice catalog/download/preview. Per-NPC voices and real physical voice validation remain open.
 
-**N-03 · Centro de configuración de motores**
+**N-03 — Structured engine settings**
 
-- Separar navegación de **Narrador**, **Imágenes**, **Voces**, **Rendimiento/GPU**, **Proveedor**, **Descargas** y **Diagnóstico** con encabezados, estado claro, ayuda contextual y presets razonables para T4/8/12/16/24 GB; evitar lista monolítica de campos.
-- Imagen: checkpoint/arquitectura, resolución múltiplo correcto, pasos, CFG, sampler, scheduler, seed, negativo, LoRAs y sus pesos, referencia/IPAdapter, matting, caché y rutas de output. Solo mostrar campos realmente implementados y compatibles con el modelo elegido.
-- Voz: modelo/idioma/acento, asignación por NPC, velocidad, silencios, volumen si el motor lo soporta, dispositivo/carga, preview y política de autolectura independiente.
-- Guardar/cancelar/revertir, validación de rangos antes de activar, cambios efectivos sobre los workflows y feedback de conexión/diagnóstico. Los ajustes futuros se añaden por capacidad del proveedor; no romper preferencias SQLite anteriores.
-- **Gate:** cambios guardados realmente afectan el siguiente render y el siguiente WAV; API/Playwright desktop-móvil, validación de límites y migraciones.
+- Separate **Narrator**, **Images**, **Voice**, **Performance/GPU**, **Providers**, **Downloads**, and **Diagnostics**, with clear headers/statuses/help and meaningful T4/8/12/16/24 GB profiles. Avoid one unstructured column of fields.
+- Images: model architecture, checkpoint, valid resolution steps, CFG, sampler/scheduler, seed, negatives, LoRA strength, IPAdapter references, matting, cache, output paths. Show only implemented and provider-compatible controls.
+- Voice: model/language/accent, per-character assignment, speed, silence, volume where supported, device/load, preview, and independent automatic-reading preference.
+- Save/cancel/revert, validate range and effective graph changes, connection health, and backward-compatible SQLite migrations.
+- **Acceptance:** saved settings actually affect the next image and WAV; API and desktop/mobile Playwright checks.
 
-**N-04 · Orquestador de narración + imagen + voz**
+**N-04 — Narration + image + voice orchestrator**
 
-- Diseñar estados del trabajo y dependencias: narración/escena/fondo/sprite/event CG/TTS, con una cola visible, cancelación idempotente, reintentos acotados, salida al cambiar de historia y registro de fallos sin duplicar medios.
-- Arbitraje real de GPU/memoria y CPU: T4 de Colab como mínimo; mecanismos verificables para pausar/liberar/descargar pesos entre Ollama/ComfyUI/Piper, evitar ejecutar tres modelos simultáneos de manera irreflexiva, gestionar OOM y hacer fallback **explícito**.
-- Presets de recursos: texto prioritario / equilibrado / visual / solo CPU; priorizar que el usuario pueda seguir leyendo aunque falle una imagen o un TTS.
-- **Gate:** 20 turnos con cambios de escena y voz bajo presupuesto medido, cancelación en cada etapa, resultados recuperables tras reinicio, 0 publicaciones parciales y logs de pico VRAM reales. No simular estas cifras.
+- Define job dependencies and states for narration, scenes, backgrounds, sprites, event CG, and TTS. Provide a visible queue, idempotent cancellation, bounded retries, story-switch cleanup, and no duplicate/partial publication.
+- Implement actual GPU/RAM arbitration for Colab T4 and local devices: controlled release/unload of **owned** Ollama/ComfyUI/Piper resources, recovery from OOM, and explicit fallback. Never assume all three engines fit simultaneously.
+- Resource presets: text-first, balanced, visual-first, CPU-only. Narrative play must survive image or voice failures.
+- **Acceptance:** 20 mixed turns with measured device budgets, cancellations at every stage, restart recovery, zero partial publications, real peak-VRAM logs. Mocked metrics do not count.
 
-**N-05 · Primer arranque y prueba de Colab real**
+**N-05 — First-run and physical Colab QA**
 
-- Verificar el notebook en entorno T4: instalación de modelos desde app, endpoint, proxy, narrador, checkpoint, TTS, persistencia Drive, configuración y futuras migraciones. Probar un escenario sin GPU.
-- No ocultar errores del instalador con banners «listo» cuando una dependencia sea obligatoria. Mostrar al usuario estado de narrador / imágenes / TTS por separado.
-- **Gate:** reporte de instalación, logs, captura visual desktop/móvil, una imagen y una voz reales, primera historia jugable y reabrirla sin pérdida.
+- Validate the real T4 flow: in-app model installation, endpoints/proxy, narrator, checkpoint, TTS, Drive persistence, saved configuration, and migrations. Also test a no-GPU environment.
+- Surface separate narrator/image/TTS readiness; never show a generic **Ready** when required dependencies failed.
+- **Acceptance:** installer logs, desktop/mobile screenshots, one physical image and voice, playable first story, and successful reopen without loss.
 
-### P1 — Dar prioridad a historias jugables y Creator Studio
+### P1 — Put playable stories and Creator Studio first
 
-**N-06 · Rediseño de Biblioteca/Detalle/Lector y navegación principal**
+**N-06 — Redesign Library, Detail, Reader, and primary navigation**
 
-- Página inicial de **historias**, no panel técnico de modelos. Biblioteca personal, Continuar, Descubrir, Creador y Ajustes como destinos diferenciados. Portadas, sinopsis, personajes, etiquetas, duración/estado e historia de lectura.
-- Detalle inmersivo: portada, descripción, personajes, fondos, opciones de inicio, requisitos de modelos, idioma, autor/versión y vista previa. El lector conserva decisiones y progreso; móvil y escritorio.
-- Estados vacíos útiles sin forzar al jugador a rellenar 10 campos técnicos. No mezclar jerarquía «Mis historias» con listados comprimidos debajo de secciones ajenas.
-- **Gate:** capturas comparativas, pruebas de rutas directas/reload/back, Playwright móvil, crear/abrir/continuar/editar sin perder posición.
+- Home with stories, not engine diagnostics. Distinct **My Library**, **Continue**, **Discover**, **Creator Studio**, and **Settings** destinations. Use covers, synopses, cast, tags, status, and reading history.
+- Immersive story detail with synopsis, characters, background art, openings, model requirements, language, creator/version, and preview. Preserve progress on desktop/mobile.
+- Helpful empty states without requiring ten technical fields before play. Do not nest a cramped library list under unrelated settings panes.
+- **Acceptance:** desktop/mobile screenshots; deep-link, reload/back tests; create/open/continue/edit without losing position.
 
-**N-07 · Creator Studio asistido por IA (story/world builder)**
+**N-07 — AI-assisted Creator Studio**
 
-- Solicitar concepto/tono/género/idioma, personajes y restricciones del creador. El asistente produce un **borrador estructurado y editable**: título, pitch, sinopsis pública, premisa privada, canon/verdades ocultas, reglas del mundo, arcos, escenarios iniciales, decisiones clave, elenco con personalidad/diálogo, Lorebooks y estado inicial.
-- Validar esquema, referencias y longitudes antes de aceptar; no guardar directamente una respuesta LLM sin revisión ni sobrescribir creaciones existentes. Distinguir claramente lo que ve el jugador de información privada del narrador.
-- Opción explícita para generar plan visual de portada, fondos y sprites por personaje, con prioridades para GPU, preview, reintento, selección editorial, coste/VRAM visible y referencias de identidad. No prometas todas las imágenes generadas si el usuario no dispone de modelo compatible.
-- **Gate:** de una idea de una frase a historia completa **jugable**, editar cualquiera de sus entidades, generar recursos a solicitud, exportar/importar/fork sin perder nada, pruebas de esquema y render físico.
+- From concept, tone, genre, output language, and author constraints, produce a **reviewable structured draft**: title, pitch, synopsis, private lore, hidden canon, world rules, arcs, opening scenes, meaningful choices, NPC personalities/dialogue, Lorebooks, and initial state.
+- Validate schema, references, and limits before saving. Never silently overwrite existing creations or leak private narrator data into public synopsis.
+- Offer explicitly approved visual plans for covers/backgrounds/NPC sprites, with queues, previews, retries, GPU budget visibility, and identity references. Do not promise models/assets that are not installed.
+- **Acceptance:** turn a one-sentence idea into an editable **playable** story, optionally generate assets, export/import/fork without losing data, validate schema and physical rendering.
+- **Partial implementation:** structured three-stage AI drafts, section regeneration, validation, and transactional install. Full illustrated novel workflow is pending.
 
-**N-08 · Historia de demostración completa y reproducible**
+**N-08 — Complete reproducible demonstration story**
 
-- Reemplazar el ejemplo superficial de «La estación de la última luna» por un paquete curado: trama pública y privada coherentes, 3–5 NPC diferenciados, fichas visuales, lugares, Lorebooks, estados, 3 comienzos alternativos y primeros eventos con decisiones significativas.
-- Recursos visuales de muestra incluidos con licencia clara o generados en un paso editorial opcional; sin enlaces falsos ni espacios vacíos simulando contenido.
-- Crear solo en biblioteca vacía (o mediante «Instalar historia de ejemplo»), nunca duplicar ni reescribir un ejemplo existente al actualizar. Mantener migración/idempotencia.
-- **Gate:** jugar 10–20 turnos, probar diferentes decisiones y reapertura, revisar continuidad del canon y resultados visuales, verificar backup.
+- Upgrade the superficial original **La estación de la última luna** experience into a curated package: coherent public/private plot, 3–5 distinct NPCs, visual descriptions, locations, Lorebooks, world state, three openings, and meaningful early decisions.
+- Include sample media with explicit licenses or offer a clearly optional editorial generation step; never fake a cover or claim visual assets exist.
+- Install only into an empty library or by explicit selection. Do not duplicate/overwrite user-edited demo stories on update.
+- **Acceptance:** play 10–20 turns, test alternate decisions, reopen with canon continuity, inspect illustrations and backup.
 
-**N-09 · Hub de historias prearmadas (catálogo local inicial)**
+**N-09 — Bundled Story Hub**
 
-- Catálogo de paquetes instalables con portada, creador, idioma, licencia, clasificación/etiquetas, versión, requisitos de recursos y sinopsis; historias con elenco y apertura real, no solo títulos y premisas.
-- Instalar/desinstalar/importar/reparar como **copia independiente**, sin corromper progreso ni sobrescribir modificaciones; gestionar versiones y compatibilidad de esquema.
-- Diferenciar **Descubrir historias** de «Mis historias»: la descarga de una historia no inicia automáticamente un proveedor remoto ni publica datos personales.
-- **Gate:** tres paquetes originales completos que puedan instalarse, jugarse, exportarse y actualizarse sin modificar originales ni romper ramas.
+- Installable packages with covers, author, language, license, tags/classification, version, requirements, synopsis, cast, and a **real opening**, not just a title.
+- Install/uninstall/import/repair as independent copies; preserve player edits and progress across package upgrades.
+- Separate **Discover Stories** from **My Library**. Installing a story must not activate a remote provider or transmit private data.
+- **Acceptance:** three complete original packs with independent installation, play, export, and safe updates.
+- **Partial implementation:** three bundled text-only worlds with transactional copies, four NPCs and three openings. Public community publishing is separate work.
 
-**N-10 · Hub de comunidad y publicación por creadores (fase de distribución)**
+**N-10 — Creator community and publishing**
 
-- Tras cerrar el formato de paquetes locales: registro público o fuente configurable de historias de autores, fichas, búsqueda/filtros, versiones, dependencias, licencias y firmas/verificación; gestionar versiones incompatibles.
-- Flujo de publicación con consentimiento, acceso y permisos, autoría/atribución, reportes/moderación, contenido no confiable, descarga segura, actualizaciones y restricciones de redistribución de imágenes/pesos. No montar subida comunitaria ni autenticación ficticias sin backend.
-- Separar «instalación de paquete del creador» de «descarga de pesos de un modelo»; proteger rutas, ZIPs, tamaño/expansión, enlaces externos y recursos.
-- **Gate:** integración real con registro comunitario y permisos, publicación/instalación/versiones reales, revisión moderación y pruebas adversariales de archivos.
+- After a safe local pack format: configurable registry, creator pages, search/filter, versions, dependencies, licenses, integrity/signatures, and incompatible-version handling.
+- Consent, permissions, attribution, moderation, reporting, secure downloads, archive inspection, and redistribution restrictions for images/model weights. No fake upload/auth flow.
+- Distinguish creator story packages from model-checkpoint downloads. Guard ZIP size, expansion ratio, path traversal, embedded links, and assets.
+- **Acceptance:** real registration/publication/install/update integration with access controls and adversarial file tests.
 
-**N-11 · Model Hub como aplicación propia al estilo funcional de Urakatsu**
+**N-11 — Standalone Urakatsu-depth Model Hub**
 
-- Sacarlo del panel técnico monolítico de \`App.tsx\`: exploración en una vista dedicada con navegación y detalle de pantalla completa o panel independiente, filtros, ordenamientos, categoría **Narrador / Imágenes / TTS**, tarjetas con información útil e historial de descargas.
-- Ficha de modelo: README/detalles/variantes/archivos/autor/licencia/formatos, motor al que pertenece, cuantización si aplica, requisitos reales y recomendación de variante según GPU y familia; instalación/aplicación y pruebas.
-- Tomar a Urakatsu como referencia de patrón de navegación/gestión. Antes de reutilizar código, auditar licencia de archivos y conservar atribución y avisos; no depender de sus servicios.
-- **Gate:** experiencia end-to-end «buscar → comparar → ficha → instalar → elegir → probar» para las tres familias admitidas; responsive y navegación por URL. Evitar mostrar «instalable» cuando solo se explora.
+- Extract from an overly large `App.tsx` into a dedicated page, with search, sorting, useful cards, master/detail UI, `Narrator / Images / Speech` roles, and download history.
+- Model details: author, README, variants/files, license, format, engine, quantization, family-specific requirements, estimated hardware fit, install/apply and test actions.
+- Reuse compatible Urakatsu patterns with required notices; no dependency on Urakatsu services.
+- **Acceptance:** end-to-end **search → compare → detail → install → select → test** for every supported model family, responsive/deep-linked; never label discovery-only entries as installable.
 
-**N-12 · División del frontend por dominios y UX coherente**
+**N-12 — Split frontend by domain with coherent UX**
 
-- Separar \`App.tsx\` y flujos enormes en rutas/componentes/hook de Biblioteca, Hub de historias, Creator Studio, Lector, Model Hub y Ajustes; reutilizar cards, detalle, filtros y estados de petición por dominio.
-- Definir sistema de diseño (tipografía, espacios, badges reales, vacío/carga/error, móvil/tablet/escritorio, accesibilidad de formularios y teclado). Diseñar historias como producto principal.
-- **Gate:** sin regresiones de enlaces/estado de lector/Story Creator; pruebas E2E y capturas comparativas. No atribuir un rediseño a un simple cambio de nombres o colores.
+- Break down `App.tsx` into separate routing/modules/hooks for Library, Story Hub, Creator Studio, Reader, Model Hub, and Settings.
+- Shared design system: typography, spacing, meaningful state indicators, empty/loading/error screens, responsive breakpoints, form and keyboard accessibility.
+- **Acceptance:** preserve existing deep links, reader state, and story creation; compare real screenshots and E2E test results. Renaming buttons or colors does not count as full redesign.
 
-### P2 — Mejoras de inmersión y comunidad a escala
+### P2 — Immersion and community growth
 
-**N-13 · Plan visual narrativo automatizado con aprobación**
+**N-13 — Automated visual narrative planning with approval**
 
-- Permitir que la IA extraiga escenarios, presencia y expresiones de escenas creadas, proponga fondos/sprites/CG y procese un lote explícitamente aprobado con caché y reutilización. Mantener identidad por referencia y variantes de escena versionadas.
-- No generar una ilustración completa para cada línea: reutilizar fondos y sprites de escenas anteriores. Los trabajos fallidos no bloquean texto.
-- **Gate:** historia creada desde idea con recursos revisados, 10 turnos misma escena sin regenerar fondo, cambios correctos al cambiar de lugar y coste/memoria medidos.
+- Let the orchestrator propose locations, cast/presence, emotions, backgrounds, sprites, and CG from scene state. Process a batch only with user approval, cache/reuse, and identity controls.
+- Do not generate a full illustration for every line; reuse existing scene assets. Media failure must not block narrative text.
+- **Acceptance:** an idea-generated story with reviewed media, ten unchanged-scene turns with no background regeneration, correct new-location transitions, measured costs/memory.
 
-**N-14 · Comunidad madura, perfiles de Creator y ecosistema**
+**N-14 — Creator ecosystem**
 
-- Perfiles de creador, fichas/versiones públicas, favoritos/colecciones, ratings/reportes con moderación, descubrimiento, import/export y procedimientos de retirada. Diseñar privacidad y filtrado antes de habilitar publicación.
-- **Gate:** flujos auténticos de publicación/autorización; no incorporar botones vacíos.
+- Creator profiles, public package/version pages, favorites/collections, ratings/reports, moderation, discovery, import/export, and takedown paths. Design privacy/access before opening publishing.
+- **Acceptance:** actual authorization and publication flows, not placeholder controls.
 
-**N-15 · Observabilidad y evaluación del orquestador**
+**N-15 — Orchestrator observability**
 
-- Dashboard de colas, estados, RAM/VRAM, latencia TTFT/TPS/imágenes/TTS, errores por modelo y rendimiento de cada historia. Historial local, exportación de diagnóstico sin filtraciones de prompts privados.
-- **Gate:** evidencia de sesiones reales Colab y Windows, escenarios de red interrumpida, CPU, GPU, versiones y recovery.
+- Queue/status dashboard, RAM/VRAM, TTFT/TPS, image and TTS latency, per-model failures, and per-story performance.
+- Local history and diagnostic export without leaking secret prompts. Distinguish simulated CI from Colab/Windows measurements.
+- **Acceptance:** real Colab and Windows sessions, interrupted-network/CPU/GPU cases, versioned reports, and tested recovery.
 
-## Reglas de ejecución y corte
+## Engineering delivery rules
 
-- **No intentar cerrar todo en un solo commit/sesión.** Trabajar en entregables funcionales verticales; primero contratos + tests, luego UX y validación real.
-- No marcar funciones avanzadas como implementadas solo porque la auditoría, maqueta, notebook o un endpoint las describa.
-- Cada tarea completada debe tener commit en \`master\`, pruebas de error y éxito, capturas de escritorio y móvil cuando sea UI, y registros de GPU reales cuando corresponda.
-- El Hub comunitario **no se confunde** con un catálogo integrado de ejemplos: la red, publicación y moderación son entregables posteriores.
-- Si la instancia Colab compartida no es accesible por el entorno, analizar el repositorio y usar evidencia de logs/capturas; no afirmar que se navegó o probó en vivo sin hacerlo.
-- Mantener retrocompatibilidad con SQLite, historias antiguas, .noble.zip, snapshots, bifurcaciones y notebooks; cualquier migración debe probarse con datos previos.
+- Do **not** claim completion of this entire backlog in one change. Deliver functional vertical increments: contracts/tests, UI, then real provider validation.
+- No milestone is complete merely because an audit, mock, notebook, or route describes it.
+- Every completed feature needs a commit in `master`, positive/negative tests, desktop/mobile screenshots for UI changes, and physical GPU logs for hardware claims.
+- The community Hub is **not** the same as the built-in Story Hub.
+- When the specific Colab runtime is inaccessible, rely on the user's logs/screenshots without claiming a live remote experiment.
+- Preserve SQLite history, earlier story formats, `.noble.zip`, snapshots, branches, and notebooks; validate migrations using older data.
 
+## Partial N-09/N-08 implementation (November 5–6, 2026)
 
-## Avance parcial N-09/N-08 (2026-11-05/06)
+`story_hub.py` and `StoryHub.tsx` provide three original **text-based** worlds with four NPCs, three openings, Lorebooks, and independent transactional installation. The Colab demo uses a richer pack only when the library is empty. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) reported 358 Python / 68 Playwright / successful Vite build.
 
-`story_hub.py` + `StoryHub.tsx` entregan tres mundos de texto con 4 NPC, 3 aperturas y Lorebooks, instalación transaccional/copia independiente y demo Colab enriquecida en biblioteca vacía. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781): 358 Python + 68 Playwright + build Vite PASS. No hay portadas, imágenes, importación de paquetes versionados ni servidor comunitario; la definición de terminado N-08/N-09/N-10 sigue sin satisfacerse. [Documentación](STORY_HUB.md).
+There are still no included cover images, versioned external pack upgrades, community registry, or publishing backend. N-08/N-09/N-10 full acceptance definitions remain open. See [Story Hub](STORY_HUB.md).
