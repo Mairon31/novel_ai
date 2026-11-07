@@ -1,60 +1,58 @@
-# Noble AI — Conectar imágenes y voces locales (P1.4)
+# Noble AI — local image and speech integration
 
-Este documento cubre los **adaptadores reales ya conectados al código**, no un benchmark ni un asistente de instalación automática.
+This guide describes the implemented adapter contracts and related setup. It is not a physical performance benchmark or a claim that all optional runtimes can be installed automatically.
 
-## Requisitos
+## Prerequisites
 
-Para generar una imagen, ejecuta ComfyUI por tu cuenta, escuchando en el mismo equipo que el backend Noble AI, normalmente `http://127.0.0.1:8188`. Instala un checkpoint compatible con workflow estándar de Stable Diffusion (CheckpointLoaderSimple, CLIPTextEncode, EmptyLatentImage, KSampler, VAEDecode y SaveImage).
+For images, install or start a compatible local ComfyUI server, normally at `http://127.0.0.1:8188`. The standard workflow uses `CheckpointLoaderSimple`, `CLIPTextEncode`, `EmptyLatentImage`, `KSampler`, `VAEDecode`, and `SaveImage`. Model compatibility depends on the checkpoint architecture and the installed nodes.
 
-Para sintetizar voz, instala `piper` en PATH del backend. Coloca los pares `voz.onnx` y `voz.onnx.json` en `data/models/voices` (o la ruta derivada de NOBLE_DATA_DIR). Piper se ejecuta con CPU en esta etapa; no es necesario disponer de NVIDIA para usarlo.
+For voice, install the Piper CLI and provide matching `.onnx` and `.onnx.json` files under `data/models/voices` (or the configured data directory). Piper can synthesize on CPU without an NVIDIA card.
 
-## Imagen paso a paso
+## Image generation
 
-1. Inicia Noble AI y abre **Configuración → Imágenes y voz**.
-2. Escribe la URL local de ComfyUI y pulsa **Buscar checkpoints**.
-3. Selecciona uno de los checkpoints instalados y ajusta ancho/alto, pasos, CFG y prompt negativo. Guarda configuración.
-4. Abre una historia en **Biblioteca → Galería** o pulsa **Ilustrar con IA** desde el panel de escena.
-5. Describe personajes, fondo, luz, clima y estilo. Pulsa **Ilustrar escena con ComfyUI**. Se realizará una petición explícita, se esperará la finalización y se guardará WebP.
-6. Si ComfyUI falla, la narración sigue funcionando, y una ilustración anterior permanece disponible.
+1. Start Noble AI and open the **Images** settings section.
+2. Connect ComfyUI or use Noble AI's manager for an **already installed** instance. Refresh its checkpoint inventory.
+3. Select a recognized checkpoint; configure width/height, steps, CFG, negative prompt, sampler, scheduler, and style where supported. Save settings.
+4. Open a story and its Gallery or scene illustration controls.
+5. Enter or review scene details and explicitly request a ComfyUI illustration. The resulting image is saved to the local gallery.
+6. If generation fails, narrative turns remain usable; previously saved images are not discarded.
 
-El backend acepta exclusivamente endpoints HTTP loopback, con un único trabajo de difusión simultáneo y límite de 180 segundos. No se soportan todavía workflows arbitrarios, nodos personalizados, LoRAs, Flux/SD3, colas multiusuario ni difusión remota.
+The backend restricts local ComfyUI connections, serializes compatible work, and applies request timeouts. It does not execute arbitrary user-supplied Python workflows. Advanced plugins, custom nodes, model families, and GPU behavior require separate compatibility checks.
 
-## Voz paso a paso
+Noble AI can install supported individual Hugging Face `.safetensors` checkpoint files into its own managed directory. A downloaded file is selectable only when ComfyUI confirms it is available. See [checkpoint installation](CHECKPOINTS_IMAGEN.md) and [managed ComfyUI](COMFY_UI_INTEGRACION.md).
 
-1. Instala Piper compatible con tu sistema y comprueba que `piper` funciona desde terminal.
-2. Coloca ONNX y JSON de la voz en la carpeta de voces. Pulsa **Actualizar voces**.
-3. Activa **Activar botones de voz bajo demanda**. No se activa autolectura.
-4. En el lector, abre la pestaña **UI/UX** para seleccionar la voz.
-5. Usa **Escuchar** junto a un turno ya guardado. Se sintetiza WAV si no hay caché; una segunda petición usa el archivo local.
-6. Usa **Detener** para pausar la reproducción en el navegador. La aplicación no inicia síntesis al crear escenas, generar texto o entrar a una historia.
+## Voice synthesis
 
-El motor Piper CPU usa hasta 120 s por petición y admite textos de hasta 3500 caracteres por turno. Se exige solicitud explícita y la configuración TTS activada. No hay clonación de voz ni soporte multicarácter automático.
+1. Install Piper and add a compatible ONNX voice pair, or use the supported voice catalog/installer for eligible models.
+2. Refresh the voice inventory in the separate **Voice / TTS** settings section.
+3. Explicitly enable on-demand voice controls and choose a default reader voice.
+4. In the reader, select or confirm the desired voice.
+5. Click **Listen** on a saved turn. The first request may synthesize local WAV; subsequent playback can reuse a cached result.
+6. Stop playback in the browser when needed. Opening a story or generating text does not automatically trigger speech.
 
-## Diagnóstico y alcance
+Piper's initial CPU adapter has request duration and input-length limits; available settings may include `length_scale`, `noise_scale`, and `noise_w`. Automatic per-character voice assignment, voice cloning, and additional TTS engines remain roadmap items unless explicitly implemented.
 
-- `GET /api/v1/images/status` consulta ComfyUI sin generar ni cargar un modelo de difusión desde Noble AI.
-- `GET /api/v1/tts/voices` enumera voces instaladas sin sintetizar nada.
-- `GET /api/v1/health` declara `comfyui_on_demand` y `piper_on_demand`, que describen los adaptadores integrados, **no la disponibilidad garantizada** de herramientas externas.
-- Todos los tests del adaptador ComfyUI utilizan transporte HTTP simulado, pero Pillow procesa una imagen PNG auténtica y la convierte a WebP.
-- Los tests Piper utilizan un CLI ficticio que escribe WAV válido; todavía falta confirmar una voz Piper real.
-- Si solo tienes 12–16 GB VRAM, no arranques ComfyUI y un LLM grande simultáneamente sin comprobar presupuesto. Un programador de recursos de GPU es trabajo pendiente.
-- Los modelos externos y voces pueden tener licencias específicas; Noble AI no los distribuye automáticamente.
+## Reference-image img2img
 
-## Próximas implementaciones
+1. Open an existing gallery image and choose it as the ComfyUI reference.
+2. Adjust transformation strength; lower strengths generally preserve more composition, but effects are checkpoint-dependent.
+3. Enter the new scene prompt and optionally set a reproducible seed.
+4. Explicitly start generation. Noble AI uploads the reference only for that request and uses the standard `LoadImage` + `VAEEncode` path.
 
-Detector de cambios de escena, identidad consistente con retratos/LoRA, versiones de escena, jobs con cancelación y progreso, motores TTS GPU (Chatterbox/Qwen3-TTS), servicios API seleccionables, lector con capas y scheduler VRAM.
+Text-to-image remains available without a reference. Contract tests cover multipart upload and graph assembly, not artistic output quality on a physical GPU.
 
+## GPU monitoring and reserve
 
-## Generación img2img (escena de referencia)
+The Images settings can report free NVIDIA VRAM from `nvidia-smi` and configure a minimum-free threshold. In monitor mode, this is informational; in guard mode, an image request may fail with HTTP 409 when the observed free VRAM is below the threshold. A single explicit override may be offered from the reader. These controls do not unload unrelated models or stop external processes.
 
-1. Abre una historia y agrega una ilustración a su galería.
-2. Selecciona **Imagen de referencia** dentro del formulario de ComfyUI.
-3. Ajusta **Transformación de la referencia**. Cuanto más baja, más se conservará la composición visual; el valor exacto depende del checkpoint.
-4. Escribe el prompt de la nueva escena. Usa una semilla si quieres que el resultado sea reproducible.
-5. Pulsa **Ilustrar escena con ComfyUI**. Se prepara y envía la imagen de referencia únicamente en esta solicitud. No se ejecuta carga adicional por abrir el lector.
+## Diagnostics and limits
 
-La generación de texto a imagen sigue disponible eligiendo «Sin referencia». Se utiliza `/upload/image` local en ComfyUI para enviar el PNG y un workflow estándar `LoadImage`+`VAEEncode`. Las pruebas de contrato verifican el grafo y el envío multipart, pero el resultado visual del modelo se evaluará en los ensayos reales agrupados.
+- `GET /api/v1/images/status` probes ComfyUI without launching a render.
+- `GET /api/v1/tts/voices` enumerates supported installed voices without synthesizing audio.
+- `GET /api/v1/health` identifies `comfyui_on_demand` and `piper_on_demand` adapters; this does not guarantee that external runtimes are installed and ready.
+- Simulated ComfyUI tests can still process real PNG/WebP fixture bytes; a mocked response is not a model-output test.
+- Piper CLI tests may use a simulated WAV-producing executable, which does not establish real voice quality.
+- On 12–16 GB VRAM systems, check actual budgets before running a large LLM and diffusion model simultaneously.
+- External models and voices have their own licenses and distribution conditions.
 
-## Monitor y reserva GPU
-
-En **Configuración → Imágenes y voz**, consulta la VRAM de `nvidia-smi` y configura un mínimo libre. El modo `monitor` solamente informa; el modo `guard` rechaza con 409 una generación cuando la VRAM registrada es menor al umbral. En el lector puedes autorizar una ejecución puntual ignorando la reserva. Ni el monitor ni el guard descargan modelos o detienen procesos.
+Next areas include improved scene scheduling, consistent identity, additional TTS engines, better job cancellation/status, and stronger GPU resource orchestration.

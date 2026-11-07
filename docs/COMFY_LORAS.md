@@ -1,31 +1,29 @@
-# Noble AI — Integración de LoRAs de personajes con ComfyUI
+# Character LoRA support in ComfyUI
 
-Estado: **carga real bajo demanda implementada y verificada con transporte HTTP simulado**; validación de GPU, pesos concretos y calidad visual pendiente.
+**Status:** explicit on-demand LoRA application is implemented and validated against simulated ComfyUI HTTP transport. Compatibility with particular weights, physical GPU execution, and visual identity quality remain unverified.
 
-## Cómo se usa
+## How to use it
 
-1. Instala el LoRA compatible con tu checkpoint en `ComfyUI/models/loras` (esta primera versión admite nombres simples `.safetensors`, sin subcarpetas).
-2. En **Creator Studio → Personajes**, selecciona el NPC, especifica `visual_dna.lora_name` y `lora_strength` entre 0 y 2. La aplicación efectiva exige fuerza superior a cero. Si usas un plan de escena guardado, enlaza el NPC con la ficha visual correspondiente en Galería: la selección posterior se hace por UUID, no por texto.
-3. En **Lector → Galería**, pulsa **Ver LoRAs instalados**. Comprueba el catálogo que informa ComfyUI. Marca **Aplicar LoRAs de personajes** para la ilustración concreta y pulsa **Ilustrar escena con ComfyUI**. El checkbox se desactiva de nuevo al cambiar de historia.
+1. Install a LoRA compatible with your diffusion checkpoint in `ComfyUI/models/loras`. The initial workflow accepts simple `.safetensors` filenames, not nested subdirectories.
+2. In **Creator Studio → Characters**, select an NPC and set `visual_dna.lora_name` plus `lora_strength` from 0 to 2. Effective application requires strength greater than zero. For a saved scene plan, connect the NPC to its corresponding gallery visual identity; the system uses UUIDs rather than name matching.
+3. In **Reader → Gallery**, inspect installed LoRAs reported by ComfyUI. Enable **Apply character LoRAs** for that particular illustration, then explicitly request a ComfyUI render. This opt-in state resets when the story changes.
 
-## Flujo técnico
+## Runtime behavior
 
-El backend acepta `apply_character_loras=false` por defecto. Con `true`, toma solo el reparto válido de la historia, resuelve hasta tres nombres LoRA distintos, consulta `GET /models/loras` y `GET /object_info/LoraLoader`, y valida los archivos/nodos antes de emitir `POST /prompt`. Si falta un LoRA, hay duplicidad, no existe reparto compatible o ComfyUI no soporta el nodo, se devuelve un error sin crear nuevas imágenes.
+The API defaults to `apply_character_loras=false`. When enabled it selects only characters belonging to the story and appearing in the resolved cast, supports up to three distinct LoRA names, and checks `GET /models/loras` and `GET /object_info/LoraLoader` before submitting `POST /prompt`.
 
-Los nodos `LoraLoader` conectan secuencialmente los puertos MODEL y CLIP desde `CheckpointLoaderSimple`; el último alimenta `KSampler` y ambos codificadores `CLIPTextEncode`. La rama img2img usa el mismo modelo, con `LoadImage` y `VAEEncode`. No se usa un nodo personalizado ni se descarga/ejecuta código arbitrario.
+Missing files, duplicate or invalid entries, unsupported nodes, and incompatible cast mappings produce errors rather than silently generating an image with incorrect settings.
 
-## Versionado, respaldos y límites
+Standard `LoraLoader` nodes are chained through MODEL and CLIP from `CheckpointLoaderSimple`, then feed `KSampler` and both `CLIPTextEncode` nodes. The `img2img` branch shares this loaded model using `LoadImage` and `VAEEncode`. No custom node or downloaded executable code is required.
 
-Cada render guarda `render_details_json` con `workflow_version` y la lista de `loras` (nombre de NPC, nombre de archivo, intensidad). La Galería expone esa procedencia; cambia la firma de caché si cambia la lista/intensidad. El esquema migra bases SQLite anteriores con valor `{}`, y los archivos `.noble.zip` preservan metadatos, incluidos forks y copias. Un archivo antiguo sin esta columna sigue importándose. Se rechazan metadatos malformados.
+## Provenance and limits
 
-ComfyUI solo proporciona los nombres disponibles, no un digest SHA256 de pesos. Reemplazar un LoRA bajo el mismo nombre no invalida automáticamente las imágenes en caché. Los efectos de varias LoRAs son **globales al modelo y CLIP**: no asignan una región del lienzo por personaje ni garantizan mantener el mismo rostro en diez escenas. El checkpoint debe ser compatible con el LoRA, y las generaciones en GPU real siguen siendo una validación distinta.
+Every render records `workflow_version` and LoRA entries (NPC, filename, strength) in `render_details_json`. Gallery history, forks, and `.noble.zip` archives preserve this provenance. Cache keys change when LoRA selections or strengths change; legacy assets without the metadata remain readable, while malformed metadata is rejected.
+
+ComfyUI's model inventory supplies filenames, **not SHA-256 hashes of local weights**. Replacing a LoRA file without changing its name may therefore leave existing cache entries valid. Multiple LoRAs affect the entire MODEL/CLIP conditioning; they do not enforce independent spatial masks or stable faces for different characters. Real checkpoint compatibility and repeated-scene identity still require GPU testing.
 
 ## QA
 
-La CI integra tests Python con transporte ComfyUI simulado y Playwright desktop/móvil. Ver `tests/test_comfy_images.py`, `tests/test_visual_render_provenance.py` y `apps/web/tests/visual-gallery.spec.ts`.
+Relevant suites: `tests/test_comfy_images.py`, `tests/test_visual_render_provenance.py`, and `apps/web/tests/visual-gallery.spec.ts`. [CI #42145790071](https://github.com/Mairon31/novel_ai/actions/runs/42145790071) reported 261 Python / 62 Playwright PASS; [CI #42146552556](https://github.com/Mairon31/novel_ai/actions/runs/42146552556) reported 266 Python / 62 Playwright PASS. Both used simulated ComfyUI responses.
 
-Referencia de implementación: [ComfyUI LoraLoader](https://github.com/Comfy-Org/docs/blob/main/built-in-nodes/LoraLoader.mdx). No se copió código de ese repositorio, se utiliza su contrato de nodos.
-
-## Verificación de esta fase
-
-La integración opt-in obtuvo [CI #42145790071](https://github.com/Mairon31/novel_ai/actions/runs/42145790071) (**261 Python, 62 Playwright PASS**). La procedencia visual y validadores de respaldo obtuvieron [CI #42146552556](https://github.com/Mairon31/novel_ai/actions/runs/42146552556) (**266 Python, 62 Playwright PASS**). Ambos resultados incluyen build Vite correcto y modelos ComfyUI simulados por HTTP; falta prueba visual con GPU física.
+Node reference: [ComfyUI LoraLoader](https://github.com/Comfy-Org/docs/blob/main/built-in-nodes/LoraLoader.mdx). The project follows the documented node contract; it did not copy upstream implementation code.

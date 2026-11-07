@@ -1,54 +1,54 @@
-# Noble AI — despliegue app-first, escritorio y web
+# Noble AI — app-first deployment and desktop packaging
 
-Estado: decisión técnica propuesta; no hay ejecutable construido todavía.
+**Status:** architectural proposal. A packaged desktop executable has **not** been released.
 
-## Dos modos, una experiencia
+## One product, two delivery modes
 
-**Modo desarrollo / web local (primer objetivo):**
-- Vite/React presenta UI en navegador local. FastAPI ofrece REST/SSE, sesión y catálogo.
-- Configuración inicial **dentro de la interfaz**; no exigir notebook o `.env` al usuario normal.
-- Windows Linux pueden correr scripts para desarrolladores inicialmente; los usuarios finales no los necesitarán en release.
+### Local web application — current development target
 
-**Modo escritorio (futura compilación):**
-- Candidato **Tauri 2**, empaquetar la UI web y el backend Python FastAPI como sidecar/executable autónomo, con recursos (manifests/config) e instalaciones opcionales de runtimes. Alternativa: launcher Rust de webview como Urakatsu, si el spike de Tauri falla.
-- El shell detecta si Noble se está ejecutando, crea directorios de usuario y abre el wizard o biblioteca. Inicia API con puerto local efímero/controlado, token de sesión y healthcheck; cierra solo sus procesos al salir, no mata servicios externos compartidos.
-- Los motores KoboldCpp/ComfyUI/TTS se ejecutan como **procesos administrados u externos** según elección, con rutas y puertos guardados en config segura. No asumir que empaquetarlos en un único binario sea trivial o recomendable.
-- Modelos y assets en carpeta configurable independiente del ejecutable; actualizaciones no sobrescriben modelos/proyectos.
-- No incluir pesos de varios GB en instalador. Instalador ofrece ruta y descarga guiada/consentida.
+- React/Vite provides the browser UI; FastAPI provides REST/SSE, sessions, narrative state, and model management.
+- Initial setup belongs in the UI rather than requiring a notebook or a manually edited `.env`.
+- Developer scripts can be used on Windows/Linux while a guided desktop installer is not available.
 
-Documento Tauri 2 sobre sidecars: https://v2.tauri.app/develop/sidecar/ . Es posible empaquetar binarios auxiliares con `externalBin`, pero requiere build por plataforma, permisos y manejo de la vida del proceso.
+### Desktop application — future target
 
-## Modo Google Colab: secundario
+**Tauri 2** is the leading candidate to bundle the web UI with a Python/FastAPI sidecar and optional runtime integration. A Rust-based WebView launcher is an alternative if a Tauri prototype proves impractical.
 
-Colab **no es interfaz principal ni paso obligatorio de instalación**. Conservamos notebooks como pruebas, benchmarks y experimentación con GPU temporal, respetando reglas de Colab. Una sesión puede simular/ejecutar llamadas del backend mediante celdas, pero la experiencia real será app web/desktop.
+A future desktop shell should detect existing Noble AI instances, create user data directories, open setup/library, start a local API on a controlled port with appropriate session access, monitor health, and terminate **only processes it owns**. It should never kill unrelated Ollama, KoboldCpp, ComfyUI, or speech processes.
 
-No establecer túneles públicos ni simular permanencia 24/7 en runtimes gratuitos. Un futuro proveedor de cómputo remoto podrá usar un **agente autenticado** en infraestructura permisiva; no mezclarlo con notebooks de test.
+Model weights and story assets must live in user-configurable directories outside the executable so application upgrades do not overwrite them. Multi-gigabyte weights should not be bundled by default: model installation should be explicit and visible to the user.
 
-## Portabilidad
+Official reference: [Tauri 2 sidecar binaries](https://v2.tauri.app/develop/sidecar/). Using `externalBin` still requires per-platform builds, permissions, and robust process lifecycle handling.
+
+## Colab is optional
+
+Colab is for temporary GPU diagnostics, experiments, and repeatable benchmarks, not the required installation path. An authenticated remote worker may be supported where the infrastructure allows it; test notebooks must not be treated as always-on application servers.
+
+## Portability
 
 ```text
-            React UI (web)
-              ↕ REST/SSE
-     FastAPI Orchestrator (Python)
-              ↕ adapters
-     KoboldCpp | Ollama | ComfyUI | TTS workers
-              ↕ hardware coordinator
-       NVIDIA CUDA/CPU/offload
+           React UI (browser)
+                ↕ REST/SSE
+      FastAPI orchestration (Python)
+                ↕ adapters
+     KoboldCpp | Ollama | ComfyUI | TTS
+                ↕ resource policies
+         NVIDIA CUDA / CPU / offload
 
-    + Tauri 2 WebView/launcher (Windows .exe futuro)
-    + notebooks Colab (pruebas independientes)
+    + Future Tauri 2 desktop shell
+    + Optional Colab test notebooks
 ```
 
-Tauri no altera los contratos de historias, ni los provider IDs, ni los formatos de datos; solo empaqueta/orquesta localmente. El resultado debe funcionar en localhost sin necesitar Tauri para desarrollo.
+Desktop packaging must preserve existing story formats, API contracts, and provider IDs. Development and local browser usage must continue to work without Tauri.
 
-## Entregables y prueba de aceptación
+## Acceptance targets
 
-1. App web inicia y muestra wizard aunque no exista modelo.
-2. Backend detecta NVIDIA/CPU y rutas disponibles.
-3. Desde UI se selecciona/instala un modelo local permitido.
-4. Desde UI se inicia narrador, se cambia modelo y se recupera historia tras reiniciar.
-5. Imagen y TTS permanecen opcionales/cargados diferidamente.
-6. Windows ejecutable abre sin terminal, muestra modelos ya instalados, inicia/para procesos de Noble y funciona offline con pesos cacheados.
-7. CI y QA sobre web y escritorio; salida real de instalador, firma/aviso de OS documentados.
+1. The local web UI starts with no model installed.
+2. The backend exposes available hardware and model storage paths.
+3. Users can select and install supported models through the application.
+4. A selected narrator can start, generate a turn, and restore the story after restart.
+5. Image generation and speech remain optional and lazy-loaded.
+6. A future Windows executable opens without requiring a terminal, preserves data, manages its own processes, and works offline with previously cached weights.
+7. CI and device QA cover the packaged result, integrity, rollback, and any required OS signing notices.
 
-Ninguna de estas metas se marca como hecha antes de implementarse/probarse.
+Do not mark the desktop acceptance targets complete before implementation and evidence exist.

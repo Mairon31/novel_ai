@@ -1,62 +1,50 @@
-# Configuración de Noble AI — cuatro apartados independientes
+# Noble AI settings — independent sections
 
-**Estado:** implementación UI publicada directamente en `master` el 6 de noviembre de 2026 y verificada en [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131): 381 Python / 80 Playwright / Vite PASS. Seguimiento: [N-25 en TODO](../TODO.md).
+**Status:** the four-section settings UI shipped to `master` on November 6, 2026. [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131) reported 381 Python tests, 80 Playwright tests, and a passing Vite build. Related backlog: N-25 in [TODO](../TODO.md).
 
-## Navegación
+## Navigation and deep links
 
-| Menú de Configuración | Dirección directa | Componente |
+| Settings section | Existing URL | Component |
 |---|---|---|
-| Imágenes | `#/configuracion/images` | `apps/web/src/ImageSettingsPanel.tsx` |
-| Voz / TTS | `#/configuracion/voice` | `apps/web/src/VoiceSettingsPanel.tsx` |
-| Acerca de Noble AI | `#/configuracion/about` | `apps/web/src/AboutSettingsPanel.tsx` |
-| Actualizaciones | `#/configuracion/updates` | `apps/web/src/UpdatesSettingsPanel.tsx` |
+| Images | `#/configuracion/images` | `apps/web/src/ImageSettingsPanel.tsx` |
+| Voice / TTS | `#/configuracion/voice` | `apps/web/src/VoiceSettingsPanel.tsx` |
+| About Noble AI | `#/configuracion/about` | `apps/web/src/AboutSettingsPanel.tsx` |
+| Updates | `#/configuracion/updates` | `apps/web/src/UpdatesSettingsPanel.tsx` |
 
-Se conserva `#/configuracion` para el resumen de ajustes y `#/configuracion/multimedia` como enlace heredado que abre la nueva sección de Imágenes. Los enlaces de cada apartado utilizan la navegación hash de la propia app, compatible con el servidor local de FastAPI sin reescrituras de URL.
+The existing `#/configuracion` overview URL and legacy `#/configuracion/multimedia` redirect to Images are retained for backward compatibility. These hash routes work with the local FastAPI server without URL rewrite rules. They are **stable URLs**, even when labels are translated.
 
-## Qué contiene cada área
+## Responsibilities
 
-**Imágenes:** política de ilustración por escena/manual/off, URL y checkpoint de ComfyUI, resolución, pasos de difusión, CFG, prompt negativo, inventario de modelos y política de reserva GPU (esta última se relaciona con imágenes aunque coordina el LLM local).
+**Images:** on-demand illustration policy, local ComfyUI URL and checkpoint, dimensions, diffusion steps, CFG, negative prompt, installed model inventory, sampling choices, anime style presets, checkpoint downloads, and a related minimum-free-VRAM setting.
 
-**Voz / TTS:** voces Piper instaladas, catálogo y trabajos de descarga, pausa/reanudación/cancelación, voz predeterminada del lector, activación de botones de voz y prueba de audio explícita. No contiene opciones ComfyUI.
+**Voice / TTS:** installed Piper voices, catalog and download jobs, pause/resume/cancel, default reader voice, explicit speech controls, and local test playback. This panel has no ComfyUI controls.
 
-**Acerca de Noble AI:** versión, commit, instalación, directorios de usuario/modelos y versión Python. No consulta releases al abrir su pantalla; el resumen global muestra la versión básica de la aplicación.
+**About Noble AI:** application version, commit, build type, data paths, model directory, and Python version. Visiting this page does not check remote releases.
 
-**Actualizaciones:** canal estable/beta/nightly, comprobación automática al iniciar, releases y revisión manual. No ofrece todavía instalación automática de nuevas versiones: pendiente de empaquetado, integridad y rollback.
+**Updates:** stable/beta/nightly channel, startup release-check preference, release information, and manual refresh. Automatic update **installation** is not available until packaging, integrity verification, and rollback exist.
 
-## Contratos que deben conservarse
+## Behavioral contracts
 
-- La separación es **de navegación, responsabilidades de componentes y cargas de API**, no de bases de datos: los valores existentes permanecen en SQLite/API.
-- Abrir Imágenes no debe solicitar voces ni iniciar Piper. Abrir Voz no debe consultar la configuración de ComfyUI. Ningún cambio de pestaña puede generar voz, imagen ni descarga sin clic explícito.
-- Volver/adelante o recargar debe conservar el apartado activo. Tras iniciar sesión desde un enlace directo no se debe redirigir al Model Hub sin solicitud.
-- Proteger la accesibilidad: nombre visible y único de cada panel, botones identificables, estado activo y navegación móvil.
-- Test principal: `apps/web/tests/settings-separation.spec.ts`, además de `app.spec.ts`, `multimedia.spec.ts`, `tts-preferences.spec.ts` y `piper-installer.spec.ts`.
+- Separation applies to navigation, component boundaries, and API calls, not necessarily separate databases: existing settings remain stored through SQLite/API.
+- Opening Images must not query voices or launch Piper. Opening Voice must not query ComfyUI configuration. Navigating between tabs must never generate media or start a download without explicit action.
+- Browser back/forward, reload, and deep links must preserve the selected section.
+- Each section needs a distinct accessible name, identifiable controls, an active-state indicator, and responsive mobile navigation.
+- The main regression test is `apps/web/tests/settings-separation.spec.ts`. Additional coverage includes `app.spec.ts`, `multimedia.spec.ts`, `tts-preferences.spec.ts`, and `piper-installer.spec.ts`.
 
-**Pendiente N-21:** ampliar las configuraciones internas de imagen y voz por modelo, además de otros motores TTS. La separación N-25 no equivale a completar N-21.
+N-25 (section separation) is not equivalent to completing N-21 (advanced per-model image and voice settings).
 
-## Evidencia de implementación
+## Image sampling and anime presets
 
-La suite genera **capturas de los cuatro apartados para escritorio y móvil** en `test-results/` como artefacto de GitHub Actions. La prueba `settings-separation.spec.ts` valida rutas persistentes, navegador Atrás, compatibilidad `/multimedia`, aislamiento de APIs imagen/voz y ausencia de descargas automáticas al abrir ajustes. `multimedia.spec.ts`, `tts-preferences.spec.ts` y `piper-installer.spec.ts` confirman que siguen operativos los controles anteriores. [Run #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131).
+The Images panel exposes persisted sampler, scheduler, and anime style settings. Defaults are `euler`, `normal`, and `anime_fantasy`. The `anime_cinematic` and `anime_watercolor` presets modify image-generation conditioning; `none` leaves the scene planner's prompt untouched. These changes do not rewrite user dialogue.
 
-La revisión visual manual de las capturas sigue disponible para mejoras de estética; no se confunde con validación de motores reales en GPU.
+**Check ComfyUI sampling** requests `GET /api/v1/images/sampler-options`, which queries the local `/object_info/KSampler` endpoint. Non-default sampler/scheduler choices are checked again before rendering. The default Euler/Normal pair retains compatibility with runtimes that do not expose introspection. Generation seeds are still chosen per request, not as a global setting. See [image controls](CONTROLES_IMAGEN.md).
 
+## Piper controls
 
-## N-21 — Ajustes de difusión y dirección anime (primer tramo)
+Piper's `length_scale`, `noise_scale`, and `noise_w` parameters are configured only under Voice/TTS. They affect explicit voice tests and playback, do not belong to Images, and do not synthesize any audio when a settings page is opened or saved. Related regression evidence: [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543).
 
-La pestaña **Imágenes** ahora contiene tres controles efectivos: muestreador, planificador y preset visual anime. Sus valores residen en la configuración SQLite de imagen y llegan al workflow estándar de ComfyUI. `anime_fantasy` es el preset predeterminado, `anime_cinematic` modifica el encuadre e iluminación, `anime_watercolor` aplica dirección acuarela y `none` mantiene intacto el prompt generado por el planificador de escena. No se cambia el texto original del usuario.
+## Managed ComfyUI runtime
 
-El botón **Comprobar muestreo ComfyUI** consulta `GET /api/v1/images/sampler-options`, que utiliza el endpoint local `/object_info/KSampler`, limita los resultados a los métodos conocidos por Noble y expone error si ComfyUI no responde. **Al generar**, los muestreadores/planificadores distintos de Euler/Normal se comprueban de nuevo contra el runtime, evitando enviar valores no disponibles. Euler/Normal mantiene compatibilidad con un ComfyUI que no exponga introspección.
+Images also contains `ComfyRuntimePanel.tsx`, which validates, configures, starts, monitors, and stops an **existing** ComfyUI installation. Its local installation path, Python interpreter, port, and memory mode persist in SQLite. Noble AI supplies the managed `noble_extra_model_paths.yaml` automatically and only stops processes it created. Opening the panel does not start ComfyUI. See [runtime integration](COMFY_UI_INTEGRACION.md).
 
-La semilla se sigue eligiendo por solicitud de escena, no como ajuste global en esta fase. La caché y los metadatos de galería diferencian el estilo y los parámetros, preservando imágenes antiguas. No incluye instalación de checkpoints, LoRA global por modelo, render automático inicial ni perfiles por historia; tareas N-21/N-22 pendientes. Ver [guía detallada](CONTROLES_IMAGEN.md).
-
-
-### Ajustes propios de Voz / TTS (N-21, tramo Piper)
-
-Velocidad (`length_scale`), variación de voz (`noise_scale`) y variación de fonemas (`noise_w`) son parámetros internos de Piper visibles únicamente en Voz/TTS. Se guardan aparte de la voz predeterminada y de la configuración de imágenes, afectan tanto a la prueba de voz como a Escuchar y pasan directamente a argumentos válidos de Piper. No se inicia síntesis con solo cambiar la pestaña o guardar.
-
-
-**Evidencia N-21, segundo tramo:** [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS. Los controles de velocidad y variación Piper se encuentran exclusivamente en Voz/TTS; el test cubre que no se produzca audio al abrir Ajustes y que los cambios deban guardarse antes de probar.
-
-
-## Arranque administrado de ComfyUI (N-01, segundo tramo)
-
-Imágenes contiene también el componente `ComfyRuntimePanel.tsx`, que gestiona un ComfyUI ya instalado en el equipo. Los ajustes del runtime (directorio, Python, puerto, perfil VRAM) persisten en SQLite y permiten validar, iniciar, consultar estado, leer logs y detener únicamente el proceso iniciado por Noble. Se usa una URL local y la ruta de modelos `noble_extra_model_paths.yaml` automática; nunca se inicia al navegar al panel. El módulo Voz/TTS no comparte esos controles. [Guía](COMFY_UI_INTEGRACION.md). La instalación automática de ComfyUI/requirements, extensiones y pruebas físicas de GPU siguen pendientes.
+Automatic ComfyUI installation/upgrading, dependency management, extension installation, and real GPU validation remain separate work.
