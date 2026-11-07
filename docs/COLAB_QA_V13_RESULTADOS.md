@@ -1,62 +1,60 @@
-# Google Colab QA — segundo ensayo real (v1.3)
+# Noble AI — real Google Colab QA, v1.3
 
-**Fecha de los registros:** 2026-11-05 UTC (2026-11-04 en Costa Rica).
-**Evidencia:** ZIP de diagnóstico v1.3 facilitado por el usuario en la conversación.
-**Commit ejecutado:** `2d1d40d1c3db80a7291397f8a66049dadbd2b02e`.
-**Alcance:** este informe solo resume datos técnicos no sensibles; no publica el ZIP ni el contenido del directorio de historias.
+**Log date:** November 5, 2026 UTC (November 4 in Costa Rica).  
+**Evidence:** v1.3 diagnostic ZIP provided by the user.  
+**Tested commit:** `2d1d40d1c3db80a7291397f8a66049dadbd2b02e`.  
+**Privacy:** the original archive and private story data are not committed.
 
-## Resultado
+## Results
 
-Duración total **178,7 segundos** (2 min 59 s). **13 PASS, 1 FAIL, 1 SKIP**.
+Elapsed time: **178.7 seconds (2 minutes 59 seconds)**. Summary: **13 PASS, 1 FAIL, 1 SKIP**.
 
-| Etapa | Resultado | Evidencia |
+| Stage | Result | Evidence |
 |---|---|---|
-| Obtener repo | PASS | 2 segundos |
-| Instalar Python | PASS | 4 segundos |
-| Tests Python | PASS | 37 tests, 5,280 segundos |
-| Dependencias frontend | PASS | 16 segundos; se corrigió `npm ci` |
-| Build React/Vite | PASS | 12 segundos, 1586 módulos transformados |
-| FastAPI + UI compilada | PASS | Health y página HTML |
-| Instalar Chromium Playwright | PASS | 58 segundos |
-| QA navegador escritorio y móvil | PASS | 8/8 pruebas, 25,3 segundos |
-| Binarios oficiales llama.cpp CUDA 12.8 | PASS | 44 segundos; ambos SHA256 verificados |
-| Resolución dinámica de bibliotecas | PASS | No faltan bibliotecas según `ldd` |
-| Paquete Hugging Face | PASS | 2 segundos |
-| Descargar GGUF | **FAIL** | 404 en el archivo especificado |
-| Benchmark GPU | SKIP | Sin modelo descargado |
+| Repository checkout | PASS | 2 seconds |
+| Python installation | PASS | 4 seconds |
+| Python tests | PASS | 37 tests, 5.280 seconds |
+| Frontend dependencies | PASS | 16 seconds; `npm ci` issue corrected |
+| React/Vite build | PASS | 12 seconds; 1,586 modules transformed |
+| FastAPI and compiled web UI | PASS | Health check and HTML page returned |
+| Playwright Chromium installation | PASS | 58 seconds |
+| Desktop/mobile browser tests | PASS | 8/8 tests, 25.3 seconds |
+| Official llama.cpp CUDA 12.8 binaries | PASS | 44 seconds; both SHA-256 values verified |
+| Dynamic library resolution | PASS | No missing libraries reported by `ldd` |
+| Hugging Face package | PASS | 2 seconds |
+| GGUF download | **FAIL** | HTTP 404 for the requested file |
+| GPU benchmark | SKIP | Model never downloaded |
 
-**Hardware:** NVIDIA Tesla T4 (15.360 MiB VRAM), Python 3.13.16, disco libre inicial ~112,54 GiB. **No hay TTFT, tokens por segundo o consumo GPU durante inferencia**, ya que el modelo nunca llegó a descargarse ni cargarse. Las capturas de QA sí muestran la interfaz funcional en escritorio y móvil, pero la generación narrativa sigue simulada durante Playwright.
+Hardware: **NVIDIA Tesla T4, 15,360 MiB VRAM**, **Python 3.13.16**, approximately **112.54 GiB** initial free disk. No TTFT, tokens/s, or inference VRAM use was measured because the model was never loaded. Browser screenshots show a working development UI with **mocked** narrative responses.
 
-## Causa raíz del único fallo
+## Root cause of the failure
 
-El notebook solicitó el archivo inexistente:
+The notebook requested a nonexistent filename:
 
-`Qwen3-4B-Instruct-2507-Q4_K_M.gguf`
+```text
+Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+```
 
-El repositorio de Hugging Face `bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF` publica en realidad:
+The real file in `bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF` is:
 
-`Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf`
+```text
+Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf
+```
 
-La diferencia es el **prefijo `Qwen_`**. El endpoint de Hugging Face respondió HTTP 404 inmediatamente. **No implica problema de CUDA, Tesla T4, VRAM ni de velocidad de descarga.**
+The missing `Qwen_` prefix caused the 404. This result does **not** establish CUDA, VRAM, or download-speed failure. [Hugging Face file listing](https://huggingface.co/bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF/tree/main).
 
-La lista oficial de archivos del repositorio demuestra la existencia del archivo correcto:
-https://huggingface.co/bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF/tree/main
+## Fixes in v1.4
 
-## Corrección implementada (v1.4)
+- Published [Colab QA notebook v1.4](../notebooks/noble_ai_colab_qa_integral_v1_4.ipynb).
+- Resolve and verify the GGUF filename against the live repository catalog before downloading.
+- Accept a uniquely matched alternative only if its quantization matches **exactly**; reject missing or ambiguous candidates.
+- Pin the Hugging Face revision SHA and record the resulting GGUF SHA-256.
+- Test exact names, prefix variants, missing quantization, and ambiguity offline.
+- Corrected an older Colab worker notebook that requested the same missing filename.
+- Export to a new `/content/noble_qa_v14/` workspace and `Noble_AI_Colab_QA_v1_4.zip`.
 
-- Nuevo notebook independiente: [Noble AI Colab QA v1.4](../notebooks/noble_ai_colab_qa_integral_v1_4.ipynb).
-- Selección y validación de GGUF previa a la descarga usando el catálogo real de Hugging Face; evita volver a pedir archivos inexistentes.
-- Si el prefijo cambia, solo se selecciona un archivo alternativo cuando su cuantización coincide **exactamente** y el candidato es único.
-- Descarga anclada al SHA de revisión del repositorio de modelos y generación del SHA256 de los bytes GGUF.
-- Pruebas offline para nombre exacto, variación de prefijo, cuantización ausente y ambigüedad.
-- También se corrigió el notebook antiguo del worker de Colab para evitar el mismo HTTP 404.
-- Carpeta de resultados separada: `/content/noble_qa_v14/` y archivo `Noble_AI_Colab_QA_v1_4.zip`.
+## Pending tests
 
-## Pendiente
+Run v1.4 with a real Colab GPU and verify the download, llama-server launch, and FastAPI-to-LLM requests. Record GPU usage during inference, full SSE turn completion and persistence, TTFT, error rate, and repeated warm runs. Image/TTS/combined-resource benchmarks remain separate tasks.
 
-1. Ejecutar v1.4 en una GPU Colab real y comprobar la descarga del archivo (~2,5 GB), carga de llama-server y peticiones reales FastAPI → LLM.
-2. Confirmar GPU usada realmente (memoria y utilización durante inferencia), que el backend SSE devuelva un turno completo y que el contexto persista.
-3. Comparar TTFT, duración, errores y VRAM observada en las repeticiones.
-4. Diagnóstico real de modelos de imagen, TTS y tiempos de transición GPU: aún no integrados.
-
-**Distinción de evidencia:** la validación en GitHub Actions usa simuladores y tests de código. Solo un nuevo ZIP de Colab puede confirmar el desempeño real del LLM.
+An offline GitHub Actions run cannot substitute for actual remote GPU evidence.

@@ -1,56 +1,56 @@
-# Perfiles de hardware — 12 GB y 16 GB VRAM
+# GPU profiles — 12 GB and 16 GB VRAM
 
-**Objetivos de ingeniería, no benchmarks medidos.** Los presupuestos son estimaciones dependientes de cuantización, backend, KV/cache, context, CUDA, grafo Comfy y presencia de navegador/Windows. La compatibilidad solo se declara tras pruebas reales documentadas.
+These are **engineering targets and estimates, not measured benchmarks**. Actual memory depends on quantization, inference backend, KV cache, context, CUDA kernels, image workflow, and concurrent workloads. A hardware profile is not certified until its documented real-device checks pass.
 
-## Hardware base
+## Baseline hardware
 
-- **Objetivo mínimo**: NVIDIA 12 GB VRAM, CPU moderna, RAM recomendada >=32 GB. Mantener una porción reservada para sistema/driver/contexto y no intentar llenar 100 % de VRAM.
-- **Objetivo recomendado**: NVIDIA 16 GB VRAM, RAM >=32 GB (64 GB mejora offload a CPU), SSD con suficiente espacio para checkpoints/cachés.
-- **PC de referencia actual**: RTX 5060 Ti 16 GB, Ryzen 7 5800XT, 64 GB DDR4, Windows 11. **Aún no ejecutó benchmarks de Noble AI.**
-- **Colab**: tamaño de GPU **no garantizado** ni equivalente a una NVIDIA de escritorio; registrar tipo real en cada sesión.
+- **Minimum target:** NVIDIA GPU with 12 GB VRAM, a modern CPU, and at least 32 GB recommended system RAM. Leave headroom for drivers, OS, and context.
+- **Recommended target:** NVIDIA GPU with 16 GB VRAM, at least 32 GB system RAM (64 GB helps with CPU offload), and sufficient SSD space for checkpoints/caches.
+- **Reference PC for future tests:** RTX 5060 Ti 16 GB, Ryzen 7 5800XT, 64 GB DDR4, Windows 11. **No Noble AI performance benchmarks from this machine have been recorded in this document.**
+- **Google Colab:** available hardware is not guaranteed and does not necessarily represent an equivalent desktop GPU. Log the actual GPU model each session.
 
-## Perfiles propuestos
+## Proposed profiles
 
-| Preset | LLM de prueba | Imagen | TTS | Política |
+| Preset | Experimental LLM | Image model | Speech | Execution policy |
 |---|---|---|---|---|
-| `minimum_12gb` | Qwen3-8B GGUF Q4_K_M; contexto inicial 4096–8192 | SDXL 768–1024 (ajustar según VRAM) | lazy, prioridad explícita | CPU offload/serializar GPU |
-| `recommended_16gb` | Qwen3-8B Q5/Q6; 14B Q4 **solo experimento** | SDXL/Illustrious con batch 1 | lazy | cola, un motor pesado a la vez |
-| `colab_probe` | modelo de smoke pequeño, benchmark 8B si GPU lo permite | proveedor opcional, smoke separado | opcional, smoke separado | pruebas secuenciales, nunca exigir UI pública en Colab gratis |
-| `cpu_fallback` | cuantizado pequeño, offload 0 GPU | imágenes deshabilitadas | deshabilitado | continuidad del texto, rendimiento no garantizado |
+| `minimum_12gb` | Qwen3-8B GGUF Q4_K_M, 4k–8k initial context | SDXL 768–1024 if compatible | Lazy/on request | CPU offload and serialized GPU |
+| `recommended_16gb` | Qwen3-8B Q5/Q6; 14B Q4 **experiment only** | SDXL/Illustrious, batch 1 | Lazy | One heavy model at a time |
+| `colab_probe` | Small smoke-test model; 8B only when allocated GPU permits | Optional separate image smoke test | Optional separate test | Sequential checks |
+| `cpu_fallback` | Small quantized LLM; zero GPU layers | Disabled | Disabled | Preserve text play without speed guarantee |
 
-**Estimar VRAM antes del experimento:** 8B Q4 pesos ≈4–6 GB (+runtime/KV); 14B Q4 ≈8–10+ GB (+runtime/KV), según quant/kernel; un workflow SDXL puede ocupar varios GB adicionales. **No sumarlos como si cupieran juntos**. Las cotas no son una promesa de velocidad o memoria pico.
+For planning only: 8B Q4 weights may require roughly **4–6 GB** plus runtime and KV cache; 14B Q4 roughly **8–10+ GB** plus runtime and KV. SDXL adds potentially several more GB. **Do not add these as if the workloads can always fit simultaneously.** These estimates are not peak-VRAM measurements.
 
-## Scheduling
+## Resource orchestration
 
-- Narrador **siempre accesible** a nivel de API durante la sesión; si no puede permanecer completamente en VRAM se ajusta offload desde arranque.
-- Cargas de GPU bajo un único **lease** de alta demanda. `interactive_text > requested_audio > requested_image > background_image`.
-- Mover TTS/imagen a modo `queued` hasta liberar margen. Responder al navegador con estado inmediato.
-- Diseñar presupuestos de memoria por perfil: `reserve_vram_mb` configurable, `max_image_jobs=1`, `max_tts_jobs=1`, políticas de cancelación y OOM.
-- Medir memoria reservada + asignada del proveedor y total GPU; el número de VRAM físico no es memoria usable garantizada.
-- Cualquier transición de modelo debe preservar state/DB, jamás truncar historia.
+- Keep the selected narrator reachable through its API, potentially with CPU offload.
+- Prioritize `interactive_text > requested_audio > requested_image > background_image`.
+- Design explicit heavy-GPU job leases and queued states, rather than starting multiple large models in parallel.
+- Support configuration such as `reserve_vram_mb`, `max_image_jobs=1`, `max_tts_jobs=1`, cancellation, and OOM recovery where each provider allows it.
+- Distinguish observed total GPU VRAM from the amount actually available for models.
+- Preserve database and story state across model changes or failures.
 
-## Experimentos mínimos por GPU
+These are target scheduler behaviors; the current local mutex/VRAM guard is **not** a complete model-unloading or memory-reallocation scheduler.
 
-1. Arranque de LLM; idle VRAM y RAM, contexto real, estabilidad streaming.
-2. 20 turnos: p50/p95 primero token, tokens/s, peak VRAM y RAM.
-3. 5 ilustraciones secuenciales de 768 y 1024; tiempos/OOM/caché.
-4. 3 diálogos TTS manuales; memoria pico y calidad.
-5. Narración mientras job imagen en cola; el texto no se duplica ni corrompe.
-6. 30 min de uso interactivo; leaks de memoria y recuperación tras cancelación.
-7. Repetir en Colab **cuando GPU real exista**, registrar SKU y runtime/driver antes de comparar.
+## Minimum measurements per GPU
 
-## Plantilla de medición
+1. Launch a real LLM and record idle VRAM/RAM, actual context, offload, and streaming stability.
+2. Generate 20 turns, measuring cold/warm TTFT, p50/p95, tokens/s when counted, and peak GPU/system memory.
+3. Produce five sequential illustrations at 768 and 1024 pixels, recording OOM, latency, and cache behavior.
+4. Synthesize three manual speech segments and assess memory use and pronunciation.
+5. Keep narration reliable while an image request is queued; detect duplicated/corrupt turns.
+6. Run a 30-minute interactive session looking for leaks and cancellation recovery.
+7. Repeat in Colab only when a real GPU is allocated; record SKU, driver, and environment.
 
-| Fecha | GPU | Perfil | LLM GGUF+hash | Contexto | Img model+workflow | TTS | peak VRAM MB | peak RAM MB | tokens/s | imagen s | audio s | errores |
+## Measurement template
+
+| Date | GPU | Profile | LLM GGUF + hash | Context | Image/workflow | TTS | Peak VRAM MiB | Peak RAM MiB | Tokens/s | Image time | Speech time | Errors |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Pendiente | — | minimum_12gb | — | — | — | — | — | — | — | — | — | No medido |
+| Pending | — | `minimum_12gb` | — | — | — | — | — | — | — | — | — | Not measured |
 
-No introducir números de rendimiento fabricados. Documentar versión de driver, CUDA, torch, cuantización, offload y parámetros de inferencia.
+Never fabricate results. Record driver, CUDA/PyTorch, quantization, inference arguments, GPU layers, batch, context, and offload settings.
 
-## APP-FIRST: dispositivos configurables por modelo
+## App-first device configuration
 
-El usuario escogerá desde UI **CPU/GPU/Auto** individualmente para narración, imagen y voz, solo cuando el runtime seleccionado admita la opción. En NVIDIA se pueden exponer capas GPU/CPU de GGUF, tamaño de contexto, batch y KV, y memoria reservada. En ComfyUI los workflows determinan su carga real; en TTS la disponibilidad CPU/GPU depende del motor/versión. Mostrar `unsupported` si no existe backend.
+Users should eventually select **CPU/GPU/Auto** independently for narration, image, and speech, **only when the chosen runtime supports that option**. GGUF runtimes may expose layers, context, batch, and KV parameters. ComfyUI memory depends on its specific graph and checkpoint; speech device support varies by engine.
 
-No se ejecuta un cálculo obligatorio de VRAM antes de abrir la app: el wizard arranca liviano, detecta dispositivos y calcula una **estimación** por variante; la medición real se obtiene con el botón `Probar`. El usuario puede elegir un modelo distinto al recomendado, con fallback/offload cuando esté soportado.
-
-El Model Hub muestra dos números separados: **VRAM/RAM estimada del modelo aislado** y **margen estimado durante sesión con el LLM activo**. Ninguno es benchmark sin datos. La cola única en GPU mantiene TTS lazy y limita imágenes pesadas.
+The app should start with lightweight hardware discovery rather than running a mandatory GPU benchmark. Model Hub may show both an estimated standalone VRAM/RAM requirement and a projected session headroom with the narrator active. Neither is a benchmark until real measurements are attached. Unsupported controls must report `unsupported` rather than pretending to apply.

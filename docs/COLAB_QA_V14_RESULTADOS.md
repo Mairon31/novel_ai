@@ -1,69 +1,69 @@
-# Colab QA v1.4 — primera inferencia GPU real de Noble AI
+# Noble AI — first successful Colab GPU inference, QA v1.4
 
-**Evidencia:** ZIP `Noble_AI_Colab_QA_v1_4.zip` suministrado por el usuario durante la revisión de Noble AI.
-**Fecha:** 2026-11-04 (Costa Rica) / 2026-11-05 UTC.
-**Commit ensayado:** `191a71ec428b23effaafec108f675976317f97e4`.
-**Procedimiento:** notebook `notebooks/noble_ai_colab_qa_integral_v1_4.ipynb`, GPU de Google Colab, FastAPI local y servidor llama.cpp CUDA.
-**Duración:** 279,4 segundos (4 minutos y 39 segundos).
+**Evidence:** user-provided `Noble_AI_Colab_QA_v1_4.zip`.  
+**Test date:** November 4, 2026 (Costa Rica) / November 5, 2026 UTC.  
+**Tested commit:** `191a71ec428b23effaafec108f675976317f97e4`.  
+**Method:** `notebooks/noble_ai_colab_qa_integral_v1_4.ipynb` with Colab GPU, local FastAPI, and CUDA llama.cpp server.  
+**Elapsed time:** **279.4 seconds (4 minutes 39 seconds)**.
 
-## Resultado global
+## Summary
 
-**20 PASS, 0 FAIL, 0 SKIP**, según el `report.json` enviado. El informe guarda `version: "1.3"` aunque procede de v1.4: es un error de metadatos heredado del notebook, **no del ensayo**. El nombre de ZIP, el directorio y los commits confirman que se ejecutó v1.4.
+The submitted `report.json` reports **20 PASS, 0 FAIL, 0 SKIP**. Its embedded `version: "1.3"` is inherited metadata despite the v1.4 notebook, output directory, and ZIP name; it does not indicate a different executed test.
 
-| Comprobación | Resultado |
+| Check | Result |
 |---|---|
-| Dependencias y 42 pruebas Python | PASS |
-| Frontend React/Vite | PASS |
-| FastAPI + interfaz web compilada | PASS |
-| Playwright desktop/móvil, 8 pruebas | PASS, **LLM simulado en estos tests** |
-| Descarga binarios oficiales llama.cpp b12119 / CUDA 12.8 | PASS, SHA256 verificado |
-| `ldd` y bibliotecas | PASS |
-| Catálogo Hugging Face + GGUF | PASS, SHA de revisión y archivo registrados |
-| Carga del motor + API de narración | PASS |
-| Tres generaciones narrativas con el LLM real | **PASS (3/3)** |
-| Generación automática de imágenes, TTS | **NO EVALUADOS / no implementados** |
+| Dependencies and 42 Python tests | PASS |
+| React/Vite frontend | PASS |
+| FastAPI and compiled UI | PASS |
+| Playwright desktop/mobile | PASS, 8 tests using **mocked LLM** |
+| Official llama.cpp b12119 / CUDA 12.8 binaries | PASS, pinned SHA-256 |
+| `ldd` libraries | PASS |
+| Hugging Face catalog and GGUF | PASS, revision and filename recorded |
+| LLM launch and narrative API | PASS |
+| Three story generations with real model | **PASS, 3/3** |
+| Automatic image generation and TTS | **NOT TESTED / not implemented in this test** |
 
-### Entorno y artefactos
+## Hardware and model
 
-- GPU **NVIDIA Tesla T4**, VRAM total **15.360 MiB** (15 GiB).
-- Python **3.13.16**.
-- GGUF **Qwen3-4B-Instruct-2507 Q4_K_M** del repositorio `bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF`.
-- Revisión HF: `ae44f08e1392f39c0e474af10c3ff8355c8b6688`.
-- Archivo: `Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf`.
-- Tamaño **2.381,59 MiB** (aprox. 2,33 GiB).
-- SHA256 archivo: `2fde00ce69dd4899c70d020845e2638353015bba0fdf161b3eb965f2bca4464e`.
-- VRAM máxima observada mediante muestreo: **3.161 MiB** (20,58% de capacidad).
-- Utilización GPU máxima observada: **96%**.
-- No hay medición fiable de tokens/s (el stream no informa conteo de tokens). La longitud de respuesta está en caracteres.
+- GPU: **NVIDIA Tesla T4**, **15,360 MiB VRAM** (15 GiB).
+- Python: **3.13.16**.
+- GGUF: **Qwen3-4B-Instruct-2507 Q4_K_M**, from `bartowski/Qwen_Qwen3-4B-Instruct-2507-GGUF`.
+- Hugging Face revision: `ae44f08e1392f39c0e474af10c3ff8355c8b6688`.
+- File: `Qwen_Qwen3-4B-Instruct-2507-Q4_K_M.gguf`.
+- File size: **2,381.59 MiB** (approximately 2.33 GiB).
+- SHA-256: `2fde00ce69dd4899c70d020845e2638353015bba0fdf161b3eb965f2bca4464e`.
+- Sampled maximum VRAM: **3,161 MiB** (20.58% of the GPU's capacity).
+- Sampled maximum GPU utilization: **96%**.
+- No reliable tokens-per-second result: the stream did not expose token counts.
 
-### Rendimiento de la API Noble AI
+## Narrative API performance
 
-| Turno | Resultado | Tiempo primer contenido (TTFT) | Tiempo total | Caracteres |
+| Turn | Result | Time to first content (TTFT) | Total time | Characters |
 |---|---|---:|---:|---:|
-| 1 | PASS | 51.255,2 ms | 53.528,8 ms | 490 |
-| 2 | PASS | 159,0 ms | 2.431,2 ms | 547 |
-| 3 | PASS | 146,1 ms | 2.430,7 ms | 560 |
+| 1 | PASS | 51,255.2 ms | 53,528.8 ms | 490 |
+| 2 | PASS | 159.0 ms | 2,431.2 ms | 547 |
+| 3 | PASS | 146.1 ms | 2,430.7 ms | 560 |
 
-**Interpretación:** la primera respuesta tras cargar el motor tuvo una espera muy alta, probablemente asociada al arranque en frío / preparación de inferencia, pero sin un log bruto del motor no puede aislarse la causa. Las dos respuestas posteriores completaron en aproximadamente 2,43 s, con TTFT 146–159 ms. Un percentil 95 de **46.145,6 ms**, calculado mezclando las tres, **no representa** la latencia típica con el motor ya activo. Se necesitan más muestras tras calentamiento y separar ambas fases. TTFT es primer fragmento de contenido de la API principal, no un conteo de tokens del motor.
+The first response had substantial **cold-start** latency (possibly engine initialization, which cannot be isolated without the engine's raw logs). Subsequent warm turns finished in approximately 2.43 seconds with 146–159 ms TTFT. A percentile computed from all three observations would mix cold and warm behavior and should not be presented as typical warm performance.
 
-El modelo fue anunciado por `/v1/models` unos **54 segundos** después del inicio del proceso (según marcas de etapa de notebook; no se mide por separado el primer kernel CUDA). Por tanto la primera experiencia tras instalar/lanzar un modelo fue sustancialmente más lenta que los turnos siguientes.
+The model appeared through `/v1/models` around **54 seconds** after process start according to notebook stage timestamps. This reflects startup experience, not an isolated measurement of the first CUDA kernel.
 
-### Evidencia UI
+## UI and evidence boundaries
 
-El ZIP contiene capturas y trazas de Playwright desktop y móvil: Model Hub, catálogo, lector, workers y diagnóstico. En el lector se ve una **ilustración de reserva**, sin generación visual real; el contenido narrativo de la captura es una respuesta **simulada**. El ensayo GPU posterior sí probó la ruta real FastAPI → llama.cpp con 3 turnos y confirmación de `done`. Los archivos brutos de inferencia no se exportan, por lo que **no puede auditarse la calidad literaria o fidelidad al español latinoamericano a partir de este ZIP**.
+The archive includes desktop/mobile screenshots and Playwright traces for Model Hub, catalog, reader, workers, and diagnostics. These are real UI tests with **simulated narrative output** and a fallback illustration. Separately, the physical GPU experiment validated the FastAPI → llama.cpp narrative path for three completed turns.
 
-## Gates y límites
+The raw generated passages were not exported, so literary quality, canon consistency, or Latin American Spanish fidelity **cannot be audited** from the report. This was not a Cloudflare-tunneled remote-worker test, and it does not establish behavior on a user's Windows GPU.
 
-**Alcanzado:** integración del primer LLM GGUF 4B en Colab T4, streaming de tres respuestas y capacidad de recopilar métricas reproducibles. El checkpoint P1.2 de inferencia remota específicamente por túnel Cloudflare **sigue pendiente**, puesto que este ensayo utilizó llama.cpp local dentro de Colab (sin un worker externo).
+## Conclusions and next gates
 
-**Pendiente:** separar calentamiento inicial / estado estable con más muestras; medir tokens reales y calidad narrativa; ejecutar en hardware de 12 y 16 GB del usuario; despliegue real con worker de red; generar imágenes con ComfyUI; sintetizar TTS; empaquetar el instalador Windows.
+Achieved: a first reproducible GGUF 4B inference experiment on Colab T4 with real API streaming and concrete measurements. Still open: separate cold/warm sampling, actual token counters, long-form narrative quality, 12/16 GB desktop hardware tests, remote worker deployment, ComfyUI renders, TTS audio, and Windows packaging.
 
-## Próximas decisiones de producto
+Product recommendations from the evidence:
 
-1. Mostrar estado **Preparando modelo** y progreso antes del primer turno; evitar que un tiempo de inicialización de 51 s se interprete como aplicación bloqueada.
-2. Tratar primer TTFT como **cold**, y las posteriores como **warm**; no mezclar ambos en percentiles de experiencia estable.
-3. Comparar distintos checkpoints/quant y contextos, pero **no** inferir que un GGUF 24B cabe en la T4 solo por medir 3.161 MiB con un 4B.
-4. Evaluar el texto de escenas sintéticas, memoria y consistencia mediante un test separado de calidad. El ZIP actual solo informa métricas.
-5. Mantener la app local como producto principal; Colab es laboratorio opcional, no dependencia obligatoria.
+1. Display **Preparing model** or similar status before the first generation.
+2. Measure cold and warm TTFT independently.
+3. Compare quantizations and context windows, but do not infer 24B compatibility from a 4B model's VRAM results.
+4. Run a dedicated consistency/literary-quality benchmark rather than treating performance logs as story evaluation.
+5. Keep the local-first application as the primary product; Colab remains an optional laboratory.
 
-**Fuente interna:** `report.json`, `RESUMEN.md`, `modelo.json`, `logs/browser_tests.log` y capturas del ZIP del ensayo. No se han cargado textos privados ni los logs completos al repositorio.
+**Private source artifacts:** `report.json`, `RESUMEN.md`, `modelo.json`, `logs/browser_tests.log`, and images from the diagnostic ZIP. Raw private story text and complete logs were not uploaded to the repository.

@@ -1,41 +1,36 @@
-# Noble AI — Control de recursos GPU
+# Noble AI — GPU resource policies
 
-Noble AI separa el **estado medido de VRAM** de las **estimaciones de consumo de modelos**. El primer dato puede consultarse mediante `nvidia-smi`; el segundo depende de checkpoint, cuantización, contexto, kernels, batch y concurrencia, por lo que no se deduce con seguridad de una sola lectura.
+Noble AI distinguishes **observed free VRAM** from **estimated model consumption**. `nvidia-smi` can provide the first metric; the second depends on model weights, quantization, context, kernels, batch, and concurrent jobs, and cannot be derived reliably from one VRAM sample.
 
-## Monitor de recursos
+## Resource monitor and admission guard
 
-`GET /api/v1/resources/status` devuelve la memoria total, usada y libre de cada GPU NVIDIA detectada, porcentaje de utilización observado y la política activa. No inicia modelos ni corre benchmarks.
+`GET /api/v1/resources/status` returns total/used/free memory, observed utilization for detected NVIDIA GPUs, and the configured policy. It neither loads a model nor runs a benchmark.
 
-La configuración persiste en `data/noble.sqlite` y se ajusta en la interfaz:
+The policy persists in `data/noble.sqlite`:
 
-- `mode=monitor` (valor inicial): observa sin bloquear.
-- `mode=guard`: antes de una **nueva** solicitud de ComfyUI compara la VRAM libre observada en el índice elegido con `minimum_free_mib`. Si es inferior, devuelve HTTP 409, sin enviar la petición.
-- `allow_low_vram=true` en una solicitud permite una excepción puntual. No modifica la política general.
-- Si la GPU configurada no existe o falta `nvidia-smi`, el estado es `unknown`; no impide ejecutar motores por CPU o hardware distinto de NVIDIA.
+- `mode=monitor` (default): observe and report, without blocking new requests.
+- `mode=guard`: before a **new** ComfyUI request, compare observed free VRAM on the chosen GPU with `minimum_free_mib`; return HTTP 409 if there is insufficient headroom.
+- `allow_low_vram=true` on an explicit request allows a one-time exception without changing the global policy.
+- If the configured GPU is unavailable or `nvidia-smi` is missing, report `unknown` rather than assuming CUDA availability. CPU or other-device inference need not be blocked solely for this reason.
 
-La gestión es deliberadamente conservadora: no detiene KoboldCpp, Ollama, ComfyUI ni aplicaciones de terceros; tampoco cambia el presupuesto de CUDA ni promete que un checkpoint quepa.
+These controls do **not** stop KoboldCpp, Ollama, ComfyUI, or third-party programs, and they do not guarantee checkpoint compatibility or adjust CUDA allocations.
 
-## Lo que falta para un scheduler completo
+## Test coverage
 
-Los procesos LLM, ComfyUI y Piper pueden ejecutarse fuera de Noble AI. Un scheduler con transferencia real de memoria requerirá integración por motor, confirmación de propiedad del proceso, liberación de tensores/cachés y estado observable antes y después. Por ahora **solo la admisión de ComfyUI** utiliza el guard de VRAM. La elección de modelos y el offload siguen bajo control del usuario y del motor conectado.
+`tests/test_resource_policy.py` simulates `nvidia-smi` responses, absent GPUs, and free-memory states. It verifies monitoring, admission rejection, one-time overrides, and persistence after API restart. It is not a physical GPU benchmark.
 
-## Pruebas
+## Local GPU operation coordination
 
-`tests/test_resource_policy.py` simula salidas de `nvidia-smi`, ausencia de GPU y distintos estados de memoria. Verifica monitor, bloqueo configurado, excepción explícita y persistencia tras reiniciar la API. No representa una prueba de rendimiento en GPU física.
+The API also provides an optional local exclusion policy, `serialize_local_gpu`, enabled by default. It covers operations Noble AI knows may compete for local GPU resources: local Ollama/KoboldCpp narration in auto mode, managed local warmup, and new ComfyUI render requests. Returning an already cached image does not reserve the GPU.
 
+`GET /api/v1/resources/active` reports an active locally managed operation, its type, and start time. With serialization enabled, a competing operation returns HTTP 409; narrative SSE can emit a readable error event. Locks are released in `finally` after normal completion, errors, or client cancellation. The user can disable serialization where providers operate on different devices.
 
-## Coordinación de operaciones locales
+**Limit:** this is admission control for **requests that Noble AI manages**, not a physical memory scheduler. It does not unload tensor weights, restart inference engines, move checkpoints, or prevent other applications from consuming VRAM. Remote workers and CPU Piper are outside the local lock.
 
-La API ahora dispone de una **exclusión mutua opcional**, `serialize_local_gpu`, activada por defecto. Solo afecta a las operaciones que Noble AI sabe que pueden competir por una GPU local: narración de Ollama/KoboldCpp en modo auto, precalentamiento local y generaciones ComfyUI nuevas (no se reserva GPU al devolver una imagen ya guardada en caché).
+## Open Argon audit gaps (AUD-002)
 
-`GET /api/v1/resources/active` muestra una operación local activa, su tipo y hora de inicio. Cuando la exclusión está habilitada, una segunda solicitud recibe HTTP 409; la narración vía SSE devuelve un evento de error legible. Los bloqueos se liberan en `finally`, también después de errores o cancelaciones del cliente. Se pueden deshabilitar en la interfaz de ajustes, por ejemplo si los proveedores utilizan GPUs distintas.
+Noble AI already observes `nvidia-smi`, maintains a configurable VRAM reserve, and uses an `asyncio.Lock` for recognized local GPU operations. It does **not** automatically unload unrelated Ollama/llama.cpp models or prove that two heavyweight providers will coexist within a particular GPU's memory budget.
 
-**Límite:** esto es coordinación de **solicitudes controladas por Noble AI**, no un planificador real de memoria. No libera tensores, reinicia motores, transfiere checkpoints ni impide que otra aplicación use la misma GPU. Los workers remotos y Piper CPU permanecen fuera del bloqueo local.
+Pending: capacity-aware leases, explicit exclusive/shared/sequential modes, before/after memory measurements, model unloading only for owned processes with permission, safe OOM handling, and a cancelable queue. Run 20–25 LLM + SDXL cycles on a real 16 GB GPU and capture peak VRAM and actual transition times rather than extrapolated values.
 
-## Brechas abiertas de arbitraje según Argon (2026-11-05)
-
-El código actual ya observa `nvidia-smi`, reserva un mínimo de VRAM y emplea `asyncio.Lock` para serializar solicitudes de GPU local conocidas. **No descarga automáticamente pesos de un Ollama/llama.cpp ajeno ni demuestra que dos proveedores cargados quepan simultáneamente.** La UI no debe inferir estas garantías.
-
-Próximos pasos [AUD-002](../TODO.md): implementar leases por clase de carga, políticas explícitas *Exclusivo / Compartido / Secuencial*, mediciones antes/después del cambio de modalidad, descarga de modelos solo de procesos gestionados con consentimiento, manejo OOM y cola cancelable. No terminar ni liberar procesos externos del usuario por defecto. Probar 20–25 ciclos LLM + SDXL sobre una GPU de 16 GB, registrar VRAM pico y tiempos reales, no estimaciones.
-
-Referencia: [auditoría §§05, 11, 18–19](ARGON_AUDITORIA.md) y [Model Hub](MODEL_HUB.md).
+See [TODO AUD-002](../TODO.md), [Argon audit](ARGON_AUDITORIA.md), and [Model Hub](MODEL_HUB.md).
