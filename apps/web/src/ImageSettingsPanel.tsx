@@ -1,7 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
-import type { ImageSettings, ImageStatus, Settings, ResourceConfig, ResourceStatus } from './types';
+import type { ImageSettings, ImageStatus, ImageSamplerOptions, Settings, ResourceConfig, ResourceStatus } from './types';
+
+const SAMPLERS: Array<{id: ImageSettings['sampler_name']; label: string}> = [
+  {id: 'euler', label: 'Euler (compatible por defecto)'},
+  {id: 'euler_ancestral', label: 'Euler ancestral'},
+  {id: 'dpmpp_2m', label: 'DPM++ 2M'},
+  {id: 'dpmpp_sde', label: 'DPM++ SDE'},
+  {id: 'dpmpp_2m_sde', label: 'DPM++ 2M SDE'},
+  {id: 'heun', label: 'Heun'},
+  {id: 'uni_pc', label: 'UniPC'},
+];
+const SCHEDULERS: Array<{id: ImageSettings['scheduler']; label: string}> = [
+  {id: 'normal', label: 'Normal (compatible por defecto)'},
+  {id: 'karras', label: 'Karras'},
+  {id: 'exponential', label: 'Exponential'},
+  {id: 'sgm_uniform', label: 'SGM Uniform'},
+  {id: 'simple', label: 'Simple'},
+];
 
 interface Props {
   imageMode: Settings['image_mode'];
@@ -12,6 +29,7 @@ interface Props {
 export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
   const [image, setImage] = useState<ImageSettings | null>(null);
   const [status, setStatus] = useState<ImageStatus | null>(null);
+  const [samplerOptions, setSamplerOptions] = useState<ImageSamplerOptions | null>(null);
   const [resources, setResources] = useState<ResourceConfig | null>(null);
   const [resourceStatus, setResourceStatus] = useState<ResourceStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,6 +57,17 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       setStatus(result);
       if (!result.online) setError(result.error || 'ComfyUI no responde');
       else setMessage('ComfyUI conectado. Checkpoints disponibles: ' + result.checkpoints.length);
+    } catch (exc) { setError((exc as Error).message); }
+    finally { setBusy(false); }
+  }
+  async function inspectSamplerOptions() {
+    setBusy(true); setError(''); setMessage('');
+    try {
+      const options = await api.imageSamplerOptions();
+      setSamplerOptions(options);
+      if (!options.online) setError(options.error || 'No se pudo consultar KSampler');
+      else setMessage('ComfyUI: ' + options.sampler_name.length +
+        ' muestreadores y ' + options.scheduler.length + ' planificadores admitidos.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -105,6 +134,36 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           <input type="number" min={1} max={20} step="0.5" value={image.cfg}
             onChange={e => change('cfg', Number(e.target.value))}/>
         </label>
+        <label className="workspace-pref-field">Estilo de ilustración
+          <select aria-label="Estilo de ilustración" value={image.style_preset}
+            disabled={busy}
+            onChange={e => change('style_preset', e.target.value as ImageSettings['style_preset'])}>
+            <option value="anime_fantasy">Anime de fantasía (predeterminado)</option>
+            <option value="anime_cinematic">Anime cinematográfico</option>
+            <option value="anime_watercolor">Anime acuarela</option>
+            <option value="none">Sin refuerzo de estilo</option>
+          </select>
+        </label>
+        <label className="workspace-pref-field">Muestreador ComfyUI
+          <select aria-label="Muestreador ComfyUI" value={image.sampler_name}
+            disabled={busy}
+            onChange={e => change('sampler_name', e.target.value as ImageSettings['sampler_name'])}>
+            {SAMPLERS.map(sampler => <option key={sampler.id} value={sampler.id}>
+              {sampler.label}{samplerOptions?.online &&
+                !samplerOptions.sampler_name.includes(sampler.id) ? ' · no disponible' : ''}
+            </option>)}
+          </select>
+        </label>
+        <label className="workspace-pref-field">Planificador ComfyUI
+          <select aria-label="Planificador ComfyUI" value={image.scheduler}
+            disabled={busy}
+            onChange={e => change('scheduler', e.target.value as ImageSettings['scheduler'])}>
+            {SCHEDULERS.map(scheduler => <option key={scheduler.id} value={scheduler.id}>
+              {scheduler.label}{samplerOptions?.online &&
+                !samplerOptions.scheduler.includes(scheduler.id) ? ' · no disponible' : ''}
+            </option>)}
+          </select>
+        </label>
         <label className="workspace-pref-field" >Prompt negativo
           <input maxLength={1000} value={image.negative_prompt}
             onChange={e => change('negative_prompt', e.target.value)}/>
@@ -113,11 +172,23 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       <div className="settings-buttons">
         <button className="secondary-button" disabled={busy} onClick={() => void discover()}>
           <RefreshCcw size={16}/> Buscar checkpoints</button>
-        <button className="primary-button" disabled={busy || !image}
+        <button className="secondary-button" disabled={busy}
+          onClick={() => void inspectSamplerOptions()}>
+          <RefreshCcw size={16}/> Comprobar muestreo ComfyUI</button>
+        <button className="primary-button" disabled={busy || !image ||
+          (samplerOptions?.online === true &&
+           (!samplerOptions.sampler_name.includes(image.sampler_name) ||
+            !samplerOptions.scheduler.includes(image.scheduler)))}
           onClick={() => void save()}>
           {busy ? <LoaderCircle size={16} className="rotating"/> : <Check size={16}/>}
           Guardar ajustes de imagen</button>
       </div>
+      {samplerOptions?.online && image && <p role="status">
+        Compatibilidad KSampler: {samplerOptions.sampler_name.includes(image.sampler_name) &&
+          samplerOptions.scheduler.includes(image.scheduler)
+          ? 'selección compatible' : 'la selección no está disponible en este ComfyUI'}.
+      </p>}
+      <p className="noble-inspector-hint">El estilo modifica el prompt real de cada imagen; cambiar el muestreador o planificador modifica el nodo KSampler. Las opciones distintas de Euler/Normal se validan en el motor antes de generar.</p>
       {status?.online && <p>Checkpoint(s) detectados: {status.checkpoints.length}. El modelo se cargará cuando pulses «Ilustrar».</p>}
     </div>
     <div className="workspace-panel">

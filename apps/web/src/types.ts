@@ -218,6 +218,13 @@ export type WorkerBenchmark = {
 export type ImageSettings = {
   provider: 'comfyui'; base_url: string; checkpoint: string;
   width: number; height: number; steps: number; cfg: number; negative_prompt: string;
+  sampler_name: 'euler' | 'euler_ancestral' | 'dpmpp_2m' | 'dpmpp_sde' |
+    'dpmpp_2m_sde' | 'heun' | 'uni_pc';
+  scheduler: 'normal' | 'karras' | 'exponential' | 'sgm_uniform' | 'simple';
+  style_preset: 'anime_fantasy' | 'anime_cinematic' | 'anime_watercolor' | 'none';
+};
+export type ImageSamplerOptions = {
+  online: boolean; sampler_name: string[]; scheduler: string[]; error: string | null;
 };
 export type ImageStatus = {
   online: boolean; provider: string; checkpoints: string[]; error: string | null;
