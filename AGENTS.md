@@ -1,6 +1,6 @@
 # AGENTS.md — Noble AI engineering guidance
 
-Read `TODO.md`, `README.md`, `docs/ARGON_AUDITORIA.md`, the relevant technical docs, both ADRs, and the latest `master` history before changing behavior. Inspect existing implementations first. Do not treat old audit findings as proof that a feature is absent.
+Read `docs/ENGLISH_MIGRATION.md`, `TODO.md`, `README.md`, `docs/ARGON_AUDITORIA.md`, the relevant technical docs, both ADRs, and the latest `master` history before changing behavior. Inspect existing implementations first. Do not treat old audit findings as proof that a feature is absent.
 
 ## Mission
 
