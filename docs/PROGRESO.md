@@ -916,3 +916,13 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] CI **[#42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS: 387 Python / 80 Playwright / Vite**. El ensayo real con una voz ONNX y el ejecutable Piper en Windows/Colab, motores adicionales y voces por personaje siguen abiertos.
 
 - [x] Corrección independiente de test Colab intermitente: comparar tokens completos de `git` en lugar de buscar fragmentos `rm`/ `clean` dentro de rutas temporales aleatorias; código publicado en `master` y nuevo CI pendiente.
+
+
+## 2026-11-06 · Instalador de checkpoints desde Imágenes (N-01/N-21, CI pendiente)
+
+- [x] Nuevo `checkpoint_installer.py`: consulta metadatos de repositorio HF, revisión SHA fijada, filtra `.safetensors` individuales con tamaño anunciado y SHA-256, valida cabeceras y tensores; registra trabajos SQLite `image_checkpoint_downloads` y descarga bajo `data/models/comfyui/checkpoints/autor/modelo/archivo.safetensors`.
+- [x] Descarga solo por clic explícito: cola serial, estados `queued/downloading/verifying/paused/failed/cancelled/completed`, recuperación HTTP Range estricta (si el servidor lo admite), reintento/cancelación, límite 24 GiB, rechazo de checksum y de rutas simbólicas, sin sobrescritura de archivos existentes ni ejecución de código o GPU.
+- [x] Archivo `data/models/comfyui/noble_extra_model_paths.yaml` generado por Noble para que ComfyUI cargue la carpeta con `--extra-model-paths-config`. El usuario debe reiniciar/reconectar ComfyUI una vez; **no** se afirma que descargar baste para que el runtime externo reconozca el checkpoint.
+- [x] `ImageCheckpointManager.tsx` integrado en la sección independiente **Imágenes**, con búsqueda HF, licencia declarada, tamaño, verificación, seguimiento, instalación, pausas y opción **Seleccionar checkpoint** solo cuando `/images/status` devuelve el nombre de ComfyUI.
+- [x] Tests `tests/test_checkpoint_installer.py` (HF simulado: validación, hash, symlinks, pausa/reanudación, formato y ausencia de descarga automática) y `apps/web/tests/checkpoint-installer.spec.ts` (desktop/móvil, consulta/instalación, controles, conexión ComfyUI y persistencia).
+- [ ] CI de la fase e instalación real de checkpoint HF y ComfyUI en Windows/Colab pendientes; siguen pendientes LoRA/VAE y compatibilidad por familia SDXL/Flux/Illustrious, launcher interno Comfy y control de recursos.

@@ -35,3 +35,8 @@ Se conserva el estilo, sampler y scheduler en la firma de caché y en `visual_as
 - `apps/web/tests/multimedia.spec.ts`: selección desde interfaz, comprobación de compatibilidad, guardar y recuperar al alternar con Voz/TTS, con API de muestreo simulada.
 
 **Pendiente:** prueba física ComfyUI en Windows/Colab, instalación de modelos y LoRAs desde interfaz, perfiles por historia/escena, batch/seed avanzado y calibración de rendimiento/identidad anime. Mantener las tareas maestras N-21 y N-24 sin completar.
+
+
+## Gestión de checkpoints de imágenes
+
+Desde **Configuración → Imágenes**, un gestor independiente permite consultar repositorios públicos de Hugging Face e instalar archivos individuales `.safetensors` con SHA-256 conocido. El almacenamiento es administrado por Noble AI y el estado del trabajo es visible, con pausa/reanudación y recuperación ante reinicio; ningún modelo se descarga solo por entrar a Imágenes. La carpeta necesita registrarse en el ComfyUI externo mediante la configuración generada por la aplicación. **Seleccionar checkpoint** aparece habilitado únicamente cuando `/images/status` confirma que ComfyUI conoce ese nombre. Los métodos de difusión, CFG, pasos y preset anime existentes siguen funcionando. [Guía técnica](CHECKPOINTS_IMAGEN.md).

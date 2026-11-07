@@ -291,3 +291,8 @@ Se implementó la separación física de la navegación y los componentes antes 
 ### N-21 · Primer tramo técnico: muestreo real y presets anime (2026-11-06)
 
 Código publicado: presets visuales aplicados al prompt, muestreador/scheduler persistidos y enviados a KSampler, consulta manual de compatibilidad y bloqueo de selección no válida antes de inferencia. Se mantiene **pendiente** el resto de N-21: instalación/gestión de checkpoints desde Noble, selección por historia/escena, parámetros de referencia/LoRA y TTS avanzado. [Documentación](CONTROLES_IMAGEN.md). CI final aún por observar.
+
+
+### N-01 / N-21 · Primer instalador de checkpoint de imagen dentro de Noble AI (2026-11-06)
+
+Implementación publicada en `master`: catálogo por repositorio HF, solo safetensors individuales con SHA-256, cola duradera y controles de transferencia, prevalidación de formato, carpeta Noble y archivo de integración ComfyUI. El panel Imágenes expone estas funciones sin abrir otra interfaz para descargas/ajustes. **Falta** que el propio Noble arranque/gestione ComfyUI y registre la nueva ruta automáticamente, además de familias y accesorios de modelos, per-historia y prueba GPU física. Por tanto **N-01 y N-21 maestros continúan abiertos**. [Contrato y límites](CHECKPOINTS_IMAGEN.md). CI final en curso.

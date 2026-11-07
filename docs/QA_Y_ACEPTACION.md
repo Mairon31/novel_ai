@@ -388,3 +388,12 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 - Comprobar persistencia/migración de ajustes actuales (voz predeterminada, configuración ComfyUI, canal de actualización, búsqueda de releases, progreso de descarga) y que cambiar de apartado no arranca una inferencia, TTS ni descarga.
 - Requerir capturas comparativas desktop/móvil y pruebas CI; QA funcional del flujo de actualización cuando se implemente un actualizador real. **Gate funcional y automática verificada** en [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131): 381 Python, 80 pruebas Playwright desktop+móvil y build Vite PASS. `settings-separation.spec.ts` captura cuatro pantallas por proyecto, verifica deep links, volver/adelante, ausencia de llamadas TTS desde Imágenes y ausencia de ComfyUI desde Voz. Tests previos de Piper/ComfyUI también pasaron. Revisión visual humana de las capturas y actualización binaria real no forman parte del alcance demostrado.
 
+
+
+## Gate N-01 · Primer instalador checkpoints safetensors (pendiente validación final)
+
+- Descarga única y explícita, metadatos HF inmutables, SHA-256 requerido, tamaño conocido y razonable, formato safetensors, bloqueo de rutas `../` y symlinks, evitar sobrescritura.
+- Pausa/reanudación tras HTTP Range con bytes ya recibidos, cancelación y recuperación duradera ante reinicio. Verificación completa antes de poner archivo a disposición de ComfyUI.
+- Configuración extra-model-paths generada sin tocar carpeta ajena. Mostrar que registrar el path y reiniciar ComfyUI externo sigue siendo necesario; **no** confundir instalado en Noble con detectado/compatible en ComfyUI.
+- UI escritorio/móvil: buscar repositorio, información de licencia/hash/tamaño, progreso, controlar, rechazar selección cuando ComfyUI no lo ve, seleccionar y guardar cuando Comfy sí lo ve; comprobar no descargas al entrar.
+- QA físico pendiente: modelo abierto real y su licencia, checkpoint reconocido al arrancar ComfyUI con config generada, render real en GPU y límites de memoria, fallo y recuperación sin corrupción. No marcar tarea maestra N-01 completada por mocks.
