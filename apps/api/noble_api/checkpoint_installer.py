@@ -101,7 +101,16 @@ class CheckpointInstaller:
         validate_repo(repo_id)
         if not CHECKPOINT.fullmatch(filename) or ".." in filename:
             raise HTTPException(422, "Solo modelos .safetensors individuales en la raíz del repositorio")
-        return self.root / repo_id / filename
+        target = self.root / repo_id / filename
+        # A local symlink in an intermediate directory must not redirect a
+        # background download or publication outside Noble-owned storage.
+        for parent in (self.root, self.root / repo_id.split("/")[0],
+                       self.root / repo_id):
+            if parent.is_symlink() or not parent.resolve().is_relative_to(self.root.resolve()):
+                raise HTTPException(409, "Ruta de checkpoint no confiable")
+        if target.is_symlink() or not target.resolve().is_relative_to(self.root.resolve()):
+            raise HTTPException(409, "Ruta de checkpoint no confiable")
+        return target
 
     def _staging(self, job_id: str) -> Path:
         folder = self.base / (".noble-image-" + str(uuid.UUID(job_id)))
