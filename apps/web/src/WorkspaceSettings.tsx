@@ -32,7 +32,7 @@ function tabFromHash(): Tab {
 }
 
 const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
-  { id: 'overview', label: 'Panel general', icon: Settings2 },
+  { id: 'overview', label: 'Overview', icon: Settings2 },
   { id: 'narration', label: 'Narration', icon: SlidersHorizontal },
   { id: 'images', label: 'Images', icon: Image },
   { id: 'voice', label: 'Voice / TTS', icon: Volume2 },
@@ -186,7 +186,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         {tab === 'overview' && <div className="workspace-settings-overview">
           <div className="setting-section-intro">
             <span className="overline">CONTROL DE TU ESTUDIO</span>
-            <h2>Tu espacio de trabajo, a tu manera</h2>
+            <h2>Your workspace, your way</h2>
             <p>Configura cada sistema por separado. Las opciones del narrador no se mezclan
               with visual settings, network or installed models.</p>
           </div>
@@ -289,8 +289,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-panel">
             <h3>Providers by feature</h3>
             <div className="workspace-service-row"><strong>Narration</strong><span>Ollama, KoboldCpp y OpenRouter</span><b>Integrated</b></div>
-            <div className="workspace-service-row"><strong>Images</strong><span>ComfyUI local bajo demanda</span><b>Connectable</b></div>
-            <div className="workspace-service-row"><strong>Voces</strong><span>Piper local CPU bajo demanda</span><b>Connectable</b></div>
+            <div className="workspace-service-row"><strong>Images</strong><span>Local ComfyUI on demand</span><b>Connectable</b></div>
+            <div className="workspace-service-row"><strong>Voces</strong><span>Local CPU Piper on demand</span><b>Connectable</b></div>
             <div className="workspace-service-row"><strong>Workers</strong><span>Worker remoto LLM autenticado</span><b>Connectable</b></div>
           </div>
         </>}

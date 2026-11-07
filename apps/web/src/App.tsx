@@ -930,7 +930,7 @@ export default function App() {
       <div className="setup-callout"><ShieldCheck size={18}/> TTS is disabled by default. Your story will not be sent to remote providers in this prototype.</div>
       <button className="primary-button full" disabled={busy} onClick={() => void finishSetup()}>
         {busy ? <LoaderCircle className="rotating" size={18}/> : <ArrowRight size={18}/>}
-        Continuar al Model Hub</button>
+        Continue to Model Hub</button>
       <small className="welcome-note">Text generation, images, and speech will be integrated incrementally.</small>
     </section></div>}
   </div>;

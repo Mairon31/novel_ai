@@ -154,7 +154,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     <p role="status">
       Status: <strong>{status?.status === 'ready' ? 'Ready' :
         status?.status === 'starting' ? 'Iniciando' :
-        status?.status === 'exited' ? 'Finalizado' : 'Detenido'}</strong>.
+        status?.status === 'exited' ? 'Exited' : 'Stopped'}</strong>.
       {status?.owns_process ? ' Noble AI manages this process.' :
         ' Noble does not manage any external process.'}
       {status?.pid ? ' PID ' + status.pid + '.' : ''}

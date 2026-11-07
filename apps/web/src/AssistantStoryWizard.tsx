@@ -138,7 +138,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     <div className="creator-ai-header">
       <div>
         <span className="overline"><Sparkles size={15}/> AI-ASSISTED CREATION</span>
-        <h2>Construye un mundo con IA</h2>
+        <h2>Build a world with AI</h2>
         <p>Generate a playable foundation with public plot and private narrator secrets,
           cuatro personajes, tres Lorebooks y tres comienzos. Primero revisas
           the proposal, then decide whether to save it.</p>
@@ -174,7 +174,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           disabled={!!busy || idea.trim().length < 30 || !protagonist.trim()}>
           {busy === 'draft' ? <LoaderCircle size={16} className="rotating"/> :
             <Sparkles size={16}/>}
-          {busy === 'draft' ? 'Generando trama, reparto y Lorebook...' : 'Generar propuesta'}
+          {busy === 'draft' ? 'Generando trama, reparto y Lorebook...' : 'Generate proposal'}
         </button>
         <small>Use the configured narrator in Settings. This does not download models or save
           nothing during generation. Illustrations and voices can be added afterward.</small>
@@ -185,7 +185,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     {draft && <div className="creator-ai-preview" aria-label="Generated world review">
       <div className="creator-ai-preview-head">
         <span className="overline"><Check size={14}/> TRES ETAPAS TERMINADAS</span>
-        <h3>Revisa el mundo antes de crearlo</h3>
+        <h3>Review your world before creating it</h3>
         <small>Model: {model} · not saved yet</small>
       </div>
       <label>Draft title
@@ -272,7 +272,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           <h4>Lorebook ({draft.lore.length})</h4>
           {draft.lore.map((entry, index) => <details key={index}
             className="creator-ai-editable-item">
-            <summary>{entry.title || 'Entrada ' + (index + 1)} · Editar conocimiento</summary>
+            <summary>{entry.title || 'Entrada ' + (index + 1)} · Edit lore</summary>
             <label>Title
               <input aria-label={'Lorebook title ' + (index + 1)}
                 maxLength={100} value={entry.title}

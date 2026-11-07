@@ -766,7 +766,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       }}>
                       <option value="">No Gallery reference</option>
                       {galleryAssets.map(asset => <option value={asset.id} key={asset.id}>
-                        {asset.origin === 'comfyui' ? 'ComfyUI' : 'Importada'} · {asset.id.slice(0, 8)}
+                        {asset.origin === 'comfyui' ? 'ComfyUI' : 'Imported'} · {asset.id.slice(0, 8)}
                       </option>)}
                     </select>
                   </label>
@@ -816,7 +816,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </div>
                   <button className="secondary-button" disabled={checkingAdapter || working}
                     onClick={() => void checkIdentityAdapter()}>
-                    {checkingAdapter ? 'Consultando ComfyUI...' : 'Verificar IPAdapter instalado'}
+                    {checkingAdapter ? 'Checking ComfyUI...' : 'Check installed IPAdapter'}
                   </button>
                   {adapterStatus && <p className="creator-hint" role="status">
                     {adapterStatus.available
