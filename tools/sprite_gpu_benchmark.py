@@ -50,13 +50,13 @@ def loopback_base(url: str) -> str:
             ("127.0.0.1", "localhost", "::1") or
             parsed.username or parsed.password or parsed.query or parsed.fragment
             or parsed.path not in ("", "/")):
-        raise ValueError("La URL de Noble debe ser HTTP loopback sin ruta/credenciales")
+        raise ValueError("Noble AI URL must be loopback HTTP without paths or credentials")
     try:
         port = parsed.port
     except ValueError as exc:
-        raise ValueError("Puerto de Noble inválido") from exc
+        raise ValueError("Invalid Noble AI port") from exc
     if port is None or not 1 <= port <= 65535:
-        raise ValueError("Especifica el puerto local de la API Noble")
+        raise ValueError("Specify the local Noble AI API port")
     return url.rstrip("/")
 
 
@@ -64,9 +64,9 @@ def canonical_uuid(value: str) -> str:
     try:
         normalized = str(uuid.UUID(value))
     except ValueError as exc:
-        raise ValueError("Identificador UUID inválido") from exc
+        raise ValueError("Invalid UUID identifier") from exc
     if normalized != value:
-        raise ValueError("UUID debe estar en formato canónico")
+        raise ValueError("UUID must be in canonical format")
     return normalized
 
 
@@ -74,7 +74,7 @@ def comma_list(value: str, allowed: tuple[str, ...]) -> tuple[str, ...]:
     names = tuple(s.strip() for s in value.split(","))
     if (not names or any(s not in allowed for s in names)
             or len(set(names)) != len(names)):
-        raise ValueError("Lista inválida o con duplicados: " + value[:120])
+        raise ValueError("Invalid or duplicate list entries: " + value[:120])
     return names
 
 
@@ -91,12 +91,12 @@ def quantile(measurements: list[float], p: float) -> float | None:
 def image_metrics(content: bytes) -> dict:
     """Quantitative transparency properties, not facial similarity or aesthetics."""
     if not 0 < len(content) <= MAX_IMAGE_BYTES:
-        raise ValueError("Vista previa demasiado grande o vacía")
+        raise ValueError("Preview is too large or empty")
     try:
         with Image.open(io.BytesIO(content)) as image:
             if image.format != "PNG" or image.mode != "RGBA" or (
                     image.width * image.height > 20_000_000):
-                raise ValueError("La vista previa no es PNG RGBA válido")
+                raise ValueError("Preview is not a valid RGBA PNG")
             image.load()
             width, height = image.size
             alpha = image.getchannel("A")
@@ -108,7 +108,7 @@ def image_metrics(content: bytes) -> dict:
             edges += [alpha.getpixel((0, y)) for y in range(height)]
             edges += [alpha.getpixel((width - 1, y)) for y in range(height)]
     except (OSError, Image.DecompressionBombError, UnidentifiedImageError) as exc:
-        raise ValueError("No se puede analizar la vista previa") from exc
+        raise ValueError("Could not analyze the preview") from exc
     total = width * height
     return {
         "width": width, "height": height,
@@ -197,7 +197,7 @@ async def list_resources(base: str, story_id: str | None = None,
     key = "stories" if story_id is None else "characters"
     values = response.get(key)
     if not isinstance(values, list):
-        raise ValueError("La API devolvió una lista de recursos inválida")
+        raise ValueError("API returned an invalid resource list")
     result = []
     for value in values:
         if isinstance(value, dict) and isinstance(value.get("id"), str):
@@ -216,7 +216,7 @@ async def get_json(client: httpx.AsyncClient, url: str) -> dict:
     response.raise_for_status()
     payload = response.json()
     if not isinstance(payload, dict):
-        raise ValueError("La API devolvió un JSON inesperado")
+        raise ValueError("API returned unexpected JSON")
     return payload
 
 
@@ -254,16 +254,16 @@ def write_review(report: dict, directory: Path) -> None:
     def label(value):
         return html.escape(str(value), quote=True)
     chunks = [
-        '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<title>Noble AI · revisión física de sprites</title><style>' +
-        styles + '</style></head><body><h1>Comparativa de sprites</h1>',
-        '<p class="hint">Los tiempos/VRAM son muestreados por el host. El '
-        'alfa suave y la silueta no certifican identidad facial ni fidelidad '
-        'artística. Las imágenes son vistas previas, no sprites publicados.</p>',
-        "<h2>Resumen medido por método</h2><table><thead><tr><th>Método</th>"
-        "<th>Estado</th><th>P50</th><th>P95</th>"
-        "<th>VRAM pico muestreada</th></tr></thead><tbody>",
+        '<title>Noble AI · physical sprite review</title><style>' +
+        styles + '</style></head><body><h1>Sprite comparison</h1>',
+        '<p class="hint">Timings and VRAM usage are sampled by the host. Soft '
+        'alpha and silhouettes do not certify facial identity or artistic '
+        'fidelity. Images are previews, not published sprites.</p>',
+        "<h2>Measured summary by method</h2><table><thead><tr><th>Method</th>"
+        "<th>Status</th><th>P50</th><th>P95</th>"
+        "<th>Sampled peak VRAM</th></tr></thead><tbody>",
     ]
     for mode in report["modes"]:
         peak = mode.get("gpu_peak_used_mb")
@@ -272,13 +272,13 @@ def write_review(report: dict, directory: Path) -> None:
             label(mode["status"]) + "</td><td>" +
             label(mode.get("latency_p50_ms") or "—") + " ms</td><td>" +
             label(mode.get("latency_p95_ms") or "—") + " ms</td><td>" +
-            (label(peak) + " MiB" if peak is not None else "Sin lecturas") +
+            (label(peak) + " MiB" if peak is not None else "No samples") +
             "</td></tr>"
         )
-    chunks.append("</tbody></table><p class=hint>La comparación visual se agrupa "
-                  "por expresión, mostrando los métodos uno junto al otro. "
-                  "Registra evaluaciones persistentes en <code>review.csv</code>; "
-                  "este HTML es de solo lectura.</p>")
+    chunks.append("</tbody></table><p class=hint>The visual comparison is grouped "
+                  "by expression, showing methods side by side. "
+                  "Record permanent evaluations in <code>review.csv</code>; "
+                  "this HTML is read-only.</p>")
     csv_rows = []
     for expression in report["expressions_requested"]:
         chunks.append("<h2>" + label(expression) + "</h2><section class=grid>")
@@ -289,7 +289,7 @@ def write_review(report: dict, directory: Path) -> None:
             if not entry or entry["status"] != "success":
                 chunks.append(
                     '<article class="failed"><strong>' + label(name) +
-                    '</strong><p>No disponible: ' + label(
+                    '</strong><p>Unavailable: ' + label(
                         mode.get("error") or (entry or {}).get("error") or
                         mode["status"]) + "</p></article>"
                 )
@@ -300,11 +300,11 @@ def write_review(report: dict, directory: Path) -> None:
                 '</strong><img loading="lazy" alt="' + label(
                     expression + " / " + name) + '" src="' +
                 label(file) + '"><p><small>' +
-                label(entry["duration_ms"]) + " ms · alfa suave " +
+                label(entry["duration_ms"]) + " ms · soft alpha " +
                 label(entry["image_metrics"]["soft_alpha_fraction"]) +
-                " · cobertura " + label(entry["image_metrics"]["opaque_coverage"]) +
-                "</small></p><p class=hint>Compara bordes, proporciones, "
-                "rostro y vestuario con el resto de la fila.</p></article>"
+                " · coverage " + label(entry["image_metrics"]["opaque_coverage"]) +
+                "</small></p><p class=hint>Compare edges, proportions, "
+                "face, and outfit against the rest of the row.</p></article>"
             )
             csv_rows.append({
                 "mode": name, "expression": expression,
@@ -342,23 +342,23 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
     base = loopback_base(base)
     story_id, character_id = canonical_uuid(story_id), canonical_uuid(character_id)
     if not modes or any(x not in MODES for x in modes) or len(set(modes)) != len(modes):
-        raise ValueError("Modos de benchmark inválidos")
+        raise ValueError("Invalid benchmark modes")
     if not discard_after and not check_only and len(modes) > 3:
         raise ValueError(
-            "Noble admite tres borradores por historia: usa máximo tres modos "
-            "o --discard-after para guardar previews y liberar los borradores")
+            "Noble allows three drafts per story: use no more than three modes "
+            "or --discard-after to save previews and release drafts")
     if not expressions or any(x not in EXPRESSIONS for x in expressions) or (
             len(set(expressions)) != len(expressions)):
-        raise ValueError("Expresiones de benchmark inválidas")
+        raise ValueError("Invalid benchmark expressions")
     if not 0 <= seed <= 2**53 - 1 or not 10 <= timeout <= MAX_TIMEOUT:
-        raise ValueError("Semilla o timeout fuera de rango")
+        raise ValueError("Seed or timeout is out of range")
     if reference_asset_id and reference_sprite_asset_id:
-        raise ValueError("No se pueden mezclar referencias de Galería y sprites")
+        raise ValueError("Gallery and sprite references cannot be mixed")
     if reference_mode not in ("img2img", "ipadapter"):
-        raise ValueError("Modo de referencia no admitido")
+        raise ValueError("Unsupported reference mode")
     if reference_mode == "ipadapter" and not (
             reference_asset_id or reference_sprite_asset_id):
-        raise ValueError("IPAdapter exige una referencia")
+        raise ValueError("IPAdapter requires a reference")
     if reference_asset_id:
         canonical_uuid(reference_asset_id)
     if reference_sprite_asset_id:
@@ -388,7 +388,7 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
         if not isinstance(checkpoint, str) or not checkpoint:
             raise ValueError("Configura primero un checkpoint en Noble AI")
         if not status.get("online") or checkpoint not in status.get("checkpoints", []):
-            raise ValueError("El checkpoint seleccionado no está disponible en ComfyUI")
+            raise ValueError("Selected checkpoint is unavailable in ComfyUI")
         report["preflight"] = {
             "checkpoint": checkpoint,
             "resolution": [config.get("width"), config.get("height")],
@@ -419,9 +419,9 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
         report["preflight"]["all_requested_ready"] = all(readiness.values())
         store_json(report, directory)
         if check_only:
-            progress("Preflight completado: sin inferencia. Modelos listos: " +
+            progress("Preflight complete: no inference performed. Ready models: " +
                      ", ".join(mode for mode, ready in readiness.items() if ready) +
-                     "; pendientes: " +
+                     "; pending: " +
                      ", ".join(mode for mode, ready in readiness.items() if not ready))
             return report
         for mode in modes:
@@ -432,15 +432,15 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
             ready = report["preflight"]["matting_modes"].get(mode) or {}
             if mode != "chroma_green" and not ready.get("ready"):
                 mode_record["status"] = "skipped"
-                mode_record["error"] = "Modelo/nodo no disponible según preflight"
-                progress("OMITIDO " + mode + ": falta el modelo o el nodo")
+                mode_record["error"] = "Model or node unavailable according to preflight"
+                progress("SKIPPED " + mode + ": model or node is missing")
                 store_json(report, directory)
                 continue
             if reference_mode == "ipadapter" and not (
                     report["preflight"]["ipadapter"]["available"] and
                     report["preflight"]["ipadapter"]["preset_ready"]):
                 mode_record["status"] = "skipped"
-                mode_record["error"] = "IPAdapter no disponible"
+                mode_record["error"] = "IPAdapter unavailable"
                 store_json(report, directory)
                 continue
             try:
@@ -448,7 +448,7 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                     base + f"/api/v1/stories/{story_id}/creator/characters/"
                            f"{character_id}/sprite-drafts",
                     json={
-                        "caption": "Benchmark técnico de sprites sin publicar",
+                        "caption": "Technical unpublished sprite benchmark",
                         "pose": "standing",
                         "style": "clean anime full-body character concept art",
                         "seed": seed, "cutout_mode": mode, "use_lora": use_lora,
@@ -463,14 +463,14 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                 draft_id = canonical_uuid(draft["id"])
                 mode_record["draft_created"] = True
                 # Draft remains in the local Noble DB for manual inspection.
-                progress(f"Borrador creado para {mode}; sin publicación.")
+                progress(f"Draft created for {mode}; not published.")
             except (httpx.HTTPError, ValueError, KeyError) as exc:
                 mode_record["status"] = "failed"
                 mode_record["error"] = safe_error(exc)
                 store_json(report, directory)
                 continue
             for expression in expressions:
-                progress(f"GENERANDO [{mode}] {expression} ...")
+                progress(f"GENERATING [{mode}] {expression} ...")
                 stop, samples = asyncio.Event(), []
                 observer = asyncio.create_task(
                     watch_gpu(stop, samples, gpu_index, monitor_period, gpu_probe))
@@ -487,7 +487,7 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                     data = response.json()
                     slot = (data.get("slots") or {}).get(expression) or {}
                     if not slot.get("ready"):
-                        raise ValueError("La API no confirmó la expresión generada")
+                        raise ValueError("API did not confirm the generated expression")
                     preview = await client.get(
                         base + f"/api/v1/stories/{story_id}/creator/sprite-drafts/"
                                f"{draft_id}/expressions/{expression}/preview",
@@ -551,7 +551,7 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
                 except httpx.HTTPError as exc:
                     mode_record["draft_cleanup"] = "failed"
                     mode_record["cleanup_error"] = safe_error(exc)
-                    progress("No se pudo descartar el borrador de " + mode)
+                    progress("Could not discard the draft for " + mode)
             else:
                 mode_record["draft_cleanup"] = "retained_for_manual_review"
             store_json(report, directory)
@@ -564,14 +564,14 @@ async def benchmark(*, base: str, story_id: str, character_id: str,
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Benchmark GPU local de sprites IA sin aprobar ni publicar arte")
+        description="Local AI sprite GPU benchmark without approving or publishing artwork")
     parser.add_argument("--api", default=DEFAULT_API)
-    parser.add_argument("--story-id", help="UUID de historia existente")
-    parser.add_argument("--character-id", help="UUID de NPC existente")
+    parser.add_argument("--story-id", help="UUID of an existing story")
+    parser.add_argument("--character-id", help="UUID of an existing NPC")
     parser.add_argument("--list-stories", action="store_true",
-                        help="Listar títulos/UUID de historias locales, sin inferencia")
+                        help="List titles and UUIDs of local stories without inference")
     parser.add_argument("--list-characters", metavar="STORY_UUID",
-                        help="Listar NPC de una historia local, sin inferencia")
+                        help="List NPCs of a local story without inference")
     parser.add_argument("--modes", default="chroma_green,neural_birefnet_portrait")
     parser.add_argument("--expressions", default=",".join(EXPRESSIONS))
     parser.add_argument("--seed", type=int, default=1407)
@@ -580,7 +580,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--gpu-index", type=int, default=0)
     parser.add_argument("--check-only", action="store_true")
     parser.add_argument("--discard-after", action="store_true",
-                        help="Conservar PNG/reportes, descartar solo el borrador recién creado")
+                        help="Keep PNGs and reports; discard only the newly created draft")
     parser.add_argument("--use-lora", action="store_true")
     parser.add_argument("--reference-asset-id")
     parser.add_argument("--reference-sprite-asset-id")
@@ -593,16 +593,16 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.list_stories or args.list_characters:
             if args.list_stories and args.list_characters:
-                parser.error("Selecciona una única opción para listar")
+                parser.error("Select only one listing option")
             resources = asyncio.run(list_resources(
                 args.api, args.list_characters))
             for entry in resources:
                 print(entry["id"] + "  " + entry["label"])
             if not resources:
-                print("No se encontraron recursos")
+                print("No resources found")
             return 0
         if not args.story_id or not args.character_id:
-            parser.error("Se requieren --story-id y --character-id (usa --list-stories)")
+            parser.error("--story-id and --character-id are required (use --list-stories)")
         result = asyncio.run(benchmark(
             base=args.api, story_id=args.story_id,
             character_id=args.character_id,
@@ -620,14 +620,14 @@ def main(argv: list[str] | None = None) -> int:
             discard_after=args.discard_after,
         ))
     except (ValueError, httpx.HTTPError, OSError) as exc:
-        print("No se pudo ejecutar el benchmark: " + safe_error(exc),
+        print("Could not run the benchmark: " + safe_error(exc),
               file=sys.stderr)
         return 2
-    print("Informe JSON: " + str(args.out / "report.json"))
+    print("JSON report: " + str(args.out / "report.json"))
     if args.check_only:
         return 0 if result["preflight"]["all_requested_ready"] else 1
-    print("Revisión HTML: " + str(args.out / "review.html"))
-    print("Planilla de revisión: " + str(args.out / "review.csv"))
+    print("HTML review: " + str(args.out / "review.html"))
+    print("Review spreadsheet: " + str(args.out / "review.csv"))
     return 1 if any(x["status"] not in ("success",) for x in result["modes"]) else 0
 
 

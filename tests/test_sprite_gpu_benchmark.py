@@ -167,8 +167,8 @@ class BenchmarkScriptTests(unittest.TestCase):
             page = (directory / "review.html").read_text(encoding="utf-8")
             self.assertIn("chroma_green-neutral.png", page)
             self.assertIn("neural_rmbg2-joy.png", page)
-            self.assertIn("Resumen medido por método", page)
-            self.assertIn("VRAM pico muestreada", page)
+            self.assertIn("Measured summary by method", page)
+            self.assertIn("Sampled peak VRAM", page)
             self.assertIn("3800 MiB", page)
             self.assertLess(page.index("<h2>neutral</h2>"),
                             page.index("<h2>joy</h2>"))
@@ -279,7 +279,7 @@ class BenchmarkScriptTests(unittest.TestCase):
             self.assertEqual(len(deleted), 2)
             self.assertTrue((Path(out) / "chroma_green-neutral.png").is_file())
             self.assertTrue((Path(out) / "neural_rmbg2-neutral.png").is_file())
-            with self.assertRaisesRegex(ValueError, "tres borradores"):
+            with self.assertRaisesRegex(ValueError, "three drafts"):
                 asyncio.run(benchmark(
                     base="http://127.0.0.1:8000", story_id=STORY,
                     character_id=NPC, modes=MODES,
