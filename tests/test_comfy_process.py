@@ -104,6 +104,24 @@ class ComfyProcessTests(unittest.TestCase):
             self.assertEqual(self.client.post("/api/v1/images/runtime/start").status_code, 502)
         self.assertEqual(self.client.get("/api/v1/images/config").json(), old)
 
+    def test_cross_site_post_cannot_launch_or_stop_local_process(self):
+        self.assertEqual(self.client.put("/api/v1/images/runtime/config",
+                                         json=self.cfg).status_code, 200)
+        for headers in (
+            {"Origin": "https://untrusted.example"},
+            {"Sec-Fetch-Site": "cross-site"},
+            {"Origin": "null"},
+        ):
+            with patch("noble_api.comfy_process.subprocess.Popen") as popen:
+                attempt = self.client.post("/api/v1/images/runtime/start",
+                                           headers=headers)
+                self.assertEqual(attempt.status_code, 403, attempt.text)
+                self.assertEqual(self.client.post("/api/v1/images/runtime/stop",
+                                                  headers=headers).status_code, 403)
+                popen.assert_not_called()
+        self.assertEqual(self.client.get("/api/v1/images/runtime/status").json()["status"],
+                         "stopped")
+
     def test_symlinks_and_bounded_logs(self):
         alias = self.root / "alias"
         try:
