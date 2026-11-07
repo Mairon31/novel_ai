@@ -69,3 +69,6 @@ Se implementaron tres parámetros específicos de Piper en **Configuración → 
 Un `length_scale` menor reproduce fonemas más rápido; los otros dos parámetros modulan el ruido del generador y la variación de longitudes fonéticas. La UI obliga a guardar los cambios antes de generar una nueva muestra. Cambiar parámetros invalida la coincidencia de caché del WAV de los turnos: no se devuelve una grabación producida con otra velocidad/variación, ni se borran las versiones de audio ya creadas. Las APIs rechazan parámetros fuera de límites, campos desconocidos y valores no finitos.
 
 **No equivale a un ecualizador de voz, asignación de voz por personaje, motor neural distinto ni clonación.** Requiere un Piper instalado para comprobar físicamente los cambios; pruebas automatizadas de CLI y WAV usan un ejecutable ficticio. La verificación CI de esta nueva parte se actualizará en `docs/PROGRESO.md`.
+
+
+**Validación de parámetros Piper:** [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS: 387 pruebas Python, 80 de navegador y build frontend. La suite comprueba el argumento enviado al ejecutable simulado y la regeneración de audio cuando cambia la configuración, no evaluación de calidad de voz con motor real.

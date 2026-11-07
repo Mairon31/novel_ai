@@ -52,3 +52,6 @@ La semilla se sigue eligiendo por solicitud de escena, no como ajuste global en 
 ### Ajustes propios de Voz / TTS (N-21, tramo Piper)
 
 Velocidad (`length_scale`), variación de voz (`noise_scale`) y variación de fonemas (`noise_w`) son parámetros internos de Piper visibles únicamente en Voz/TTS. Se guardan aparte de la voz predeterminada y de la configuración de imágenes, afectan tanto a la prueba de voz como a Escuchar y pasan directamente a argumentos válidos de Piper. No se inicia síntesis con solo cambiar la pestaña o guardar.
+
+
+**Evidencia N-21, segundo tramo:** [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS. Los controles de velocidad y variación Piper se encuentran exclusivamente en Voz/TTS; el test cubre que no se produzca audio al abrir Ajustes y que los cambios deban guardarse antes de probar.

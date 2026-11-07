@@ -907,10 +907,12 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] CI [#42340226265](https://github.com/Mairon31/novel_ai/actions/runs/42340226265) PASS (385 Python / 80 Playwright escritorio-móvil / Vite). La prueba física con ComfyUI real sin mocks sigue pendiente. N-21 completo sigue abierto: instalación de modelos de imagen y ajustes por historia/escena y TTS de múltiples proveedores.
 
 
-## 2026-11-06 · N-21, controles avanzados Piper (CI pendiente)
+## 2026-11-06 · N-21, controles avanzados Piper (CI verificada)
 
 - [x] API `GET/PUT /api/v1/tts/synthesis-config` con Pydantic y SQLite, `length_scale` (0.5–2), `noise_scale` (0–1.5) y `noise_w` (0–1.5). Rechazo de campos inválidos y persistencia sin afectar a voz predeterminada.
 - [x] Previsualización puntual y lectura de turnos comparten parámetros Piper reales `--length_scale`, `--noise_scale`, `--noise_w` y respetan la ejecución bajo demanda. La firma del audio cacheado incorpora la configuración para generar nuevas versiones sin perder originales.
 - [x] Voz/TTS (panel separado de Imágenes) expone los controles, guardado explícito, señal de cambios pendientes y deshabilitación de muestra hasta guardarlos; audio previo invalidado tras cambiar parámetros.
 - [x] Pruebas Python con ejecutable falso validan argumentos, persistencia, rechazo de valores, cambios de caché y WAV temporal; test Playwright valida guardar/recargar y ausencia de síntesis implícita.
-- [ ] CI final y ensayo real con una voz ONNX y el ejecutable Piper en Windows/Colab pendientes. Motores TTS adicionales y asignación de voces por personaje siguen abiertos.
+- [x] CI **[#42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS: 387 Python / 80 Playwright / Vite**. El ensayo real con una voz ONNX y el ejecutable Piper en Windows/Colab, motores adicionales y voces por personaje siguen abiertos.
+
+- [x] Corrección independiente de test Colab intermitente: comparar tokens completos de `git` en lugar de buscar fragmentos `rm`/ `clean` dentro de rutas temporales aleatorias; código publicado en `master` y nuevo CI pendiente.
