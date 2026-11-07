@@ -4,6 +4,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   const repo = 'artist/fantasy-checkpoint';
   const filename = 'fantasy-anime.safetensors';
   const checkpointName = repo + '/' + filename;
+  const comfyReportedName = 'artist\\fantasy-checkpoint\\fantasy-anime.safetensors';
   const revision = 'c'.repeat(40);
   let installs = 0;
   let started = false;
@@ -54,7 +55,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
     statusChecks++;
     await route.fulfill({ status: 200, contentType: 'application/json',
       body: JSON.stringify({ online: true, provider: 'comfyui',
-        checkpoints: installed ? [checkpointName] : [], error: null }) });
+        checkpoints: installed ? [comfyReportedName] : [], error: null }) });
   });
 
   await page.goto('/#/configuracion/images');
@@ -86,11 +87,11 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   await page.getByRole('button', { name: 'Buscar checkpoints', exact: true }).click();
   await expect(page.getByText('Detectado en ComfyUI')).toBeVisible();
   await page.getByRole('button', { name: 'Seleccionar checkpoint' }).click();
-  await expect(page.getByLabel('Checkpoint')).toHaveValue(checkpointName);
+  await expect(page.getByLabel('Checkpoint')).toHaveValue(comfyReportedName);
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
   await expect.poll(async () =>
     (await (await page.request.get('/api/v1/images/config')).json()).checkpoint)
-    .toBe(checkpointName);
+    .toBe(comfyReportedName);
   expect(installs).toBe(1);
 
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
