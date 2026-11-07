@@ -28,7 +28,7 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByRole('button', { name: /Images \(0\)/ }).click();
   await page.getByLabel('Image name').fill('Castillo soleado');
   await page.getByLabel('Image description').fill('castillo iluminado en la ciudad');
-  await page.getByLabel('Archivo de recurso visual').setInputFiles({
+  await page.getByLabel('Visual asset file').setInputFiles({
     name: 'castillo.png', mimeType: 'image/png', buffer: background,
   });
   await page.getByRole('button', { name: 'Import image' }).click();
@@ -37,10 +37,10 @@ test('author art library overlays caption-matched background and transparent spr
 
   await page.getByLabel('Tipo de recurso visual').selectOption('foreground');
   await page.getByLabel('Sprite expression').selectOption('joy');
-  await page.getByLabel('Pose de sprite').fill('waving');
+  await page.getByLabel('Sprite pose').fill('waving');
   await page.getByLabel('Image name').fill('Aira feliz');
   await page.getByLabel('Image description').fill('Aira sonríe en el castillo');
-  await page.getByLabel('Archivo de recurso visual').setInputFiles({
+  await page.getByLabel('Visual asset file').setInputFiles({
     name: 'aira.png', mimeType: 'image/png', buffer: sprite,
   });
   await page.getByRole('button', { name: 'Import image' }).click();
@@ -58,7 +58,7 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByRole('button', { name: 'Go to Library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   await expect(page.getByRole('region', { name: 'Details of ' + title })).toBeVisible();
-  await page.getByRole('button', { name: 'Continue historia' }).click();
+  await page.getByRole('button', { name: 'Continue story' }).click();
   const portrait = page.getByRole('img', { name: 'Present character: Aira feliz' });
   await expect(portrait).toBeVisible();
   await expect(portrait).toHaveAttribute('data-expression', 'joy');

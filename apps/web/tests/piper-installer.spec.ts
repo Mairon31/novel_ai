@@ -68,7 +68,7 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
   await page.getByRole('button', { name: 'Resume download' }).click();
   await expect(page.getByRole('button', { name: 'Pause download' })).toBeVisible();
   status = 'completed'; installed = true;
-  await page.getByRole('button', { name: 'Refresh voces' }).click();
+  await page.getByRole('button', { name: 'Refresh voices' }).click();
   await expect(page.getByText('Lista para seleccionar')).toBeVisible();
   await page.getByLabel('Default Piper voice').selectOption(voice);
   expect(downloads).toBe(1);

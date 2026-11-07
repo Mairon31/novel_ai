@@ -76,7 +76,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
 
   await page.getByRole('button', { name: /Characters \(0\)/ }).click();
   await page.getByLabel('Name de NPC').fill('Aira');
-  await page.getByLabel('Descripción de NPC').fill(
+  await page.getByLabel('NPC description').fill(
     'Aira conoce los senderos del reino, aunque evita hablar con viajeros.');
   await page.getByRole('button', { name: 'Add character' }).click();
   await expect(page.getByRole('button', { name: /Characters \(1\)/ })).toBeVisible();

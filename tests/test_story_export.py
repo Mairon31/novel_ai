@@ -97,9 +97,9 @@ class StoryExportTests(unittest.TestCase):
         page = self.client.get(self.url).text
         self.assertEqual(page.count("data:image/webp;base64,"), 3)
         self.assertEqual(page.count("<section>"), 2)
-        self.assertIn('alt="Portada de la historia"', page)
-        self.assertIn('alt="Ilustración de la escena 1"', page)
-        self.assertIn('alt="Ilustración de la escena 2"', page)
+        self.assertIn('alt="Story cover"', page)
+        self.assertIn('alt="Illustration for scene 1"', page)
+        self.assertIn('alt="Illustration for scene 2"', page)
         # Forking at first turn cannot inherit art or text from later scenes.
         fork = self.client.post(f"/api/v1/stories/{self.story}/fork",
                                 json={"until_turn_id": first["id"]})

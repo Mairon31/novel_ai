@@ -51,7 +51,7 @@ test('installed Model Hub reports real disk usage, partials and absent files', a
 
   await storage.getByText('View counted files (3)').click();
   await expect(storage.getByText('Missing.gguf · No encontrado')).toBeVisible();
-  await expect(page.getByText('Archivo no encontrado: revisa la instalación.')).toBeVisible();
+  await expect(page.getByText('File not found: check installation.')).toBeVisible();
   const missing = page.locator('.installed-row').filter({hasText:'Missing.gguf'});
   await expect(missing.getByRole('button', {name:'Choose narrator'})).toBeDisabled();
   const installed = page.locator('.installed-row').filter({hasText:'Model-A-Q4_K_M.gguf'});

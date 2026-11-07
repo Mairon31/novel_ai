@@ -23,18 +23,18 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading',{name:projectTitle})).toBeVisible();
 
-  await page.getByLabel('Sinopsis para lectores').fill(
+  await page.getByLabel('Reader synopsis').fill(
     'Una ciudad repleta de misterios que nadie conoce.');
-  await page.getByLabel('Contexto interno de la IA').fill(
+  await page.getByLabel('Private AI context').fill(
     'El antiguo alcalde esconde la llave detrás del castillo.');
-  await page.getByLabel('Directrices de narración').fill(
+  await page.getByLabel('Narration guidelines').fill(
     'No controles las decisiones de Luna; describe las reacciones de los NPC.');
   await page.getByRole('button',{name:'Save plot and context'}).click();
   await expect(page.getByText(/Contenido del creador guardado/)).toBeVisible();
 
   await page.getByRole('button',{name:/Characters \(0\)/}).click();
   await page.getByLabel('Name de NPC').fill('Aira');
-  await page.getByLabel('Descripción de NPC').fill(
+  await page.getByLabel('NPC description').fill(
     'Una bibliotecaria dedicada que protege los registros secretos de la ciudad.');
   await page.getByLabel('NPC personality').fill('Sarcástica, reservada y muy observadora.');
   await page.getByRole('button',{name:'Add character'}).click();
@@ -49,7 +49,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await expect(page.getByRole('button',{name:'Use as story opening'})).toBeVisible();
 
   await page.getByRole('button',{name:'Plot and context'}).click();
-  await expect(page.getByLabel('Contexto interno de la IA')).toHaveValue(
+  await expect(page.getByLabel('Private AI context')).toHaveValue(
     'El antiguo alcalde esconde la llave detrás del castillo.');
   await page.screenshot({
     path:'test-results/'+test.info().project.name+'-creator-studio.png',fullPage:true,
@@ -61,7 +61,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
     await page.getByRole('button',{name:'Open menu'}).click();
   await page.getByRole('button',{name:'Creator Studio'}).click();
   await page.locator('.creator-project').filter({hasText:projectTitle}).first().click();
-  await expect(page.getByLabel('Contexto interno de la IA')).toHaveValue(
+  await expect(page.getByLabel('Private AI context')).toHaveValue(
     'El antiguo alcalde esconde la llave detrás del castillo.');
   await page.getByRole('button',{name:/Characters \(1\)/}).click();
   await expect(page.locator('.creator-character-list button').filter({hasText:'Aira'}).first()).toBeVisible();

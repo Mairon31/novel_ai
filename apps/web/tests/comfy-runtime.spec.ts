@@ -67,7 +67,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await panel.getByLabel('ComfyUI Python').fill('/home/test/venv/bin/python');
   await panel.getByLabel('ComfyUI port').fill('19080');
   await panel.getByLabel('ComfyUI VRAM profile').selectOption('lowvram');
-  await expect(panel.getByText('Hay cambios sin guardar')).toBeVisible();
+  await expect(panel.getByText('Unsaved changes')).toBeVisible();
   await panel.getByRole('button', { name: 'Validate installation' }).click();
   await expect(panel.getByText('ComfyUI installation and Python executable verified.')).toBeVisible();
   expect(validations).toBe(1);

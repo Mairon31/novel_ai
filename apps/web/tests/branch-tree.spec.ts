@@ -34,7 +34,7 @@ test('story detail shows a non-destructive branch tree and reader switches route
   await expect(region.getByText('Main story')).toBeVisible();
   await region.getByRole('button', { name: 'Open branch ' + grandson.title }).click();
   await expect(page.getByRole('heading', { name: grandson.title, exact: true })).toBeVisible();
-  await page.getByRole('button', { name: /Start story|Continue historia/ }).click();
+  await page.getByRole('button', { name: /Start story|Continue story/ }).click();
   const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });
   await expect(selector).toBeVisible();
   await expect(selector.locator('option')).toHaveCount(3);
