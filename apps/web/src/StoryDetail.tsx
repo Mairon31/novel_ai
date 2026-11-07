@@ -91,7 +91,7 @@ export function StoryDetail({
       </div>
       <article className="noble-story-detail-resume">
         <span className="overline">{last ? 'TU AVENTURA' : 'EL MUNDO'}</span>
-        <h2>{last ? 'Donde quedó tu historia' : 'Antes de comenzar'}</h2>
+        <h2>{last ? 'Where your story left off' : 'Before you begin'}</h2>
         <p>{last ? last.assistant_text.slice(0, 700) :
           preview(publicPlot || story.premise, story.protagonist_name)}</p>
         {last && <button className="noble-story-detail-resume-link" onClick={onContinue}>
@@ -100,10 +100,10 @@ export function StoryDetail({
       </article>
     </div>
     {branches.length > 1 && <section className="noble-detail-section"
-      aria-label="Árbol de rutas narrativas">
+      aria-label="Narrative branch tree">
       <div className="noble-detail-section-heading">
         <span className="overline"><GitBranch size={16}/> HISTORIAS CONECTADAS</span>
-        <h2>Árbol de rutas <small>{branches.length}</small></h2>
+        <h2>Branch tree <small>{branches.length}</small></h2>
         <p>Explora las bifurcaciones guardadas sin alterar sus turnos ni decisiones.</p>
       </div>
       <div className="noble-route-list">
@@ -128,7 +128,7 @@ export function StoryDetail({
       <div className="noble-detail-section-heading">
         <span className="overline"><Users size={15}/> CONOCE AL ELENCO</span>
         <h2>Personajes de este mundo <small>{characters.length}</small></h2>
-        <p>Conoce a quienes pueden acompañarte en tu historia.</p>
+        <p>Meet the characters who may accompany you.</p>
       </div>
       <div className="noble-detail-cast-grid">
         {characters.map(character => {
@@ -150,8 +150,8 @@ export function StoryDetail({
     {openings.length > 0 && <section className="noble-detail-section"
       id="noble-story-openings" aria-label="Escenas de apertura">
       <div className="noble-detail-section-heading">
-        <span className="overline"><Feather size={15}/> TU PRIMERA DECISIÓN</span>
-        <h2>Elige cómo empieza la historia</h2>
+        <span className="overline"><Feather size={15}/> YOUR FIRST DECISION</span>
+        <h2>Choose how the story begins</h2>
         <p>Selecciona una escena de apertura. Al comenzar, se guardará como
           el primer turno de esta historia, sin generar texto adicional.</p>
       </div>
@@ -171,9 +171,9 @@ export function StoryDetail({
       </div>
     </section>}
     {media.some(asset => asset.kind !== 'cover') && <section className="noble-detail-section"
-      aria-label="Galería visual de la historia">
+      aria-label="Story art gallery">
       <div className="noble-detail-section-heading">
-        <span className="overline"><ImageIcon size={15}/> GALERÍA DEL MUNDO</span>
+        <span className="overline"><ImageIcon size={15}/> WORLD GALLERY</span>
         <h2>Escenarios e ilustraciones</h2>
       </div>
       <div className="noble-detail-media-strip">

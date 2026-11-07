@@ -36,7 +36,7 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'narration', label: 'Narración', icon: SlidersHorizontal },
   { id: 'images', label: 'Imágenes', icon: Image },
   { id: 'voice', label: 'Voz / TTS', icon: Volume2 },
-  { id: 'languages', label: 'Idiomas y traducción', icon: Languages },
+  { id: 'languages', label: 'Languages and translation', icon: Languages },
   { id: 'providers', label: 'Proveedores', icon: Globe2 },
   { id: 'appearance', label: 'Apariencia', icon: Palette },
   { id: 'runtimes', label: 'Runtimes', icon: Cpu },
@@ -47,15 +47,15 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
 ];
 
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
-  {title:'RESUMEN', description:'Acceso rápido a tus preferencias',
+  {title:'OVERVIEW', description:'Quick access to your preferences',
     sections:['overview']},
   {title:'INTELIGENCIA',description:'Narrador y proveedores',
     sections:['narration','providers','languages']},
-  {title:'CREACIÓN MULTIMEDIA',description:'Generación visual y voces',
+  {title:'MEDIA CREATION',description:'Image generation and voices',
     sections:['images','voice']},
-  {title:'APLICACIÓN',description:'Preferencias y herramientas',
+  {title:'APPLICATION',description:'Preferences and tools',
     sections:['appearance','shortcuts','runtimes']},
-  {title:'CONEXIONES Y SISTEMA',description:'Red, dispositivos y versión',
+  {title:'CONNECTIONS AND SYSTEM',description:'Network, devices, and version',
     sections:['network','about','updates']},
 ];
 
@@ -138,7 +138,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       const updated = remove ? await api.deleteOpenRouterCredential() :
         await api.saveOpenRouterCredential(keyDraft);
       setCredential(updated); setKeyDraft('');
-      setFeedback(remove ? 'Clave retirada del almacén.' : 'Clave guardada en el almacén de credenciales del sistema.');
+      setFeedback(remove ? 'Key removed from secure storage.' : 'Key saved in the system credential store.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -165,7 +165,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       <p>Motores, idioma, interfaz, diagnóstico y futuras conexiones remotas desde un solo lugar.</p>
     </div>
     <div className="workspace-settings-shell">
-      <nav aria-label="Apartados de configuración" className="workspace-settings-tabs">
+      <nav aria-label="Settings sections" className="workspace-settings-tabs">
         {settingGroups.map(group => <div className="settings-nav-group" key={group.title}>
           <span className="settings-nav-label">{group.title}</span>
           <small>{group.description}</small>
@@ -191,8 +191,8 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               con los ajustes visuales, la red ni los modelos instalados.</p>
           </div>
           <div className="workspace-settings-snapshot">
-            <div><Languages size={17}/><small>Idioma de narración</small>
-              <strong>{prefs?.target_language === 'es-419' ? 'Español latinoamericano' :
+            <div><Languages size={17}/><small>Narration language</small>
+              <strong>{prefs?.target_language === 'es-419' ? 'Latin American Spanish' :
                 prefs?.target_language || 'Consultando...'}</strong></div>
             <div><Volume2 size={17}/><small>Ilustraciones</small>
               <strong>{imageMode === 'off' ? 'Desactivadas' :
@@ -204,13 +204,13 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           </div>
           <div className="workspace-settings-overview-grid">
             {[
-              {id:'narration',title:'Motor narrativo',summary:'Conectar tu LLM, contexto, parámetros y modelo.'},
-              {id:'images',title:'Imágenes',summary:'ComfyUI, ilustraciones, checkpoints y GPU.'},
+              {id:'narration',title:'Narrative engine',summary:'Connect your LLM, context, settings, and model.'},
+              {id:'images',title:'Imágenes',summary:'ComfyUI, illustrations, checkpoints, and GPU.'},
               {id:'voice',title:'Voz / TTS',summary:'Piper, modelos de voz y prueba de audio.'},
               {id:'providers',title:'Servicios y claves',summary:'Accesos, proveedores y credenciales externas.'},
-              {id:'languages',title:'Idiomas y estilo',summary:'Español latinoamericano, traducción y narración.'},
-              {id:'appearance',title:'Interfaz de lectura',summary:'Tema, presentación de novela visual y tipografía.'},
-              {id:'runtimes',title:'Models y ejecutables',summary:'Paquetes locales detectados y diagnóstico de motores.'},
+              {id:'languages',title:'Languages and style',summary:'Latin American Spanish, traducción y narración.'},
+              {id:'appearance',title:'Reader appearance',summary:'Theme, visual novel layout, and typography.'},
+              {id:'runtimes',title:'Models and executables',summary:'Installed packages and engine diagnostics.'},
               {id:'network',title:'GPU remotas y red',summary:'Workers, conexiones seguras y red local.'},
               {id:'shortcuts',title:'Atajos de teclado',summary:'Combinaciones para navegar y jugar.'},
               {id:'about',title:'About Noble AI',summary:'Application version, build, and data.'},
@@ -227,13 +227,13 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           </div>
           <div className="workspace-panel workspace-overview-storage">
             <h3>Almacenamiento de modelos</h3>
-            <code title={modelsDir}>{modelsDir || 'Ruta todavía no disponible'}</code>
+            <code title={modelsDir}>{modelsDir || 'Path not available yet'}</code>
             <p>Las rutas y ejecutables se administran desde sus apartados correspondientes.</p>
           </div>
         </div>}
 
         {tab === 'narration' && <>
-          <div className="setting-section-intro"><h2>Motor narrativo</h2>
+          <div className="setting-section-intro"><h2>Narrative engine</h2>
             <p>Elige entre un LLM local o una API de pago. Configura muestreo, razonamiento y contexto.</p></div>
           <NarrativeSettings key={narrativeRevision}/>
           <RuntimeManager onActivated={onNarratorActivated}/>
@@ -243,23 +243,23 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         {tab === 'voice' && <VoiceSettingsPanel/>}
 
         {tab === 'languages' && prefs && <>
-          <div className="setting-section-intro"><h2>Idioma y traducción</h2>
+          <div className="setting-section-intro"><h2>Language and translation</h2>
             <p>La salida se aplica al prompt que recibe el narrador en cada turno; todavía no es un motor independiente de traducción.</p></div>
           <div className="workspace-panel workspace-field-grid">
             {option('Idioma de salida', prefs.target_language, [
-              ['es-419', 'Español latinoamericano'], ['en', 'English'], ['ja', '日本語'],
+              ['es-419', 'Latin American Spanish'], ['en', 'English'], ['ja', '日本語'],
               ['ko', '한국어'], ['pt-BR', 'Português brasileiro'], ['fr', 'Français'],
             ], v => void update('target_language', v))}
             {option('Idioma del contenido entrante', prefs.source_language, [
-              ['auto', 'Detectar automáticamente'], ['es', 'Español'], ['en', 'Inglés'],
-              ['ja', 'Japonés'], ['ko', 'Coreano'], ['pt', 'Portugués'], ['fr', 'Francés'],
+              ['auto', 'Detect automatically'], ['es', 'Español'], ['en', 'English'],
+              ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['fr', 'French'],
             ], v => void update('source_language', v))}
             {option('Tratamiento multilingüe', prefs.translation_mode, [
-              ['off', 'Narración normal'], ['target_output', 'Conservar el sentido y responder en idioma objetivo'],
+              ['off', 'Standard narration'], ['target_output', 'Preserve meaning and respond in the target language'],
             ], v => void update('translation_mode', v))}
             {option('Estilo narrativo', prefs.narration_style, [
               ['natural', 'Natural y conversacional'], ['literary', 'Literario y descriptivo'],
-              ['concise', 'Breve y dinámico'],
+              ['concise', 'Brief and dynamic'],
             ], v => void update('narration_style', v))}
           </div>
           <div className="workspace-note"><Languages size={17}/> Estos ajustes se guardan en SQLite y afectan la siguiente generación, no reescriben automáticamente capítulos anteriores.</div>
@@ -302,11 +302,11 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             {option('Paleta de color', prefs.accent, [
               ['violet', 'Violeta nocturno'], ['rose', 'Rosa oscuro'], ['teal', 'Turquesa'],
             ], v => void update('accent', v))}
-            {option('Presentación del lector', prefs.reader_layout, [
-              ['immersive', 'VN · fondo y narración'], ['classic', 'Libro · lectura continua'],
+            {option('Reader layout', prefs.reader_layout, [
+              ['immersive', 'VN · background and narration'], ['classic', 'Book · continuous reading'],
               ['chat', 'Chat · turnos y respuestas'],
             ], v => void update('reader_layout', v))}
-            <label className="workspace-pref-field">Tamaño del texto del lector: {prefs.font_scale}%
+            <label className="workspace-pref-field">Reader text size: {prefs.font_scale}%
               <input type="range" min={85} max={135} step={5} value={prefs.font_scale}
                 disabled={busy} onChange={e => void update('font_scale', Number(e.target.value))}/></label>
           </div>

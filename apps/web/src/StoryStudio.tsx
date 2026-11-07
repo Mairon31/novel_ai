@@ -185,7 +185,7 @@ export function StoryStudio({
             { ...s, updated_at: Date.now() / 1000 } : s));
         }
       });
-      if (!complete) throw new Error('La conexión terminó sin confirmar el turno.');
+      if (!complete) throw new Error('Connection ended without committing the turn.');
     } catch (exc) {
       if (!controllerLocal.signal.aborted) setError((exc as Error).message);
     } finally {
@@ -253,7 +253,7 @@ export function StoryStudio({
     abortCurrentNarration();
     setGenerating(false);
     setStreamText('');
-    setNotice('Cancelación solicitada. Puedes continuar cuando se libere el narrador.');
+    setNotice('Cancellation requested. You can continue once the narrator becomes available.');
   }
 
   function selectStory(story: Story) {
@@ -342,7 +342,7 @@ export function StoryStudio({
         onRouteChange?.(story.id, false);
       }}/>
       <div className="noble-library-section-heading">
-        <div><span className="overline">TU COLECCIÓN</span><h2>Mis historias <small>{stories.length}</small></h2></div>
+        <div><span className="overline">YOUR COLLECTION</span><h2>My stories <small>{stories.length}</small></h2></div>
         {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> Cargando...</div>}
       </div>
       <div className="noble-library-cover-grid">
@@ -360,8 +360,8 @@ export function StoryStudio({
           </div>
         </button>)}
         {!loading && stories.length===0 && <div className="noble-library-empty">
-          <BookOpen size={38}/><h3>Tu próxima aventura comienza aquí</h3>
-          <p>Instala un mundo preparado del catálogo o crea una historia original desde cero.</p>
+          <BookOpen size={38}/><h3>Your next adventure begins here</h3>
+          <p>Install a ready-made world from the catalog or create an original story.</p>
           <button className="secondary-button" onClick={() => setCreating(true)}>Crear historia</button>
         </div>}
       </div>
@@ -385,19 +385,19 @@ export function StoryStudio({
       <span className="overline">{createStep === 'story' ? 'PASO 1 / 2 · EL MUNDO' : 'PASO 2 / 2 · TU PERSONAJE'}</span>
       {createStep === 'story' ? <>
         <h2>Empieza una nueva historia.</h2>
-        <p>Define el escenario inicial. No se crearán imágenes ni voces hasta que las solicites.</p>
+        <p>Define the opening scene. Images and speech are generated only when requested.</p>
         <label className="form-label" htmlFor="story-title">Título</label>
         <input id="story-title" className="story-create-input" maxLength={100} value={title}
-          onChange={e => setTitle(e.target.value)} placeholder="Por ejemplo: El bosque de los espíritus"/>
+          onChange={e => setTitle(e.target.value)} placeholder="For example: The Forest of Spirits"/>
         <label className="form-label" htmlFor="story-premise">Premisa del mundo</label>
         <textarea id="story-premise" className="story-create-input" value={premise}
           onChange={e => setPremise(e.target.value)} rows={5} maxLength={4000}
-          placeholder="Dónde sucede, cómo es este mundo y cómo comienza tu aventura..."/>
+          placeholder="Where it happens, what the world is like, and how your adventure begins..."/>
       </> : <>
         <div className="noble-create-character"><div className="noble-create-avatar"><Feather size={33}/></div>
-          <span>ESTÁS JUGANDO COMO...</span></div>
-        <h2>¿Cómo te llamas en esta historia?</h2>
-        <p>Este será el nombre del personaje que tú controlas. El narrador respetará sus decisiones.</p>
+          <span>YOU ARE PLAYING AS...</span></div>
+        <h2>What is your name in this story?</h2>
+        <p>This will be the name of the character you control. The narrator will respect your decisions.</p>
         <label className="form-label" htmlFor="story-protagonist">Nombre del protagonista</label>
         <input id="story-protagonist" className="story-create-input noble-name-input"
           value={protagonistName} maxLength={60} autoFocus

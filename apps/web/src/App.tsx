@@ -62,7 +62,7 @@ function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
     ? ' · ~' + Math.round(fit.gpu_share * 100) + '% GPU' : '';
   const breakdown = [
     fit.estimated_required_bytes ? 'Memoria estimada: ' + size(fit.estimated_required_bytes) : '',
-    fit.estimated_kv_bytes ? 'Caché de contexto: ' + size(fit.estimated_kv_bytes) : '',
+    fit.estimated_kv_bytes ? 'Context cache: ' + size(fit.estimated_kv_bytes) : '',
     fit.note, fit.disk_ok === false ? 'Espacio insuficiente en disco.' : '',
   ].filter(Boolean).join(' · ');
   return <span className={'hub-fit-state state-' + fit.fit}
@@ -451,7 +451,7 @@ export default function App() {
     <aside className={'sidebar ' + (navOpen ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark"><Sparkles size={22}/></div>
         <div className="brand-text"><strong>Noble AI</strong><small>LOCAL STORY STUDIO</small></div>
-        <button className="mobile-dismiss icon-button" onClick={() => setNavOpen(false)} aria-label="Cerrar menú"><X size={18}/></button>
+        <button className="mobile-dismiss icon-button" onClick={() => setNavOpen(false)} aria-label="Close menu"><X size={18}/></button>
       </div>
       <div className="nav-label">ESPACIO DE TRABAJO</div>
       <nav className="nav-menu" aria-label="Secciones">
@@ -471,10 +471,10 @@ export default function App() {
         <p className="sidebar-footer">PROTOTIPO P1 <span>·</span> LOCAL-FIRST</p>
       </div>
     </aside>
-    {navOpen && <button aria-label="Cerrar navegación" className="mobile-overlay" onClick={() => setNavOpen(false)}/>}
+    {navOpen && <button aria-label="Close navigation" className="mobile-overlay" onClick={() => setNavOpen(false)}/>}
     <div className="work-area">
       <header className="topbar">
-        <button className="mobile-menu icon-button" aria-label="Abrir menú" onClick={() => setNavOpen(true)}><Menu size={23}/></button>
+        <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setNavOpen(true)}><Menu size={23}/></button>
         <div className="breadcrumb">Noble AI <span>/</span> <strong>{menu.find(m => m.id === page)?.label}</strong></div>
         <div className="top-actions">
           <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : 'Sin conexión'}</span>
@@ -518,7 +518,7 @@ export default function App() {
                 <input aria-label="Buscar modelos" value={query} onChange={e => setQuery(e.target.value)}
                   placeholder="Buscar modelos, familias o autores..."/></div>
               <div className="search-role-wrap"><SlidersHorizontal size={17}/>
-                <select aria-label="Categoría de modelo" value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
+                <select aria-label="Model category" value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select><ChevronDown size={15}/></div>
             </div>
@@ -529,7 +529,7 @@ export default function App() {
                 {item.title}</button>)}
             </div>
             <div className="section-caption"><div><h2>{selectedRole.subtitle}</h2>
-              <p>Catálogo de Hugging Face · selecciona un modelo para ver su análisis</p></div>
+              <p>Hugging Face catalog · select a model for its analysis</p></div>
               <div className="noble-model-sort"><label htmlFor="hub-sort">Ordenar por</label>
                 <select id="hub-sort" aria-label="Ordenar modelos" value={modelSort}
                   onChange={e => setModelSort(e.target.value)}>
@@ -565,12 +565,12 @@ export default function App() {
                 </button>)}
                 {!searchLoading && searchResults.length === 0 && <div className="empty-state">
                   <Search size={30}/><strong>No hay resultados</strong>
-                  <p>Prueba otra búsqueda o revisa tu conexión con Hugging Face.</p></div>}
+                  <p>Try a different search or check your Hugging Face connection.</p></div>}
               </div>
               <aside className="hub-hardware-panel">
                 <div className="hub-hardware-title"><Cpu size={20}/>
                   <div><strong>Compatibilidad de tu equipo</strong>
-                    <small>Estimación por cuantización</small></div></div>
+                    <small>Estimate by quantization</small></div></div>
                 <div className="hub-hardware-numbers">
                   <div><span>GPU detectada</span><strong>{hardware?.gpus[0]?.name || 'No detectada'}</strong></div>
                   <div><span>VRAM libre</span><strong>
@@ -639,9 +639,9 @@ export default function App() {
                 <div className="installed-details"><strong>{model.filename}</strong>
                   <span>{model.repo_id} · {size(model.size_bytes)}</span>
                   <small>{model.integrity_status === 'sha256_verified' ? 'SHA-256 verificado con el origen' :
-                    'Hash local; el origen no anunció SHA-256'}</small>
+                    'Local hash; the source did not publish SHA-256'}</small>
                   {modelStorage?.items.find(item => item.id === model.id)?.file_present === false &&
-                    <small className="hub-file-missing">Archivo no encontrado: revisa la instalación.</small>}
+                    <small className="hub-file-missing">File not found: check installation.</small>}
                 </div>
                 <div className="installed-actions">
                   {assignments.narrator === model.id && <span className="assigned"><Check size={16}/> Narrador elegido</span>}
@@ -651,8 +651,8 @@ export default function App() {
                     {assignments.narrator === model.id ? 'Asignado' : 'Elegir narrador'}</button>
                 </div>
               </article>)}
-              {installed.length === 0 && <div className="empty-state"><Database size={31}/><strong>Aún no hay modelos instalados</strong>
-                <p>Busca un GGUF en Descubrir, elige una variante y descárgala aquí.</p>
+              {installed.length === 0 && <div className="empty-state"><Database size={31}/><strong>No models installed yet</strong>
+                <p>Find a GGUF in Discover, select a variant, and download it here.</p>
                 <button className="secondary-button" onClick={() => setTab('discover')}>Buscar modelos</button></div>}
             </div>
           </>}
@@ -692,18 +692,18 @@ export default function App() {
               </div>
             </article>;
           })}
-          {jobs.length === 0 && <div className="empty-state"><ArrowDownToLine size={30}/><strong>Sin descargas todavía</strong>
-            <p>Los modelos que instales desde Model Hub aparecerán aquí.</p>
+          {jobs.length === 0 && <div className="empty-state"><ArrowDownToLine size={30}/><strong>No downloads yet</strong>
+            <p>Models installed from Model Hub appear here.</p>
             <button className="secondary-button" onClick={() => changePage('modelos')}>Abrir Model Hub</button></div>}
           </div>
         </section>}
 
-        {page === 'descubrir' && <section className="noble-discover-page" aria-label="Catálogo de historias">
+        {page === 'descubrir' && <section className="noble-discover-page" aria-label="Story catalog">
           <div className="page-heading">
             <div className="eyebrow"><Compass size={14}/> DESCUBRIR</div>
             <h1>Historias para jugar<span className="title-dot">.</span></h1>
-            <p>Explora historias incluidas y añádelas a tu biblioteca como proyectos independientes.
-              Las historias de la comunidad serán una función posterior.</p>
+            <p>Explore bundled stories and add them to your library as independent projects.
+              Community-created stories will be added in a later release.</p>
           </div>
           <StoryHub onInstall={story => navigateRoute({
             page: 'inicio', storyId: story.id, reading: false,
@@ -737,7 +737,7 @@ export default function App() {
             <div className="stat"><span>ESPACIO LIBRE</span><strong>{hardware ? hardware.storage_free_gb + ' GB' : '—'}</strong><small>Carpeta de modelos</small></div>
           </div>
           <div className="settings-panel"><section><div className="setting-icon"><Cloud size={22}/></div><div className="setting-main">
-            <strong>Proveedores</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? 'Listo' : 'Integración pendiente'}</p>)}
+            <strong>Proveedores</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? 'Listo' : 'Integration pending'}</p>)}
           </div></section></div>
         </section>}
       </main>
@@ -768,7 +768,7 @@ export default function App() {
             {detail.hardware_fit?.architecture &&
               <div><span>Arquitectura GGUF</span><strong>{detail.hardware_fit.architecture}</strong></div>}
             {detail.hardware_fit?.parameter_count != null &&
-              <div><span>Parámetros declarados</span>
+              <div><span>Declared parameters</span>
                 <strong>{(detail.hardware_fit.parameter_count/1e9).toFixed(2)} B</strong></div>}
             {detail.library && <div><span>Biblioteca</span><strong>{detail.library}</strong></div>}
             {detail.base_model && <div><span>Modelo base</span><strong>
@@ -783,7 +783,7 @@ export default function App() {
           {role === 'narrator' && detail.variants.length > 0 ? <>
             <section className="hub-fit-analysis">
               <div className="hub-fit-header">
-                <div><h3>Evaluación para tu hardware</h3>
+                <div><h3>Hardware assessment</h3>
                   <p>{detail.hardware_fit?.gpu?.name || 'CPU / RAM'} ·
                     {detail.hardware_fit?.metadata_source === 'gguf_header'
                       ? ' KV estimada desde cabecera GGUF' : ' Reserva de contexto aproximada'}
@@ -801,11 +801,11 @@ export default function App() {
               </div>
               {detail.hardware_fit?.recommended_filename ?
                 <div className="hub-best-fit"><CheckCircle2 size={19}/>
-                  <div><strong>Cuantización sugerida: {detail.hardware_fit.recommended_filename}</strong>
-                    <small>Estimación para la memoria observada, no garantía de ejecución.</small>
+                  <div><strong>Suggested quantization: {detail.hardware_fit.recommended_filename}</strong>
+                    <small>Estimate based on observed memory, not a runtime guarantee.</small>
                   </div></div> :
                 <div className="hub-fit-caution"><CircleAlert size={18}/>
-                  No se pudo recomendar una cuantización con la información disponible.</div>}
+                  Could not recommend a quantization from the available data.</div>}
               {selectedFit && <div className="hub-selected-fit">
                 <div className="hub-selected-fit-head">
                   <strong>Variante seleccionada: {selectedFit.quantization || 'GGUF'}</strong>
@@ -813,18 +813,18 @@ export default function App() {
                     ? 'Demanda aproximada ' + size(selectedFit.estimated_required_bytes)
                     : 'Consumo desconocido'}</span>
                 </div>
-                <div role="meter" aria-label="Relación de demanda y memoria utilizable"
+                <div role="meter" aria-label="Memory requirement versus usable memory"
                   aria-valuemin={0} aria-valuemax={100}
                   aria-valuenow={selectedMemoryPercent} className="hub-memory-meter">
                   <span style={{width: selectedMemoryPercent+'%'}}/>
                 </div>
                 <div className="hub-selected-fit-foot">
-                  <span>{selectedFit.fit === 'full_gpu' ? 'Límite GPU utilizable estimado' :
-                    selectedFit.fit === 'partial_offload' ? 'Límite combinado GPU y RAM' :
-                    'Límite RAM utilizable estimado'}: {memoryBudget ? size(memoryBudget) : 'sin datos'}</span>
+                  <span>{selectedFit.fit === 'full_gpu' ? 'Estimated usable GPU limit' :
+                    selectedFit.fit === 'partial_offload' ? 'Combined GPU and RAM limit' :
+                    'Estimated usable RAM limit'}: {memoryBudget ? size(memoryBudget) : 'sin datos'}</span>
                   <span>{selectedFit.fit === 'partial_offload' ?
                     'Requiere offload compatible del motor' :
-                    selectedFit.fit === 'full_gpu' ? 'Cálculo con VRAM libre observada' :
+                    selectedFit.fit === 'full_gpu' ? 'Based on observed free VRAM' :
                     'No implica que se ejecute en GPU'}</span>
                 </div>
               </div>}
@@ -875,7 +875,7 @@ export default function App() {
                 {detail.variants.filter(v => variantFilter === 'all' ||
                   detail.hardware_fit?.variants.some(item =>
                     item.filename === v.filename && item.fit === variantFilter)).length === 0 &&
-                  <p className="hub-variant-no-fit">No hay variantes en esta categoría.
+                  <p className="hub-variant-no-fit">No variants in this category.
                     Prueba otro filtro o ajusta el contexto.</p>}
               </div>
               <p className="detail-disclaimer">{detail.hardware_fit?.warning ||
@@ -906,32 +906,32 @@ export default function App() {
               <p role="status">Cargando README.md...</p> : cardData?.available ?
                 <div>
                   {cardData.truncated && <p>Mostrando los primeros 128 KiB del documento.</p>}
-                  <pre className="hub-model-readme">{cardData.readme || 'Documento vacío.'}</pre>
-                </div> : <p>Este modelo no publica un README.md en la revisión seleccionada.</p>)}
+                  <pre className="hub-model-readme">{cardData.readme || 'Empty document.'}</pre>
+                </div> : <p>This model does not publish a README.md at the selected revision.</p>)}
           </section>
         </>}
       </section>
     </div>}
 
-    {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Bienvenida y configuración inicial">
+    {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Welcome and initial setup">
       <div className="welcome-icon"><Sparkles size={31}/></div><span className="overline">BIENVENIDO A NOBLE AI</span>
-      <h2>Tu estudio de historias empieza aquí.</h2>
-      <p>Elige cómo quieres preparar tu biblioteca. Puedes configurar tus modelos ahora o después; no se descargará nada sin tu autorización.</p>
+      <h2>Your story studio starts here.</h2>
+      <p>Choose how to prepare your library. Models can be configured now or later; nothing will download without your permission.</p>
       <div className="welcome-hardware"><Cpu size={19}/>
         <div><strong>{hardware?.gpus[0]?.name || 'CPU disponible'}</strong>
           <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB de VRAM detectados' :
-            'No se detectó una GPU NVIDIA en el backend'}</small></div></div>
-      <label className="form-label" htmlFor="image-policy">Generación visual en futuras versiones</label>
+            'No NVIDIA GPU detected by the backend'}</small></div></div>
+      <label className="form-label" htmlFor="image-policy">Image generation in future versions</label>
       <select id="image-policy" value={imageMode} onChange={e => setImageMode(e.target.value as 'scene' | 'manual' | 'off')}>
-        <option value="scene">Crear imágenes cuando cambie la escena</option>
+        <option value="scene">Create images when the scene changes</option>
         <option value="manual">Solo cuando las solicite</option>
-        <option value="off">Sin imágenes</option>
+        <option value="off">No images</option>
       </select>
-      <div className="setup-callout"><ShieldCheck size={18}/> TTS desactivado por defecto. Tu historia no se enviará a proveedores remotos en este prototipo.</div>
+      <div className="setup-callout"><ShieldCheck size={18}/> TTS is disabled by default. Your story will not be sent to remote providers in this prototype.</div>
       <button className="primary-button full" disabled={busy} onClick={() => void finishSetup()}>
         {busy ? <LoaderCircle className="rotating" size={18}/> : <ArrowRight size={18}/>}
         Continuar al Model Hub</button>
-      <small className="welcome-note">La inferencia de texto, las imágenes y las voces se integrarán por fases.</small>
+      <small className="welcome-note">Text generation, images, and speech will be integrated incrementally.</small>
     </section></div>}
   </div>;
 }

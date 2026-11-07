@@ -323,7 +323,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   }
 
   async function discardSprites(draft: SpriteDraft) {
-    if (!active || working || !window.confirm('¿Descartar este borrador y sus vistas previas?')) return;
+    if (!active || working || !window.confirm('Discard this draft and its previews?')) return;
     const storyId = active.id;
     setWorking(true); setError(''); setNotice('');
     try {
@@ -374,7 +374,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   }
 
   async function removeLorebook(entry: LorebookEntry) {
-    if (!active || working || !window.confirm('¿Eliminar esta entrada del Lorebook?')) return;
+    if (!active || working || !window.confirm('Delete this Lorebook entry?')) return;
     setWorking(true); setError(''); setNotice('');
     try {
       await api.deleteLorebookEntry(active.id, entry.id);
@@ -450,7 +450,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     finally { setWorking(false); }
   }
   async function deleteMediaAsset(asset: CreatorMediaAsset) {
-    if (!active || !window.confirm('¿Eliminar este recurso visual de la historia?')) return;
+    if (!active || !window.confirm('Delete this visual asset from the story?')) return;
     setWorking(true); setError('');
     try {
       await api.deleteCreatorAsset(active.id, asset.id);
@@ -469,7 +469,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setWorking(true); setError(''); setNotice('');
     try {
       await api.startCreatorOpening(active.id, index);
-      setNotice('La apertura se guardó como primer turno. Abre la historia desde Biblioteca para continuar.');
+      setNotice('Opening saved as the first turn. Open the story from Library to continue.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -598,7 +598,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         <button className="secondary-button" disabled={working}
                           onClick={() => void chooseCover(asset.id)}>Usar como portada</button>}
                       <button className="secondary-button" disabled={working}
-                        onClick={() => editAsset(asset)}>Editar descripción</button>
+                        onClick={() => editAsset(asset)}>Edit description</button>
                       <button aria-label={'Eliminar imagen ' + asset.label}
                         className="creator-media-delete" disabled={working}
                         onClick={() => void deleteMediaAsset(asset)}><Trash2 size={15}/></button>
@@ -651,7 +651,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     placeholder="Salón del trono, Aira sonriendo..."
                     onChange={e => setMediaLabel(e.target.value)}/></label>
                 <label>Descripción para reconocer la escena
-                  <textarea aria-label="Descripción de imagen" maxLength={220} rows={3}
+                  <textarea aria-label="Image description" maxLength={220} rows={3}
                     value={mediaCaption} onChange={e => setMediaCaption(e.target.value)}
                     placeholder="Bosque oscuro de noche, Aira sonríe en la taberna..."/>
                   <small>Usa lugares y emociones concretas. No se envía esta descripción a ningún modelo.</small>
@@ -673,9 +673,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     (mediaKind === 'foreground' && !/^[a-z0-9_-]{1,32}$/.test(mediaPose.trim().toLowerCase())) ||
                     (!editingAsset && !mediaFile)}
                     onClick={() => void saveMediaAsset()}><UploadCloud size={16}/>
-                    {editingAsset ? 'Guardar descripción' : 'Importar imagen'}</button>
+                    {editingAsset ? 'Save description' : 'Import image'}</button>
                   {editingAsset && <button className="secondary-button"
-                    onClick={resetMediaEditor}>Cancelar edición</button>}
+                    onClick={resetMediaEditor}>Cancel editing</button>}
                 </div>
               </div>
               <div className="creator-media-form">
@@ -724,7 +724,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </button>
               </div>
               <div className="creator-media-form">
-                <h4>Generar expresiones con IA · revisión previa</h4>
+                <h4>Generate expressions with AI · review first</h4>
                 <p>ComfyUI produce cinco retratos individuales, uno por solicitud. Noble
                   intenta quitar el fondo verde; si el recorte no es fiable se rechaza.
                   Los resultados son borradores hasta que apruebes las cinco vistas previas.</p>
@@ -835,13 +835,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </p>
                 </>}
                 <div className="creator-double">
-                  <label>Método de recorte del fondo
+                  <label>Background removal method
                     <select aria-label="Recorte de fondo para sprites IA"
                       value={draftCutoutMode}
                       onChange={event => setDraftCutoutMode(
                         event.target.value as NeuralCutoutMode)}>
-                      <option value="chroma_green">Fondo verde · rápido, sin modelo adicional</option>
-                      <option value="neural_rmbg2">RMBG 2.0 · máscara neuronal</option>
+                      <option value="chroma_green">Green screen · fast, no extra model</option>
+                      <option value="neural_rmbg2">RMBG 2.0 · neural mask</option>
                       <option value="neural_birefnet_portrait">BiRefNet Portrait · retratos</option>
                       <option value="neural_birefnet_matting">BiRefNet Matting · transparencias</option>
                     </select>
@@ -927,7 +927,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                             Cobertura {Math.round(slot.quality.coverage * 100)}%
                           </small>}
                           <button className="secondary-button" disabled={working}
-                            aria-label={'Generar expresión ' + entry.label}
+                            aria-label={'Generate expression ' + entry.label}
                             onClick={() => void generateSprites(draft, entry.id)}>
                             {slot.ready ? 'Regenerar' : 'Generar'}
                           </button>
@@ -944,12 +944,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       que se vean distintas, o confirma que las has revisado.</p>
                     <label>
                       <input type="checkbox"
-                        aria-label={'Confirmé diferencias del borrador ' + draft.character_name}
+                        aria-label={'I accepted draft differences for ' + draft.character_name}
                         checked={!!alignmentConfirmed[draft.id]}
                         onChange={event => setAlignmentConfirmed(prev => ({
                           ...prev, [draft.id]: event.target.checked,
                         }))}/>
-                      {' '}Revisé personalmente las diferencias y las acepto
+                      {' '}I personally reviewed and accept the differences
                     </label>
                   </div>}
                   <div className="creator-actions">
@@ -1092,7 +1092,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     {editingLorebook ? 'Actualizar Lorebook' : 'Crear entrada de Lorebook'}
                   </button>
                   {editingLorebook && <button className="secondary-button"
-                    onClick={resetLorebookEditor}>Cancelar edición</button>}
+                    onClick={resetLorebookEditor}>Cancel editing</button>}
                 </div>
               </div>
               <div className="creator-media-form">
@@ -1139,7 +1139,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <label>Idioma
                   <select aria-label="Idioma de la historia" value={blueprint.language}
                     onChange={e => update('language', e.target.value)}>
-                    <option value="es-419">Español latinoamericano</option>
+                    <option value="es-419">Latin American Spanish</option>
                     <option value="en">English</option><option value="ja">日本語</option>
                     <option value="ko">한국어</option><option value="pt-BR">Português (Brasil)</option>
                     <option value="fr">Français</option>
@@ -1277,7 +1277,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </button>
                 {editingCharacter && <button className="secondary-button" onClick={() => {
                   setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
-                }}><X size={15}/> Cancelar edición</button>}
+                }}><X size={15}/> Cancel editing</button>}
               </div>
             </div> : <div className="creator-fields">
               <div className="creator-section-intro">

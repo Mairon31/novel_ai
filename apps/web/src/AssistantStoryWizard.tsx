@@ -97,7 +97,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         instruction: regenerationInstruction.trim(),
       });
       if (revisionRef.current !== revisionAtStart) {
-        setError('El borrador cambió durante la solicitud. No se aplicó la respuesta para proteger tus ediciones.');
+        setError('The draft changed during the request. The result was not applied to protect your edits.');
         return;
       }
       setPreviousDraft(draft);
@@ -137,7 +137,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   return <section className="creator-ai-wizard" aria-label="Asistente IA de historias">
     <div className="creator-ai-header">
       <div>
-        <span className="overline"><Sparkles size={15}/> CREACIÓN ASISTIDA</span>
+        <span className="overline"><Sparkles size={15}/> AI-ASSISTED CREATION</span>
         <h2>Construye un mundo con IA</h2>
         <p>Genera una base jugable con trama pública, secretos para el narrador,
           cuatro personajes, tres Lorebooks y tres comienzos. Primero revisas
@@ -157,14 +157,14 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           <input aria-label="Protagonista de historia IA" maxLength={60}
             value={protagonist} onChange={e => { setProtagonist(e.target.value); reset(); }}/>
         </label>
-        <label>Género (opcional)
-          <input aria-label="Género de historia IA" maxLength={80}
-            value={genre} placeholder="Misterio, fantasía, romance..."
+        <label>Genre (optional)
+          <input aria-label="AI story genre" maxLength={80}
+            value={genre} placeholder="Mystery, fantasy, romance..."
             onChange={e => { setGenre(e.target.value); reset(); }}/>
         </label>
         <label>Tono (opcional)
           <input aria-label="Tono de historia IA" maxLength={120}
-            value={tone} placeholder="Suspenso, melancólico..."
+            value={tone} placeholder="Suspenseful, melancholic..."
             onChange={e => { setTone(e.target.value); reset(); }}/>
         </label>
       </div>
@@ -186,13 +186,13 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <div className="creator-ai-preview-head">
         <span className="overline"><Check size={14}/> TRES ETAPAS TERMINADAS</span>
         <h3>Revisa el mundo antes de crearlo</h3>
-        <small>Modelo: {model} · aún no se ha guardado</small>
+        <small>Modelo: {model} · not saved yet</small>
       </div>
-      <label>Título de la propuesta
-        <input aria-label="Título generado editable" maxLength={100} value={draft.title}
+      <label>Draft title
+        <input aria-label="Editable generated title" maxLength={100} value={draft.title}
           onChange={e => updateDraft({ ...draft, title: e.target.value })}/>
       </label>
-      <label>Sinopsis pública
+      <label>Public synopsis
         <textarea aria-label="Sinopsis generada editable" rows={3} maxLength={250}
           value={draft.synopsis} onChange={e =>
             updateDraft({ ...draft, synopsis: e.target.value })}/>
@@ -203,8 +203,8 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             value={draft.protagonist_name} onChange={e =>
               updateDraft({ ...draft, protagonist_name: e.target.value })}/>
         </label>
-        <label>Género del mundo
-          <input aria-label="Género generado editable" maxLength={80}
+        <label>World genre
+          <input aria-label="Editable generated genre" maxLength={80}
             value={draft.genre} onChange={e =>
               updateDraft({ ...draft, genre: e.target.value })}/>
         </label>
@@ -219,8 +219,8 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         </label>
       </div>
       <div className="creator-ai-reading">
-        <label><BookOpen size={16}/> Mundo público del jugador
-          <textarea aria-label="Trama pública generada editable" rows={5}
+        <label><BookOpen size={16}/> Player-visible world
+          <textarea aria-label="Editable public plot" rows={5}
             maxLength={4000} value={draft.player_plot}
             onChange={e => updateDraft({ ...draft, player_plot: e.target.value })}/>
         </label>
@@ -252,7 +252,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
                 onChange={e => editCharacter(index, 'name', e.target.value)}/>
             </label>
             <label>Descripción
-              <textarea aria-label={'Descripción NPC ' + (index + 1)}
+              <textarea aria-label={'NPC description ' + (index + 1)}
                 rows={3} maxLength={3000} value={npc.description}
                 onChange={e => editCharacter(index, 'description', e.target.value)}/>
             </label>
@@ -262,7 +262,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
                 onChange={e => editCharacter(index, 'personality', e.target.value)}/>
             </label>
             <label>Ejemplos de diálogo
-              <textarea aria-label={'Diálogos NPC ' + (index + 1)}
+              <textarea aria-label={'NPC dialogue ' + (index + 1)}
                 rows={3} maxLength={3000} value={npc.dialogue_examples}
                 onChange={e => editCharacter(index, 'dialogue_examples', e.target.value)}/>
             </label>
@@ -274,7 +274,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             className="creator-ai-editable-item">
             <summary>{entry.title || 'Entrada ' + (index + 1)} · Editar conocimiento</summary>
             <label>Título
-              <input aria-label={'Título Lorebook ' + (index + 1)}
+              <input aria-label={'Lorebook title ' + (index + 1)}
                 maxLength={100} value={entry.title}
                 onChange={e => editLore(index, 'title', e.target.value)}/>
             </label>
@@ -305,11 +305,11 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         </label>)}
       </div>
       <div className="creator-ai-regenerate">
-        <h4><Sparkles size={16}/> Regenerar solo una sección</h4>
+        <h4><Sparkles size={16}/> Regenerate one section</h4>
         <p>Conserva el resto del borrador, incluidos tus cambios manuales.
-          Revisa la nueva versión antes de instalarla.</p>
+          Review the new version before installing it.</p>
         <label>Sección
-          <select aria-label="Sección para regenerar" value={regenerationSection}
+          <select aria-label="Section to regenerate" value={regenerationSection}
             disabled={!!busy} onChange={e => setRegenerationSection(
               e.target.value as 'plot' | 'openings' | 'characters' | 'lore')}>
             <option value="plot">Trama principal y directrices</option>
@@ -322,23 +322,23 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           <textarea aria-label="Indicaciones para regenerar" rows={2} maxLength={1000}
             value={regenerationInstruction}
             onChange={e => setRegenerationInstruction(e.target.value)}
-            placeholder="Por ejemplo: escenas con más tensión y decisiones abiertas."/>
+            placeholder="For example: scenes with more tension and meaningful choices."/>
         </label>
         <button type="button" className="secondary-button" disabled={!!busy}
           onClick={() => void regenerate()}>
           {busy === 'regenerate' ? <LoaderCircle size={16} className="rotating"/> :
             <Sparkles size={16}/>}
-          {busy === 'regenerate' ? 'Regenerando...' : 'Regenerar sección'}
+          {busy === 'regenerate' ? 'Regenerating...' : 'Regenerate section'}
         </button>
         {previousDraft && <div className="creator-ai-undo">
-          <p role="status">Regeneración terminada ({lastRegenerated}).
-            Puedes recuperar la versión anterior de todo el borrador.</p>
+          <p role="status">Regeneration complete ({lastRegenerated}).
+            You can restore the previous version of the entire draft.</p>
           <button type="button" className="secondary-button"
             disabled={!!busy} onClick={undoRegeneration}>
-            Restaurar versión anterior
+            Restore previous version
           </button>
         </div>}
-        {generationBudget && <small aria-label="Estimación de presupuesto de generación">
+        {generationBudget && <small aria-label="Estimated generation budget">
           Contexto: {generationBudget.context_characters.toLocaleString()} caracteres,
           aproximadamente {generationBudget.input_tokens_estimate.toLocaleString()} tokens de entrada
           y máximo {generationBudget.max_output_tokens.toLocaleString()} tokens de salida.
@@ -346,7 +346,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         </small>}
       </div>
       <p className="creator-ai-private-note">Estos datos quedan en tu biblioteca local.
-        Después podrás modificar todos los campos desde Creator Studio.
+        You can edit every field later in Creator Studio.
         No se ha creado portada, imagen ni voz.</p>
       <button className="primary-button" type="button" disabled={!!busy ||
         draft.title.trim().length < 2 || draft.synopsis.trim().length < 25}
