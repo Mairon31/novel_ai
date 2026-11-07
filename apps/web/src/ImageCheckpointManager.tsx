@@ -162,7 +162,11 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
     {installed && <>
       <h4>Checkpoints administrados por Noble AI ({installed.models.length})</h4>
       {installed.models.map(model => {
-        const usable = availableInComfy.includes(model.checkpoint_name);
+        // ComfyUI on Windows may report native backslash paths. Preserve the
+        // exact spelling reported by the provider when saving the selection.
+        const discovered = availableInComfy.find(name =>
+          name.replace(/\\/g, '/') === model.checkpoint_name.replace(/\\/g, '/'));
+        const usable = discovered !== undefined;
         return <div className="noble-voice-card" key={model.repo_id + model.filename}>
           <div className="noble-voice-main">
             <strong>{model.filename}</strong>
@@ -170,7 +174,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
               {usable ? ' Detectado en ComfyUI' : ' ComfyUI aún no lo reconoce'}</span>
           </div>
           <button className="secondary-button" type="button" disabled={!usable}
-            onClick={() => onSelectCheckpoint(model.checkpoint_name)}>
+            onClick={() => { if (discovered) onSelectCheckpoint(discovered); }}>
             {usable ? <><Check size={16}/> Seleccionar checkpoint</> : 'Pendiente de ComfyUI'}
           </button>
         </div>;
