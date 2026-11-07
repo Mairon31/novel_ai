@@ -15,7 +15,7 @@ test('shareable story URLs survive reload and browser Back/Forward', async ({ pa
 
   await page.goto('/#/historia/' + story.id);
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   await expect(page.getByRole('region', { name: 'Detalle de ' + story.title }))
@@ -54,7 +54,7 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   const story = await created.json();
   await page.goto('/#/creator/' + story.id);
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   await expect(page.getByRole('region', { name: 'Estudio de creación de historias' }))
@@ -63,7 +63,7 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   await page.reload();
   await expect(page.getByRole('heading', { name: story.title })).toBeVisible();
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await expect(page).toHaveURL(/#\/creator$/);
   await expect(page.getByText('Selecciona una historia para editarla')).toBeVisible();
@@ -71,7 +71,7 @@ test('Creator and infrastructure routes are bookmarkable and synchronized', asyn
   await page.goto('/#/infraestructura');
   await expect(page.getByRole('heading', { name: /Diagnóstico/ })).toBeVisible();
   await page.goto('/#/biblioteca');
-  await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /My stories/ })).toBeVisible();
   await page.goto('/#/modelos');
   await expect(page.getByRole('heading', { name: /Centro de modelos/ })).toBeVisible();
 });
@@ -95,7 +95,7 @@ test('first-time setup does not discard a bookmarked story URL', async ({ page }
     await route.fulfill({ response, json: { ...settings, setup_complete: false } });
   });
   await page.goto('/#/historia/' + story.id);
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   await expect(setup).toBeVisible();
   await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   await expect(setup).toBeHidden();

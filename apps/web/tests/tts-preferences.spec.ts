@@ -43,12 +43,12 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   });
   const openSettings = async () => {
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-    const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+    const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await welcome.isVisible()) {
       await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
     }
     if (test.info().project.name === 'mobile') {
-      await page.getByRole('button', { name: 'Abrir menú' }).click();
+      await page.getByRole('button', { name: 'Open menu' }).click();
     }
     await page.getByRole('button', { name: 'Configuración' }).click();
     await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
@@ -72,7 +72,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await page.getByLabel('Ruido de fonemas Piper').fill('0.95');
   await expect(page.getByRole('button', { name: 'Probar voz seleccionada' })).toBeDisabled();
   await expect(page.getByText('Guarda los parámetros nuevos antes de probar la voz.')).toBeVisible();
-  await page.getByRole('button', { name: 'Guardar parámetros Piper' }).click();
+  await page.getByRole('button', { name: 'Save Piper settings' }).click();
   await expect(page.getByText('Parámetros Piper guardados para las próximas síntesis.')).toBeVisible();
   expect(parameterWrites).toBe(1);
   expect(synthesis).toEqual({ length_scale: 0.85, noise_scale: 0.75, noise_w: 0.95 });

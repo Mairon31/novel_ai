@@ -63,13 +63,13 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
 
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
     await expect(setup).toBeHidden();
   }
   if (test.info().project.name === 'mobile') {
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   }
   await page.getByRole('button', { name: 'Configuración' }).click();
   await page.getByRole('button', { name: 'Red y workers' }).click();

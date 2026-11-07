@@ -3,12 +3,12 @@ import { expect, test } from '@playwright/test';
 test('create a story and render SSE turn with the real UI (mocked LLM response)', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   }
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await expect(page.getByRole('heading', { name: /Historias para vivir/ })).toBeVisible();
@@ -45,16 +45,16 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
         '\n\nevent: done\ndata: ' + JSON.stringify({ turn, replayed: false }) + '\n\n',
     });
   });
-  await page.getByRole('textbox', { name: 'Tu intervención en la historia' })
+  await page.getByRole('textbox', { name: 'Your input in the story' })
     .fill('Abro el libro que hay sobre el mostrador.');
   await page.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(page.locator('.noble-reader-prose').getByText('Una hechicera abre la puerta y señala un libro antiguo.')).toBeVisible();
   await expect(page.getByText('Abro el libro que hay sobre el mostrador.')).toBeVisible();
-  await page.getByRole('button', { name: 'Abrir información de historia' }).click();
+  await page.getByRole('button', { name: 'Open story details' }).click();
   const inspector = page.locator('.noble-reader-inspector.is-open');
   await expect(inspector).toBeVisible();
   await expect(inspector).toHaveCSS('position', 'fixed');
-  await page.getByRole('button', { name: 'Cerrar información' }).click();
+  await page.getByRole('button', { name: 'Close details' }).click();
   await expect(page.locator('.noble-reader-inspector.is-open')).toHaveCount(0);
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-story-reader.png',
@@ -64,7 +64,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   await expect(page.locator('.noble-library-cover-grid')).toHaveCount(0);
   await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
   await expect(page.locator('.noble-reader-layout')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /My stories/ })).toBeVisible();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title }).first()).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-bookshelf.png',

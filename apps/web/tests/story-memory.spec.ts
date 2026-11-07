@@ -3,11 +3,11 @@ import { expect, test } from '@playwright/test';
 test('history inspector searches local story memory without model or GPU', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva historia' }).click();
   const creator = page.getByRole('dialog', { name: 'Crear una nueva historia' });
@@ -20,7 +20,7 @@ test('history inspector searches local story memory without model or GPU', async
   await creator.getByRole('button', { name: 'Empezar historia' }).click();
   await expect(creator).toBeHidden();
 
-  await page.getByRole('button', { name: 'Abrir información de historia' }).click();
+  await page.getByRole('button', { name: 'Open story details' }).click();
   const inspector = page.locator('.noble-reader-inspector.is-open');
   await inspector.getByRole('button', { name: 'Historial' }).click();
   await inspector.getByRole('textbox', { name: 'Buscar recuerdos de la historia' })

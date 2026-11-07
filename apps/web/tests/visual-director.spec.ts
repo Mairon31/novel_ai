@@ -28,15 +28,15 @@ test('visual director registers and reuses existing background without ComfyUI',
 
     await page.goto('/#/historia/' + story.id + '/leer');
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-    const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+    const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
     await expect(page.locator('.noble-reader-chapter')).toContainText(title);
 
-    await page.getByRole('button', { name: 'Abrir información de historia' }).click();
+    await page.getByRole('button', { name: 'Open story details' }).click();
     const inspector = page.locator('.noble-reader-inspector.is-open');
     await inspector.getByRole('button', { name: 'Galería', exact: true }).click();
-    await expect(inspector.getByText('Director visual y caché de fondos')).toBeVisible();
+    await expect(inspector.getByText('Visual director and background cache')).toBeVisible();
     await inspector.getByRole('button', { name: 'Evaluar director visual' }).click();
     const result = inspector.locator('.noble-director-result');
     await expect(result).toContainText('Preparar un fondo nuevo');
@@ -53,15 +53,15 @@ test('visual director registers and reuses existing background without ComfyUI',
     expect(after.assets).toHaveLength(before.assets.length);
     expect(after.selected_asset_id).toBe(before.selected_asset_id);
 
-    await inspector.getByRole('combobox', { name: 'Intención visual del director' })
+    await inspector.getByRole('combobox', { name: 'Visual director intent' })
       .selectOption('emotion');
     await inspector.getByRole('button', { name: 'Evaluar director visual' }).click();
-    await expect(result).toContainText('Actualizar expresión del personaje');
+    await expect(result).toContainText('Update character expression');
 
-    await inspector.getByRole('combobox', { name: 'Intención visual del director' })
+    await inspector.getByRole('combobox', { name: 'Visual director intent' })
       .selectOption('event');
     await inspector.getByRole('button', { name: 'Evaluar director visual' }).click();
-    await expect(result).toContainText('Proponer ilustración especial de evento');
+    await expect(result).toContainText('Suggest a special event illustration');
     await expect(result).toContainText('no se ha producido ninguna imagen automáticamente');
 
     await page.screenshot({
