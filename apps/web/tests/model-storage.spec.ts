@@ -34,7 +34,7 @@ test('installed Model Hub reports real disk usage, partials and absent files', a
   }));
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const wizard = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible())
     await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 

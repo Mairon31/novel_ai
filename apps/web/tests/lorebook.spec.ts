@@ -3,11 +3,11 @@ import { expect, test } from '@playwright/test';
 test('Creator Studio Lorebook creates trigger, previews it and persists locally', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
 
   await page.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
@@ -47,7 +47,7 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.reload();
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.locator('.creator-project').filter({ hasText: title }).first().click();
   await page.getByRole('button', { name: /Lorebook \(1\)/ }).click();
@@ -57,11 +57,11 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
 test('Private Lorebook is restricted to present NPC witnesses on desktop and mobile', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible())
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
 
   await page.getByRole('button', { name: 'Crear proyecto', exact: true }).click();

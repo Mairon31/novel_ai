@@ -3,12 +3,12 @@ import { expect, test } from '@playwright/test';
 test('Creator Studio keeps author-only story data separate from reader', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready','yes');
-  const setup=page.getByRole('dialog',{name:/Bienvenida y configuración inicial/});
+  const setup=page.getByRole('dialog',{name:/Welcome and initial setup/});
   if(await setup.isVisible()) {
     await setup.getByRole('button',{name:/Continuar al Model Hub/}).click();
   }
   if(test.info().project.name==='mobile')
-    await page.getByRole('button',{name:'Abrir menú'}).click();
+    await page.getByRole('button',{name:'Open menu'}).click();
   await page.getByRole('button',{name:'Creator Studio'}).click();
   await expect(page.getByRole('heading',{name:/Construye historias/})).toBeVisible();
 
@@ -58,7 +58,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await page.reload();
   await expect(page.locator('main.content')).toHaveAttribute('data-ready','yes');
   if(test.info().project.name==='mobile')
-    await page.getByRole('button',{name:'Abrir menú'}).click();
+    await page.getByRole('button',{name:'Open menu'}).click();
   await page.getByRole('button',{name:'Creator Studio'}).click();
   await page.locator('.creator-project').filter({hasText:projectTitle}).first().click();
   await expect(page.getByLabel('Contexto interno de la IA')).toHaveValue(

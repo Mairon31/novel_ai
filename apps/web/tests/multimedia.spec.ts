@@ -48,12 +48,12 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
       body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aUO8AAAAASUVORK5CYII=', 'base64') }));
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Configuración' }).click();
   await page.getByRole('button', { name: 'Imágenes', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Imágenes', exact: true })).toBeVisible();
@@ -67,7 +67,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.getByRole('button', { name: 'Guardar ajustes de imagen' })).toBeDisabled();
   await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_2m');
   await page.getByLabel('Planificador ComfyUI').selectOption('karras');
-  await page.getByLabel('Estilo de ilustración').selectOption('anime_cinematic');
+  await page.getByLabel('Illustration style').selectOption('anime_cinematic');
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
   // Wait for the actual PUT response and saved UI state before reading SQLite.
   await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
@@ -83,7 +83,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByRole('button', { name: 'Imágenes', exact: true }).click();
   await expect(page.getByLabel('Muestreador ComfyUI')).toHaveValue('dpmpp_2m');
   await expect(page.getByLabel('Planificador ComfyUI')).toHaveValue('karras');
-  await expect(page.getByLabel('Estilo de ilustración')).toHaveValue('anime_cinematic');
+  await expect(page.getByLabel('Illustration style')).toHaveValue('anime_cinematic');
   await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
   // Speech preferences initialize independently after switching tabs.
@@ -92,7 +92,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeChecked();
 
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva historia' }).click();
   const wizard = page.getByRole('dialog', { name: 'Crear una nueva historia' });
@@ -104,7 +104,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(wizard).toBeHidden();
   expect(requests).toEqual([]);
 
-  await page.getByRole('button', { name: 'Abrir información de historia' }).click();
+  await page.getByRole('button', { name: 'Open story details' }).click();
   await page.getByRole('textbox', { name: 'Canon de la historia' })
     .fill('El dragón conoce la biblioteca.');
   await page.getByRole('button', { name: 'Guardar canon' }).click();

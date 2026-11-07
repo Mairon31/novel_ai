@@ -53,7 +53,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
 
   await page.goto('/#/configuracion/images');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
@@ -68,7 +68,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await panel.getByLabel('Puerto de ComfyUI').fill('19080');
   await panel.getByLabel('Perfil de VRAM ComfyUI').selectOption('lowvram');
   await expect(panel.getByText('Hay cambios sin guardar')).toBeVisible();
-  await panel.getByRole('button', { name: 'Validar instalación' }).click();
+  await panel.getByRole('button', { name: 'Validate installation' }).click();
   await expect(panel.getByText('Instalación ComfyUI y ejecutable Python verificados.')).toBeVisible();
   expect(validations).toBe(1);
   expect(launches).toBe(0);

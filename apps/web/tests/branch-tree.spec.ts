@@ -19,16 +19,16 @@ test('story detail shows a non-destructive branch tree and reader switches route
 
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await page.locator('.noble-library-cover').filter({
     has: page.locator('.noble-library-cover-copy strong').getByText(title, { exact: true }),
   }).click();
-  const region = page.getByRole('region', { name: 'Árbol de rutas narrativas' });
+  const region = page.getByRole('region', { name: 'Narrative branch tree' });
   await expect(region).toBeVisible();
   await expect(region.locator('.noble-route-node')).toHaveCount(3);
   await expect(region.getByText('Historia principal')).toBeVisible();

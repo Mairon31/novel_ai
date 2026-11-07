@@ -8,12 +8,12 @@ const sprite = Buffer.from(
 test('author art library overlays caption-matched background and transparent sprite', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
   const modal = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
@@ -27,11 +27,11 @@ test('author art library overlays caption-matched background and transparent spr
 
   await page.getByRole('button', { name: /Imágenes \(0\)/ }).click();
   await page.getByLabel('Nombre de imagen').fill('Castillo soleado');
-  await page.getByLabel('Descripción de imagen').fill('castillo iluminado en la ciudad');
+  await page.getByLabel('Image description').fill('castillo iluminado en la ciudad');
   await page.getByLabel('Archivo de recurso visual').setInputFiles({
     name: 'castillo.png', mimeType: 'image/png', buffer: background,
   });
-  await page.getByRole('button', { name: 'Importar imagen' }).click();
+  await page.getByRole('button', { name: 'Import image' }).click();
   await expect(page.getByRole('button', { name: /Imágenes \(1\)/ })).toBeVisible();
   await expect(page.getByText('Castillo soleado')).toBeVisible();
 
@@ -39,11 +39,11 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByLabel('Expresión de sprite').selectOption('joy');
   await page.getByLabel('Pose de sprite').fill('waving');
   await page.getByLabel('Nombre de imagen').fill('Aira feliz');
-  await page.getByLabel('Descripción de imagen').fill('Aira sonríe en el castillo');
+  await page.getByLabel('Image description').fill('Aira sonríe en el castillo');
   await page.getByLabel('Archivo de recurso visual').setInputFiles({
     name: 'aira.png', mimeType: 'image/png', buffer: sprite,
   });
-  await page.getByRole('button', { name: 'Importar imagen' }).click();
+  await page.getByRole('button', { name: 'Import image' }).click();
   await expect(page.getByRole('button', { name: /Imágenes \(2\)/ })).toBeVisible();
   await expect(page.getByText('Expresión: joy · Pose: waving')).toBeVisible();
 

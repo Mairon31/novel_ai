@@ -59,12 +59,12 @@ test('AI Creator previews a whole world before an explicit local install', async
   });
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   }
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.getByRole('button', { name: 'Crear con IA' }).click();
@@ -96,7 +96,7 @@ test('AI Creator previews a whole world before an explicit local install', async
     path: 'test-results/' + test.info().project.name + '-creator-ai-preview.png',
     fullPage: true,
   });
-  await page.getByLabel('Sección para regenerar').selectOption('openings');
+  await page.getByLabel('Section to regenerate').selectOption('openings');
   await page.getByLabel('Indicaciones para regenerar').fill('Aperturas con más misterio');
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
   await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/llave brillante/);
@@ -104,13 +104,13 @@ test('AI Creator previews a whole world before an explicit local install', async
   await expect(page.getByRole('button', { name: 'Restaurar versión anterior' })).toBeVisible();
   await page.getByRole('button', { name: 'Restaurar versión anterior' }).click();
   await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/carta del farero/);
-  await page.getByLabel('Sección para regenerar').selectOption('plot');
+  await page.getByLabel('Section to regenerate').selectOption('plot');
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
-  await expect(page.getByLabel('Trama pública generada editable')).toHaveValue(/muelle ha sido cerrado/);
+  await expect(page.getByLabel('Editable public plot')).toHaveValue(/muelle ha sido cerrado/);
   await expect(page.getByLabel('Sinopsis generada editable')).toHaveValue(/conspiración/);
   await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
   await expect(page.getByLabel('Apertura generada 1')).toHaveValue(/carta del farero/);
-  await expect(page.getByLabel('Estimación de presupuesto de generación')).toBeVisible();
+  await expect(page.getByLabel('Estimated generation budget')).toBeVisible();
   await page.getByLabel('Indicaciones para regenerar').fill('verificar edición concurrente');
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
   await page.getByLabel('Sinopsis generada editable').fill(

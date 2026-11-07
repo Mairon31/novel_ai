@@ -60,7 +60,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
 
   await page.goto('/#/configuracion/images');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
