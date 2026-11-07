@@ -87,7 +87,7 @@ export function VoiceSettingsPanel() {
     try {
       await api.installPiperVoice(voiceId);
       await refreshVoiceDownloads();
-      setMessage('Instalación de voz iniciada; el progreso aparecerá abajo.');
+      setMessage('Voice installation started; progress will appear below.');
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setVoiceAction(null); }
@@ -99,7 +99,7 @@ export function VoiceSettingsPanel() {
       await api.controlPiperVoice(job.id, action);
       await refreshVoiceDownloads();
       setMessage(action === 'pause' ? 'Descarga pausada.' :
-        action === 'resume' ? 'Descarga reanudada.' : 'Instalación cancelada.');
+        action === 'resume' ? 'Download resumed.' : 'Installation canceled.');
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setVoiceAction(null); }
@@ -123,7 +123,7 @@ export function VoiceSettingsPanel() {
       const saved = await api.savePiperSynthesisConfig(synthesisConfig);
       setSynthesisConfig(saved); setSavedSynthesis(saved);
       clearPreview();
-      setMessage('Parámetros Piper guardados para las próximas síntesis.');
+      setMessage('Piper settings saved for future synthesis.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -156,9 +156,9 @@ export function VoiceSettingsPanel() {
     <div className="workspace-panel">
       <h3><Volume2 size={18}/> Voz local con Piper</h3>
       <p>Instala una voz de español latinoamericano desde el catálogo o añade manualmente el modelo <code>.onnx</code> y su configuración <code>.onnx.json</code>. La síntesis ocurre únicamente cuando pulsas «Escuchar».</p>
-      <div className="noble-voice-library" aria-label="Catálogo de voces Piper">
-        <h4>Voces de español latinoamericano</h4>
-        <p className="noble-inspector-hint">Descarga explícita desde Hugging Face, con revisión fijada y verificación de archivos. El motor Piper se instala por separado.</p>
+      <div className="noble-voice-library" aria-label="Piper voice catalog">
+        <h4>Latin American Spanish voices</h4>
+        <p className="noble-inspector-hint">Explicit Hugging Face downloads with pinned revisions and file verification. Install the Piper engine separately.</p>
         {voiceCatalog?.voices.map(voice => {
           const job = voiceJobs.find(item => item.voice_id === voice.id);
           const status = voice.installed ? 'installed' : job?.status;
@@ -225,22 +225,22 @@ export function VoiceSettingsPanel() {
         </button>
       </div>}
       <div className="noble-voice-synthesis workspace-field-grid">
-        <h4>Parámetros de síntesis Piper</h4>
+        <h4>Piper synthesis settings</h4>
         <p>Estos parámetros se aplican a las muestras y a cada narración nueva.
           No reproducen audio automáticamente.</p>
         {synthesisConfig && <>
-          <label className="workspace-pref-field">Velocidad (duración de fonemas)
+          <label className="workspace-pref-field">Speed (phoneme duration)
             <input aria-label="Velocidad Piper" type="number" min={0.5} max={2}
               step={0.05} value={synthesisConfig.length_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('length_scale', Number(e.target.value))}/>
-            <small>1,0 es la velocidad normal; menor valor = voz más rápida.</small>
+            <small>1.0 is normal speed; lower values produce faster speech.</small>
           </label>
-          <label className="workspace-pref-field">Variación de la voz
+          <label className="workspace-pref-field">Voice variation
             <input aria-label="Ruido de voz Piper" type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_scale', Number(e.target.value))}/>
           </label>
-          <label className="workspace-pref-field">Variación de fonemas
+          <label className="workspace-pref-field">Phoneme variation
             <input aria-label="Ruido de fonemas Piper" type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_w} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_w', Number(e.target.value))}/>
@@ -253,7 +253,7 @@ export function VoiceSettingsPanel() {
             !Number.isFinite(synthesisConfig.noise_w) ||
             synthesisConfig.noise_w < 0 || synthesisConfig.noise_w > 1.5}
             onClick={() => void savePiperParameters()}>
-            <Check size={16}/> Guardar parámetros Piper
+            <Check size={16}/> Save Piper settings
           </button>
         </>}
       </div>
@@ -272,7 +272,7 @@ export function VoiceSettingsPanel() {
         </button>
         {previewUrl && <audio aria-label="Reproducir prueba de voz" controls
           preload="none" src={previewUrl}/>}
-        {synthesisDirty && <small role="status">Guarda los parámetros nuevos antes de probar la voz.</small>}
+        {synthesisDirty && <small role="status">Save the updated settings before testing the voice.</small>}
         <small>Solo genera la muestra al pulsar Probar. Necesita Piper instalado y
           una voz ONNX/JSON válida; el audio no se añade a ninguna historia.</small>
       </div>

@@ -79,7 +79,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     try {
       setResources(await api.saveResourceConfig(resources));
       setResourceStatus(await api.resourceStatus());
-      setMessage('Política GPU guardada.');
+      setMessage('GPU policy saved.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -91,7 +91,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
   return <div className="creative-settings image-settings-panel">
     <div className="setting-section-intro">
       <h2>Imágenes</h2>
-      <p>Ilustraciones, modelos, escenas y recursos de generación visual.</p>
+      <p>Illustrations, models, scenes, and visual generation resources.</p>
     </div>
     {(error || message) && <p role="status" className={error ? 'narrative-error' : 'narrative-saved'}>
       {error || <><Check size={15}/>{message}</>}</p>}
@@ -103,11 +103,11 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     <div className="workspace-panel">
       <h3><Image size={18}/> Escenas con ComfyUI</h3>
       <p>Puedes iniciar ComfyUI desde este mismo apartado, o conectar uno externo. Necesita un checkpoint compatible. El botón «Ilustrar» del lector genera una imagen y sustituye la escena únicamente si finaliza correctamente.</p>
-      <label className="workspace-pref-field">Política de ilustración
+      <label className="workspace-pref-field">Illustration policy
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
           <option value="manual">Bajo demanda (funcional)</option>
-          <option value="scene">Escenas (detección automática pendiente; botón manual)</option>
+          <option value="scene">Scenes (automatic detection pending; manual button)</option>
           <option value="off">Desactivadas</option>
         </select>
       </label>
@@ -133,7 +133,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             {[512, 768, 1024].map(w => <option key={w} value={w}>{w} px</option>)}
           </select>
         </label>
-        <label className="workspace-pref-field">Pasos de difusión
+        <label className="workspace-pref-field">Diffusion steps
           <input type="number" min={1} max={70} value={image.steps}
             onChange={e => change('steps', Number(e.target.value))}/>
         </label>
@@ -141,12 +141,12 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           <input type="number" min={1} max={20} step="0.5" value={image.cfg}
             onChange={e => change('cfg', Number(e.target.value))}/>
         </label>
-        <label className="workspace-pref-field">Estilo de ilustración
-          <select aria-label="Estilo de ilustración" value={image.style_preset}
+        <label className="workspace-pref-field">Illustration style
+          <select aria-label="Illustration style" value={image.style_preset}
             disabled={busy}
             onChange={e => change('style_preset', e.target.value as ImageSettings['style_preset'])}>
-            <option value="anime_fantasy">Anime de fantasía (predeterminado)</option>
-            <option value="anime_cinematic">Anime cinematográfico</option>
+            <option value="anime_fantasy">Fantasy anime (default)</option>
+            <option value="anime_cinematic">Cinematic anime</option>
             <option value="anime_watercolor">Anime acuarela</option>
             <option value="none">Sin refuerzo de estilo</option>
           </select>
@@ -175,7 +175,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           <input maxLength={1000} value={image.negative_prompt}
             onChange={e => change('negative_prompt', e.target.value)}/>
         </label>
-      </div> : <div className="loading">Cargando configuración...</div>}
+      </div> : <div className="loading">Loading settings...</div>}
       <div className="settings-buttons">
         <button className="secondary-button" disabled={busy} onClick={() => void discover()}>
           <RefreshCcw size={16}/> Buscar checkpoints</button>
@@ -193,10 +193,10 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       {samplerOptions?.online && image && <p role="status">
         Compatibilidad KSampler: {samplerOptions.sampler_name.includes(image.sampler_name) &&
           samplerOptions.scheduler.includes(image.scheduler)
-          ? 'selección compatible' : 'la selección no está disponible en este ComfyUI'}.
+          ? 'compatible selection' : 'this selection is unavailable in the current ComfyUI instance'}.
       </p>}
       <p className="noble-inspector-hint">El estilo modifica el prompt real de cada imagen; cambiar el muestreador o planificador modifica el nodo KSampler. Las opciones distintas de Euler/Normal se validan en el motor antes de generar.</p>
-      {status?.online && <p>Checkpoint(s) detectados: {status.checkpoints.length}. El modelo se cargará cuando pulses «Ilustrar».</p>}
+      {status?.online && <p>Detected checkpoint(s): {status.checkpoints.length}. El modelo se cargará cuando pulses «Ilustrar».</p>}
     </div>
     <ImageCheckpointManager availableInComfy={status?.online ? status.checkpoints : []}
       onSelectCheckpoint={name => {
@@ -204,7 +204,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         setMessage('Checkpoint seleccionado. Guarda los ajustes de imagen para aplicarlo.');
       }}/>
     <div className="workspace-panel">
-      <h3>Memoria GPU y admisión</h3>
+      <h3>GPU memory and admission</h3>
       <p>Consulta la VRAM libre observada con nvidia-smi. Puedes avisar o impedir una
         solicitud de ComfyUI por debajo de una reserva configurada. Esto no calcula
         la memoria real que necesita el checkpoint ni detiene otros procesos.</p>
@@ -213,15 +213,15 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           ? resourceStatus.selected_gpu.name + ' · ' +
             resourceStatus.selected_gpu.free_mib + ' MiB libres / ' +
             resourceStatus.selected_gpu.total_mib + ' MiB totales'
-          : 'Telemetría de GPU no disponible (CPU u otro proveedor).'}
+          : 'GPU telemetry unavailable (CPU or another provider).'}
         {' · '}{resourceStatus.message}
       </p>}
       {resourceStatus?.workload.active && <p role="status">
-        Operación local activa: {resourceStatus.workload.active.kind}.
+        Active local operation: {resourceStatus.workload.active.kind}.
         Las solicitudes simultáneas al mismo recurso recibirán un aviso.
       </p>}
       {resources && <label className="workspace-pref-toggle">
-        <span>Coordinar narrador local y ComfyUI (una operación GPU a la vez)</span>
+        <span>Coordinate the local narrator and ComfyUI (one GPU operation at a time)</span>
         <input type="checkbox" aria-label="Coordinar GPU local"
           checked={resources.serialize_local_gpu}
           onChange={e => setResources(x => x ? {
@@ -238,13 +238,13 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             <option value="guard">Bloquear si hay menos VRAM que la reserva</option>
           </select>
         </label>
-        <label className="workspace-pref-field">GPU (índice nvidia-smi)
+        <label className="workspace-pref-field">GPU (nvidia-smi index)
           <input type="number" min={0} max={31} value={resources.gpu_index}
-            aria-label="Índice GPU" onChange={e => setResources(x => x ? {
+            aria-label="GPU index" onChange={e => setResources(x => x ? {
               ...x, gpu_index: Number(e.target.value),
             } : x)}/>
         </label>
-        <label className="workspace-pref-field">Reserva mínima libre (MiB)
+        <label className="workspace-pref-field">Minimum free reserve (MiB)
           <input type="number" min={0} max={65536} step={256}
             value={resources.minimum_free_mib} aria-label="Reserva GPU en MiB"
             onChange={e => setResources(x => x ? {
@@ -259,7 +259,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           <RefreshCcw size={16}/> Consultar VRAM</button>
         <button className="primary-button" disabled={busy || !resources}
           onClick={() => void saveResourcePolicy()}>
-          <Check size={16}/> Guardar política GPU</button>
+          <Check size={16}/> Save GPU policy</button>
       </div>
     </div>
   </div>;

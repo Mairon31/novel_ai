@@ -9,11 +9,11 @@ const DEFAULT: ComfyLaunchConfig = {
   install_dir: '', python_executable: '', port: 8188, memory_mode: 'auto',
 };
 const MODES: Array<{id: ComfyLaunchConfig['memory_mode']; label: string}> = [
-  {id: 'auto', label: 'Automático (recomendado)'},
+  {id: 'auto', label: 'Automatic (recommended)'},
   {id: 'lowvram', label: 'VRAM baja'},
   {id: 'normalvram', label: 'VRAM normal'},
   {id: 'highvram', label: 'VRAM alta'},
-  {id: 'cpu', label: 'Solo CPU (más lento)'},
+  {id: 'cpu', label: 'CPU only (slower)'},
 ];
 function sameSettings(a: ComfyLaunchConfig, b: ComfyLaunchConfig) {
   return a.install_dir === b.install_dir &&
@@ -57,7 +57,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     setBusy(true); setError(''); setMessage('');
     try {
       setValidation(await api.comfyRuntimeValidate(config));
-      setMessage('Instalación ComfyUI y ejecutable Python verificados.');
+      setMessage('ComfyUI installation and Python executable verified.');
     } catch (e) { setValidation(null); setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -66,7 +66,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     try {
       const result = await api.comfyRuntimeSave(config);
       setSaved(result); setConfig(result);
-      setValidation(null); setMessage('Configuración de ComfyUI guardada.');
+      setValidation(null); setMessage('ComfyUI settings saved.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -76,7 +76,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     try {
       const result = await api.comfyRuntimeStart();
       setStatus(result); onRuntimeStarted(result.base_url);
-      setMessage('ComfyUI iniciado. Espera a que el diagnóstico indique «Listo».');
+      setMessage('ComfyUI started. Check diagnostics until it reports Ready.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -109,7 +109,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
       </label>
       <label className="workspace-pref-field">Ejecutable Python (opcional)
         <input aria-label="Python para ComfyUI" value={config.python_executable}
-          placeholder="Vacío: autodetectar entorno .venv o Python"
+          placeholder="Leave empty to detect .venv or Python"
           disabled={busy || !!running}
           onChange={e => change('python_executable', e.target.value)}/>
       </label>
@@ -128,7 +128,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     </div>
     <div className="settings-buttons">
       <button type="button" className="secondary-button" disabled={busy || !!running}
-        onClick={() => void verify()}><Check size={16}/> Validar instalación</button>
+        onClick={() => void verify()}><Check size={16}/> Validate installation</button>
       <button type="button" className="secondary-button"
         disabled={busy || !!running || !dirty} onClick={() => void save()}>
         Guardar arranque de ComfyUI
@@ -158,11 +158,11 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
         status?.status === 'starting' ? 'Iniciando' :
         status?.status === 'exited' ? 'Finalizado' : 'Detenido'}</strong>.
       {status?.owns_process ? ' Noble administra este proceso.' :
-        ' Noble no administra ningún proceso externo.'}
+        ' Noble does not manage any external process.'}
       {status?.pid ? ' PID ' + status.pid + '.' : ''}
     </p>
     {status?.diagnostics && <p role="status">
-      Versión ComfyUI: {status.diagnostics.comfyui_version || 'desconocida'}.
+      ComfyUI version: {status.diagnostics.comfyui_version || 'desconocida'}.
       {' '}Dispositivos: {status.diagnostics.devices.map(x => x.name).join(', ') || 'no informados'}.
     </p>}
     {dirty && <p role="status">Hay cambios sin guardar. Guarda antes de iniciar ComfyUI.</p>}
@@ -171,15 +171,15 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
       {' '}Modelos Noble: <code>{validation.model_paths_config}</code>.
     </p>}
     {logs && <div className="noble-comfy-log">
-      <h4>Últimos registros del proceso</h4>
-      <pre>{logs.text || 'Aún no hay registros.'}</pre>
-      {logs.truncated && <small>Se muestran los últimos 16 KiB del registro.</small>}
+      <h4>Latest process logs</h4>
+      <pre>{logs.text || 'No logs yet.'}</pre>
+      {logs.truncated && <small>Showing the last 16 KiB of the log.</small>}
     </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}
     {message && <p role="status" className="narrative-saved">{message}</p>}
     <p className="noble-inspector-hint">
       Arranque local 127.0.0.1, sin shell, con la carpeta de modelos Noble.
-      Usa «Buscar checkpoints» cuando ComfyUI esté listo.
+      Use Find checkpoints once ComfyUI is ready.
     </p>
   </div>;
 }

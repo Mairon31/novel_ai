@@ -69,10 +69,10 @@ export function NarrativeSettings() {
       if (probe) {
         const info = await api.narrativeModels();
         setStatus(info);
-        setSaved(info.online ? 'Conexión local verificada.' :
-          'Configuración guardada; el motor todavía no responde.');
+        setSaved(info.online ? 'Local connection verified.' :
+          'Settings saved; the engine is not responding yet.');
       } else {
-        setSaved('Parámetros narrativos guardados.');
+        setSaved('Narrative parameters saved.');
       }
     } catch (exc) {
       setError((exc as Error).message);
@@ -99,10 +99,10 @@ export function NarrativeSettings() {
   return <section className="narrative-settings" aria-labelledby="narrative-settings-heading">
     <div className="narrative-section-title">
       <span className="setting-icon"><BookOpen size={22}/></span>
-      <div><h2 id="narrative-settings-heading">Motor narrativo</h2>
+      <div><h2 id="narrative-settings-heading">Narrative engine</h2>
         <p>Selecciona un motor local, OpenRouter o un worker GPU autenticado. Ajusta parámetros según las capacidades reales del proveedor.</p></div>
     </div>
-    {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Leyendo configuración...</div> : <>
+    {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading settings...</div> : <>
       <div className="narrative-settings-grid">
         <label>Proveedor
           <select value={config.provider} onChange={e => {
@@ -117,8 +117,8 @@ export function NarrativeSettings() {
             <option value="worker" disabled={!config.worker_id}>Worker GPU remoto (Red y workers)</option>
           </select>
         </label>
-        <label>Dirección del proveedor
-          <input aria-label="Dirección del servidor LLM" value={config.base_url}
+        <label>Provider address
+          <input aria-label="LLM server address" value={config.base_url}
             readOnly={config.provider === "openrouter" || config.provider === "worker"}
             onChange={e => update('base_url', e.target.value)} spellCheck={false}/>
         </label>
@@ -128,7 +128,7 @@ export function NarrativeSettings() {
           <datalist id="noble-local-models">
             {status?.models.map(item => <option key={item} value={item}/>)}
           </datalist>
-          {status?.online && <small>Modelos encontrados: {status.models.length}. Escribe o selecciona uno del catálogo local.</small>}
+          {status?.online && <small>Models found: {status.models.length}. Escribe o selecciona uno del catálogo local.</small>}
         </label>
         <label>Temperatura <span className="field-value">{config.temperature.toFixed(2)}</span>
           <input type="range" min={0} max={2} step={0.05} value={config.temperature}
@@ -143,7 +143,7 @@ export function NarrativeSettings() {
             disabled={config.provider === 'koboldcpp' || config.provider === 'worker'}
             onChange={e => update('top_k', Number(e.target.value))}/>
         </label>
-        <label>Penalización de repetición <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
+        <label>Repetition penalty <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
           <input type="range" min={0.5} max={2} step={0.05} value={config.repetition_penalty}
             disabled={config.provider === 'koboldcpp'}
             onChange={e => update('repetition_penalty', Number(e.target.value))}/>
@@ -152,11 +152,11 @@ export function NarrativeSettings() {
           <select aria-label="Razonamiento del narrador" value={config.reasoning_mode}
             disabled={config.provider !== 'ollama'}
             onChange={e => update('reasoning_mode', e.target.value as NarrativeConfig['reasoning_mode'])}>
-            <option value="auto">Automático / configuración del modelo</option>
+            <option value="auto">Automatic / model defaults</option>
             <option value="off">No solicitar razonamiento</option>
           </select>
         </label>
-        <label>Máximo de tokens generados
+        <label>Maximum generated tokens
           <input type="number" min={50} max={2048} value={config.max_tokens}
             onChange={e => update('max_tokens', Number(e.target.value))}/>
         </label>
@@ -168,7 +168,7 @@ export function NarrativeSettings() {
         <label>Dispositivo <span className="field-value">Ollama</span>
           <select aria-label="Dispositivo narrativo" disabled={config.provider !== 'ollama'} value={config.device}
             onChange={e => update('device', e.target.value as NarrativeConfig['device'])}>
-            <option value="auto">Automático — usar GPU si existe</option>
+            <option value="auto">Automatic — use GPU if available</option>
             <option value="cpu">Solo CPU</option>
           </select>
         </label>
@@ -180,7 +180,7 @@ export function NarrativeSettings() {
       {config.provider === 'worker' && <p className="narrative-helper">Este modelo se ha activado desde Red y workers. El servidor remoto decide el hardware; Noble AI envía únicamente la petición narrativa autenticada.</p>}
       {status && <div className={'narrative-connect ' + (status.online ? 'connected' : 'disconnected')}>
         <Cpu size={17}/>
-        <span>{status.online ? 'Servidor disponible' : 'Sin conexión con el servidor'}
+        <span>{status.online ? 'Server available' : 'Cannot connect to the server'}
           {status.error ? ' — ' + status.error : ''}</span>
       </div>}
       {error && <p className="narrative-error" role="alert">{error}</p>}
@@ -189,9 +189,9 @@ export function NarrativeSettings() {
         <button className="secondary-button" disabled={working}
           onClick={() => void persist(true)}>
           {working ? <LoaderCircle className="rotating" size={16}/> : <PlugZap size={16}/>}
-          Guardar y probar conexión</button>
+          Save and test connection</button>
         <button className="primary-button" disabled={working}
-          onClick={() => void persist(false)}><Save size={16}/> Guardar parámetros</button>
+          onClick={() => void persist(false)}><Save size={16}/> Save parameters</button>
         <button className="secondary-button"
           disabled={working || !config.model || config.provider === 'openrouter'}
           onClick={() => void prepare()}>
@@ -217,7 +217,7 @@ export function NarrativeSettings() {
                 {stories.map(story => <option value={story.id} key={story.id}>{story.title}</option>)}
               </select>
             </label>
-            <label>Modo de intervención
+            <label>Input mode
               <select aria-label="Modo para inspeccionar" value={inspectMode}
                 onChange={e => { setInspectMode(e.target.value as typeof inspectMode); setInspectorData(null); }}>
                 <option value="do">Acción</option>
@@ -227,8 +227,8 @@ export function NarrativeSettings() {
               </select>
             </label>
           </div>
-          <label>Intervención de ejemplo
-            <textarea aria-label="Intervención para inspeccionar"
+          <label>Sample input
+            <textarea aria-label="Input to inspect"
               rows={2} maxLength={3000} value={inspectText}
               onChange={e => { setInspectText(e.target.value); setInspectorData(null); }}/>
           </label>

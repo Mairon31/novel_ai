@@ -80,7 +80,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       setDocument(result);
       setDraft(result.state);
       setInventoryInput(result.state.inventory.join('\n'));
-      setNotice('Estado confirmado. El próximo turno guardará una instantánea de estos datos.');
+      setNotice('State confirmed. The next turn will snapshot these values.');
     } catch (cause) {
       setError((cause as Error).message +
         ' Si se modificó desde otra pestaña, recarga antes de guardar.');
@@ -126,14 +126,14 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     {notice && <p className="narrative-saved" role="status"><Check size={15}/>{notice}</p>}
 
     <section className="world-section">
-      <h4>Situación de la escena</h4>
+      <h4>Scene situation</h4>
       <div className="creator-double">
         <label>Lugar actual
           <input aria-label="Lugar del mundo" maxLength={200} value={draft.location}
             placeholder="Puerto de las estrellas..."
             onChange={event => patch({ location: event.target.value })}/>
         </label>
-        <label>Momento del día
+        <label>Time of day
           <input aria-label="Momento del mundo" maxLength={80} value={draft.time_of_day}
             placeholder="Anochecer, madrugada..."
             onChange={event => patch({ time_of_day: event.target.value })}/>
@@ -144,7 +144,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           placeholder="Lluvia, despejado, tormenta..."
           onChange={event => patch({ weather: event.target.value })}/>
       </label>
-      <label>Inventario confirmado (un objeto por línea)
+      <label>Confirmed inventory (one item per line)
         <textarea aria-label="Inventario del mundo" rows={4} value={inventoryInput}
           onChange={event => { setInventoryInput(event.target.value); setNotice(''); }}
           placeholder="Llave de plata\nMapa antiguo"/>
@@ -170,7 +170,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
         <h4>Relaciones confirmadas</h4>
         {characters.map(character => <label key={character.id}>
           Relación de {character.name} con el protagonista
-          <input aria-label={'Relación con ' + character.name} maxLength={160}
+          <input aria-label={'Relationship with ' + character.name} maxLength={160}
             value={draft.relationships[character.id] || ''}
             onChange={event => {
               const relationships = { ...draft.relationships };
@@ -211,7 +211,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           onClick={() => {
             patch({ flags: { ...draft.flags, [flagName]: false } });
             setFlagName('');
-          }}><Plus size={15}/> Añadir indicador</button>
+          }}><Plus size={15}/> Add flag</button>
       </div>
     </section>
 
@@ -234,10 +234,10 @@ export function WorldStateEditor({ storyId, characters }: Props) {
                 editFact(index, { text: event.target.value })}/>
           </label>
           <label className="world-check">
-            <input type="checkbox" aria-label={'Hecho público ' + (index + 1)}
+            <input type="checkbox" aria-label={'Public fact ' + (index + 1)}
               checked={fact.public}
               onChange={event => editFact(index, { public: event.target.checked })}/>
-            <span>Público · todos pueden conocerlo</span>
+            <span>Public · everyone may know this</span>
           </label>
           {!fact.public && <div className="world-witnesses">
             <strong>Personajes que presenciaron este hecho</strong>
@@ -256,7 +256,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <button className="secondary-button" disabled={draft.facts.length >= 120}
         onClick={() => patch({ facts: [...draft.facts, {
           id: crypto.randomUUID(), text: '', public: true, witness_character_ids: [],
-        }] })}><Plus size={16}/> Añadir hecho</button>
+        }] })}><Plus size={16}/> Add fact</button>
     </section>
 
     <div className="creator-actions">
@@ -271,18 +271,18 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       uno o más testigos.</p>}
 
     <details className="world-history">
-      <summary><History size={16}/> Historial de instantáneas por turno</summary>
+      <summary><History size={16}/> Turn snapshot history</summary>
       <p>Selecciona un turno para consultar su estado original, incluso si la historia
         ha cambiado después. Los turnos anteriores a este sistema podrían no tener snapshot.</p>
       <div className="world-add-row">
-        <select aria-label="Turno histórico del mundo" value={turnId}
+        <select aria-label="Historical world turn" value={turnId}
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>
           <option value="">Seleccionar turno</option>
           {turns.map((turn, index) =>
             <option key={turn.id} value={turn.id}>Turno {index + 1}: {turn.input_text.slice(0, 65)}</option>)}
         </select>
         <button className="secondary-button" disabled={busy || !turnId}
-          onClick={() => void inspectSnapshot()}><BookOpen size={16}/> Ver instantánea</button>
+          onClick={() => void inspectSnapshot()}><BookOpen size={16}/> View snapshot</button>
       </div>
       {snapshot && <div className="world-snapshot" role="status">
         <strong>Estado registrado en ese turno</strong>

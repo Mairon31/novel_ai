@@ -39,7 +39,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
         gpu_layers: gpuLayers, contextsize: contextSize, port,
       });
       setStatus(result);
-      setMessage('Proceso iniciado. El modelo aparecerá como listo cuando KoboldCpp responda.');
+      setMessage('Process started. The model will appear ready when KoboldCpp responds.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -64,7 +64,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
   const running = status && ['starting', 'ready'].includes(status.status);
   const label = status?.status === 'ready' ? 'Modelo listo' :
     status?.status === 'starting' ? 'Cargando modelo...' :
-    status?.status === 'exited' ? 'El proceso terminó' : 'Detenido';
+    status?.status === 'exited' ? 'Process exited' : 'Detenido';
 
   return <section className="narrative-settings kobold-manager">
     <div className="narrative-section-title"><span className="setting-icon"><Cpu size={22}/></span>
@@ -95,7 +95,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
         <label>Capas que se ejecutan en GPU
           <select aria-label="Capas GPU KoboldCpp" value={gpuLayers}
             onChange={e => setGpuLayers(Number(e.target.value))}>
-            <option value={-1}>Automático (autofit)</option>
+            <option value={-1}>Automatic (auto-fit)</option>
             <option value={0}>Solo CPU</option>
             {[12, 24, 36, 48, 64, 96, 128].map(n => <option key={n} value={n}>{n} capas GPU</option>)}
           </select>

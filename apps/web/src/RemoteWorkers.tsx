@@ -46,7 +46,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       setToken(''); setName(''); setUrl('');
       await refresh(); setSelected(item.id);
       setProbe(null); setModel('');
-      setMessage('Worker registrado. Comprueba su conexión antes de activarlo.');
+      setMessage('Worker registered. Check its connection before activation.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -132,7 +132,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <div className="noble-worker-controls-actions">
         <button className="secondary-button" disabled={busy || !selected} onClick={() => void verify()}>
           {busy ? <LoaderCircle size={16} className="rotating"/> : <PlugZap size={16}/>}
-          Probar conexión</button>
+          Test connection</button>
         <button className="secondary-button" disabled={busy || !selected}
           onClick={() => void remove()}><Trash2 size={16}/> Quitar</button>
       </div>
@@ -155,10 +155,10 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
         {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCw size={16}/>}
         Medir respuesta real</button>
       {benchmark && <div className="noble-worker-benchmark" role="status">
-        <strong>{benchmark.success ? 'Prueba de generación completada' : 'Prueba fallida'}</strong>
+        <strong>{benchmark.success ? 'Generation test completed' : 'Test failed'}</strong>
         <span>Primer texto: {benchmark.ttft_ms == null
           ? 'Sin datos' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
-        <span>Duración total: {benchmark.duration_ms.toFixed(0)} ms</span>
+        <span>Total duration: {benchmark.duration_ms.toFixed(0)} ms</span>
         <span>Caracteres de salida: {benchmark.output_characters}</span>
         <small>Es un único turno de prueba. Para estadísticas P50/P95 y VRAM muestreada
           utiliza el benchmark del notebook Colab.</small>
@@ -172,7 +172,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
           ? 'No disponible' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
         <div><span>Motor</span><strong>{probe.health?.engine_status === 'ready'
           ? 'Disponible' : probe.health?.engine_status === 'unavailable'
-            ? 'Sin respuesta' : 'Sin telemetría'}</strong></div>
+            ? 'No response' : 'No telemetry'}</strong></div>
         <div><span>Tiempo hasta primer byte</span><strong>
           {probe.health?.last_ttft_ms == null
             ? 'Sin datos' : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
@@ -191,7 +191,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       </div>)}
       <p className="noble-worker-health-note">
         Las métricas reflejan el momento de la comprobación, no un benchmark continuo.
-        Actualízalas con «Probar conexión».
+        Actualízalas con «Test connection».
       </p>
     </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}
