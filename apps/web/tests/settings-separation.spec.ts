@@ -18,11 +18,11 @@ test('four settings panels are independent, deep-linkable and responsive', async
   });
   await page.goto('/#/configuracion/images');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
-  const nav = page.getByRole('navigation', { name: 'Apartados de configuración' });
+  const nav = page.getByRole('navigation', { name: 'Settings sections' });
   await expect(nav.getByRole('button', { name: 'Imágenes', exact: true })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Voz / TTS' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'About Noble AI' })).toBeVisible();
@@ -86,7 +86,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
 test('legacy combined multimedia deep link opens images without displaying TTS', async ({ page }) => {
   await page.goto('/#/configuracion/multimedia');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const welcome = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }

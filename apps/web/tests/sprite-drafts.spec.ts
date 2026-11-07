@@ -28,7 +28,7 @@ test('Creator Studio stages five AI expressions for author review before approva
 
     await page.goto('/#/creator/' + story.id);
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-    const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+    const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
     await page.getByRole('button', { name: /Imágenes/ }).click();
@@ -94,7 +94,7 @@ test('Creator Studio stages five AI expressions for author review before approva
       name: 'Aprobar cinco expresiones',
     })).toBeDisabled();
     await section.getByRole('checkbox', {
-      name: 'Confirmé diferencias del borrador Aira',
+      name: 'I accepted draft differences for Aira',
     }).check();
     await expect(section.getByRole('button', {
       name: 'Aprobar cinco expresiones',

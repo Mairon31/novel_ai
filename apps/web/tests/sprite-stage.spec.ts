@@ -56,7 +56,7 @@ test('VN scene composites three owned transparent NPC sprites with focus and sub
     expect(prefs.status()).toBe(200);
     await page.goto('/#/historia/' + story.id + '/leer');
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-    const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+    const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 

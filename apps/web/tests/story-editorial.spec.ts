@@ -8,7 +8,7 @@ const portrait = Buffer.from(
 test('editorial detail shows cast and visuals, then persists the chosen opening once', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const wizard = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible())
     await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
@@ -61,7 +61,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   }
 
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   const detail = page.getByRole('region', { name: 'Detalle de ' + title });

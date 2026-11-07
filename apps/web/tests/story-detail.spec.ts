@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('bookshelf opens a separate story detail, the reader and the matching creator project', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const wizard = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible()) await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
   const title = 'El faro de las estrellas ' + test.info().project.name;
@@ -19,7 +19,7 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
   expect(blueprint.ok()).toBeTruthy();
 
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await expect(page.getByRole('heading', { name: /Historias para vivir/ })).toBeVisible();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
@@ -49,5 +49,5 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
   await expect(page.locator('.noble-library-cover-grid')).toHaveCount(0);
   await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
   await expect(page.locator('.noble-story-detail')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: /Mis historias/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /My stories/ })).toBeVisible();
 });

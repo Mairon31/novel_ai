@@ -3,11 +3,11 @@ import { expect, test } from '@playwright/test';
 test('reader exports its current story as a standalone HTML attachment', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
   await page.getByRole('button', { name: 'Nueva historia' }).click();
   const dialog = page.getByRole('dialog', { name: 'Crear una nueva historia' });

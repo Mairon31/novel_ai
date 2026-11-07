@@ -29,7 +29,7 @@ async function openIllustratedReader(page: import('@playwright/test').Page, proj
   });
   await page.goto('/#/historia/' + story.id + '/leer');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   await expect(page.locator('.noble-reader-chapter')).toContainText(title);
@@ -42,7 +42,7 @@ test('VN, book and chat keep the same scene and persist preference after reload'
     const { title } = await openIllustratedReader(page, test.info().project.name);
     const reader = page.locator('.noble-reader-layout');
     await expect(reader).toHaveAttribute('data-reader-mode', 'immersive');
-    await page.getByRole('button', { name: 'Abrir información de historia' }).click();
+    await page.getByRole('button', { name: 'Open story details' }).click();
     const inspector = page.locator('.noble-reader-inspector.is-open');
     await inspector.getByRole('button', { name: 'UI/UX' }).click();
     await inspector.getByRole('button', { name: 'Libro', exact: true }).click();
@@ -52,7 +52,7 @@ test('VN, book and chat keep the same scene and persist preference after reload'
     await expect(reader).toHaveAttribute('data-reader-mode', 'chat');
     await expect(reader.locator('.noble-scene-panel')).toBeHidden();
     await expect(reader.locator('.noble-reading-turn')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Cerrar información' }).click();
+    await page.getByRole('button', { name: 'Close details' }).click();
     await page.reload();
     await expect(reader).toHaveAttribute('data-reader-mode', 'chat');
     await expect(reader.locator('.noble-reading-turn')).toHaveCount(1);
@@ -86,11 +86,11 @@ test('backlog and HUD shortcuts restore controls without changing saved turns',
     await page.keyboard.press('Alt+h');
     await expect(reader).toHaveClass(/is-hud-hidden/);
     await expect(page.getByRole('button', { name: 'Mostrar interfaz del lector' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'Tu intervención en la historia' }))
+    await expect(page.getByRole('textbox', { name: 'Your input in the story' }))
       .toBeHidden();
     await page.keyboard.press('Alt+h');
     await expect(reader).not.toHaveClass(/is-hud-hidden/);
-    await expect(page.getByRole('textbox', { name: 'Tu intervención en la historia' }))
+    await expect(page.getByRole('textbox', { name: 'Your input in the story' }))
       .toBeVisible();
     await page.keyboard.press('Alt+b');
     const backlog = page.getByRole('dialog', { name: 'Backlog de historia' });

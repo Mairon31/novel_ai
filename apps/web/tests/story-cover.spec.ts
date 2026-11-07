@@ -6,7 +6,7 @@ const coverPng = Buffer.from(
 test('creator uploads a fixed book cover, bookshelf displays it and removing it preserves the story', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-  const wizard = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+  const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible()) {
     await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
@@ -20,7 +20,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
 
   async function navigate(label: string) {
     if (test.info().project.name === 'mobile')
-      await page.getByRole('button', { name: 'Abrir menú' }).click();
+      await page.getByRole('button', { name: 'Open menu' }).click();
     await page.getByRole('button', { name: label, exact: true }).click();
   }
 
@@ -31,11 +31,11 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await expect(section.getByText('Sin portada personalizada')).toBeVisible();
   await page.getByLabel('Tipo de recurso visual').selectOption('cover');
   await page.getByLabel('Nombre de imagen').fill('La luna sobre la torre');
-  await page.getByLabel('Descripción de imagen').fill('Cubierta con una luna violeta y una torre');
+  await page.getByLabel('Image description').fill('Cubierta con una luna violeta y una torre');
   await page.getByLabel('Archivo de recurso visual').setInputFiles({
     name: 'cover.png', mimeType: 'image/png', buffer: coverPng,
   });
-  await page.getByRole('button', { name: 'Importar imagen' }).click();
+  await page.getByRole('button', { name: 'Import image' }).click();
   await expect(section.getByText('Portada personalizada')).toBeVisible();
   await expect(section.getByRole('img', { name: 'Portada de ' + title })).toBeVisible();
 

@@ -58,7 +58,7 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     });
     await page.goto('/#/creator/' + story);
     await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
-    const setup = page.getByRole('dialog', { name: /Bienvenida y configuración inicial/ });
+    const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
