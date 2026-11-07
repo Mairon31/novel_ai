@@ -69,6 +69,8 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByLabel('Planificador ComfyUI').selectOption('karras');
   await page.getByLabel('Estilo de ilustración').selectOption('anime_cinematic');
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
+  // Wait for the actual PUT response and saved UI state before reading SQLite.
+  await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
   const configured = await page.request.get('/api/v1/images/config');
   expect(configured.ok()).toBeTruthy();
   const params = await configured.json();
@@ -84,6 +86,8 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.getByLabel('Estilo de ilustración')).toHaveValue('anime_cinematic');
   await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);
+  // Speech preferences initialize independently after switching tabs.
+  await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeEnabled();
   await page.getByLabel('Activar botones de voz bajo demanda').check();
   await expect(page.getByLabel('Activar botones de voz bajo demanda')).toBeChecked();
 
