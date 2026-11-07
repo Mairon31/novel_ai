@@ -8,14 +8,14 @@ test('story-first bundled hub installs an independent playable world without a m
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
-    const hub = page.getByRole('region', { name: 'Descubrir historias para jugar' });
-    await expect(hub.getByRole('heading', { name: 'Descubre un mundo para jugar' })).toBeVisible();
-    await expect(hub.getByRole('button', { name: /^Ver historia / })).toHaveCount(3);
-    await hub.getByRole('button', { name: 'Ver historia Las mareas de vidrio' }).click();
+    const hub = page.getByRole('region', { name: 'Discover playable stories' });
+    await expect(hub.getByRole('heading', { name: 'Discover a world to play' })).toBeVisible();
+    await expect(hub.getByRole('button', { name: /^View story / })).toHaveCount(3);
+    await hub.getByRole('button', { name: 'View story Las mareas de vidrio' }).click();
     await expect(hub.getByRole('heading', { name: 'Las mareas de vidrio' })).toBeVisible();
     await expect(hub.getByText('Lía Monterroso · Tomás Ureña')).toBeVisible();
-    await expect(hub.getByText('Inicio 3')).toBeVisible();
-    await hub.getByLabel('Nombre para la historia instalada').fill('Sara');
+    await expect(hub.getByText('Opening 3')).toBeVisible();
+    await hub.getByLabel('Protagonist name for installed story').fill('Sara');
 
     await page.screenshot({
       path: 'test-results/' + test.info().project.name + '-story-hub.png',
@@ -25,7 +25,7 @@ test('story-first bundled hub installs an independent playable world without a m
     const installed = page.waitForResponse(response =>
       response.url().includes('/api/v1/story-hub/mareas-de-vidrio/install') &&
       response.request().method() === 'POST');
-    await hub.getByRole('button', { name: 'Añadir a mi biblioteca' }).click();
+    await hub.getByRole('button', { name: 'Add to my library' }).click();
     const result = await installed;
     expect(result.status()).toBe(201);
     const body = await result.json() as {
@@ -69,12 +69,12 @@ test('Discover Stories has its own shareable route and installs into the library
     await expect(page.getByRole('heading', { name: 'Historias para jugar' })).toBeVisible();
     await page.reload();
     await expect(page.getByRole('region', { name: 'Catálogo de historias' })).toBeVisible();
-    const hub = page.getByRole('region', { name: 'Descubrir historias para jugar' });
-    await hub.getByRole('button', { name: 'Ver historia El jardín de las horas rotas' }).click();
+    const hub = page.getByRole('region', { name: 'Discover playable stories' });
+    await hub.getByRole('button', { name: 'View story El jardín de las horas rotas' }).click();
     const installed = page.waitForResponse(r =>
       r.url().includes('/api/v1/story-hub/jardin-mecanico/install') &&
       r.request().method() === 'POST');
-    await hub.getByRole('button', { name: 'Añadir a mi biblioteca' }).click();
+    await hub.getByRole('button', { name: 'Add to my library' }).click();
     const reply = await installed;
     expect(reply.status()).toBe(201);
     const data = await reply.json() as { story: { id: string } };

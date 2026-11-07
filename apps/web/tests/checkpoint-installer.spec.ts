@@ -64,29 +64,29 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
-  await expect(page.getByRole('heading', { name: 'Checkpoints desde Noble AI' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Checkpoints from Noble AI' })).toBeVisible();
   expect(installs).toBe(0);
   expect(statusChecks).toBe(0);
-  await page.getByLabel('Repositorio Hugging Face').fill(repo);
-  await page.getByRole('button', { name: 'Buscar archivos del checkpoint' }).click();
+  await page.getByLabel('Hugging Face repository').fill(repo);
+  await page.getByRole('button', { name: 'Find checkpoint files' }).click();
   await expect(page.getByText(filename).first()).toBeVisible();
   expect(installs).toBe(0);
 
-  await page.getByRole('button', { name: 'Instalar checkpoint' }).click();
-  await expect(page.getByRole('button', { name: 'Pausar', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Install checkpoint' }).click();
+  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
   expect(installs).toBe(1);
-  await page.getByRole('button', { name: 'Pausar', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Reanudar', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Reanudar', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Pausar', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
 
   phase = 'completed'; installed = true;
-  await page.getByRole('button', { name: 'Actualizar descargas de imágenes' }).click();
-  await expect(page.getByText('ComfyUI aún no lo reconoce')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pendiente de ComfyUI' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Refresh image downloads' }).click();
+  await expect(page.getByText('ComfyUI has not recognized it yet')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Waiting for ComfyUI' })).toBeDisabled();
   await page.getByRole('button', { name: 'Buscar checkpoints', exact: true }).click();
   await expect(page.getByText('Detectado en ComfyUI')).toBeVisible();
-  await page.getByRole('button', { name: 'Seleccionar checkpoint' }).click();
+  await page.getByRole('button', { name: 'Select checkpoint' }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveValue(comfyReportedName);
   await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
   await expect.poll(async () =>

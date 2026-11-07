@@ -42,8 +42,8 @@ const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
   { id: 'runtimes', label: 'Runtimes', icon: Cpu },
   { id: 'shortcuts', label: 'Atajos', icon: Keyboard },
   { id: 'network', label: 'Red y workers', icon: Server },
-  { id: 'about', label: 'Acerca de Noble AI', icon: MonitorCog },
-  { id: 'updates', label: 'Actualizaciones', icon: Download },
+  { id: 'about', label: 'About Noble AI', icon: MonitorCog },
+  { id: 'updates', label: 'Updates', icon: Download },
 ];
 
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
@@ -199,7 +199,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
                 imageMode === 'manual' ? 'Bajo demanda' : 'Por escena'}</strong></div>
             <div><KeyRound size={17}/><small>OpenRouter</small>
               <strong>{credential?.configured ? 'Clave configurada' : 'Sin clave'}</strong></div>
-            <div><Cpu size={17}/><small>Versión local</small>
+            <div><Cpu size={17}/><small>Version local</small>
               <strong>{about?.version || 'Consultando...'}</strong></div>
           </div>
           <div className="workspace-settings-overview-grid">
@@ -210,11 +210,11 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
               {id:'providers',title:'Servicios y claves',summary:'Accesos, proveedores y credenciales externas.'},
               {id:'languages',title:'Idiomas y estilo',summary:'Español latinoamericano, traducción y narración.'},
               {id:'appearance',title:'Interfaz de lectura',summary:'Tema, presentación de novela visual y tipografía.'},
-              {id:'runtimes',title:'Modelos y ejecutables',summary:'Paquetes locales detectados y diagnóstico de motores.'},
+              {id:'runtimes',title:'Models y ejecutables',summary:'Paquetes locales detectados y diagnóstico de motores.'},
               {id:'network',title:'GPU remotas y red',summary:'Workers, conexiones seguras y red local.'},
               {id:'shortcuts',title:'Atajos de teclado',summary:'Combinaciones para navegar y jugar.'},
-              {id:'about',title:'Acerca de Noble AI',summary:'Versión, compilación y datos del programa.'},
-              {id:'updates',title:'Actualizaciones',summary:'Canal y comprobación de nuevas versiones.'},
+              {id:'about',title:'About Noble AI',summary:'Application version, build, and data.'},
+              {id:'updates',title:'Updates',summary:'Release channel and update checks.'},
             ].map(item => {
               const section = tabs.find(candidate => candidate.id === item.id)!;
               return <button className="workspace-overview-card" key={item.id}
@@ -270,7 +270,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <p>Conecta modelos externos para narrar sin consumir tu GPU. ComfyUI se configura en «Imágenes» y Piper en «Voz / TTS»; los proveedores de pago para estas tareas siguen pendientes.</p></div>
           <div className="workspace-panel">
             <div className="workspace-provider-head"><span className="provider-icon">OR</span><div>
-              <h3>OpenRouter</h3><p>Modelos de lenguaje en la nube, con consumo según el proveedor.</p></div>
+              <h3>OpenRouter</h3><p>Models de lenguaje en la nube, con consumo según el proveedor.</p></div>
               <span className={credential?.configured ? 'provider-ready' : 'provider-missing'}>
                 {credential?.configured ? 'Configurado' : 'Sin clave'}</span></div>
             <p>La clave se guarda en el almacén de credenciales del sistema; nunca en el historial de historias ni en SQLite.</p>

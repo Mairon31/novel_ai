@@ -43,26 +43,25 @@ export function StoryHub({ onInstall }: Props) {
       setInstalling(null);
     }
   }
-  return <section className="noble-story-hub" aria-label="Descubrir historias para jugar">
+  return <section className="noble-story-hub" aria-label="Discover playable stories">
     <header className="noble-story-hub-heading">
       <div>
-        <span className="overline"><Compass size={15}/> HISTORIAS PARA COMENZAR</span>
-        <h2>Descubre un mundo para jugar</h2>
-        <p>Instala historias originales con personajes, reglas del mundo y
-          tres comienzos alternativos. Cada instalación crea una copia editable.</p>
+        <span className="overline"><Compass size={15}/> STORIES TO BEGIN</span>
+        <h2>Discover a world to play</h2>
+        <p>Install original worlds with characters, world rules, and three alternate openings. Each installation creates an editable copy.</p>
       </div>
-      <span className="noble-story-hub-source">Catálogo incluido · sin cuenta</span>
+      <span className="noble-story-hub-source">Bundled catalog · no account required</span>
     </header>
     {loading && <div className="loading" role="status">
-      <LoaderCircle size={18} className="rotating"/> Cargando historias...</div>}
+      <LoaderCircle size={18} className="rotating"/> Loading stories...</div>}
     {!loading && packs.length === 0 && !error && <p>
-      No hay historias incluidas en esta versión.</p>}
+      There are no bundled stories in this version.</p>}
     <div className="noble-story-hub-grid">
       {packs.map((pack, index) => <button key={pack.id}
         type="button" disabled={!!installing}
         className={'noble-story-hub-tile ' + (chosen?.id === pack.id ? 'is-selected' : '')}
         aria-pressed={chosen?.id === pack.id}
-        aria-label={'Ver historia ' + pack.title}
+        aria-label={'View story ' + pack.title}
         onClick={() => { setSelected(pack.id); setProtagonist(''); setError(''); }}>
         <div className={'noble-story-hub-art hub-art-' + index % 3}
           aria-hidden="true"><BookOpen size={36}/></div>
@@ -70,14 +69,14 @@ export function StoryHub({ onInstall }: Props) {
           <small>{pack.genre} · {pack.language}</small>
           <strong>{pack.title}</strong>
           <span>{pack.synopsis}</span>
-          <em>{pack.character_count} personajes · {pack.opening_previews.length} inicios</em>
+          <em>{pack.character_count} characters · {pack.opening_previews.length} openings</em>
         </div>
       </button>)}
     </div>
     {chosen && <article className="noble-story-hub-detail"
-      aria-label={'Vista previa de ' + chosen.title}>
+      aria-label={'Preview of ' + chosen.title}>
       <div className="noble-story-hub-detail-main">
-        <span className="overline">HISTORIA SELECCIONADA</span>
+        <span className="overline">SELECTED STORY</span>
         <h3>{chosen.title}</h3>
         <p>{chosen.player_plot}</p>
         <div className="noble-story-hub-tags">
@@ -87,15 +86,14 @@ export function StoryHub({ onInstall }: Props) {
           <Users size={15}/> {chosen.character_names.join(' · ')}
         </p>
         <p className="noble-story-hub-credits">
-          Autoría {chosen.author} · {chosen.license} · Versión {chosen.version}
+          Created by {chosen.author} · {chosen.license} · Version {chosen.version}
         </p>
         <p className="noble-story-hub-credits">
-          Esta edición contiene texto y lore. Las imágenes se pueden crear
-          o importar posteriormente en Creator Studio.
+          This edition includes story text and lore. Images can be generated or imported later in Creator Studio.
         </p>
         <label className="noble-hub-protagonist">
-          Nombre de tu protagonista
-          <input aria-label="Nombre para la historia instalada" maxLength={60}
+          Your protagonist's name
+          <input aria-label="Protagonist name for installed story" maxLength={60}
             value={protagonist} placeholder={chosen.protagonist}
             onChange={event => setProtagonist(event.target.value)}/>
         </label>
@@ -103,22 +101,22 @@ export function StoryHub({ onInstall }: Props) {
           disabled={!!installing} onClick={() => void install()}>
           {installing === chosen.id ? <LoaderCircle className="rotating" size={16}/> :
             <CheckCircle2 size={16}/>}
-          {installing === chosen.id ? 'Instalando historia...' : 'Añadir a mi biblioteca'}
+          {installing === chosen.id ? 'Installing story...' : 'Add to my library'}
           {!installing && <ArrowRight size={16}/>}
         </button>
       </div>
       <div className="noble-story-hub-openings">
-        <strong>Tres formas de comenzar</strong>
+        <strong>Three ways to begin</strong>
         {chosen.opening_previews.map((opening, idx) => <div key={idx}>
-          <small>Inicio {idx + 1}</small>
+          <small>Opening {idx + 1}</small>
           <p>{opening.replace(/\{\{user\}\}/g, protagonist.trim() || chosen.protagonist)}</p>
         </div>)}
       </div>
     </article>}
     {error && <p role="alert" className="narrative-error">
-      No se pudo cargar o instalar la historia: {error}
+      Could not load or install the story: {error}
       {!packs.length && <button type="button" className="secondary-button"
-        onClick={() => window.location.reload()}>Reintentar</button>}
+        onClick={() => window.location.reload()}>Retry</button>}
     </p>}
   </section>;
 }

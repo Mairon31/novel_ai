@@ -21,7 +21,7 @@ import type {
 } from './types';
 
 const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
-  { id: 'narrator', title: 'Narración', subtitle: 'Modelos de lenguaje GGUF' },
+  { id: 'narrator', title: 'Narración', subtitle: 'Models de lenguaje GGUF' },
   { id: 'image', title: 'Imágenes', subtitle: 'Difusión y arte' },
   { id: 'tts', title: 'Voces', subtitle: 'Síntesis de voz' },
 ];
@@ -508,7 +508,7 @@ export default function App() {
               <button role="tab" aria-selected={tab === 'discover'} className={tab === 'discover' ? 'active' : ''}
                 onClick={() => { setTab('discover'); closeModelDetail(); }}><Search size={17}/> Descubrir</button>
               <button role="tab" aria-selected={tab === 'installed'} className={tab === 'installed' ? 'active' : ''}
-                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> Instalados <span className="mini-count">{installed.length}</span></button>
+                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> Installeds <span className="mini-count">{installed.length}</span></button>
             </div>
             <div className="source-tag"><Cloud size={16}/> Hugging Face</div>
           </div>
@@ -594,7 +594,7 @@ export default function App() {
               </aside>
             </div>
           </> : <>
-            <div className="section-caption"><div><h2>Modelos en tu equipo</h2><p>Solo instalaciones completas y registradas por Noble AI.</p></div></div>
+            <div className="section-caption"><div><h2>Models en tu equipo</h2><p>Solo instalaciones completas y registradas por Noble AI.</p></div></div>
             {modelStorage && <section className="hub-storage-summary" aria-label="Almacenamiento de modelos">
               <div className="hub-storage-heading">
                 <div><strong>Espacio de modelos</strong>
@@ -603,7 +603,7 @@ export default function App() {
                 <span><HardDrive size={15}/> Disco local</span>
               </div>
               <div className="hub-storage-metrics">
-                <div><span>Modelos registrados</span><strong>{size(modelStorage.installed.bytes)}</strong>
+                <div><span>Models registrados</span><strong>{size(modelStorage.installed.bytes)}</strong>
                   <small>{modelStorage.installed.count} en el registro</small></div>
                 <div><span>Descargas parciales</span><strong>{size(modelStorage.partial.bytes)}</strong>
                   <small>{modelStorage.partial.count} con archivos .part</small></div>
@@ -685,9 +685,9 @@ export default function App() {
                 <span>{job.expected_size ? pct + '%' : 'Total desconocido'}</span></div>
               {job.error && <p className="job-error">{job.error}</p>}
               <div className="download-controls">
-                {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> Pausar</button>}
-                {['paused', 'failed', 'cancelled'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'resume')}><Play size={16}/> Reanudar</button>}
-                {['queued', 'downloading', 'paused', 'failed'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'cancel')}><X size={16}/> Cancelar</button>}
+                {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> Pause</button>}
+                {['paused', 'failed', 'cancelled'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'resume')}><Play size={16}/> Resume</button>}
+                {['queued', 'downloading', 'paused', 'failed'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'cancel')}><X size={16}/> Cancel</button>}
                 {job.status === 'completed' && <span className="complete"><CheckCircle2 size={16}/> Modelo registrado</span>}
               </div>
             </article>;
@@ -729,7 +729,7 @@ export default function App() {
 
         {page === 'diagnostico' && <section className="hub">
           <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SISTEMA</div><h1>Diagnóstico<span className="title-dot">.</span></h1>
-            <p>Datos detectados en el equipo que ejecuta el backend, no en tu navegador.</p></div>
+            <p>Data detectados en el equipo que ejecuta el backend, no en tu navegador.</p></div>
           <div className="stat-grid">
             <div className="stat"><span>ESTADO DEL BACKEND</span><strong>{health?.status === 'ok' ? 'Conectado' : 'Sin conexión'}</strong><small>API Noble {health?.version || '—'}</small></div>
             <div className="stat"><span>MEMORIA RAM</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? Math.round(hardware.ram_available_mb / 1024) + ' GB disponibles' : ''}</small></div>
