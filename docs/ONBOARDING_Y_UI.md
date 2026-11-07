@@ -1,102 +1,89 @@
-# Noble AI — experiencia de aplicación, onboarding y diseño UI
+# Noble AI — application experience, onboarding, and UI design
 
-Estado: diseño de producto y evaluación UX. Biblioteca, Creator Studio, Model Hub y lector ya tienen una interfaz funcional; varias funciones de esta especificación siguen siendo propuestas.
+**Status:** product specification and UX research. Library, Creator Studio, Model Hub, and reader already have functioning UI flows; several planned capabilities below are not yet implemented.
 
-## Objetivo de experiencia
+## Experience goal
 
-El usuario descarga/instala Noble AI, abre **una aplicación visual** y configura modelos y herramientas sin escribir comandos, gestionar archivos `.env` ni utilizar Colab. Noble AI podrá ofrecer una web local con las mismas pantallas, y más adelante empaquetarse en escritorio.
+The intended user downloads Noble AI, opens a graphical application, and manages supported models and services without editing `.env` files or running Colab. Today there is a local web interface; a packaged desktop application is a later milestone.
 
-**Navegación general:** `Inicio / Biblioteca`, `Crear historia`, `Mi estudio`, `Modelos`, `Descargas`, `Configuración`, `Diagnóstico`.
+**Primary spaces:** Library / Discover Stories, Reader, Creator Studio, Model Hub, Downloads, Settings, and Diagnostics. The reader should not be visually embedded inside the library or infrastructure screens.
 
-## Pantallas del primer inicio (wizard reanudable)
+## First-run onboarding concept
 
-| Paso | Pantalla | Acción del usuario | Respuesta de la app |
+| Step | Screen | User action | App response |
 |---|---|---|---|
-| 0 | Bienvenida/idioma | Elegir idioma (ES-LA predeterminado) | Guardar preferencia local |
-| 1 | Diagnóstico | Seleccionar GPU/CPU o Automático; revisar RAM/VRAM | Detectar dispositivos, drivers y estimar presets |
-| 2 | Almacenamiento | Elegir carpeta de modelos/proyectos/caché | Ver espacio y permisos, aceptar discos externos |
-| 3 | Narrador | Buscar/cargar GGUF o conectar Ollama/KoboldCpp/API remota | Mostrar quant, tamaño, compatibilidad y descargar si falta |
-| 4 | Ilustraciones | ComfyUI/local, buscar modelo o saltar | Configurar política: escena progresiva u on-demand OFF |
-| 5 | Voces | TTS local/remote, modelo y dispositivo opcionales | TTS OFF inicialmente y **sin carga** |
-| 6 | Resumen | Ver selección y costos/compatibilidad | Descargar únicamente lo solicitado; probar conexión |
-| 7 | Biblioteca | Crear una historia o importar una existente | Arrancar la historia; iniciar LLM asignado si está listo |
+| 0 | Welcome and language | Select preferred UI and story language; **English UI is the product default** | Persist preference without forcing story content to English |
+| 1 | Hardware diagnostics | Choose GPU/CPU/Auto if supported | Detect devices and report estimated fit |
+| 2 | Storage | Choose model/project/cache directories | Inspect free space, permissions, external disks |
+| 3 | Narrator | Find/install a GGUF or connect Ollama/KoboldCpp/API | Show quantization, sizes, capability estimates, and installation actions |
+| 4 | Images | Configure ComfyUI and supported checkpoint or skip | Set manual/on-demand/disabled image policy |
+| 5 | Voice | Configure an optional speech engine/model | Speech OFF by default and no engine preload |
+| 6 | Review | Confirm settings, compatibility, and external service use | Download only explicitly chosen components |
+| 7 | Library | Create or import a story | Open story and initialize the selected narrator when ready |
 
-**Reanudar:** el asistente almacena step completado/validación y puede continuarse tras reinicio; un usuario avanzado puede abrir la interfaz sin completar medios opcionales. Si no hay LLM, la Biblioteca funciona para leer/importar/editar, pero el botón generar informa cuál falta y lleva al Model Hub.
+**Resume:** the future setup flow should persist validated progress. Users can access the app without completing optional image or voice steps. Without an LLM configured, the library remains available for reading/import/editing while new generation explains which model connection is missing.
 
-## Model Hub — estructura visual propuesta
+## Model Hub information architecture
 
-```text
-╭─────────────────────────────────────────────────────────────────────────────────────────────╮
-│ Noble AI   Biblioteca   Crear   Modelos*   Descargas   Ajustes   Diagnóstico                │
-├───────────────┬──────────────────────────────────────────────────────┬──────────────────────┤
-│ Categorías    │  Descubrir  Instalados  Descargas  Proveedores      │ Modelo seleccionado  │
-│ Narración     │ [ Buscar en Hugging Face ...                🔎 ]    │ Nombre + versión     │
-│ Imágenes      │ [GPU estimada ▼] [12/16GB] [Tipo] [Licencia]       │ Fuente + licencia    │
-│ Voces         │                                                      │ Cuantizaciones       │
-│              │  [ Modelo A  GGUF · Q4 · compatible estimado ]       │ Tamaño + VRAM/RAM    │
-│ Opciones      │  [ Modelo B  SDXL · workflow requerido ]             │ Descarga/Instalar    │
-│ Importar      │  [ Modelo C  TTS · ES-LA · prueba pendiente ]        │ Usar en narración    │
-├───────────────┴──────────────────────────────────────────────────────┴──────────────────────┤
-│ GPU: NVIDIA ...   Modelos: ruta elegida   Descargas: 1 activa   LLM: listo   TTS: inactivo    │
-╰─────────────────────────────────────────────────────────────────────────────────────────────╯
-```
+The intended desktop UI has a model list and detail inspector; mobile uses a detail modal. Provide: categories by role; Discover, Installed, and Downloads; Hugging Face search; provider/source/license; variants and quantization; estimated GPU/CPU fit; disk capacity; and explicit install/select controls.
 
-Esto es **wireframe escrito**, no una captura, demo o UI funcional. Debe transformarse en componentes reales con pruebas visuales y validación de UX.
+This is a **design target**, not proof that every filter, installer, or engine exists. Do not present a design wireframe as a runtime screenshot.
 
-## Ajustes — categorías
+## Independent settings areas
 
-**General:** idioma, tema, tipografía, accesibilidad, paths/backup, actualizaciones.
-**Modelos:** default model assignments, instalados, dispositivos por modelo, profiles.
-**Narración:** proveedor/URL, modelo/quant, contexto, sampling, reasoning, memoria/canon, estilo, parámetros avanzados.
-**Imagen:** ComfyUI/workflow/checkpoint/LoRA/VAEs, prompts, cfg/steps, seed, resolución, escenarios auto/manual; opciones de contenido mediante checkpoint/metadata, sin promesa ficticia de filtro universal.
-**Voces:** Chatterbox/Qwen3-TTS/Piper, voz por personaje, CPU/GPU/Auto según soporte, idioma, velocidad, calidad, cache; audio OFF al iniciar.
-**Hardware/rendimiento:** GPU seleccionada, RAM/VRAM, prioridad narrativa, offload, límites de jobs y uso actual.
-**Proveedores:** local vs remoto, API URL, claves en keyring, test de conexión, reglas de privacidad.
-**Datos:** modelos/caché/proyectos, importar/exportar, desinstalar y recuperar archivos.
-**Diagnóstico:** estado de motores, versiones, fallos, logs filtrados, benchmark reproducible.
+- **General:** UI language, themes, typography, accessibility, paths, backups, and updates.
+- **Narrative:** provider URL, model/quantization, context, sampling, optional reasoning, canon/memory, style, and effective parameters.
+- **Images:** ComfyUI workflow/checkpoint/LoRA/VAE, prompts, CFG, steps, seed, resolution, explicit/scene policies. Do not pretend a universal content filter exists.
+- **Voice / TTS:** Piper, future engines, per-character voices, device options only if supported, pronunciation, speed, quality, and cache.
+- **Model management:** installed models, per-role device assignments, download queues, and profiles.
+- **Hardware:** observed GPU/RAM/VRAM, offload, job limits, and contention.
+- **Providers and network:** local or remote endpoints, keyring secrets, connection tests, privacy.
+- **Data:** stored projects, models, caches, import/export, recovery, and uninstall.
+- **Diagnostics:** engine status, dependencies, sanitized errors/logs, reproducible benchmarks.
+- **About:** version, build, paths, installation type.
+- **Updates:** release channel and checks, kept separate from About.
 
-## Plantillas de perfiles (config global + por historia)
+Image and Voice/TTS **must be independent navigation destinations**. About and Updates **must also remain separate**. These separations already have UI implementation; they are not reasons to combine unrelated controls in a single page. See [settings sections](CONFIGURACION_APARTADOS.md).
 
-Cada herramienta tendrá **perfil global** y **override por historia**:
-- Global `default_narrator`, `default_image`, `default_voice`.
-- Story `override_narrator`, `override_image`, `override_voice` opcionales y versionados.
-- Perfil `Rápido` para VRAM 12GB, `Calidad` 16GB, `CPU` y `Personalizado`; nunca asumir que 12GB caben modelos ilimitados.
-- **Mostrar configuración efectiva** y resolver precedencia `story override > global profile > provider defaults`.
-- Parámetros de un modelo se validan contra `provider.capabilities` y se muestran deshabilitados si no aplica.
-- Cambiar perfil no borra archivos ni reinventa el canon de historias anteriores.
+## Global and per-story profiles
 
-## Modo novela visual
+The target model is global defaults plus optional versioned overrides for individual stories:
 
-Una interfaz de juego distinta de Model Hub: escenario a pantalla, sprite/expresión según situación, diálogos y prosa diferenciados, modo lectura, continuar/reintentar/editar y entrada Hacer/Decir/Narrar. Los cambios de modelo se acceden desde menú rápido, pero los controles avanzados permanecen en Studio/Settings para no saturar el reproductor.
+- Global `default_narrator`, `default_image`, and `default_voice`.
+- Story `override_narrator`, `override_image`, and `override_voice`.
+- Named target presets such as Fast (12 GB), Quality (16 GB), CPU, and Custom. Do not guarantee heavy models fit just because the hardware has 12/16 GB.
+- Show **effective configuration** with precedence `story override > global profile > provider defaults`.
+- Validate only supported `provider.capabilities`; disable unavailable controls with an explanation.
+- Changing profiles must not erase checkpoints, story state, or authored canon.
 
-**Móvil:** navegación de drawers, panel de texto adaptable, botones de 44px, retratos sin tapar el texto, control de zoom/accesibilidad y fallback sin ilustraciones. **Desktop:** layout adaptable y paneles ajustables.
+## Visual novel reader
 
-## Estado visual obligatorio
+A separate immersive scene surface with backgrounds, sprites/expressions, distinguishable dialogue and narration, book/chat modes, backlog, continue/edit/branch actions, and action/speech input. Keep advanced Model Hub and runtime management outside the reader canvas.
 
-UI siempre diferencia `no configurado`, `descargando`, `instalado`, `cargando`, `listo`, `en uso`, `error`, `incompatible`, `desconocido`. No mostrar un botón "Instalado" si solo se descargó una parte; no afirmar "compatible" por el tamaño de fichero.
+**Mobile:** drawer navigation, adaptive text panel, minimum comfortable touch target (~44 px), portraits that do not obscure reading, zoom/accessibility options, and fallback without images. **Desktop:** responsive multi-panel layouts.
 
-**No fake buttons:** cada control debe activar API real o indicar inhabilitación y motivo; los prototipos no cuentan como funcionalidades.
+## Truthful product states
 
-## Criterios de pruebas
+Distinguish `unconfigured`, `downloading`, `installed`, `loading`, `ready`, `busy`, `error`, `incompatible`, and `unknown`. A partially downloaded file must not appear installed, and a file size alone must not imply runtime compatibility. No fake buttons or production placeholders; disabled actions need a visible reason.
 
-- Wizard con 0 modelos funciona y se puede reanudar.
-- Cambios de proveedor/modelo guardan perfil y persisten tras reinicio; sin editar archivos de configuración.
-- Webview desktop y navegador usan **mismo backend** y contratos.
-- GPU de 12/16GB: warning de modelo sin soporte y opción CPU/offload cuando realmente exista.
-- Se puede desactivar medios opcionales y jugar texto.
-- Todo estado de descarga/instalación se refleja sin refrescar manualmente.
-- Capturas/Playwright en 390x844 y 1440x900, sin overflow, inputs ocultos ni controles de mentira.
-- Logs de cargas: abrir Settings/TTS no carga modelo TTS por defecto.
+## Acceptance criteria
 
-Referencia: [Model Hub](MODEL_HUB.md), [Arquitectura](ARQUITECTURA.md), [Roadmap](ROADMAP.md).
+- First-run UI opens with zero models.
+- Settings persist across restarts without requiring manual config-file edits.
+- Browser and future desktop shell use the same API/storage contracts.
+- 12/16 GB compatibility warnings and CPU/offload options are accurate and capability-based.
+- Text stories work with optional media disabled.
+- Download progress and state changes remain visible without manual page reload.
+- Desktop/mobile Playwright checks at 1440×900 and 390×844, without overflow or inaccessible controls.
+- Opening Settings/Voice does not launch TTS synthesis or load media models.
 
-## Arquitectura de experiencia posterior a la auditoría Argon
+## Post-Argon information architecture
 
-La navegación debe evolucionar a **cuatro espacios visualmente independientes**, no a una única columna donde todos los subpaneles ocupen el mismo nivel:
+Organize the product as **four distinct experiences**, not one long combined settings column:
 
-1. **Biblioteca/Exploración:** historias con portada editorial, sinopsis pública, elenco, aperturas alternativas, última actividad y acceso directo a continuar.
-2. **Lector inmersivo:** superficie VN a pantalla completa con fondo/sprites/diálogo, cambio VN/Libro/Chat, backlog, modo de acción, cancelación y ramas. Herramientas de modelos fuera del lienzo.
-3. **Creator Studio:** formulario básico y avanzado por personaje, historia, canon, Lorebook, sprites, voz y aperturas; previsualización sin inferencia forzada.
-4. **Infraestructura:** Model Hub, selector de cuantizaciones, downloads, workers, configuración de hardware, presupuestos y benchmarks.
+1. **Library / discovery:** editorial covers, public synopsis, cast, alternate openings, recent activity, and continue actions.
+2. **Immersive reader:** full-scene VN canvas with background/sprites/dialogue, VN/Book/Chat modes, backlog, actions, cancellation, and branches.
+3. **Creator Studio:** basic/advanced character and world editing, canon, Lorebooks, sprites, voice plans, story openings, and previews without forced inference.
+4. **Infrastructure:** Model Hub, quantizations, downloads, workers, hardware policy, budgets, and benchmarks.
 
-**No rehacer todo el frontend de golpe:** aislar estados y URLs con pruebas E2E por cambio; incorporar Radix/virtualización solo cuando ofrezcan accesibilidad/rendimiento verificables. Evitar acciones placebo y mantener acceso móvil. El roadmap y criterios de aceptación actualizados están en [TODO](../TODO.md), [auditoría §13](ARGON_AUDITORIA.md) y [QA](QA_Y_ACEPTACION.md).
+Do not rewrite the entire frontend in a single pass. Preserve states, deep links, tests, and mobile support while introducing improvements. Adopt Radix or virtualization only where accessibility/performance benefits can be demonstrated. See [TODO](../TODO.md), [Argon audit](ARGON_AUDITORIA.md), [QA](QA_Y_ACEPTACION.md), and [Model Hub](MODEL_HUB.md).

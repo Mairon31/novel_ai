@@ -1,28 +1,33 @@
-# Noble AI — Worker GPU remoto (P1.1 experimental)
+# Noble AI — remote GPU workers (experimental P1.1)
 
-**Estado real:** registro, comprobación y activación de un worker LLM compatible con OpenAI implementados. También se incluye un **proxy HTTP con Bearer token** que se ejecuta en la máquina GPU. Las pruebas están simuladas, no hay benchmark real en Google Colab, ni botón de *iniciar instancia Colab*, ni instalación automática de Cloudflared.
+**Implemented:** registration, connection checks, and activation of an OpenAI-compatible remote LLM worker, plus a bearer-authenticated HTTP proxy that runs on the GPU machine. Tests currently simulate the remote protocol. This is **not** proof of a real Colab benchmark or a one-click Colab instance installer. Noble AI does not automatically install cloudflared.
 
-## Arquitectura
+## Architecture
 
-Navegador/PC principal → Noble AI local (FastAPI + SQLite) → HTTPS Cloudflare Tunnel → proxy autenticado en worker → servidor local compatible con OpenAI → GPU remota.
+```text
+Main browser/PC → Noble AI FastAPI + SQLite → HTTPS Cloudflare Tunnel
+                → authenticated Noble Worker proxy
+                → local OpenAI-compatible inference service → remote GPU
+```
 
-- Historias y credenciales se conservan en el equipo principal. Se envía al worker el **contexto narrativo necesario** para producir la respuesta. Cloudflare transporta el tráfico entre máquinas.
-- La API principal permanece ligada a **127.0.0.1**: no es una opción para servir el workspace entero en red.
-- El worker solo publica **GET /v1/models** y **POST /v1/chat/completions**. Su token se exige en todas las rutas (incluidos los endpoints no reconocidos).
-- Noble AI comprueba tanto que el token correcto funcione como que un token incorrecto sea rechazado con 401/403. Un túnel que expone directamente Ollama/KoboldCpp sin autorización **no es admitido**.
-- El token se guarda en el almacén de credenciales del sistema mediante Python keyring; en sistemas headless sin keyring se debe configurar un backend seguro antes de registrar. No existe fallback de texto plano.
+Story data and unrelated credentials remain on the primary PC. The worker receives only the narrative context needed for generation. Cloudflare transports requests between machines.
 
-## 1. Preparar la segunda PC / Google Colab
+- The primary API stays bound to `127.0.0.1`; this feature is **not** a way to publish the entire workspace to the internet.
+- The worker proxy exposes `GET /v1/models` and `POST /v1/chat/completions`; the bearer token is mandatory on all paths, including unrecognized ones.
+- Noble AI checks that a valid token succeeds and an invalid token is rejected with 401/403. A direct unauthenticated tunnel to Ollama/KoboldCpp is not an accepted worker.
+- The token is kept in the operating-system keyring. A secure keyring backend is required for headless setups; there is no plaintext fallback.
 
-Necesitas **Python 3.11+**, el código Noble AI, una instalación de cloudflared y un servidor compatible con OpenAI ya ejecutándose localmente en el worker. Por ejemplo, si KoboldCpp está ejecutándose en `127.0.0.1:5001` y publica `/v1/models` y `/v1/chat/completions`, puedes usarlo como upstream.
+## 1. Prepare a second PC or eligible Colab environment
 
-En el equipo GPU, desde la raíz del repositorio:
+You need Python 3.11+, Noble AI source, cloudflared installed separately, and a running OpenAI-compatible inference server on the GPU machine. For example, KoboldCpp at `127.0.0.1:5001` must expose `/v1/models` and `/v1/chat/completions`.
+
+From the repository root:
 
 ```bash
 python -m pip install -r apps/api/requirements.txt
 ```
 
-Establece un token fuerte en una variable **local** (sin pegarlo en issues, terminales compartidas ni celdas públicas):
+Create a strong, private local token. Do not paste it in issues, shared terminals, or public notebook cells.
 
 **Windows PowerShell:**
 
@@ -32,103 +37,84 @@ $env:NOBLE_WORKER_UPSTREAM = 'http://127.0.0.1:5001'
 python -m uvicorn noble_api.worker_server:app --app-dir apps/api --host 127.0.0.1 --port 8765
 ```
 
-**Linux/Colab:** exporta `NOBLE_WORKER_TOKEN` (al menos 24 caracteres, preferentemente aleatorios) y `NOBLE_WORKER_UPSTREAM=http://127.0.0.1:5001`. Ejecuta el mismo comando con Python/Uvicorn dentro del entorno GPU. En Colab necesitas mantener el notebook activo; el runtime gratuito puede suspenderse o desconectarse.
+**Linux/Colab:** export `NOBLE_WORKER_TOKEN` (at least 24 characters; use cryptographically random bytes) and `NOBLE_WORKER_UPSTREAM=http://127.0.0.1:5001`, then run the same Uvicorn command. Colab notebooks need an active session, which can disconnect or terminate.
 
-### 2. Exponer únicamente el proxy
+## 2. Expose only the worker proxy
 
-Con **cloudflared** instalado en el equipo remoto:
+With cloudflared installed on the remote machine:
 
 ```bash
 cloudflared tunnel --url http://127.0.0.1:8765
 ```
 
-Obtendrás una URL como `https://palabras-aleatorias.trycloudflare.com`. No uses la URL directamente del servidor de inferencia ni publiques puertos de Noble AI.
+The tunnel provides a temporary address such as `https://random-words.trycloudflare.com`. Do not use an inference server URL directly and never expose the primary Noble AI API. Quick Tunnel addresses may change after restart; persistent managed tunnels are not part of this release.
 
-Los Quick Tunnels son temporales y pueden cambiar de dirección al reiniciar. Para una instalación persistente, más adelante se añadirá un proveedor con túnel administrado y controles más avanzados.
+## 3. Connect in Noble AI
 
-### 3. Conectar desde Noble AI
+On the primary PC, open **Settings → Network & Workers → Remote GPU Workers**.
 
-En el PC principal: **Configuración → Red y workers → Workers GPU remotos**.
+1. Enter a display name, temporary HTTPS Cloudflare URL, and the token configured on the GPU machine.
+2. Explicitly register the worker.
+3. Select it and test the connection. Check the returned model IDs and the verification that an invalid bearer token is rejected.
+4. Choose a real remote model and activate it as the narrator.
+5. Open Library and generate a story turn. Successful completed turns are stored in local SQLite.
 
-1. Escribe un nombre para identificar el worker, la URL HTTPS de Cloudflare y el token que configuraste en el equipo GPU.
-2. Pulsa **Registrar worker**.
-3. Selecciónalo y pulsa **Probar conexión**. Debe mostrar los modelos anunciados por el servidor remoto y confirmar que se exige token Bearer.
-4. Selecciona un modelo real y pulsa **Usar modelo remoto como narrador**.
-5. Ve a **Biblioteca**. El siguiente turno narrativo usará el worker. Los turnos confirmados se guardan en el SQLite local.
+If the remote service disconnects, Noble AI reports a generation error. It does not silently switch narration to a local GPU. Workers can be removed from the management panel.
 
-Si se cae la sesión remota, Noble AI indica un error al generar; no intenta ejecutar automáticamente el LLM en tu tarjeta local. El registro puede quitarse del panel.
+## Feature support
 
-## Límites de esta versión
-
-| Función | Estado |
+| Feature | Current state |
 |---|---|
-| Registro de URL + token y eliminación | Implementado |
-| Validación de URL `*.trycloudflare.com` y comprobación 401/403 | Implementado |
-| Descubrimiento de IDs de modelos y activación | Implementado |
-| Envío de peticiones LLM streaming a GPU remota | Adaptador implementado y simulado en pruebas |
-| Proxy de inferencia local autenticado | Implementado; pruebas simuladas |
-| Inicio automático Colab / Kaggle | Pendiente |
-| Túneles permanentes con dominio propio | Pendiente |
-| Workers de ComfyUI/imágenes y TTS | Pendiente |
-| Compartir interfaz en LAN o Internet con cuentas y permisos | Pendiente |
-| Inferencia real de modelos grandes y benchmark | Pendiente |
+| Register/remove remote worker URL and token | Implemented |
+| `*.trycloudflare.com` HTTPS validation and 401/403 checks | Implemented |
+| Model ID discovery and narrator selection | Implemented |
+| Remote LLM streaming adapter | Implemented; mocked in automated tests |
+| Authenticated local worker proxy | Implemented; mocked tests |
+| One-click Colab/Kaggle startup | Pending |
+| Permanent custom-domain tunnels | Pending |
+| Remote ComfyUI image/TTS workers | Pending |
+| Full LAN/internet workspace sharing with user accounts | Pending |
+| Real large-model remote benchmark | Pending |
 
-## Seguridad y gastos
+## Privacy and service requirements
 
-Este modo requiere un servicio Cloudflare de terceros que enruta tráfico narrativo y depende de las políticas/cuotas vigentes. Los workers no deben exponer archivos o claves. La aplicación permite solo HTTPS `*.trycloudflare.com` en este primer contrato, no URLs arbitrarias. No se publican claves en respuestas de la API. Nunca subas el token a Git ni a un notebook público.
+The experimental transport depends on the third-party Cloudflare service and its current policies/quotas. Prompts transmitted through the tunnel are not entirely local. Tokens must never be committed to Git, returned in API logs, or stored in public notebooks.
 
-## Referencias
+## Real Colab GPU notebook and benchmarking (P1.2 experimental)
 
-- [Urakatsu — enfoque de workers](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/remote/workers.py) (inspiración conceptual; sin copiar código).
-- [Urakatsu — túneles](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/remote/tunnel.py).
-- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/).
-- Backend: `apps/api/noble_api/workers.py`, `worker_server.py`.
-- Pruebas: `tests/test_workers.py`.
+[Remote worker Colab notebook](../notebooks/noble_worker_colab_gpu.ipynb) · [Open in Google Colab](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_worker_colab_gpu.ipynb).
 
-## Colab GPU real: notebook y benchmark (P1.2 experimental)
+The notebook checks CUDA/NVIDIA state, prepares llama.cpp, obtains a Qwen3 4B GGUF, starts llama-server and the authenticated proxy, opens a temporary tunnel, and runs client-side benchmarks. **A real remote-tunnel GPU benchmark has not been verified here.**
 
-[Notebook para Colab](../notebooks/noble_worker_colab_gpu.ipynb) · [Abrir directamente en Google Colab](https://colab.research.google.com/github/Mairon31/novel_ai/blob/master/notebooks/noble_worker_colab_gpu.ipynb).
+Available metrics include client-observed **TTFT** (request to first actual narrative content, including tunnel overhead), p50/p95 across repeated runs, sampled `nvidia-smi` VRAM/utilization, active/completed/failed job counts, and runtime status. VRAM sampling is not an exact peak. Tokens/s is reported only if the provider returns `completion_tokens`; character counts are not equivalent.
 
-El notebook verifica NVIDIA/CUDA, compila llama.cpp con GPU, descarga Qwen3-4B-Instruct-2507 Q4_K_M, lanza llama-server y el proxy Bearer de Noble AI, crea un túnel HTTPS temporal y ejecuta un benchmark desde el cliente contra esa URL. **No se ha ejecutado aquí con hardware real**; no existe una medición de Colab hasta que se corra el notebook.
+The worker exposes bearer-protected `GET /v1/health`. Noble AI can surface telemetry after a connection test without persisting prompts, replies, credentials, or private worker addresses in the reported metrics.
 
-### Nuevas métricas
-
-- TTFT real: tiempo desde que el cliente solicita texto hasta que recibe el primer contenido narrativo (incluye túnel y proxy), P50/P95 por ensayos.
-- GPU: VRAM utilizada y utilización obtenidas de `nvidia-smi`, muestreadas mientras genera. **No es el pico exacto garantizado**.
-- Estado: motor disponible, solicitudes activas/completadas/fallidas y tiempo medio de los ensayos.
-- Velocidad: solo se informa tokens por segundo si el servidor reporta `completion_tokens`; no se equiparan caracteres a tokens.
-
-El worker ahora ofrece `GET /v1/health`, protegido con el mismo token Bearer. Noble AI muestra esas estadísticas al pulsar **Configuración → Red y workers → Probar conexión**. No se guardan prompts, respuestas, direcciones o credenciales en la telemetría.
-
-Para medir un worker ya registrado, usa una terminal en la PC principal:
+To benchmark an already registered worker from the main PC:
 
 ```bash
-export NOBLE_WORKER_TOKEN="TOKEN_LOCAL"
-python tools/worker_benchmark.py --url https://mi-worker.trycloudflare.com --runs 3 --output informe-worker.json
+export NOBLE_WORKER_TOKEN="LOCAL_PRIVATE_TOKEN"
+python tools/worker_benchmark.py --url https://my-worker.trycloudflare.com --runs 3 --output worker-report.json
 ```
 
-En PowerShell establece `$env:NOBLE_WORKER_TOKEN = "TOKEN_LOCAL"` antes del segundo comando. El benchmark exige rechazo 401/403 ante un token incorrecto, lee el catálogo real, genera escenas de prueba y guarda un JSON con tiempos, errores y VRAM muestreada, sin contenido textual.
+In PowerShell, set `$env:NOBLE_WORKER_TOKEN = "LOCAL_PRIVATE_TOKEN"` before running the Python command.
 
-### Diagnósticos
+The script checks invalid-token rejection, reads live model IDs, submits test requests, and writes JSON containing duration, error counts, and sampled GPU metrics without generated story content.
 
-- Si faltan `nvidia-smi` o `nvcc`, verifica que activaste la GPU en Colab.
-- Si el modelo no inicia, revisa `llama-server.log` y cuantización/contexto.
-- Si `/v1/health` responde 401, comprueba el token; **no publiques directamente el puerto 5001**.
-- Si el túnel desaparece o cambia, vuelve a registrarlo en Noble AI; todavía no hay reconexión automática.
-- En Colab la sesión GPU puede desconectarse. El producto principal seguirá conservando la historia localmente.
+## Quick response test from the UI
 
-Los tests CI de este incremento usan mocks del protocolo y comprueban la sintaxis de las celdas. **No son una prueba real de GPU**.
+After registering, verifying, and selecting a remote model, **Test real response** explicitly requests one short generation without adding it to a story.
 
-## Prueba rápida desde la propia interfaz
+It can return client-to-GPU first-content latency, total duration, character count, available GPU health observations, and clear failure information. This is **one sample**, not a p95 benchmark or exact peak VRAM. For repeated measurements, use the notebook or `tools/worker_benchmark.py`.
 
-Después de registrar, verificar y seleccionar un modelo remoto en **Configuración → Red y workers**, puedes pulsar **Medir respuesta real**. Esta acción ejecuta **una generación corta y explícita** con el modelo de la GPU remota, sin añadir texto a una historia ni guardarlo en SQLite.
+An interrupted streaming response does not commit an incomplete narrative turn. This behavior has been tested with simulated disconnection; real network recovery is still a separate validation requirement.
 
-Devuelve:
-- tiempo del primer fragmento de contenido (TTFT cliente → túnel → GPU),
-- tiempo total de la petición y cantidad de caracteres recibidos,
-- GPU reconocida durante la comprobación previa (si existe telemetría),
-- un estado de error claro si falla la inferencia.
+## Troubleshooting
 
-Esta medición representa **una única generación**, no un promedio ni un pico exacto de VRAM. Para múltiples repeticiones P50/P95, VRAM muestreada y evidencia en JSON utiliza el notebook de Colab o `tools/worker_benchmark.py`.
+- Missing `nvidia-smi` or `nvcc`: check that a GPU runtime is actually allocated.
+- Model cannot start: inspect `llama-server.log`, quantization, and context.
+- HTTP 401 from `/v1/health`: recheck the bearer token; never publish port 5001 directly.
+- Tunnel URL changed or disappeared: re-register it, since automatic reconnection is not available.
+- Colab runtime expired: the primary PC still retains the saved local story.
 
-Si una conexión falla después de empezar a transmitir, el turno incompleto **no se confirma** en el historial. La siguiente intervención puede reintentarse después de recuperar la conexión. Esa recuperación está probada con una desconexión simulada; no sustituye ensayos de red reales.
+**Code and references:** `apps/api/noble_api/workers.py`, `worker_server.py`, `tests/test_workers.py`, [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/), and the concept references [Urakatsu workers](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/remote/workers.py) and [tunnels](https://github.com/karrot0/Urakatsu/blob/main/urakatsu/remote/tunnel.py). Upstream implementations were not copied.
