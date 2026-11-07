@@ -359,7 +359,7 @@ class CheckpointInstaller:
                 # Atomic creation that never replaces a file created by
                 # another process between our exists() check and publication.
                 # Staging and destination share Noble's own model filesystem.
-                os.link(part, target, follow_symlinks=False)
+                os.link(part, target)
                 part.unlink()
                 with self.store._conn() as db:
                     db.execute("""UPDATE image_checkpoint_downloads
