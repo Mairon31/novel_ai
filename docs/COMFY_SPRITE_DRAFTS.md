@@ -1,79 +1,104 @@
-# Noble AI — Borradores de expresiones IA con ComfyUI
+# Noble AI — ComfyUI AI expression drafts
 
-## Alcance
+## Scope
 
-Generación **a petición del autor** de cinco retratos de un NPC: `neutral`, `joy`, `anger`, `sadness`, `surprise`. Cada expresión se genera por separado y se guarda como borrador revisable. **Nada se publica al lector hasta aprobar las cinco**. No se inicia inferencia en segundo plano durante conversaciones. El generador usa el ComfyUI local ya configurado en Imágenes y voz; no instala modelos ni ejecuta nodos remotos.
+Creators can explicitly request five portraits for one NPC: `neutral`, `joy`, `anger`, `sadness`, `surprise`. Each is generated independently as a **reviewable draft**. **Nothing becomes available to the reader until all five are approved.**
 
-## Uso en Creator Studio
+The workflow uses the configured local ComfyUI runtime. It never silently starts inference in response to a story turn, installs model weights, or runs arbitrary remote nodes.
 
-1. Configura y arranca ComfyUI con un checkpoint activo desde **Ajustes → Imágenes y voz**. En Creator Studio, crea un NPC con `visual_dna.tags` y `visual_dna.seed` si quieres mantener atributos/semilla constantes; opcionalmente asocia un LoRA `.safetensors` instalado y su intensidad.
-2. En **Imágenes → Generar expresiones con IA**, selecciona el NPC, escribe contexto (para la selección determinista posterior del lector), pose y estilo. Opcionalmente especifica otra semilla, una ilustración de referencia ya perteneciente a Galería (activa img2img) y el LoRA del NPC.
-3. Haz clic en **Preparar borrador de cinco expresiones**. No se usa GPU aún. **Generar faltantes** ejecuta secuencialmente las solicitudes pendientes; también puedes generar o regenerar cada expresión de forma individual. El botón informará el slot en curso. Si uno falla, los anteriores quedan intactos.
-4. Revisa las cinco imágenes PNG transparentes, bordes del cabello, ausencia de personajes extra, ropa, poses y consistencia del NPC. Puedes regenerar slots sin perder otras variantes. Cuando las cinco estén aceptables, pulsa **Aprobar cinco expresiones**. Las cinco se importan transaccionalmente como `foreground` de Creator; el lector puede seleccionarlas sin activar ComfyUI.
-5. Un borrador no aprobado se puede descartar y puede retomarse después de recargar; caduca tras 48 horas de inactividad. Máximo tres borradores simultáneos por historia.
+## Creator Studio workflow
 
-## Calidad y transparencia
+1. Configure and start an existing compatible ComfyUI with an active checkpoint from **Settings → Images**. In Creator Studio create an NPC with `visual_dna.tags` and optionally `visual_dna.seed`; an installed `.safetensors` LoRA may be associated if compatible.
+2. Open **Images → Generate expressions with AI**. Choose the NPC, scene context for later deterministic selection, pose, style, optional seed override, optional gallery reference (img2img), and optional NPC LoRA.
+3. Click **Prepare five-expression draft**. This step does not use GPU. **Generate missing** requests remaining slots sequentially; individual slots can also be regenerated without deleting the others.
+4. Inspect five transparent PNGs for hair borders, stray figures, outfit, pose, facial coherence, and scale. Only when acceptable, choose **Approve five expressions**. Publication is transactional; the reader can use those assets without launching ComfyUI.
+5. Drafts persist across reload and can be discarded. The cap is three drafts per story; inactive drafts expire after 48 hours.
 
-El workflow estándar de ComfyUI genera imágenes opacas. Noble solicita un solo personaje aislado sobre un croma verde muy uniforme. `sprite_cutout.transparent_sprite` decodifica la salida, comprueba tamaño, contorno dentro del lienzo, croma de bordes y cobertura; elimina solo los componentes verdes conectados al fondo exterior. Si ComfyUI ya devuelve alfa real, se valida su cobertura y contorno. Los resultados dudosos se rechazan con error explícito. **No se trata de segmentación neuronal:** modelos que generen interiores, gradientes, cabello verde, múltiples figuras, sombras complejas o siluetas recortadas pueden necesitar regeneración o importación manual.
+## Transparency and quality
 
-La semilla es compartida entre expresiones, pero las cinco condiciones de expresión alteran el prompt; una semilla estable ni LoRA global **garantizan** preservar el mismo rostro. Una referencia img2img conserva parcialmente composición pero puede dificultar el croma. El sistema evita prometer consistencia perfecta y requiere revisión visual humana.
+The default ComfyUI graph produces opaque images. Noble AI asks for a single isolated character on a consistent chroma-green background. `sprite_cutout.transparent_sprite` validates dimensions, silhouette margins, corner/border chroma and coverage, removing green regions connected to the outer background. Real alpha returned by an upstream PNG is validated instead of being discarded.
 
-## Estado duradero y protección
+This is **not neural segmentation**. Green clothing/hair, internal green spaces, gradients, extra figures, complex shadows, or crops may require regeneration or manual import. Suspicious candidates must fail visibly rather than be published.
 
-- SQLite `sprite_drafts`: UUID, historia/NPC, snapshot de configuración, cinco slots y fechas de actividad.
-- Archivos temporales `sprite-drafts/<story-id>/<draft-id>/<expression>-<uuid>.png`, separados del árbol de archivos publicados y de backups `.noble.zip`.
-- Un candado global comparte ComfyUI con ilustraciones normales y una reserva GPU opcional; no hay cinco generaciones paralelas ni una cola oculta. Faltan pruebas físicas de VRAM.
-- `approve` compone una hoja horizontal RGBA, valida las cinco celdas y llama `CreatorMediaService.import_expression_sheet`. En caso de falla, mantiene los borradores anteriores para reintentar.
-- Una imagen aprobada conserva `source=ai_reviewed` y `generation_json` por expresión: checkpoint, seed, LoRA, SHA256 del prompt, método de recorte y aprobación. Archivos anteriores conservan origen `manual`. Una bifurcación o respaldo copia los activos publicados y su procedencia, no las vistas previas sin aprobar.
+Sharing a seed across expressions and using a LoRA **does not guarantee the same face**. Expression-specific prompts still vary, and an img2img reference can preserve composition while interfering with chroma extraction. Human review remains mandatory.
 
-## QA
+## Durable draft state and publication
 
-La CI usa transporte ComfyUI simulado, Pillow para pruebas de transparencia, SQLite real y Playwright escritorio/móvil. No prueba un checkpoint físico, calidad visual real, continuidad facial ni la instalación de LoRA en la GPU. Ver `tests/test_sprite_cutout.py`, `tests/test_sprite_drafts.py`, `tests/test_sprite_provenance.py` y `apps/web/tests/sprite-drafts.spec.ts`.
+- SQLite `sprite_drafts`: UUID, story/NPC association, settings snapshot, five slots, timestamps.
+- Temporary files: `sprite-drafts/<story-id>/<draft-id>/<expression>-<uuid>.png`. These are distinct from published `story-assets` and excluded from `.noble.zip` archives.
+- A shared ComfyUI lock and optional GPU admission reserve prevent five parallel jobs; real physical VRAM budgets still require measurement.
+- `approve` assembles a horizontal RGBA sheet, validates each cell, and calls `CreatorMediaService.import_expression_sheet`. On failure, existing drafts remain available for retry.
+- Published expression assets contain `source=ai_reviewed` and `generation_json` including checkpoint, seed, LoRA, prompt SHA-256, extraction method, and approval. Manual imports retain `source=manual`. Forks/backups copy approved media and metadata only.
 
-### Endurecimiento del protocolo de difusión
+## Tests and evidence
 
-Los nombres/ID recibidos de ComfyUI se validan antes de componer rutas `/history` o consultas `/view`. La plantilla propia de `SaveImage` no necesita subcarpetas, por lo que se rechazan respuestas con rutas arbitrarias. El archivo se obtiene únicamente por HTTP desde el loopback configurado; no hay lectura local de rutas indicadas por el proveedor.
+CI uses simulated ComfyUI HTTP responses, real SQLite/Pillow, and desktop/mobile Playwright. It does **not** establish the quality of generated sprites, identity preservation, real checkpoint compatibility, or GPU memory use.
 
-### Resultado de aceptación de esta versión
+Tests: `tests/test_sprite_cutout.py`, `tests/test_sprite_drafts.py`, `tests/test_sprite_provenance.py`, and `apps/web/tests/sprite-drafts.spec.ts`.
 
-[GitHub Actions #42152514498](https://github.com/Mairon31/novel_ai/actions/runs/42152514498): 283/283 pruebas Python y 64/64 Playwright (desktop/móvil) aprobadas, además de build Vite. La ejecución utiliza un proveedor ComfyUI simulado; no hay validación física de generación o extracción de fondos en una GPU.
+### Hardened diffusion protocol
 
-## Referencias de identidad con IPAdapter Plus
+ComfyUI-provided IDs and filenames are validated before constructing `/history` and `/view` requests. Noble AI's `SaveImage` workflow does not require arbitrary subfolders, so responses containing unapproved paths are rejected. Images are fetched only through the configured loopback HTTP service; no filesystem reads are performed at paths supplied by ComfyUI.
 
-El creador puede escoger `Modo de referencia → img2img` (composición del input) o `IPAdapter` (rasgos guía sobre una composición nueva). Las fuentes son **una imagen de Galería** de la historia o un **sprite aprobado y perteneciente al mismo NPC**, nunca ambas. Para IPAdapter, es obligatorio seleccionar alguna. El selector del editor ofrece `STANDARD`, `PLUS` y `PLUS FACE`, además de un peso de 0.1–1.5. ComfyUI debe disponer del complemento compatible [IPAdapter Plus](https://github.com/comfyorg/comfyui-ipadapter), sus nodos `IPAdapterUnifiedLoader` e `IPAdapter`, modelos IPAdapter y CLIP Vision para la familia del checkpoint; `Verificar IPAdapter instalado` consulta su presencia sin generar ni descargar nada.
+### Original implementation milestone
 
-Al generar, el backend comprueba que ambos nodos anuncien sus entradas correctas y el preset exista en el catálogo. Si faltan los nodos o modelos, devuelve un error **antes** de enviar el grafo a `/prompt`. La referencia se prepara como PNG RGB con bordes neutrales sin recortar el personaje. El modelo se conecta `Checkpoint → (LoRA opcional) → IPAdapterUnifiedLoader → IPAdapter → KSampler`, sin VAEEncode en este modo. Esto no es FaceID ni control de regiones; el resultado requiere comparación facial humana. Al aprobar, la procedencia incluye `comfy-sprite-v2-ipadapter`, preset/peso y SHA256 de la referencia. Cambiar o borrar el sprite de referencia después de crear el borrador provoca rechazo, nunca sustitución por otra imagen.
+[GitHub Actions #42152514498](https://github.com/Mairon31/novel_ai/actions/runs/42152514498): **283 Python / 64 Playwright / Vite PASS** with mocked ComfyUI. Physical image generation and cutout quality remain unverified.
 
-## Revisión de continuidad de la silueta
+## IPAdapter Plus identity reference
 
-Además de validar el croma de cada candidato, Noble compara la escala y el centro del rectángulo alfa de las cinco variantes. Muestra avisos de diferencias fuertes. Si los hay, **Aprobar cinco expresiones** queda desactivado hasta marcar que revisaste y aceptas las diferencias; la API también exige `accept_alignment_warnings=true` explícito. En aprobación se revisan de nuevo las cinco imágenes, comprobando el SHA256 guardado para evitar publicar un PNG alterado desde que se generó. Estas alarmas son geométricas: pueden detectar una silueta desplazada o con tamaño muy distinto, **no** garantizan que el rostro, ojos, vestuario o edad coincidan.
+Creators can select **Reference mode → img2img** (reuse composition) or **IPAdapter** (guide a new scene from a reference). The source must be **either** a gallery image from the current story **or** an approved sprite belonging to the same NPC, not both. IPAdapter requires an explicit source.
 
-### Gates de aceptación completadas
+Supported presets: `STANDARD`, `PLUS`, `PLUS FACE`; weight range **0.1–1.5**. Compatible [IPAdapter Plus](https://github.com/comfyorg/comfyui-ipadapter) nodes, `IPAdapterUnifiedLoader`, `IPAdapter`, IPAdapter model files, and matching CLIP Vision assets must exist in ComfyUI for the checkpoint family.
 
-La funcionalidad IPAdapter de NPC y el editor (sin gate de siluetas) obtuvieron [CI #42155018903](https://github.com/Mairon31/novel_ai/actions/runs/42155018903): **298 Python y 66 Playwright PASS**. La revisión de desplazamiento/escala y validación SHA256 de cada preview obtuvo [CI #42155457588](https://github.com/Mairon31/novel_ai/actions/runs/42155457588): **307 Python y 66 Playwright PASS**, ambos con compilación Vite. Son regresiones HTTP simuladas; ni una CI puede afirmar que el checkpoint físico produzca rostro coherente o que los pesos IPAdapter estén instalados y sean compatibles.
+**Check installed IPAdapter** inspects capabilities without downloading or generating. On generation, the backend validates advertised node inputs and preset availability before calling `/prompt`. References are normalized as RGB PNG with neutral borders. The graph connects:
 
-## Recorte neuronal opcional (RMBG-2.0 y BiRefNet)
+```text
+Checkpoint → optional LoRA → IPAdapterUnifiedLoader → IPAdapter → KSampler
+```
 
-**Creator Studio → Imágenes → Recorte de fondo para sprites IA** ofrece cuatro métodos:
+This mode does not use `VAEEncode`, FaceID, or region masks. Human face comparison is still needed. Approved provenance includes `comfy-sprite-v2-ipadapter`, preset/weight, and reference SHA-256. If the referenced source is changed or deleted before generation, the request is rejected rather than silently using a substitute.
 
-- **Fondo verde** (`chroma_green`, predeterminado): algoritmo local de croma, sin red neuronal adicional. El prompt exige un fondo verde uniforme; puede fallar con ropa/cabello verdes o sombras y exige bordes despejados.
-- **RMBG-2.0** (`neural_rmbg2`): nodo `RMBG` del complemento [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG), con el modelo `RMBG-2.0`.
-- **BiRefNet Portrait** (`neural_birefnet_portrait`) y **BiRefNet Matting** (`neural_birefnet_matting`): nodo `BiRefNetRMBG` y sus modelos especializados.
+## Silhouette continuity review
 
-El método se fija al crear cada borrador, junto con ADN visual, seed, LoRA y referencia opcionales. El prompt de modos neuronales solicita fondo neutro simple, sin prohibir ropa verde. No se ejecuta ninguna inferencia al crear el borrador ni al verificar el estado. El botón **Comprobar modelos de recorte** consulta `/object_info/RMBG`, `/object_info/BiRefNetRMBG`, `/object_info/MaskToImage` y `/models/rmbg`; inspecciona las entradas reales de nodos y exige todos los archivos de modelo registrados por ComfyUI (código auxiliar, configuración y pesos). Si no están expuestos, devuelve un diagnóstico concreto y la solicitud de generación falla antes de enviar el trabajo. **Noble no instala ni descarga pesos**. El plugin RMBG de terceros podría ofrecer descargas si se invoca fuera de este flujo; aquí Noble no llama a su nodo sin confirmar primero el inventario.
+Noble AI compares alpha bounding-box center and scale across all five variants and flags large differences. Approval is disabled until the creator explicitly accepts discrepancies using `accept_alignment_warnings=true` or regenerates outliers. The API rechecks each PNG against its saved SHA-256 at approval to prevent publishing a modified preview.
 
-### Transparencia a partir de dos salidas de un mismo trabajo
+Geometry warnings can identify significant shifts but **cannot certify** matching face, eyes, outfit, or apparent character age.
 
-El workflow mantiene `VAEDecode(6)`, conecta `RMBG/BiRefNetRMBG(23)` a esa imagen, guarda la imagen procesada en `SaveImage(7)` y convierte la salida MASK en una segunda imagen PNG `MaskToImage(24) → SaveImage(25)`. **Ambas salen del mismo ID `/prompt`**; si falta cualquiera, no se publica nada. Noble descarga exclusivamente esas dos salidas bajo el endpoint loopback configurado y valida IDs, nombres, tipos y subcarpetas antes de recuperar recursos. La segunda imagen se interpreta como alfa gris real; Pillow crea un PNG RGBA a partir de los píxeles de la imagen procesada y la máscara. Esto evita depender de que `SaveImage` preserve el alfa de un tensor de cuatro canales. Se conservan los valores suaves de pelo/bordes en vez de binarizar toda la máscara.
+### Evidence for IPAdapter and geometry milestones
 
-El validador rechaza entradas mayores de 12 MiB, formatos inesperados, máscaras con dimensiones diferentes, fondos con alfa mayoritario, máscaras vacías o invertidas, coberturas implausibles y contornos que toquen el borde de forma importante. El resultado conserva la propiedad editorial y la revisión de geometría de las cinco expresiones. No se ofrece un fallback silencioso al croma.
+- [CI #42155018903](https://github.com/Mairon31/novel_ai/actions/runs/42155018903): **298 Python / 66 Playwright PASS**, IPAdapter editor/integration (without silhouette gate).
+- [CI #42155457588](https://github.com/Mairon31/novel_ai/actions/runs/42155457588): **307 Python / 66 Playwright PASS**, geometry warnings and preview SHA-256 validation.
+- Both built Vite successfully with simulated ComfyUI transport. Neither proves installed physical IPAdapter weights or repeatable facial identity.
 
-### Proveniencia y límites
+## Optional neural background extraction
 
-Los sprites aprobados por recorte neuronal guardan `quality.method=neural_rmbg|neural_birefnet` y el objeto `matting:{mode,model}`. Si no usaron IPAdapter, la versión es `comfy-sprite-v3-matting`; al combinar ambos se usa `comfy-sprite-v4-matting-ipadapter`. Los respaldos `.noble.zip` y bifurcaciones conservan estos datos y rechazan variantes alteradas. Versiones v1/v2 y archivos manuales siguen siendo válidos.
+The AI sprite cutout controls support four modes:
 
-Los tests emulan las respuestas de ComfyUI y comprueban composición, máscaras inválidas, rutas, catálogo de pesos y UI, pero no demuestran que un checkpoint concreto y el modelo RMBG estén instalados o produzcan buena segmentación. La VRAM y la fidelidad de bordes/peinados deben medirse con un ensayo físico antes de recomendar un preset para hardware determinado.
+| Mode | Identifier | Required runtime |
+|---|---|---|
+| **Green screen** | `chroma_green` | Local chroma extraction; no extra neural weights |
+| **RMBG-2.0** | `neural_rmbg2` | `RMBG` node from [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG) with `RMBG-2.0` |
+| **BiRefNet Portrait** | `neural_birefnet_portrait` | `BiRefNetRMBG` node and Portrait model |
+| **BiRefNet Matting** | `neural_birefnet_matting` | `BiRefNetRMBG` node and Matting model |
 
-### Gate de implementación neuronal
+The selected method is captured at draft creation alongside visual DNA, seed, LoRA, and optional reference. Green screen requests a uniform chroma background; neural modes ask for a simple neutral background and need not prohibit green clothing.
 
-[GitHub Actions #42158275044](https://github.com/Mairon31/novel_ai/actions/runs/42158275044) del commit `63db653c`: **326 Python, 66 Playwright escritorio/móvil y compilación Vite aprobadas**. Las pruebas cubren el grafo IMAGE/MASK, ausencia de salida secundaria, inventario de modelos, no-fallback, alfa real y procedencia v3/v4 con IPAdapter. **El resultado todavía no certifica funcionamiento con una instalación física de ComfyUI-RMBG**; la inspección visual del pelo fino y la VRAM quedan pendientes.
+**Check cutout models** probes `/object_info/RMBG`, `/object_info/BiRefNetRMBG`, `/object_info/MaskToImage`, and `/models/rmbg`, validating actual node inputs and registered supporting code/config/weights. No generation/download occurs while checking. Missing models produce diagnostics, and generation fails **before** submitting a graph. Noble AI does not install these weights; a third-party ComfyUI extension may have independent download behavior outside this guarded flow.
+
+### Two outputs from one render
+
+The neural graph keeps `VAEDecode(6)`, passes its image through `RMBG/BiRefNetRMBG(23)`, saves the processed image via `SaveImage(7)`, and converts the returned MASK into a separate PNG through `MaskToImage(24) → SaveImage(25)`.
+
+**Both outputs must come from the same `/prompt` job**. If either is missing, no result is published. Noble AI retrieves both through the configured loopback URL after validating IDs, filenames, file types and subfolders. Pillow composes an RGBA PNG using RGB from the processed image and the real gray mask; soft hair/edge alpha is retained instead of binarizing the entire mask.
+
+Reject: files larger than 12 MiB, unexpected formats, mismatched mask dimensions, inverted/empty masks, implausible coverage, opaque-dominant backgrounds, or silhouettes touching critical canvas edges. No silent chroma fallback. Normal story ownership, five-expression review and geometry gates still apply.
+
+### Provenance and limits
+
+Neural cutouts record `quality.method=neural_rmbg|neural_birefnet` with `matting:{mode,model}`. Without IPAdapter, workflow version is `comfy-sprite-v3-matting`; combining them yields `comfy-sprite-v4-matting-ipadapter`. Forks and `.noble.zip` archives preserve and validate provenance. v1/v2/manual assets stay compatible.
+
+Automated tests cover graph routing, secondary output requirements, invalid masks/path handling, weight inventory, UI controls, and provenance—not real model installation, image quality, or hardware fit. Measure actual segmentation and VRAM before recommending a mode for a specific GPU.
+
+### Neural implementation milestone
+
+[GitHub Actions #42158275044](https://github.com/Mairon31/novel_ai/actions/runs/42158275044), commit `63db653c`: **326 Python / 66 desktop+mobile Playwright / Vite PASS**. The test suite exercised the IMAGE/MASK graph, absent secondary output, model inventory, no-fallback behavior, alpha quality checks, and v3/v4 provenance with IPAdapter. **Real ComfyUI-RMBG generation and fine-hair inspection remain unverified.**

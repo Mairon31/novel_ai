@@ -1,78 +1,97 @@
-# Noble AI — Medios visuales para autores
+# Noble AI — visual assets for creators
 
-El módulo Creator Studio → Imágenes permite componer una novela visual utilizando archivos del creador, sin cargar ComfyUI ni otro modelo para elegir la ilustración.
+Creator Studio → Images lets authors assemble visual novel scenes using their own media without loading ComfyUI or another model merely to select existing artwork.
 
-## Importación
+## Import files
 
-Abre Creator Studio, elige un proyecto y entra en Imágenes. Selecciona Portada editorial, Fondo de escenario o Personaje / primer plano. Escribe un nombre y una descripción breve (caption), como «castillo iluminado en la ciudad» o «Aira sonríe en el castillo». Puedes vincular el retrato a un NPC de la misma historia.
+Choose a project in Creator Studio and open **Images**. Select **Editorial Cover**, **Scene Background**, or **Character / Foreground**. Provide a label and descriptive caption, such as "illuminated castle at night" or "Aira smiling at the castle". A foreground image may optionally be associated with an NPC from the same story.
 
-Los archivos admitidos son PNG, JPEG y WebP hasta 12 MiB. Se comprueba la imagen con Pillow y se limita la resolución. La portada y el fondo quedan como WebP RGB y el primer plano como PNG RGBA para conservar la transparencia.
+Supported formats: PNG, JPEG, and WebP up to 12 MiB. Pillow validates image data and resolution limits. Covers and backgrounds are converted to RGB WebP; foreground images are stored as RGBA PNG to retain transparency.
 
-## Portada de la historia
+## Story covers
 
-Una portada es un recurso editorial independiente de las imágenes que genera o selecciona el narrador. Al importar una imagen como `Portada editorial`, Creator Studio la elige para esa historia. Puedes subir varias, marcar otra con `Usar como portada` o desvincularla mediante `Quitar portada` sin borrar la historia.
+A story cover is a distinct editorial asset, not a scene automatically generated or selected by the narrator. Import a **Cover** asset, upload alternatives, choose **Use as cover**, or clear the association without deleting the story.
 
-La Biblioteca y la ficha de historia muestran `cover_image_url` cuando está disponible. En historias sin portada se sigue usando el arte de escena anterior como alternativa, sin pérdida de contenido. La selección se conserva en SQLite como `stories.cover_asset_id`; durante un fork se clona el archivo y se remapea a un ID propio de la nueva historia. Eliminar el archivo que está seleccionado desactiva la portada para esa historia. Las portadas no forman parte de la detección de escenas del lector.
+Library and story detail use `cover_image_url` when available and fall back to existing scene artwork when there is no cover. The selection persists as `stories.cover_asset_id`. A story fork clones the underlying media into new asset IDs and remaps the cover reference. Deleting the active cover clears its association. Covers do **not** participate in scene matching.
 
-## Selección durante la lectura
+## Selection during reading
 
-El lector consulta una ruta específica de presentación que examina la ubicación actual y el texto del último turno narrado. Compara palabras completas, requiere coincidencias múltiples en captions descriptivas y exige que un NPC vinculado aparezca explícitamente en la narración. Cuando coincide un fondo, se muestra en el escenario. Cuando coincide un primer plano, se superpone sobre él. Si no hay coincidencia, conserva la ilustración de historia ya existente o la escena vacía.
+The reader queries a dedicated presentation endpoint using current location and the most recent saved narrative turn. It compares whole words, requires several matches for descriptive captions, and accepts an NPC-linked foreground only if that NPC is explicitly present in the narration. A matching background becomes the current scene; a matching foreground is layered on top.
 
-La operación usa archivos locales guardados. No solicita generación ni descarga de modelos, y no envía automáticamente la narración a terceros. La coincidencia lexical todavía puede fallar con sinónimos o expresiones ambiguas; no constituye clasificación semántica.
+If nothing matches, the existing story illustration or an empty stage remains. The selector reads locally stored assets; it does not call a generation service, download models, or send narration to external providers. Lexical matching may miss synonyms/ambiguous descriptions and must not be misrepresented as robust semantic classification.
 
-## API
+## API and persistence
 
-- GET /api/v1/stories/{id}/creator/assets — lista de recursos y URLs.
-- POST /api/v1/stories/{id}/creator/assets — multipart con kind, label, caption, file y character_id opcional.
-- PUT /api/v1/stories/{id}/creator/cover — selecciona o quita la portada con `{"asset_id":"uuid"}` o `{"asset_id":null}`.
-- GET /api/v1/stories/{id}/creator/assets/scene — background, foreground y selection.
-- GET /api/v1/stories/{id}/creator/assets/{asset_id}/file — entrega el archivo validado según su historia.
-- PUT /api/v1/stories/{id}/creator/assets/{asset_id} — actualiza nombre y caption.
-- DELETE /api/v1/stories/{id}/creator/assets/{asset_id} — elimina el recurso.
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/v1/stories/{id}/creator/assets` | List assets and URLs |
+| POST | `/api/v1/stories/{id}/creator/assets` | Multipart `kind`, `label`, `caption`, `file`, optional `character_id` |
+| PUT | `/api/v1/stories/{id}/creator/cover` | Set `{"asset_id":"uuid"}` or clear `{"asset_id":null}` |
+| GET | `/api/v1/stories/{id}/creator/assets/scene` | Resolve background, foreground, and selection |
+| GET | `/api/v1/stories/{id}/creator/assets/{asset_id}/file` | Stream validated story-owned file |
+| PUT | `/api/v1/stories/{id}/creator/assets/{asset_id}` | Update label and caption |
+| DELETE | `/api/v1/stories/{id}/creator/assets/{asset_id}` | Remove owned asset |
 
-Tablas SQLite: creator_media_assets y stories.cover_asset_id. Al crear una rama se copian los archivos con UUID propios y se remapean tanto la asociación del personaje como la portada.
+SQLite uses `creator_media_assets` and `stories.cover_asset_id`. Forks copy files with new UUIDs and remap linked NPCs and cover selection.
 
-## Próximas mejoras de este módulo
+## Image compositor and planned enhancements
 
-Compositor de hasta tres NPC y variantes por expresión/pose ya implementado. Siguen pendientes generación IA de hojas, selección manual avanzada de posición, rig 2D, recorte del fondo automático y validación visual de identidad en imágenes generadas. El diseño usa principios generales documentados por Isekai Zero, sin tomar sus recursos de imagen.
+The staged compositor can place up to three NPCs using pose/expression variants. More advanced positioning, 2D rigging, automatic cutouts, real model visual-identity evaluation, and editorial image-generation improvements remain in the backlog. These are Noble AI implementations inspired by general VN interaction principles, not imported Isekai Zero image assets.
 
-## Seguridad y evolución según auditoría Argon (2026-11-05)
+## Argon audit: security and evolution (November 5, 2026)
 
-- **Endurecimiento implementado en `master`:** los paths de recursos exigen UUID canónicos, tipo válido y directorio resuelto dentro del espacio administrado. Los enlaces simbólicos que desvíen archivos fuera de `story-assets` son rechazados, incluidos al acceder a registros antiguos importados. Ver `tests/test_creator_media.py::test_owned_asset_paths_reject_traversal_and_symlinked_directories` y [CI](https://github.com/Mairon31/novel_ai/actions/runs/41994792794).
-- **Fase P1:** asociar a cada personaje una hoja de expresiones `neutral/joy/anger/sadness/surprise` con IDs de assets, poses y metadatos; separar portada, fondo, sprite y CG, manteniendo referencias al ramificar.
-- **Fase P2:** importación/exportación de Character Card PNG V2/V3 (`chara`/`ccv3`), drag-and-drop, campos mapeados, Lorebook incrustado y límites de bytes/chunks; no ejecutar scripts ni suponer que un PNG contiene JSON seguro.
-- **Validación:** pruebas de permisos de historia, symlink, traversal, clonación, borrado seguro, roundtrip de tarjetas y reproducción de la misma expresión sin llamar a la GPU.
+**Already hardened on `master`:** all asset paths use canonical UUIDs and valid types and resolve inside managed storage. Symlinks escaping `story-assets` are rejected, including when reading imported legacy rows. Evidence: `tests/test_creator_media.py::test_owned_asset_paths_reject_traversal_and_symlinked_directories` and [CI #41994792794](https://github.com/Mairon31/novel_ai/actions/runs/41994792794).
 
-Seguimiento: [TODO](../TODO.md), [auditoría §§08, 12, 16](ARGON_AUDITORIA.md).
+Further requirements:
 
-## Identidad visual y hojas de expresiones importadas (2026-11-05/06)
+- **P1:** per-character sheets for `neutral/joy/anger/sadness/surprise`, with asset IDs, pose, metadata, and separate cover/background/sprite/CG types. Preserve mappings across forks.
+- **P2:** Character Card PNG V2/V3 import/export (`chara`, `ccv3`) with drag-and-drop, mapped fields, embedded Lorebooks, and strict byte/chunk limits. Never execute embedded scripts or trust arbitrary PNG JSON.
+- **QA:** story ownership, symlink/traversal prevention, branching and safe delete, card roundtrip, and reusing the same expression without inference.
 
-En **Creator Studio → Personajes** se configura `visual_dna` independiente de la personalidad del narrador. Sus etiquetas normalizadas y semilla se fijan al guardarlas (si no estaban establecidas); los modelos LoRA se registran por nombre sin ruta y peso y solo se aplican en peticiones ComfyUI que el autor habilita explícitamente (galería o borradores de sprites). Los datos viajan como parte del JSON de cada NPC en el canon, instantáneas, bifurcaciones y backups existentes.
+See [TODO](../TODO.md), [Argon audit](ARGON_AUDITORIA.md), and related [QA](QA_Y_ACEPTACION.md).
 
-**Importación de hoja**: en **Creator Studio → Imágenes**, selecciona el NPC, describe el contexto de la escena, elige pose y una fila de cinco (1 × 5) o columna de cinco (5 × 1). El PNG/WebP debe ser transparente, con cinco celdas de tamaño igual y ninguna celda vacía; orden: neutral → alegría → enojo → tristeza → sorpresa. Se crean cinco PNG RGBA y metadatos `foreground` asociados al NPC de la misma historia. Puedes importar otra hoja para otra pose sin sustituir la primera. Los archivos se preparan antes de insertar el conjunto en SQLite; un fallo SQL revierte los registros y elimina los archivos de esta operación.
+## Visual DNA and manually imported expression sheets
 
-Ruta: `POST /api/v1/stories/{id}/creator/characters/{character_id}/expression-sheet` (multipart `caption`, `pose`, `layout`, `file`). Respuesta `201` con `assets[]` y `count:5`. La selección de variante por el lector continúa siendo heurística y necesita captions compatibles con el texto narrado. Importar no genera recursos con IA ni garantiza consistencia artística entre dibujos distintos.
+Under **Creator Studio → Characters**, `visual_dna` is separate from narrative personality. Normalized tags and seed are fixed when saved if missing. Optional LoRA filename and strength are stored without arbitrary paths; they apply only when the creator explicitly opts into a relevant ComfyUI request. These fields follow NPC records through canon, snapshots, forks, and backups.
 
-### Vinculación de NPC a fichas visuales
+**Expression-sheet import:** under Images, select the NPC, scene context, and pose, then upload a transparent PNG/WebP arranged as five equal cells in a row (`1x5`) or column (`5x1`). Every cell must contain content, in order: **neutral → joy → anger → sadness → surprise**. Import creates five RGBA PNG foreground assets associated with the NPC. Another sheet for another pose can coexist without overwriting the first.
 
-La sección **Personajes** ofrece el selector **Ficha visual vinculada**. Esta ficha pertenece a la Galería de la misma historia; su UUID une el NPC narrativo con el personaje del plan de escena. Cuando un autor utiliza un elenco explícito, la guía textual de ADN solo se añade a esos UUID vinculados y presentes; una coincidencia del nombre por sí sola no introduce otro personaje. El enlace no genera arte ni instala LoRA.
+Files are prepared before SQLite insertion; any SQL failure rolls back the records and deletes files created by the failed operation. API:
+`POST /api/v1/stories/{id}/creator/characters/{character_id}/expression-sheet`
+(multipart `caption`, `pose`, `layout`, `file`), response 201 with `assets[]` and `count:5`.
 
-## LoRAs de NPC para nuevas ilustraciones
+Reader selection remains heuristic and depends on matching captions and text. Importing does not generate AI artwork or prove images of the character are visually consistent.
 
-Desde Personajes, especifica un nombre de LoRA simple (`.safetensors`) y su intensidad; enlaza la ficha visual cuando el reparto de escena use UUID. El lector puede consultar los archivos que ComfyUI reconoce y activar manualmente la carga de hasta tres LoRAs por ilustración. Al avanzar turnos o cambiar de historia no se ejecuta difusión. Los resultados conservan sus LoRAs/intensidades en la galería. [Detalles](COMFY_LORAS.md).
+### Link NPCs with visual-character records
 
-## Hojas IA de cinco expresiones con aprobación previa
+The **Linked visual character** control under Characters selects a gallery visual-character record owned by the same story. Its UUID links a narrative NPC to the cast item in a scene plan. When the creator explicitly supplies a cast, visual-DNA descriptions are applied only to linked and present UUIDs. Matching a name alone must not inject another unrelated character. Linking does not render art or install LoRA.
 
-La importación manual continúa sin depender de GPU. Como opción adicional, **Creator Studio → Imágenes → Generar expresiones con IA** crea borradores por NPC con semilla compartida (prioriza `visual_dna.seed`), estilo, pose, contexto, LoRA opcional y referencia visual propia de Galería por img2img. Cada botón **Generar** invoca un solo workflow ComfyUI; **Generar faltantes** ejecuta las solicitudes secuencialmente. Si una expresión no pasa el recorte a PNG transparente (fondo verde continuo, márgenes, cobertura de silueta), se rechaza ese candidato y se mantiene cualquier versión de borrador anterior.
+## NPC LoRAs for future illustrations
 
-Los borradores quedan en `sprite-drafts/<story_uuid>/<draft_uuid>`, fuera del archivo `.noble.zip` y la galería publicada. SQLite guarda estados y permite retomar o descartar tras recargar. Se admiten hasta tres borradores por historia y se eliminan los inactivos tras 48 h. **Aprobar cinco expresiones** utiliza el importador transaccional de hoja preexistente; genera cinco activos `foreground` definitivos sin sustituir versiones anteriores. Los activos aprobados guardan `source=ai_reviewed` y `generation_json` con checkpoint/seed/LoRA/huella de prompt y calidad/confirmación. Sus metadatos viajan por fork y backup; borradores temporales no. [Detalle técnico y limitaciones](COMFY_SPRITE_DRAFTS.md).
+Select a simple `.safetensors` LoRA filename and intensity in Characters, then link the visual identity if the scene cast uses UUIDs. The reader can inspect the installed LoRA inventory reported by ComfyUI and explicitly apply up to three LoRAs to one illustration. Advancing narration or changing stories never silently generates images. Gallery provenance records the actual LoRA filenames and strengths. See [LoRA guide](COMFY_LORAS.md).
 
-## Condicionamiento opcional de identidad y revisión geométrica
+## Five-expression AI drafts with explicit approval
 
-En **Creator Studio → Imágenes → Generar expresiones IA**, elige una referencia de Galería o un sprite ya aprobado de ese mismo NPC y cambia a `IPAdapter` para generar imágenes nuevas condicionadas por una referencia, en lugar de img2img. Puedes añadir LoRA a la cadena, elegir el preset y ajustar fuerza. Deben estar instalados y disponibles los nodos y modelos de IPAdapter Plus y CLIP Vision. El backend verifica propiedad, SHA256 y nodos antes de encolar la GPU; no aplica fallback silencioso. La biblioteca registra qué adaptación se utilizó en las expresiones aprobadas.
+Manual expression sheets work without GPU inference. The optional **Creator Studio → Images → Generate expressions with AI** flow creates per-NPC drafts using a shared seed (prefer `visual_dna.seed`), style, pose, context, optional LoRA, and optional owned gallery reference via img2img.
 
-Si las siluetas aparecen desalineadas entre expresiones, recibirás advertencias y tendrás que aceptarlas explícitamente o regenerar el slot. Esta comprobación no compara rostros. [Guía IPAdapter y revisión](COMFY_SPRITE_DRAFTS.md).
+Each **Generate** action makes one ComfyUI request. **Generate missing** requests remaining slots sequentially. Candidate images that fail transparent-PNG cutout checks (green background, borders, or silhouette coverage) are rejected while existing saved drafts remain intact.
 
-## Recorte de fondo neuronal en Creator Studio
+Draft files live in `sprite-drafts/<story_uuid>/<draft_uuid>`, separate from published media and `.noble.zip` exports. SQLite tracks draft slots and supports resuming/discarding after reload. Up to three drafts per story are allowed; inactive drafts expire after 48 hours.
 
-Desde el formulario de nuevos borradores IA, selecciona **Recorte de fondo para sprites IA**. El modo inicial `Fondo verde` conserva el pipeline anterior sin pesos extra. RMBG 2.0 y BiRefNet Portrait/Matting necesitan el plugin ComfyUI-RMBG y sus archivos presentes en el inventario de ComfyUI. **Comprobar modelos de recorte** muestra cuáles están listos sin ejecutar ninguna generación. Cuando un modelo falla, se conserva cualquier preview anterior y se muestra el error, en lugar de guardar un sprite opaco o hacer fallback automático a verde. Para modos neuronales, Noble recibe imagen y máscara por separado y reconstruye un PNG transparente con validación de bordes; los cinco sprites siguen requiriendo aprobación, y su procedencia registra el modelo utilizado. [Guía](COMFY_SPRITE_DRAFTS.md).
+**Approve five expressions** uses the established transactional importer to publish five `foreground` assets without replacing older approved variants. Published images store `source=ai_reviewed` and `generation_json` with checkpoint, seed, LoRA, prompt fingerprint, quality results, and confirmation. Approved media/provenance survive forks and backups; temporary drafts do not. See [sprite draft architecture](COMFY_SPRITE_DRAFTS.md).
+
+## Optional identity conditioning and silhouette QA
+
+Under the AI expression wizard, choose an owned gallery image or an approved sprite for the **same NPC**, then select `IPAdapter` to condition a new composition rather than classic img2img. An optional LoRA can be chained; preset and influence are configurable.
+
+IPAdapter Plus and CLIP Vision nodes/model files must be installed and visible to ComfyUI. The backend validates story ownership, source SHA-256, and required node inputs **before submitting GPU work**. It must not silently fall back to another conditioning mode. Published expression provenance records which method was used.
+
+Significant shifts in silhouette position/scale produce warnings. Approval requires explicit acceptance or regeneration of affected slots. This is a geometry check, not face recognition. See [IPAdapter and geometry review](COMFY_SPRITE_DRAFTS.md).
+
+## Neural cutout options
+
+The AI draft workflow offers **Sprite background removal**. The original `chroma_green` path requires no additional model. `RMBG 2.0`, `BiRefNet Portrait`, and `BiRefNet Matting` require ComfyUI-RMBG with the corresponding installed weights.
+
+**Check cutout models** probes availability without generating. A missing or failed model keeps earlier previews and surfaces an error rather than publishing opaque sprites or silently falling back to green.
+
+For neural modes, Noble AI retrieves a processed image and its mask as separate outputs, then reconstructs an alpha PNG with border/coverage checks. All five generated sprites still need review and approval, and provenance records the selected cutout model. See [technical cutout guide](COMFY_SPRITE_DRAFTS.md).
