@@ -407,3 +407,6 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 - **Detener** únicamente el proceso creado con Popen por Noble, con terminate/kill controlado; no detener servicios ComfyUI ajenos ni reiniciar otros workers. Logs solo desde `data/logs/comfyui.log`, fragmento final limitado y rechazo de enlaces simbólicos.
 - Validación UI Playwright escritorio/móvil: validación → guardar → iniciar → estado → logs → detener; recarga de preferencias, navegación a Voz/TTS sin efecto en imagen, ruta directa y ausencia de ejecución automática.
 - Verificar CI Python/frontend y, antes de marcar el runtime plenamente operativo, arranque físico en Windows y/o Colab con un ComfyUI real, detección de checkpoint y render final en GPU. **CI mock no demuestra compatibilidad de GPU.**
+
+
+- Protección CSRF para `POST /images/runtime/start` y `/stop`: rechazar `Origin` ajeno a Noble o `Sec-Fetch-Site: cross-site` antes de crear o detener el proceso, sin impedir llamadas locales permitidas y sin habilitar `shell=True`. Test de seguridad `test_cross_site_post_cannot_launch_or_stop_local_process`.

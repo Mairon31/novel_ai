@@ -40,3 +40,9 @@ El backend está en `apps/api/noble_api/comfy_process.py`; la UI está en `apps/
 `tests/test_comfy_process.py` valida sin GPU rutas inseguras, puertos, configuración, ausencia de autoinicio, argv y binding loopback, parada propia, logs y persistencia de parámetros de generación. `apps/web/tests/comfy-runtime.spec.ts` verifica flujo completo escritorio/móvil con API simulada y que la pestaña Voz/TTS permanezca independiente.
 
 **Aún pendiente:** un ensayo de instalación real en Windows y Colab con PyTorch, CUDA, checkpoint compatible y render; manejo de instalación y actualización automática del programa ComfyUI, entorno Python/requirements y extensiones. La detección de `/system_stats` prueba que el servidor responde, **no** garantiza VRAM ni que el checkpoint pueda renderizar. Los hitos generales N-01 y N-21 permanecen abiertos.
+
+## Protección de las acciones locales
+
+Los endpoints **Iniciar** y **Detener** validan el encabezado `Origin` y los metadatos `Sec-Fetch-Site` para rechazar formularios o solicitudes de sitios web ajenos a Noble AI. Se admiten llamadas locales sin `Origin` para pruebas o clientes de la propia máquina, y la interfaz localhost de Noble. La protección evita peticiones cruzadas del navegador; no es un sistema de autenticación contra programas maliciosos ya ejecutándose en el equipo. En el cierre de la aplicación solo se termina la instancia que Noble creó.
+
+**Evidencia de código principal:** [CI #42343555333](https://github.com/Mairon31/novel_ai/actions/runs/42343555333), 397 pruebas Python, 84 de navegador escritorio/móvil y build Vite. La protección adicional de `Origin` y su test en `tests/test_comfy_process.py` tienen CI separado pendiente.
