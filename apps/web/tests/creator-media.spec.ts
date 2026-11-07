@@ -10,7 +10,7 @@ test('author art library overlays caption-matched background and transparent spr
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
@@ -51,9 +51,9 @@ test('author art library overlays caption-matched background and transparent spr
   await page.getByLabel('Nueva apertura').fill(
     'Llegaron al castillo iluminado en la ciudad. Aira sonríe y se acerca a Luna.');
   await page.getByRole('button', { name: 'Añadir apertura' }).click();
-  await page.getByRole('button', { name: 'Guardar aperturas' }).click();
+  await page.getByRole('button', { name: 'Save openings' }).click();
   await page.getByRole('button', { name: 'Utilizar como inicio de esta historia' }).click();
-  await expect(page.getByText(/apertura se guardó como primer turno/)).toBeVisible();
+  await expect(page.getByText(/Opening saved as the first turn/)).toBeVisible();
 
   await page.getByRole('button', { name: 'Ir a Library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();

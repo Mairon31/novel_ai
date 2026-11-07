@@ -55,10 +55,10 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   const panel = page.locator('.comfy-runtime-panel');
-  await expect(panel.getByRole('heading', { name: 'Ejecutar ComfyUI desde Noble AI' })).toBeVisible();
+  await expect(panel.getByRole('heading', { name: 'Run ComfyUI from Noble AI' })).toBeVisible();
   expect(launches).toBe(0);
   expect(validations).toBe(0);
   expect(stopping).toBe(0);
@@ -73,7 +73,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   expect(validations).toBe(1);
   expect(launches).toBe(0);
   await panel.getByRole('button', { name: 'Save ComfyUI launch' }).click();
-  await expect(panel.getByText('Settings de ComfyUI guardada.')).toBeVisible();
+  await expect(panel.getByText('ComfyUI settings saved.')).toBeVisible();
   await panel.getByRole('button', { name: 'Iniciar ComfyUI' }).click();
   await expect(panel.getByText('Ready', { exact: true })).toBeVisible();
   await expect(panel.getByText('mock GPU', { exact: false })).toBeVisible();
@@ -83,7 +83,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await panel.getByRole('button', { name: 'View ComfyUI logs' }).click();
   await expect(panel.getByText('ComfyUI launched on 127.0.0.1:19080')).toBeVisible();
   await panel.getByRole('button', { name: 'Stop ComfyUI' }).click();
-  await expect(panel.getByText('Detenido', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Stopped', { exact: true })).toBeVisible();
   expect(stopping).toBe(1);
   await page.reload();
   await expect(panel.getByLabel('Puerto de ComfyUI')).toHaveValue('19080');

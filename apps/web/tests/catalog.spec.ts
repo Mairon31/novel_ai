@@ -66,7 +66,7 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   await expect(page.getByText('Qwen3-8B-GGUF')).toBeVisible();
   await expect(page.getByText('Gemma-4-GGUF')).toBeVisible();
@@ -81,14 +81,14 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
     await expect(dialog).toHaveAttribute('aria-modal', 'true');
   }
   await expect(page.getByText('Qwen3-8B-Q4_K_M.gguf')).toBeVisible();
-  await expect(page.getByText(/Cuantización sugerida: Qwen3-8B-Q8_0.gguf/)).toBeVisible();
-  await expect(page.getByRole('meter', { name: 'Relación de demanda y memoria utilizable' })).toBeVisible();
+  await expect(page.getByText(/Suggested quantization: Qwen3-8B-Q8_0.gguf/)).toBeVisible();
+  await expect(page.getByRole('meter', { name: 'Memory requirement versus usable memory' })).toBeVisible();
   await page.getByRole('button', { name: 'CPU', exact: true }).click();
   await expect(page.getByText('Qwen3-8B-Q2_K.gguf')).toBeVisible();
   await expect(page.getByText('Qwen3-8B-Q4_K_M.gguf')).toBeHidden();
   await page.getByRole('button', { name: 'All', exact: true }).click();
   await page.getByRole('button', { name: /Qwen3-8B-Q8_0.gguf/ }).click();
-  await expect(page.getByText('Variante seleccionada: Q8_0')).toBeVisible();
+  await expect(page.getByText('Selected variant: Q8_0')).toBeVisible();
   await page.getByRole('button', { name: 'Read full model card' }).click();
   const modelReadme = page.locator('.hub-model-readme');
   await expect(modelReadme).toContainText('Modelo de ejemplo');

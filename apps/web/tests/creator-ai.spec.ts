@@ -61,21 +61,21 @@ test('AI Creator previews a whole world before an explicit local install', async
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
   await page.getByRole('button', { name: 'Creator Studio' }).click();
   await page.getByRole('button', { name: 'Create with AI' }).click();
-  await expect(page.getByRole('heading', { name: 'Construye un mundo con IA' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Build a world with AI' })).toBeVisible();
   await page.getByLabel('Story idea').fill(
     'En una bahía costera, tres faros guardan los recuerdos de sus habitantes. Las decisiones cambian la memoria del lugar y el destino de sus vecinos.'
   );
-  await page.getByLabel('Protagonist de historia IA').fill('Luna');
-  await page.getByRole('button', { name: 'Generar propuesta' }).click();
-  await expect(page.getByRole('heading', { name: 'Revisa el mundo antes de crearlo' })).toBeVisible();
-  await expect(page.getByText('Modelo: test-mock')).toBeVisible();
+  await page.getByLabel('AI story protagonist').fill('Luna');
+  await page.getByRole('button', { name: 'Generate proposal' }).click();
+  await expect(page.getByRole('heading', { name: 'Review your world before creating it' })).toBeVisible();
+  await expect(page.getByText('Model: test-mock')).toBeVisible();
   await expect(page.getByRole('heading', { name: title })).toHaveCount(0);
   await expect(page.getByText('Characters (4)', { exact: true })).toBeVisible();
   await expect(page.getByText('Lorebook (3)', { exact: true })).toBeVisible();
@@ -84,11 +84,11 @@ test('AI Creator previews a whole world before an explicit local install', async
   );
   await page.getByLabel('Editable generated tags').fill('faro, memoria, secretos');
   await expect(page.getByLabel('Editable generated tags')).toHaveValue('faro, memoria, secretos');
-  await page.getByText('El primer faro · Editar conocimiento').click();
+  await page.getByText('El primer faro · Edit lore').click();
   await page.getByLabel('Lorebook triggers 1').fill('faro, luz antigua');
   await expect(page.getByLabel('Lorebook triggers 1')).toHaveValue('faro, luz antigua');
-  await page.getByText('Sara · Editar ficha').click();
-  await page.getByLabel('Descripción NPC 1').fill(
+  await page.getByText('Sara · Edit profile').click();
+  await page.getByLabel('NPC description 1').fill(
     'Sara conoce los antiguos pactos del puerto, guarda una llave y duda de su misión como guardiana.');
   await page.getByLabel('Generated opening 1').fill(
     '{{user}} llega al muelle y descubre la carta del farero. Una extraña silueta aparece frente a una campana al otro lado de la bahía.');
@@ -100,7 +100,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByLabel('Regeneration instructions').fill('Aperturas con más misterio');
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
   await expect(page.getByLabel('Generated opening 1')).toHaveValue(/llave brillante/);
-  await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
+  await expect(page.getByLabel('NPC description 1')).toHaveValue(/Sara conoce los antiguos pactos/);
   await expect(page.getByRole('button', { name: 'Restaurar versión anterior' })).toBeVisible();
   await page.getByRole('button', { name: 'Restaurar versión anterior' }).click();
   await expect(page.getByLabel('Generated opening 1')).toHaveValue(/carta del farero/);
@@ -108,7 +108,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByRole('button', { name: 'Regenerar sección' }).click();
   await expect(page.getByLabel('Editable public plot')).toHaveValue(/muelle ha sido cerrado/);
   await expect(page.getByLabel('Editable generated synopsis')).toHaveValue(/conspiración/);
-  await expect(page.getByLabel('Descripción NPC 1')).toHaveValue(/Sara conoce los antiguos pactos/);
+  await expect(page.getByLabel('NPC description 1')).toHaveValue(/Sara conoce los antiguos pactos/);
   await expect(page.getByLabel('Generated opening 1')).toHaveValue(/carta del farero/);
   await expect(page.getByLabel('Estimated generation budget')).toBeVisible();
   await page.getByLabel('Regeneration instructions').fill('verificar edición concurrente');

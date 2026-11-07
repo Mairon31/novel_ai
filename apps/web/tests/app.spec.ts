@@ -6,7 +6,7 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
   const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible()) {
     await expect(wizard.getByText('Your story studio starts here.')).toBeVisible();
-    await wizard.getByRole('button', { name: /Continue al Model Hub/ }).click();
+    await wizard.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await expect(wizard).toBeHidden();
   }
   await expect(page.getByRole('heading', { name: /Model Hub/ })).toBeVisible();
@@ -25,11 +25,11 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
   }
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByRole('heading', { name: /Settings/ })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Tu espacio de trabajo, a tu manera' }))
+  await expect(page.getByRole('heading', { name: 'Your workspace, your way' }))
     .toBeVisible();
-  await page.locator('.workspace-overview-card').filter({ hasText: 'Motor narrativo' }).click();
-  await expect(page.locator('.setting-section-intro h2', { hasText: 'Motor narrativo' })).toBeVisible();
-  await page.getByRole('button', { name: 'Panel general' }).click();
+  await page.locator('.workspace-overview-card').filter({ hasText: 'Narrative engine' }).click();
+  await expect(page.locator('.setting-section-intro h2', { hasText: 'Narrative engine' })).toBeVisible();
+  await page.getByRole('button', { name: 'Overview' }).click();
   await expect(page.locator('.workspace-overview-card')).toHaveCount(11);
   await page.getByRole('button', { name: 'About Noble AI', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'About Noble AI' })).toBeVisible();
