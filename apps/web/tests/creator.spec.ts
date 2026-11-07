@@ -5,21 +5,21 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await expect(page.locator('main.content')).toHaveAttribute('data-ready','yes');
   const setup=page.getByRole('dialog',{name:/Welcome and initial setup/});
   if(await setup.isVisible()) {
-    await setup.getByRole('button',{name:/Continuar al Model Hub/}).click();
+    await setup.getByRole('button',{name:/Continue al Model Hub/}).click();
   }
   if(test.info().project.name==='mobile')
     await page.getByRole('button',{name:'Open menu'}).click();
   await page.getByRole('button',{name:'Creator Studio'}).click();
   await expect(page.getByRole('heading',{name:/Construye historias/})).toBeVisible();
 
-  await page.getByRole('button',{name:'Crear proyecto',exact:true}).click();
-  const dialog=page.getByRole('dialog',{name:'Crear proyecto narrativo'});
+  await page.getByRole('button',{name:'Create project',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Create story project'});
   const projectTitle = 'El mundo de Aira '+test.info().project.name;
   await dialog.getByLabel('Título').fill(projectTitle);
   await dialog.getByLabel('World premise').fill(
     'La aventura comienza en una biblioteca secreta bajo una montaña encantada.');
   await dialog.getByLabel('Protagonist').fill('Luna');
-  await dialog.getByRole('button',{name:'Crear proyecto',exact:true}).click();
+  await dialog.getByRole('button',{name:'Create project',exact:true}).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading',{name:projectTitle})).toBeVisible();
 
@@ -32,14 +32,14 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await page.getByRole('button',{name:'Guardar trama y contexto'}).click();
   await expect(page.getByText(/Contenido del creador guardado/)).toBeVisible();
 
-  await page.getByRole('button',{name:/Personajes \(0\)/}).click();
+  await page.getByRole('button',{name:/Characters \(0\)/}).click();
   await page.getByLabel('Nombre de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Una bibliotecaria dedicada que protege los registros secretos de la ciudad.');
   await page.getByLabel('Personalidad de NPC').fill('Sarcástica, reservada y muy observadora.');
-  await page.getByRole('button',{name:'Añadir personaje'}).click();
+  await page.getByRole('button',{name:'Add character'}).click();
   await expect(page.getByText(/Ficha narrativa del personaje guardada/)).toBeVisible();
-  await expect(page.getByRole('button',{name:/Personajes \(1\)/})).toBeVisible();
+  await expect(page.getByRole('button',{name:/Characters \(1\)/})).toBeVisible();
 
   await page.getByRole('button',{name:'Aperturas'}).click();
   await page.getByLabel('Nueva apertura').fill(
@@ -63,6 +63,6 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await page.locator('.creator-project').filter({hasText:projectTitle}).first().click();
   await expect(page.getByLabel('Contexto interno de la IA')).toHaveValue(
     'El antiguo alcalde esconde la llave detrás del castillo.');
-  await page.getByRole('button',{name:/Personajes \(1\)/}).click();
+  await page.getByRole('button',{name:/Characters \(1\)/}).click();
   await expect(page.locator('.creator-character-list button').filter({hasText:'Aira'}).first()).toBeVisible();
 });

@@ -50,7 +50,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
@@ -105,13 +105,13 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   expect(requests).toEqual([]);
 
   await page.getByRole('button', { name: 'Open story details' }).click();
-  await page.getByRole('textbox', { name: 'Canon de la historia' })
+  await page.getByRole('textbox', { name: 'Story canon' })
     .fill('El dragón conoce la biblioteca.');
-  await page.getByRole('button', { name: 'Guardar canon' }).click();
-  await page.getByRole('button', { name: 'Galería', exact: true }).click();
+  await page.getByRole('button', { name: 'Save canon' }).click();
+  await page.getByRole('button', { name: 'Gallery', exact: true }).click();
   await page.getByLabel('Describe la escena que quieres ilustrar')
     .fill('La biblioteca iluminada por luciérnagas, estilo anime.');
-  await page.getByRole('button', { name: 'Ilustrar escena con ComfyUI' }).click();
+  await page.getByRole('button', { name: 'Illustrate scene with ComfyUI' }).click();
   await expect(page.getByRole('img', { name: /Ilustración de Laboratorio multimedia/ })).toBeVisible();
   expect(requests).toEqual(['illustrate']);
   await page.screenshot({

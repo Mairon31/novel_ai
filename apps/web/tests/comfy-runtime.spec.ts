@@ -55,7 +55,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   const panel = page.locator('.comfy-runtime-panel');
   await expect(panel.getByRole('heading', { name: 'Ejecutar ComfyUI desde Noble AI' })).toBeVisible();
@@ -82,7 +82,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await expect(panel.getByRole('button', { name: 'Guardar arranque de ComfyUI' })).toBeDisabled();
   await panel.getByRole('button', { name: 'Ver registros ComfyUI' }).click();
   await expect(panel.getByText('ComfyUI launched on 127.0.0.1:19080')).toBeVisible();
-  await panel.getByRole('button', { name: 'Detener ComfyUI' }).click();
+  await panel.getByRole('button', { name: 'Stop ComfyUI' }).click();
   await expect(panel.getByText('Detenido', { exact: true })).toBeVisible();
   expect(stopping).toBe(1);
   await page.reload();

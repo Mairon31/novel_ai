@@ -5,34 +5,34 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
 
-  await page.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
+  await page.getByRole('button', { name: 'Create project', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'Archivo de los mapas ' + test.info().project.name;
   await dialog.getByLabel('Título').fill(title);
   await dialog.getByLabel('World premise').fill(
     'Una exploradora visita las ruinas perdidas en un reino lleno de secretos.');
   await dialog.getByLabel('Protagonist').fill('Luna');
-  await dialog.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Create project', exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
 
   await page.getByRole('button', { name: /Lorebook \(0\)/ }).click();
-  await page.getByLabel('Título de Lorebook').fill('Mapa de las ruinas');
-  await page.getByLabel('Contenido de Lorebook').fill(
+  await page.getByLabel('Lorebook title').fill('Mapa de las ruinas');
+  await page.getByLabel('Lorebook content').fill(
     'Las ruinas esconden una puerta que solo Luna puede abrir con el mapa antiguo.');
-  await page.getByLabel('Claves de Lorebook').fill('ruinas, mapa');
-  await page.getByLabel('Prioridad de Lorebook').fill('95');
-  await page.getByRole('button', { name: 'Crear entrada de Lorebook' }).click();
+  await page.getByLabel('Lorebook keys').fill('ruinas, mapa');
+  await page.getByLabel('Lorebook priority').fill('95');
+  await page.getByRole('button', { name: 'Create Lorebook entry' }).click();
   await expect(page.getByText(/Entrada de Lorebook guardada/)).toBeVisible();
   await expect(page.getByRole('button', { name: /Lorebook \(1\)/ })).toBeVisible();
 
-  await page.getByLabel('Simular activación Lorebook').fill('Entro en las ruinas.');
-  await page.getByRole('button', { name: 'Previsualizar Lorebook' }).click();
+  await page.getByLabel('Simulate Lorebook activation').fill('Entro en las ruinas.');
+  await page.getByRole('button', { name: 'Preview Lorebook' }).click();
   await expect(page.getByText('1 entrada(s) activada(s)')).toBeVisible();
   await expect(page.locator('.creator-hint[role="status"]').getByText(
     'Mapa de las ruinas · prioridad 95')).toBeVisible();
@@ -40,8 +40,8 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
     path: 'test-results/' + test.info().project.name + '-lorebook.png', fullPage: true,
   });
 
-  await page.getByLabel('Simular activación Lorebook').fill('Camino por el puerto.');
-  await page.getByRole('button', { name: 'Previsualizar Lorebook' }).click();
+  await page.getByLabel('Simulate Lorebook activation').fill('Camino por el puerto.');
+  await page.getByRole('button', { name: 'Preview Lorebook' }).click();
   await expect(page.getByText('0 entrada(s) activada(s)')).toBeVisible();
 
   await page.reload();
@@ -59,39 +59,39 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible())
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Creator Studio' }).click();
 
-  await page.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
-  const creation = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
+  await page.getByRole('button', { name: 'Create project', exact: true }).click();
+  const creation = page.getByRole('dialog', { name: 'Create story project' });
   const title = 'Testigo del sello ' + test.info().project.name;
   await creation.getByLabel('Título').fill(title);
   await creation.getByLabel('World premise').fill(
     'Dos personajes exploran una ciudad donde solo uno conoce un antiguo secreto.');
   await creation.getByLabel('Protagonist').fill('Luna');
-  await creation.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
+  await creation.getByRole('button', { name: 'Create project', exact: true }).click();
   await expect(creation).toBeHidden();
 
-  await page.getByRole('button', { name: /Personajes \(0\)/ }).click();
+  await page.getByRole('button', { name: /Characters \(0\)/ }).click();
   await page.getByLabel('Nombre de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Aira conoce los senderos del reino, aunque evita hablar con viajeros.');
-  await page.getByRole('button', { name: 'Añadir personaje' }).click();
-  await expect(page.getByRole('button', { name: /Personajes \(1\)/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Add character' }).click();
+  await expect(page.getByRole('button', { name: /Characters \(1\)/ })).toBeVisible();
 
   await page.getByRole('button', { name: /Lorebook \(0\)/ }).click();
-  await page.getByLabel('Título de Lorebook').fill('El secreto del sello');
-  await page.getByLabel('Contenido de Lorebook').fill(
+  await page.getByLabel('Lorebook title').fill('El secreto del sello');
+  await page.getByLabel('Lorebook content').fill(
     'La última llave del sello permanece bajo una estatua en el palacio.');
-  await page.getByLabel('Claves de Lorebook').fill('sello');
+  await page.getByLabel('Lorebook keys').fill('sello');
   await page.getByLabel('Visibilidad de Lorebook').selectOption('witnesses');
   await page.getByRole('checkbox', { name: 'Testigo Aira' }).check();
-  await page.getByRole('button', { name: 'Crear entrada de Lorebook' }).click();
+  await page.getByRole('button', { name: 'Create Lorebook entry' }).click();
   await expect(page.getByText(/Entrada de Lorebook guardada/)).toBeVisible();
-  await page.getByLabel('Simular activación Lorebook').fill('Busco el sello con Aira.');
-  await page.getByRole('button', { name: 'Previsualizar Lorebook' }).click();
+  await page.getByLabel('Simulate Lorebook activation').fill('Busco el sello con Aira.');
+  await page.getByRole('button', { name: 'Preview Lorebook' }).click();
   await expect(page.getByText('0 entrada(s) activada(s)')).toBeVisible();
   await expect(page.getByText(/1 sin testigos presentes/)).toBeVisible();
 
@@ -114,7 +114,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   } });
   expect(update.ok()).toBeTruthy();
 
-  await page.getByRole('button', { name: 'Previsualizar Lorebook' }).click();
+  await page.getByRole('button', { name: 'Preview Lorebook' }).click();
   await expect(page.getByText('1 entrada(s) activada(s)')).toBeVisible();
   await expect(page.getByText('0 sin testigos presentes')).toBeVisible();
   await expect(page.locator('.creator-hint[role="status"]').getByText(

@@ -23,7 +23,7 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
     body: JSON.stringify({ repo_id: 'demo/Qwen3-8B-GGUF', revision: 'a'.repeat(40),
       license: 'apache-2.0', gated: false, supports_install: true,
       url: 'https://huggingface.co/demo/Qwen3-8B-GGUF',
-      summary:'Narrador local de prueba',
+      summary:'Narrator local de prueba',
       variants: [
         { filename: 'Qwen3-8B-Q4_K_M.gguf', size_bytes: 5368709120,
           sha256: 'f'.repeat(64), supported: true },
@@ -66,7 +66,7 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible()) {
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   await expect(page.getByText('Qwen3-8B-GGUF')).toBeVisible();
   await expect(page.getByText('Gemma-4-GGUF')).toBeVisible();

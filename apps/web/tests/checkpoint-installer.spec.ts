@@ -62,7 +62,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {
-    await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await welcome.getByRole('button', { name: /Continue al Model Hub/ }).click();
   }
   await expect(page.getByRole('heading', { name: 'Checkpoints from Noble AI' })).toBeVisible();
   expect(installs).toBe(0);

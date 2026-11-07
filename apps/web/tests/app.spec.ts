@@ -6,7 +6,7 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
   const wizard = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await wizard.isVisible()) {
     await expect(wizard.getByText('Your story studio starts here.')).toBeVisible();
-    await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await wizard.getByRole('button', { name: /Continue al Model Hub/ }).click();
     await expect(wizard).toBeHidden();
   }
   await expect(page.getByRole('heading', { name: /Model Hub/ })).toBeVisible();

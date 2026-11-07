@@ -21,7 +21,7 @@ test('story detail shows a non-destructive branch tree and reader switches route
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await setup.isVisible())
-    await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
+    await setup.getByRole('button', { name: /Continue al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Library', exact: true }).click();
@@ -34,7 +34,7 @@ test('story detail shows a non-destructive branch tree and reader switches route
   await expect(region.getByText('Historia principal')).toBeVisible();
   await region.getByRole('button', { name: 'Abrir ruta ' + grandson.title }).click();
   await expect(page.getByRole('heading', { name: grandson.title, exact: true })).toBeVisible();
-  await page.getByRole('button', { name: /Comenzar historia|Continuar historia/ }).click();
+  await page.getByRole('button', { name: /Comenzar historia|Continue historia/ }).click();
   const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });
   await expect(selector).toBeVisible();
   await expect(selector.locator('option')).toHaveCount(3);
