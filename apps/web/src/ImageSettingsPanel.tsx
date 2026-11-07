@@ -123,12 +123,12 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             {status?.checkpoints.map(model => <option value={model} key={model}/>)}
           </datalist>
         </label>
-        <label className="workspace-pref-field">Ancho
+        <label className="workspace-pref-field">Width
           <select value={image.width} onChange={e => change('width', Number(e.target.value))}>
             {[512, 768, 1024].map(w => <option key={w} value={w}>{w} px</option>)}
           </select>
         </label>
-        <label className="workspace-pref-field">Alto
+        <label className="workspace-pref-field">Height
           <select value={image.height} onChange={e => change('height', Number(e.target.value))}>
             {[512, 768, 1024].map(w => <option key={w} value={w}>{w} px</option>)}
           </select>

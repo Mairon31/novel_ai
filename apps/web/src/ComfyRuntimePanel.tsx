@@ -129,7 +129,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
         onClick={() => void verify()}><Check size={16}/> Validate installation</button>
       <button type="button" className="secondary-button"
         disabled={busy || !!running || !dirty} onClick={() => void save()}>
-        Save arranque de ComfyUI
+        Save ComfyUI launch
       </button>
       <button type="button" className="primary-button"
         disabled={busy || !!running || dirty || !saved.install_dir}
@@ -153,20 +153,20 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     </div>
     <p role="status">
       Status: <strong>{status?.status === 'ready' ? 'Ready' :
-        status?.status === 'starting' ? 'Iniciando' :
+        status?.status === 'starting' ? 'Starting' :
         status?.status === 'exited' ? 'Exited' : 'Stopped'}</strong>.
       {status?.owns_process ? ' Noble AI manages this process.' :
         ' Noble does not manage any external process.'}
       {status?.pid ? ' PID ' + status.pid + '.' : ''}
     </p>
     {status?.diagnostics && <p role="status">
-      ComfyUI version: {status.diagnostics.comfyui_version || 'desconocida'}.
-      {' '}Dispositivos: {status.diagnostics.devices.map(x => x.name).join(', ') || 'no informados'}.
+      ComfyUI version: {status.diagnostics.comfyui_version || 'unknown'}.
+      {' '}Devices: {status.diagnostics.devices.map(x => x.name).join(', ') || 'not reported'}.
     </p>}
     {dirty && <p role="status">Unsaved changes. Save before starting ComfyUI.</p>}
     {validation && <p role="status">
       Python: <code>{validation.python_executable}</code>.
-      {' '}Modelos Noble: <code>{validation.model_paths_config}</code>.
+      {' '}Noble AI models: <code>{validation.model_paths_config}</code>.
     </p>}
     {logs && <div className="noble-comfy-log">
       <h4>Latest process logs</h4>

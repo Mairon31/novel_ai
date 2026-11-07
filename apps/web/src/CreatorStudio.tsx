@@ -786,7 +786,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       onChange={event => setDraftReferenceMode(
                         event.target.value as 'img2img' | 'ipadapter')}>
                       <option value="img2img">img2img · preserve composition</option>
-                      <option value="ipadapter">IPAdapter · guiar identidad</option>
+                      <option value="ipadapter">IPAdapter · guide identity</option>
                     </select>
                   </label>
                 </div>
@@ -796,9 +796,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       <select aria-label="Sprite IPAdapter preset"
                         value={draftAdapterPreset}
                         onChange={event => setDraftAdapterPreset(event.target.value)}>
-                        <option value="PLUS FACE (portraits)">PLUS FACE · retratos</option>
-                        <option value="PLUS (high strength)">PLUS · alta influencia</option>
-                        <option value="STANDARD (medium strength)">STANDARD · media</option>
+                        <option value="PLUS FACE (portraits)">PLUS FACE · portraits</option>
+                        <option value="PLUS (high strength)">PLUS · high influence</option>
+                        <option value="STANDARD (medium strength)">STANDARD · medium</option>
                       </select>
                     </label>
                     <label>IPAdapter strength: {draftAdapterWeight.toFixed(2)}
@@ -994,16 +994,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <label>Primary keys (comma-separated)
                     <input aria-label="Lorebook keys" value={loreKeysInput}
                       onChange={e => setLoreKeysInput(e.target.value)}
-                      placeholder="bosque, ruinas, mapa"/>
+                      placeholder="forest, ruins, map"/>
                   </label>
                   <label>Optional secondary keys
                     <input aria-label="Secondary Lorebook keys" value={loreSecondaryInput}
                       onChange={e => setLoreSecondaryInput(e.target.value)}
-                      placeholder="noche, guardia"/>
+                      placeholder="night, guard"/>
                   </label>
                 </div>
                 <div className="creator-double">
-                  <label>Prioridad (0–100)
+                  <label>Priority (0–100)
                     <input aria-label="Lorebook priority" type="number" min={0} max={100}
                       value={lorebookDraft.priority}
                       onChange={e => setLorebookDraft(v => ({ ...v,

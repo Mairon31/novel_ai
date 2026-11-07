@@ -864,7 +864,7 @@ export default function App() {
                   <span className="hub-variant-aside">
                     {fit && <ModelFitBadge fit={fit}/>}
                     {fit?.estimated_required_bytes && <small>
-                      ~{size(fit.estimated_required_bytes)} memoria
+                      ~{size(fit.estimated_required_bytes)} memory
                     </small>}
                     {detail.hardware_fit?.recommended_filename === v.filename &&
                       <small className="hub-variant-recommended">Recommended for your hardware</small>}

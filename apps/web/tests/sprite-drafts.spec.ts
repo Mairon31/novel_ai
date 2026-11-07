@@ -32,17 +32,17 @@ test('Creator Studio stages five AI expressions for author review before approva
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
     await page.getByRole('button', { name: /Images/ }).click();
-    await page.getByLabel('NPC para generar expresiones').selectOption(npc.id);
+    await page.getByLabel('NPC for expression generation').selectOption(npc.id);
     await page.getByLabel('AI sprite context').fill('Aira castillo de cristal');
-    await page.getByLabel('Estilo visual de sprites IA').fill('watercolor anime');
+    await page.getByLabel('AI sprite style').fill('watercolor anime');
     await expect(page.getByRole('checkbox', {
-      name: 'Usar LoRA del NPC para sprites IA',
+      name: 'Use NPC LoRA for AI sprites',
     })).not.toBeChecked();
-    await page.getByRole('button', { name: 'Preparar borrador de cinco expresiones' }).click();
-    await expect(page.getByText(/Borrador creado/)).toBeVisible();
+    await page.getByRole('button', { name: 'Prepare five-expression draft' }).click();
+    await expect(page.getByText(/Draft created/)).toBeVisible();
     await expect(page.getByRole('region', {
-      name: 'Borrador de sprites Aira',
-    }).getByText('Aira · 0/5 expresiones')).toBeVisible();
+      name: 'Sprite draft Aira',
+    }).getByText('Aira · 0/5 expressions')).toBeVisible();
 
     const collection = await page.request.get(
       '/api/v1/stories/' + story.id + '/creator/sprite-drafts');
@@ -83,10 +83,10 @@ test('Creator Studio stages five AI expressions for author review before approva
         } });
       });
 
-    const section = page.getByRole('region', { name: 'Borrador de sprites Aira' });
+    const section = page.getByRole('region', { name: 'Sprite draft Aira' });
     await expect(section.getByRole('button', { name: 'Approve five expressions' })).toBeDisabled();
     await section.getByRole('button', { name: 'Generate missing expressions' }).click();
-    await expect(section.getByText('Aira · 5/5 expresiones')).toBeVisible();
+    await expect(section.getByText('Aira · 5/5 expressions')).toBeVisible();
     await expect(section.locator('img')).toHaveCount(5);
     expect(generated).toBe(5);
     await expect(section.getByText(/Variaciones importantes de encuadre/)).toBeVisible();
@@ -116,7 +116,7 @@ test('Creator Studio stages five AI expressions for author review before approva
         } });
       });
     await section.getByRole('button', { name: 'Approve five expressions' }).click();
-    await expect(page.getByText(/Aprobadas 5 expresiones/)).toBeVisible();
+    await expect(page.getByText(/Approved 5 expressions/)).toBeVisible();
     expect(approved).toBe(true);
     // The UI fixture does not create server-side sprite files: cleanup the real draft.
     expect((await page.request.delete(

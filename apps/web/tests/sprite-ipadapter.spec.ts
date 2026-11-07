@@ -63,24 +63,24 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
       await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
 
     await page.getByRole('button', { name: /Images/ }).click();
-    await page.getByLabel('NPC para generar expresiones').selectOption(npc);
+    await page.getByLabel('NPC for expression generation').selectOption(npc);
     await page.getByLabel('AI sprite context').fill('Aira cuidando el castillo');
-    await page.getByLabel('Modo de referencia IA').selectOption('ipadapter');
+    await page.getByLabel('AI reference mode').selectOption('ipadapter');
     await expect(page.getByRole('button', {
-      name: 'Preparar borrador de cinco expresiones',
+      name: 'Prepare five-expression draft',
     })).toBeDisabled();
-    await page.getByLabel('Sprite de referencia IA').selectOption(sprite);
+    await page.getByLabel('AI reference sprite').selectOption(sprite);
     await page.getByLabel('AI sprite background removal')
       .selectOption('neural_birefnet_portrait');
-    await page.getByRole('button', { name: 'Comprobar modelos de recorte' }).click();
+    await page.getByRole('button', { name: 'Check cutout models' }).click();
     await expect(page.getByText('BiRefNet-portrait: Ready')).toBeVisible();
-    await page.getByLabel('Preset IPAdapter de sprites IA').selectOption(
+    await page.getByLabel('Sprite IPAdapter preset').selectOption(
       'STANDARD (medium strength)');
-    await page.getByLabel('Fuerza IPAdapter de sprites IA').fill('0.9');
+    await page.getByLabel('Sprite IPAdapter strength').fill('0.9');
     await page.getByRole('button', { name: 'Check installed IPAdapter' }).click();
     await expect(page.getByText(/IPAdapter available · 2 models/)).toBeVisible();
-    await page.getByRole('button', { name: 'Preparar borrador de cinco expresiones' }).click();
-    await expect(page.getByText(/Borrador creado/)).toBeVisible();
+    await page.getByRole('button', { name: 'Prepare five-expression draft' }).click();
+    await expect(page.getByText(/Draft created/)).toBeVisible();
     const response = await page.request.get(
       '/api/v1/stories/' + story + '/creator/sprite-drafts');
     expect(response.status()).toBe(200);
@@ -99,7 +99,7 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     });
     await expect(page.getByText(/IPAdapter STANDARD \(medium strength\) \(0.9\)/))
       .toBeVisible();
-    await expect(page.getByText(/Recorte: BiRefNet retratos/)).toBeVisible();
+    await expect(page.getByText(/Cutout: BiRefNet portraits/)).toBeVisible();
     const media = await page.request.get(
       '/api/v1/stories/' + story + '/creator/assets');
     expect((await media.json() as {assets: unknown[]}).assets).toHaveLength(1);

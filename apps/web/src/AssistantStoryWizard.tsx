@@ -295,7 +295,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <h4>Three possible openings</h4>
       <div className="creator-ai-openings">
         {draft.openings.map((opening, index) => <label key={index}>
-          Inicio {index + 1}
+          Opening {index + 1}
           <textarea aria-label={'Generated opening ' + (index + 1)}
             rows={4} maxLength={3000} value={opening}
             onChange={e => editOpening(index, e.target.value)}/>
