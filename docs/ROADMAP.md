@@ -1,306 +1,316 @@
-# Hoja de ruta de Noble AI
+# Noble AI — roadmap and definition of done
 
-## Plan operativo actualizado — Auditoría Argon (2026-11-05)
+**Updated product direction:** app-first, story-first, creator-first. This roadmap records historical P0–P5 phases and later Argon/Colab feedback. The actionable implementation checklist is [TODO.md](../TODO.md); [Progress](PROGRESO.md) records completed changes and evidence. Milestones remain open until their **full acceptance criteria** pass, even if some constituent features have shipped.
 
-La ruta anterior que aparece a continuación refleja los hitos históricos P0–P5. A partir de esta revisión, la ejecución se sigue en [`TODO.md`](../TODO.md), derivado de las 22 secciones de [`ARGON_AUDITORIA.md`](ARGON_AUDITORIA.md); no se duplican allí fechas ni se marcan funcionalidades completas por mera presencia de un módulo. El trabajo se integra directamente en `master` y se evidencia en [`PROGRESO.md`](PROGRESO.md).
+## Updated execution plan — Argon audit (November 5, 2026)
 
-| Secuencia de dependencias | Entregable demostrable | Prueba o criterio de cierre |
-| --- | --- | --- |
-| Fase 1 / P0 | SQLite transaccional, contención de rutas, descargas resilientes, SSE cancelable y seguridad de credenciales | Rollback y 50 escrituras; rutas/links adversariales; transferencia interrumpida; GPU liberada al abortar |
-| Fase 2 / P0–P1 | Arbitraje VRAM, ciclo de procesos gestionados, Model Hub V2 y ajuste según hardware real | 20–25 turnos texto/imagen sin OOM; comparación real de cuantizaciones y uso de memoria |
-| Fase 3 / P1 | Canon por turno, testigos, Lorebooks, resumen y memoria híbrida con contextos presupuestados | Historia de 100–120 turnos, restauración exacta al bifurcar y presupuestos visibles |
-| Fase 4 / P1 | Director de escena, caché de fondo, sprites emocionales, ComfyUI reproducible y voces por personaje | 10 turnos misma escena sin regenerar fondo, sprites instantáneos y TTS multivoz |
-| Fase 5 / P1–P2 | Cuatro espacios de navegación, VN/Libro/Chat, Studio básico/avanzado, tarjetas PNG V2/V3 y mobile | URLs directas, importación válida, pruebas Playwright en desktop/móvil, sin falsas funciones |
-| Fase 6 / P2–P3 | Paquete escritorio, benchmarks versionados y diferenciadores de producto | Instalador/portable real, informes reproducibles, exportación y regresiones medidas |
+The earlier roadmap phases below remain historical context. The current backlog follows the 22 sections of [Argon audit](ARGON_AUDITORIA.md), cross-referenced by stable AUD identifiers. Avoid confusing section numbers with similar-looking AUD IDs. Integrate work directly on `master` unless explicitly instructed otherwise.
 
-**Importante:** el código de `store.py` ya usa WAL, `narrative.py` ya transmite SSE y `downloads.py` ya usa Range y SHA-256 cuando hay hash anunciado. Ninguno de estos hechos certifica que las condiciones completas de su fase estén resueltas. La tabla de Argon usa etiquetas AUD-005/006/007 distintas de §05: el identificador estable y las subtareas se mantienen en el TODO.
+| Dependency sequence | Demonstrable delivery | Acceptance evidence |
+|---|---|---|
+| Phase 1 / P0 | Transactional SQLite, safe file paths, resilient downloads, cancelable SSE, credential security | Rollback/50 writes, adversarial paths/symlinks, interrupted transfer, cancellation recovery |
+| Phase 2 / P0–P1 | VRAM arbitration, owned runtime lifecycle, Model Hub V2, real hardware fit checks | 20–25 mixed text/image turns without OOM, measured quantization and memory comparison |
+| Phase 3 / P1 | Per-turn canon and witnesses, Lorebooks, summaries, hybrid memory with bounded context | 100–120-turn story, exact fork restoration, visible budgets |
+| Phase 4 / P1 | Stage director, background reuse, emotion sprites, reproducible ComfyUI, character voices | Ten same-scene turns without new background, fast sprite switches, multi-voice TTS |
+| Phase 5 / P1–P2 | Separate product spaces, VN/Book/Chat, basic/advanced Studio, PNG V2/V3, mobile | Deep links, imports, desktop/mobile Playwright, no fake controls |
+| Phase 6 / P2–P3 | Desktop package, versioned benchmarks, distinct product capabilities | Real installer/portable build, reproducible reports, export and regression results |
 
-## Cambio de prioridad por uso real en Colab — 2026-11-05
+`store.py` already uses WAL, `narrative.py` provides SSE, and `downloads.py` uses Range and SHA-256 where a trustworthy upstream hash exists. **These partial facts do not certify complete phases**.
 
-El usuario ejecutó Noble AI y verificó que aún faltan funciones esenciales de instalación/gestión de modelos de **imagen y TTS**, opciones completas, un orquestador fiable, un Model Hub comparable en profundidad al de Urakatsu y recorridos atractivos para **jugar y crear historias**. También pidió un Hub de historias completas de la comunidad y un Creator Studio capaz de producir una historia estructurada con sus recursos visuales; la historia de ejemplo actual no cumple esa expectativa.
+## Priority shift from actual Colab use — November 5, 2026
 
-**Nueva prioridad funcional:** producto **story-first / creator-first**. La administración de modelos no debe dominar el inicio. El plan **no se considera implementado** por incluirlo en documentación.
+Owner testing exposed gaps in image/speech model installation, full settings, intelligent orchestration, a detailed Urakatsu-level Model Hub, and the workflows for **playing and authoring compelling stories**. A community story hub and a Creator Studio that can produce structured stories with visuals are future needs. The current demonstration stories do not yet represent the desired full illustrated experience.
 
-| Orden | Hito | Estado |
-| --- | --- | --- |
-| P0 | Instaladores UI de imágenes/TTS, ajustes específicos, orquestador de memoria/colas, QA Colab real | **Pendiente** |
-| P1-A | Biblioteca y detalle centrados en jugar historias; historia demo completa y Story Hub local | **Pendiente** |
-| P1-B | Creator Studio «idea → mundo/NPC/lore/escenas/imágenes» editable y verificable | **Pendiente** |
-| P1-C | Model Hub independiente con detalle profundo, instalaciones reales y UX tipo Urakatsu; modularización del frontend | **Pendiente** |
-| P1-D | Publicación/Hub remoto de creadores con permisos, moderación, paquetes versionados y licencias | **Pendiente** |
-| P2 | Director visual automático, marketplace/colecciones más amplias y métricas reales del orquestador | **Pendiente** |
+**Functional priority:** playable stories and Creator Studio before infrastructure-centered landing pages. The plan is **not automatically implemented** by documenting it.
 
-**Fuente detallada para la nueva etapa:** [FEEDBACK_COLAB_Y_BACKLOG.md](FEEDBACK_COLAB_Y_BACKLOG.md) (N-01 a N-15); checklist operativo en [TODO.md](../TODO.md). Hacer entregas verticales en \`master\`, sin forzar estas iniciativas en una única sesión.
+| Order | Milestone | Overall acceptance |
+|---|---|---|
+| P0 | In-app image/TTS installers, per-engine settings, resource/job orchestration, physical Colab QA | **Open**; first installers and runtime manager partly implemented |
+| P1-A | Story-first Library/Detail, complete demo, bundled Story Hub | **Open**; local text packs exist |
+| P1-B | Editable AI-assisted idea → world/NPC/lore/scene/image workflow | **Open**; structured draft generation exists |
+| P1-C | Independent detailed Model Hub and modular frontend | **Open**; initial master/detail and registry exist |
+| P1-D | Community creator publishing, permissions, moderation, versioned packs, licenses | **Open** |
+| P2 | Automated visual direction, collections/marketplace and real orchestrator telemetry | **Open** |
+
+The full N-01–N-15 requirements are in [Colab feedback backlog](FEEDBACK_COLAB_Y_BACKLOG.md). Deliver vertical increments to `master`, rather than trying to close everything in a single session.
 
 ---
 
+## P1.5 — Persistent visual state and non-destructive gallery (implemented in code)
 
+- [x] Conservative location-change detection after completed narration, without another model call.
+- [x] Persistent scenes with provenance/detection mode and manual correction.
+- [x] Every import/render saves a distinct WebP version with SHA-256 and gallery selection.
+- [x] Non-destructive migration of legacy `scene.webp`.
+- [x] Versioned per-character visual profiles, included in prompts only when relevant.
+- [x] Preview of the enriched illustration prompt without inference.
+- [x] Exact cache by explicit seed, configuration, checkpoint, scene, and relevant traits.
+- [x] Forked gallery/profiles are isolated from future scenes of the original timeline.
+- [ ] Validated semantic extraction of scenes and cast presence.
+- [ ] Full reference-image/IPAdapter/LoRA identity consistency across real checkpoints.
+- [ ] Intelligent image planning with persistent cancelable queues, GPU budgets and multiworker deduplication.
+- [ ] Commercial image API options and GPU/cloud speech adapters.
+- [ ] Actual VRAM/offload priorities among LLM, diffusion, and TTS.
+- [ ] Physical visual/media validation and grouped benchmarks.
 
-## P1.5 — estado visual persistente y galería sin sobrescrituras (IMPLEMENTADO EN CÓDIGO)
+## P1.4 — Connectable local multimedia and persisted canon (implemented in code)
 
-- [x] Detector conservador de cambios de lugar en respuestas narrativas finalizadas; no consulta otro modelo.
-- [x] Registro persistente de escenas con origen y modo de detección, corregible manualmente.
-- [x] Cada importación y render crea versión WebP independiente, con SHA256 y selección por galería.
-- [x] Migración no destructiva de `scene.webp` de versiones antiguas.
-- [x] Fichas visuales y revisión de apariencia por personaje, integradas en prompts únicamente cuando se le nombra.
-- [x] Previsualización del prompt enriquecido sin usar inferencia.
-- [x] Caché exacta por seed/configuración/checkpoint/escena y rasgos pertinentes.
-- [x] Clonación de galería y fichas por rama sin mezclar versiones de etapas posteriores.
-- [ ] Extracción semántica estructurada de escenarios y presencia de personajes con validación humana.
-- [ ] Consistencia visual respaldada por imagen de referencia, IPAdapter/LoRA, no solo prompts.
-- [ ] Planner inteligente de imágenes con colas cancelables, límites de GPU y deduplicación multiworker.
-- [ ] Proveedores de imágenes comerciales por API y generadores TTS por GPU/cloud.
-- [ ] Administrador de VRAM real y prioridades entre LLM, difusión y TTS, incluyendo offload.
-- [ ] Validación visual/multimedia con motores reales. Los benchmarks se harán agrupados.
+- [x] Editable per-story canon included in narrator context; automated extraction/reconciliation remains separate.
+- [x] SSE `status` phases for preparing context, connecting, and streaming, with elapsed time and abort.
+- [x] On-demand ComfyUI: checkpoint in UI, standard graph, seed/settings, polling, validated local WebP; disconnected service does not block text.
+- [x] On-demand CPU Piper: local ONNX voice inventory, path validation, cached per-turn WAV, Listen/Stop controls.
+- [x] Responsive multimedia controls with access from the reader and independent Settings destinations.
+- [x] Mocked ComfyUI with real Pillow image decoding and simulated Piper CLI with WAV contract tests.
+- [ ] Real ComfyUI and compatible model on a physical GPU (functional test before extended benchmarks).
+- [ ] Real Piper ES-LA pronunciation/intonation tests.
+- [ ] Automatic scene-aware visual planning.
+- [ ] Multi-character narration/voice casting and additional TTS runtimes.
+- [ ] Robust visual identity and comprehensive GPU scheduler for 12/16 GB.
+- [ ] Complete derived canon, branch management, and summaries.
 
+**P1.4 gate:** green Python/React/Playwright plus actual external-engine tests. Mocked CI alone is not the end of verification.
 
-## P1.4 — multimedia local conectable y canon permanente (IMPLEMENTADO EN CÓDIGO)
+# Historical app-first roadmap (ADR-0002)
 
-- [x] Editor de canon persistente por historia; se incluye en los mensajes de contexto del narrador. Memoria automática derivada, reconciliación de estado y ramas todavía pendientes.
-- [x] Eventos SSE \`status\` para preparar contexto, conectar y transmitir; UI muestra segundos transcurridos y permite abortar.
-- [x] ComfyUI bajo demanda: checkpoint por UI, workflow de difusión estándar, seed, parámetros, polling y WebP local validado; motor desconectado no bloquea LLM.
-- [x] Piper CPU bajo demanda: detección de voces locales ONNX, validación de rutas, WAV por intervención con caché y botón Escuchar/Detener.
-- [x] UI de multimedia responsive, accesos a ilustración desde el lector, controles independientes en Ajustes.
-- [x] Pruebas simuladas ComfyUI + Pillow y Piper CLI falso + lectura WAV para verificar contratos.
-- [ ] ComfyUI real con un modelo de imagen instalado (sin benchmark por ahora).
-- [ ] Piper real con voz ES-LA, pruebas de entonación (sin benchmark por ahora).
-- [ ] Detección automática de escenas y planificación visual por cambios de estado.
-- [ ] Narración multicarácter, voces por personaje y TTS GPU/API.
-- [ ] Identidad visual consistente, caché por versión de escena y planner GPU 12/16 GB.
-- [ ] Ramas, resúmenes y mantenimiento automático del canon.
-- **Gate P1.4:** CI verde en pruebas Python/React/Playwright, seguido de validación funcional con herramientas reales.
+Baseline created November 4, 2026 after [ADR-0002](adr/0002-app-first-model-hub.md). **The status notes in this section describe the phase at that historical date**, not a present-day audit. The original dependency order put Model Hub/Onboarding ahead of narrative play; later feedback shifted editorial priorities toward stories and creators. Colab is optional diagnostics, not the main UI.
 
-# Noble AI — Roadmap APP-FIRST y Definition of Done
+## Engineering principles
 
-Actualizado 2026-11-04 tras [ADR-002](adr/0002-app-first-model-hub.md). Estado: **P1 — Model Hub y prototipo narrativo ejecutables; sin pruebas de inferencia GPU real**. El orden de dependencias ha cambiado: el **Model Hub/Onboarding precede al núcleo narrativo**; Colab es diagnóstico opcional, no interfaz principal.
+1. Assemble suitable open-source tools and evaluate their licenses/costs.
+2. Users should not have to edit config files, manually download weights in a terminal, or run a notebook before using the product.
+3. UI/API must be functional from early increments; mock providers belong only in tests.
+4. Certify features with appropriate CPU tests, real integrations, desktop/mobile visual QA, and logs.
+5. Persist narrative turns while optional images/TTS remain nonblocking; never make unmeasured 12/16 GB claims.
+6. Record architectural decisions as ADRs and update progress evidence when changing them.
 
-## Principios de trabajo
+## Phase P0 — Open-source study and contracts (documented)
 
-1. Ensamblar herramientas open source donde sea conveniente, evaluar licencias/costos.
-2. El usuario final **nunca** debe necesitar editar configuración, instalar pesos por consola o ejecutar notebook para usar el producto.
-3. UI y API deben ser funcionales desde el primer incremento; los mock providers son solo de pruebas.
-4. Todas las funciones se certifican con tests CPU, integraciones reales cuando correspondan, QA visual desktop/móvil y logs.
-5. Narración persiste; imagen/TTS opcionales nunca bloquean; 12/16GB sin afirmaciones no medidas.
-6. Cambios de arquitectura requieren ADR y actualización de progreso, junto con evidencia.
+- [x] Initial README, GDD, architecture, memory, API and QA.
+- [x] OSS tool/license inventory.
+- [x] Technical Urakatsu MIT and Koharu MIT/Apache-2.0 research with source paths.
+- [x] App-first ADR-002 and Model Hub/onboarding/desktop specifications.
+- [x] Basic documentation CI; **not physical GPU inference**.
+- [ ] Reuse comparison of Urakatsu catalog versus `huggingface_hub`, with real cost/attribution assessment.
+- [ ] Exact upstream source revision and reusable-component license review.
 
-## Fase P0 — investigación de reusable code y contratos (DOCUMENTADA)
+**P0 gate:** explicit contracts/licenses and honest unverified states.
 
-- [x] README, GDD, arquitectura, memoria, API y QA iniciales.
-- [x] Inventario de herramientas OSS y licencias.
-- [x] Investigación técnica de Urakatsu MIT y Koharu dual MIT/Apache, rutas de código y modelo manager documentadas.
-- [x] ADR-002 app-first y specs de Model Hub, UI wizard, escritorio.
-- [x] Prueba CI de documentos básica; **no GPU/LLM**.
-- [ ] Spike de reuso del catálogo Urakatsu vs `huggingface_hub`, evaluación del coste real y atribución.
-- [ ] Selección y revisión exacta de versión/base de componentes reusables.
-- **Gate P0:** contratos y licencias claros; todo lo no probado identificado.
-
-## Fase P0.5 — aplicación visual y Model Hub (PRIMER OBJETIVO EJECUTABLE)
+## Phase P0.5 — Visual app and Model Hub (first executable goal)
 
 [Issue #9](https://github.com/Mairon31/novel_ai/issues/9) · [Issue #10](https://github.com/Mairon31/novel_ai/issues/10)
 
-- [x] Crear frontend React/Vite/TS inicial con Biblioteca (aún no jugable), Model Hub, Descargas, Settings, Wizard y Diagnóstico.
-- [x] Crear FastAPI y detección de hardware, disco y settings. **Supervisor de runtimes pendiente.**
-- [ ] Wizard reanudable, elegir directorio de modelos, política de descarga y dispositivo; no requiere modelo para abrir UI.
-- [x] Implementar búsqueda HF/metadata GGUF/variantes. **Validación live pendiente.**
-- [ ] Estimar compatibilidad 12/16 GB con incertidumbre explícita y filtros por función.
-- [ ] Descargas durables verificadas con jobs, pausa/reanudar/cancelar, importación local, registros instalados; UI con estados reales.
-- [ ] Model assignment `narrator/image/tts` y parámetros por rol/capacidades, presets globales y overrides por historia.
-- [ ] Sin descarga/ejecución automática de TTS al abrir configuraciones.
-- [ ] Pruebas contract, integración descarga pequeña real, Playwright 390x844 y 1440x900, capturas.
-- **Gate P0.5:** abrir app sin modelo, instalar/importar peso, reabrir y seleccionar desde UI con tests y logs reales.
+- [x] Initial React/Vite/TS frontend with Library, Model Hub, Downloads, Settings, wizard and Diagnostics.
+- [x] Initial FastAPI, hardware/disk discovery and settings; complete runtime orchestration remained separate.
+- [ ] Resumable first-run wizard for model directory, download policy, and device, without forcing a model.
+- [x] Hugging Face GGUF metadata/variant search; real network compatibility requires separate evidence.
+- [ ] Calibrated 12/16 GB fit estimates with uncertainty and role filters.
+- [ ] Complete durable job/verified pause-resume-cancel/import/installed registry coverage with physical tests.
+- [ ] Per-role `narrator/image/tts` assignment and capability-grounded provider settings, global presets and story overrides.
+- [ ] Zero automatic TTS downloads/synthesis when opening a settings page.
+- [ ] Contract and small real download tests, Playwright 390×844 and 1440×900 screenshots.
 
-## Fase P1 — narrator engine y persistencia jugable
+**P0.5 gate:** open without model, install/import a compatible weight, reopen, select from UI, with observed logs.
 
-[Backend #3](https://github.com/Mairon31/novel_ai/issues/3), [LLM #4](https://github.com/Mairon31/novel_ai/issues/4), [Runtimes #11](https://github.com/Mairon31/novel_ai/issues/11)
+## Phase P1 — Narrator engine and persistent gameplay
 
-- [x] Integrar **adaptadores** KoboldCpp/Ollama y conectar motores existentes desde Configuración. Instalador automático del motor pendiente.
-- [x] Lanzador KoboldCpp básico con start/stop, health y GPU layers (incl. CPU). **Swap/rollback, descarga runtime y OOM pendiente**.
-- [ ] SQLite/Alembic: historias, personajes, canon, eventos, memorias y branching/retry.
-- [x] Historia nueva, streaming, intervención libre, Continuar y reabrir después de reinicio. **Reintentar/Editar/ramas pendientes**.
-- [x] Lector VN de texto responsive móvil/escritorio sin arte obligatorio. **Sprites/fondo pendiente P2**.
-- [ ] 10 turnos con LLM real en GPU; tests de proveedor **simulados** pasan; idempotencia y recuperación probadas con mocks.
-- **Gate P1:** desde UI seleccionar LLM, iniciar, generar historia, guardar/reintentar con evidencia real.
+[Backend #3](https://github.com/Mairon31/novel_ai/issues/3) · [LLM #4](https://github.com/Mairon31/novel_ai/issues/4) · [Runtime #11](https://github.com/Mairon31/novel_ai/issues/11)
 
-## Fase P1.1 — ajustes completos, lectura visual y LLM remoto (IMPLEMENTACIÓN EXPERIMENTAL)
+- [x] KoboldCpp/Ollama adapters and connection settings; automatic runtime installation pending.
+- [x] Basic managed KoboldCpp start/stop, health, GPU layers including CPU; robust swap/rollback/runtime download/OOM still pending.
+- [ ] Complete long-term SQLite state/memory/branching requirements; simple persistence alone is not enough.
+- [x] New story, streaming, free-form input, Continue, restart/reopen; retry/edit/branches evolved in later increments.
+- [x] Responsive text-only VN reader, independently of artwork; sprites/background were initially P2.
+- [ ] Ten real-GPU LLM turns, with idempotence and recovery checks beyond mocks.
 
-- [x] Configuración persistente de idioma objetivo, traducción del prompt, estilo narrativo y apariencia.
-- [x] Adaptador OpenRouter con clave no guardada en SQLite.
-- [x] Identidad del protagonista, reader con escena e inspector, carga de imagen manual validada.
-- [x] Diagnóstico de runtimes y comprobación de publicaciones stable/beta/nightly.
-- [x] Registro de worker LLM Cloudflare, proxy Bearer token, activación de modelo remoto, UI y pruebas simuladas.
-- [ ] QA final sin fallos del lector y del panel de workers en desktop/móvil.
-- [ ] Colab real: GPU, túnel, latencia, reconexión y transferencia de contexto con tamaño seguro.
-- [ ] Cliente LAN autenticado (el backend principal continúa solo loopback).
-- [ ] Worker de imágenes y TTS con reserva de GPU y protocolos separados.
-- [ ] Instalación de runtimes y actualizador de aplicación firmado/rollback.
-- **Gate P1.1:** CI PASS y una inferencia remota real reproducible (aún no alcanzado).
+**P1 gate:** select LLM in UI, start, generate, save, and branch with repeatable real-provider evidence.
 
-## Fase P1.2 — ensayo remoto GPU (HERRAMIENTAS DISPONIBLES)
+## Phase P1.1 — Advanced settings, visual reading, remote LLM (experimental implementation)
 
-- [x] Medición autenticada de TTFT, duración, errores y VRAM muestreada.
-- [x] Pantalla de estado remoto con GPU y latencia al comprobar worker.
-- [x] Notebook Colab reproducible con llama.cpp CUDA y Cloudflare Quick Tunnel.
-- [x] CLI de benchmark más tests offline de sus contratos.
-- [ ] Medir inferencia de un GGUF real en Colab T4/L4 y conservar reporte.
-- [ ] Probar fallos de red reales, recuperación de sesión y OOM.
-- [ ] Medir perfiles reales de tarjetas de 12/16 GB.
-- **Gate P1.2:** benchmark real ejecutado y adjuntado. Sigue pendiente.
+- [x] Persisted story output language, prompt translation, narrative style, and appearance.
+- [x] OpenRouter adapter with API key outside SQLite.
+- [x] Protagonist identity, scene/inspector reader, validated manual image upload.
+- [x] Runtime diagnostics and stable/beta/nightly release checks.
+- [x] Cloudflare-tunneled LLM worker registration, bearer proxy, remote model assignment UI and mocked tests.
+- [ ] Complete desktop/mobile reader and worker visual acceptance.
+- [ ] Real Colab remote-GPU tunnel, latency, reconnect and safe context limits.
+- [ ] Authenticated LAN access; primary backend currently defaults to loopback.
+- [ ] Remote image and speech workers with resource reservations.
+- [ ] Runtime installers and signed application updates/rollback.
 
-## Fase P1.3 — Informe GPU real y siguiente validación de calidad (PARCIAL)
+**P1.1 gate:** CI and a real reproducible remote inference path; the latter was not established by the initial tests.
 
-- [x] Primer LLM GGUF real funcionando con la API Noble AI: Qwen3-4B-Instruct-2507 Q4_K_M / Tesla T4, 3 generaciones completadas.
-- [x] Registro reproducible del entorno, SHA256 del modelo y métricas de TTFT, duración, caracteres, uso GPU y VRAM muestreada.
-- [x] Informe de hallazgos cold vs. warm con limitaciones de la muestra.
-- [ ] Explicar y minimizar demora del primer turno en frío; progreso de inicialización en interfaz.
-- [ ] Mejorar medición: estado de calentamiento, más respuestas steady-state y calidad textual.
-- [ ] Confirmar narrador por túnel Cloudflare desde otra computadora (el benchmark local de Colab NO cubre conexión remota).
-- [ ] Modelos mayores y 12/16 GB reales; difusión y TTS bajo control de GPU.
-- **Gate P1.3:** calidad narrativa y arranque frío medidos separadamente en escenarios repetibles, sin falsear tokens/s.
+## Phase P1.2 — Remote GPU probe (tools available)
 
-## Fase P2 — ComfyUI, identidad y recursos visuales progresivos
+- [x] Authenticated TTFT, duration, error and sampled VRAM diagnostics.
+- [x] Remote worker GPU/latency status screen.
+- [x] Colab notebook using CUDA llama.cpp and temporary Cloudflare Quick Tunnel.
+- [x] Benchmark CLI and offline contract tests.
+- [ ] Capture real GGUF inference through a remote Colab T4/L4 worker, rather than only same-machine Colab.
+- [ ] Real network failure, session recovery, and OOM tests.
+- [ ] Measured desktop 12/16 GB hardware profiles.
+
+**P1.2 gate:** a real attached remote-worker benchmark, still open.
+
+## Phase P1.3 — First physical GPU report (partial)
+
+- [x] Actual Noble AI API + GGUF experiment: Qwen3-4B-Instruct-2507 Q4_K_M on Tesla T4, three generations completed.
+- [x] Reproducible environment, model SHA-256, TTFT/total/character count and sampled GPU/VRAM.
+- [x] Documented cold vs warm behavior and sampling limitations.
+- [ ] Explain/reduce cold-first-turn delay and show model preparation in the UI.
+- [ ] More warm samples, model status and literary-quality evaluation.
+- [ ] Remote Cloudflare-tunnel narrator from a second computer. The local Colab test does **not** cover this.
+- [ ] Larger LLMs, real 12/16 GB devices and diffusion/TTS arbitration.
+
+**P1.3 gate:** repeated cold/warm and narrative-quality tests, without inventing tokens/s. See [Colab QA v1.4](COLAB_QA_V14_RESULTADOS.md).
+
+## Phase P2 — ComfyUI, character identity, progressive art
 
 [Issue #6](https://github.com/Mairon31/novel_ai/issues/6)
-- [ ] Selección checkpoint/workflow/LoRA/seed/sampler/steps/CFG/resolución desde UI con capacidades reales.
-- [ ] ComfyUI job API, validación de workflow, cache/manifest, GPU leases, fallback.
-- [ ] Generación por cambio visual material de escena o click; no una imagen por cada turno.
-- [ ] Consistencia personaje con identity profile, versiones de vestuario y QA de 10 escenas.
-- [ ] Prueba 10 diálogos en misma escena ⇒ 0 imágenes; cambio de escena ⇒ máximo 1 job.
-- **Gate P2:** escena real generada, reutilizada y asociada a rama correcta sin bloquear narración.
 
-## Fase P3 — TTS configurable bajo demanda
+- [ ] Complete capability-based checkpoint/workflow/LoRA/seed/sampler/steps/CFG/resolution UI, across supported model families.
+- [ ] ComfyUI job API with workflow validation, cache/manifest, leases and errors.
+- [ ] Scene-aware generation/reuse, not an image for every response.
+- [ ] Identity/versioned outfits and ten-scene visual quality evaluation.
+- [ ] Ten dialogue turns in one scene → zero new art; scene change → at most one job.
+
+Parts of the above were subsequently implemented as documented below, but full P2 remains open.
+
+**P2 gate:** real art generated, reused, and attached to the correct story/branch without blocking text.
+
+## Phase P3 — On-demand, configurable TTS
 
 [Issue #7](https://github.com/Mairon31/novel_ai/issues/7)
-- [ ] Seleccionar motor/voz/idioma/CPU/GPU/Auto desde ajustes si el motor lo soporta.
-- [ ] Lazy worker, audio por personaje y caché por texto/voz/versiones.
-- [ ] OFF por defecto, escuchar manual, autolectura solo opt-in.
-- [ ] 50 turnos OFF ⇒ 0 llamadas a TTS; síntesis real y rendimiento registrados.
-- **Gate P3:** audio real manual, controles funcionan y errores no afectan texto.
 
-## Fase P4 — UI completa y empaquetado Windows
+- [ ] Compatible engine/voice/language/device selection, exposing CPU/GPU/Auto only where supported.
+- [ ] Lazy worker, per-character audio, cache by text/voice/version.
+- [ ] OFF by default, manual Listen, auto-read only if explicitly enabled.
+- [ ] Fifty turns with TTS disabled → zero syntheses; real audio and resource results.
 
-[Frontend #5](https://github.com/Mairon31/novel_ai/issues/5), [Desktop #12](https://github.com/Mairon31/novel_ai/issues/12)
-- [ ] Biblioteca, editor visual de historias/personajes, galería, import/export.
-- [ ] Tauri 2 (candidato) con sidecar FastAPI y launcher, instalación sin consola, datos en carpeta personalizable.
-- [ ] Verificación de updates, permisos, LAN opt-in segura y fallos de proceso.
-- [ ] QA visual mobile/desktop y pruebas reales del instalador/ejecutable.
-- **Gate P4:** abrir app de escritorio y terminar un capítulo sin editar archivos a mano.
+**P3 gate:** real manual audio with working controls and no effect on text play when speech fails. Piper pieces have shipped, but comprehensive multi-engine/character acceptance is open.
 
-## Fase P5 — mediciones reales de memoria y portabilidad
+## Phase P4 — Full product UI and Windows packaging
 
-[GPU #8](https://github.com/Mairon31/novel_ai/issues/8), [Colab #1](https://github.com/Mairon31/novel_ai/issues/1)
-- [ ] Medir equipos NVIDIA 12 GB y RTX 5060 Ti 16 GB con modelos/versión/hashes exactos.
-- [ ] Ensayar secuencia texto→imagen→voz, offload, OOM, RAM/VRAM/p95 y persistencia.
-- [ ] Colab **opcional** para diagnósticos y modelos de laboratorio; no exigirlo para instalar/usar.
-- [ ] CI de app, contract/integration/e2e, restauración, performance, documentación y licencias.
-- **Gate P5:** informe reproducible 12/16GB y limitaciones; no marcar soporte sin hardware correspondiente.
+[Frontend #5](https://github.com/Mairon31/novel_ai/issues/5) · [Desktop #12](https://github.com/Mairon31/novel_ai/issues/12)
 
-## Definition of Done por issue/PR
+- [ ] Comprehensive Library, visual world/character editor, Gallery, import/export.
+- [ ] Candidate Tauri 2 shell with FastAPI sidecar, no-console install, user-chosen storage.
+- [ ] Verified updates/permissions, authenticated opt-in LAN, process recovery.
+- [ ] Desktop/mobile visual QA and physical installer/executable tests.
 
-- Código real, API/estados validados y test plan explícito.
-- Comandos y resultados reales; capturas Playwright desktop/móvil para UI.
-- Hash de pesos y revisión de proveedor; atribución de fuentes si reusamos código.
-- Confirmar estados de botones y errores: no controles visuales vacíos.
-- Verificar que no se carguen modelos por navegar Settings/Model Hub.
-- En tests GPU indicar equipo, driver, backend, preset y pico VRAM.
-- Actualizar README, ADR, `docs/PROGRESO.md`, mapa de issues; no ocultar FAIL.
+**P4 gate:** install and launch desktop application, finish a chapter without editing files manually.
 
-## Enlaces
+## Phase P5 — Actual hardware and portability measurements
 
-[Model Hub](MODEL_HUB.md) · [Onboarding](ONBOARDING_Y_UI.md) · [Referencias Urakatsu/Koharu](REFERENCIAS_URAKATSU_KOHARU.md) · [App desktop](DESKTOP_Y_DESPLIEGUE.md) · [Issues](https://github.com/Mairon31/novel_ai/issues)
+[GPU #8](https://github.com/Mairon31/novel_ai/issues/8) · [Colab #1](https://github.com/Mairon31/novel_ai/issues/1)
 
-### P1.4 — ampliación funcional completada
+- [ ] NVIDIA 12 GB and RTX 5060 Ti 16 GB measurements with exact models/revisions/hashes.
+- [ ] Text → image → speech sequences with offload, OOM handling, RAM/VRAM/p95/persistence.
+- [ ] Colab as optional laboratory, never mandatory installation.
+- [ ] CI for app, contracts, integration/E2E, backup/restore, performance, docs, and licensing.
 
-- [x] Canon editable por historia, reinyectado al contexto del narrador.
-- [x] Ramas independientes desde cualquier turno guardado con copia de historia/imagen y enlace a origen.
-- [x] Preparación manual del modelo vía API sin escribir turnos de prueba ni cargar GPU en startup.
-- [x] UI de progreso de inferencia, espera y cancelación.
-- [ ] Árbol de ramas, merge/rewind, gestión de conflictos y cache por rama.
-- [ ] Extracción automática, auditable y configurable de hechos de los capítulos.
-- [ ] Controlador GPU/CPU multinivel de ComfyUI, LLM y TTS.
+**P5 gate:** reproducible 12/16 GB reports with real hardware, limitations, and recovery evidence.
 
+## Definition of done for issues and pull requests
 
+- Actual code, validated API/data states, and a clear test plan.
+- Exact commands/results; desktop/mobile Playwright screenshots for UI changes.
+- Model hashes/provider revision; licensing notices for adapted code.
+- Working buttons/error states; no decorative controls masquerading as functionality.
+- Navigation in Settings/Model Hub does not load models or synthesize speech.
+- Real-GPU tests specify device, driver, backend, preset, and observed peak VRAM.
+- Update README, relevant ADR, [Progress](PROGRESO.md) and issues; never conceal failures.
 
-## Referencias de imagen y recursos GPU
+[Model Hub](MODEL_HUB.md) · [Onboarding](ONBOARDING_Y_UI.md) · [Urakatsu/Koharu references](REFERENCIAS_URAKATSU_KOHARU.md) · [Desktop](DESKTOP_Y_DESPLIEGUE.md)
 
-- [x] Img2img con VAEEncode de ComfyUI; cargar una versión WebP de la galería como composición inicial.
-- [x] Control seguro del archivo de referencia por historia y firma SHA256.
-- [x] Denoise seleccionable y cache reproducible por referencia, semilla, prompt y configuración.
-- [x] Consulta bajo demanda de VRAM global observada con nvidia-smi, sin presuponer modelos concretos.
-- [x] Opción de admisión por reserva mínima y sobreescritura explícita por solicitud.
-- [ ] IPAdapter/FaceID, consistencia visual a nivel identidad sin cambios indeseados.
-- [ ] Gestor de prioridades/orquestación para offload y transferencia LLM-ComfyUI-TTS.
-- [ ] Telemetría de memoria por proceso, GPUs múltiples y CUDA con checkpoints heterogéneos.
+---
 
+## Later P1.4 delivery — expanded functionality
 
-## Motor visual y tareas locales (implementado en código)
+- [x] Per-story editable canon reinserted into narrator context.
+- [x] Independent forks from saved turns, with copied story/art and origin metadata.
+- [x] Explicit model warmup API without writing test turns or loading GPU at startup.
+- [x] Inference progress, elapsed time, and cancel controls.
+- [ ] Interactive branch tree, merge/rewind/conflict handling, per-branch caches.
+- [ ] Auditable, configurable automatic extraction of chapter facts.
+- [ ] Multi-level resource manager for ComfyUI/LLM/TTS.
 
-- [x] Planes específicos por escena: composición, plano, luz, atmósfera y reparto con referencias persistentes.
-- [x] Referencia visual asignable a cada personaje desde una imagen de la galería, validada y copiable a ramas.
-- [x] Previsualización del prompt planificado sin cargar modelos.
-- [x] Bloqueo opcional de generación simultánea local de LLM y difusión, liberado al finalizar o fallar.
-- [x] Protección frente a duplicación concurrente de escena inicial en SQLite.
-- [ ] Conditioning multi-referencia y control consistente de identidad (IPAdapter/LoRA/etc.).
-- [ ] Cola persistente y scheduler consciente de GPU disponible, prioridades/cancelación y descarga real de pesos.
+## Image references and GPU resources
 
-## Crear historias con capas visuales — módulo autor
+- [x] Basic ComfyUI VAEEncode img2img using a saved story-gallery WebP.
+- [x] Story ownership and reference SHA-256 validation.
+- [x] Configurable denoise and reproducible cache signature for reference/seed/prompt/config.
+- [x] On-demand free VRAM query via `nvidia-smi`, without pretending a model was measured.
+- [x] Minimum VRAM reserve/one-request explicit override.
+- [ ] Full FaceID/IPAdapter real-hardware identity stability across model families.
+- [ ] Owned-process offload and LLM↔ComfyUI↔TTS scheduling.
+- [ ] Per-process memory telemetry, multi-GPU, heterogeneous CUDA/model checkpoints.
 
-- [x] Gestionar fondos WebP y sprites PNG alfa por historia.
-- [x] Captions de aparición, selección conservadora por palabras completas y mapeo a NPC.
-- [x] Compositor visual básico en el lector con archivos existentes; no genera imágenes automáticamente.
-- [x] Aislamiento de recursos y remapeo de personajes al bifurcar historias.
-- [x] Model Hub con filtros interactivos de compatibilidad y medidor visual de demanda de memoria.
-- [ ] Visor de expresión y pose múltiple por personaje; animaciones, capas y posicionamiento.
-- [ ] Motor de coincidencias semánticas revisable, con reglas por escena y sin invenciones.
-- [ ] Instalación efectiva de modelos de imagen, TTS y reportes de compatibilidad por runtime.
+## Scene planning and local resources (implemented components)
 
+- [x] Per-scene plans with composition, framing, lighting, atmosphere, cast and saved references.
+- [x] Character reference gallery image with validated association and fork remapping.
+- [x] Prompt preview without loading inference models.
+- [x] Optional local LLM/diffusion operation exclusion, released on completion/error.
+- [x] Concurrent initial-scene duplicate prevention in SQLite.
+- [ ] Robust multi-reference identity conditioning and region consistency.
+- [ ] Durable GPU-aware prioritized queues, cancellation, and owned-weight unloading.
 
-### N-08/N-09 — avance parcial en Story Hub local
+## Authorial layered-story media
 
-Existe un catálogo de tres historias originales de texto, instalables como copia independiente con NPC, aperturas y Lorebooks desde Biblioteca. La demo de Colab puede usar el paquete enriquecido sin sobrescribir una biblioteca anterior. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) supera 358 Python y 68 Playwright. **N-08 y N-09 continúan abiertas** hasta tener arte, paquetes externos y QA real de inmersión. N-10 (publicación/comunidad online) no se implementó. [Documentación](STORY_HUB.md).
+- [x] Per-story WebP backgrounds and alpha-PNG foreground sprites.
+- [x] Appearance captions, conservative whole-word selection, optional NPC mapping.
+- [x] Basic existing-asset reader compositor; no automatic generation on every turn.
+- [x] Media ownership/remapping when forking stories.
+- [x] Model Hub fit filters and visual memory-demand explanations.
+- [ ] Rich expression/pose viewer, animation/layer positioning.
+- [ ] Reviewable semantic match engine and per-scene rules.
+- [ ] Full runtime-specific image/TTS model installation and compatibility reports.
 
-- [x] Navegación `#/descubrir` independiente agregada como base para descubrimiento remoto futuro; el contenido actual continúa siendo local y sin servidor comunitario.
+## N-08/N-09 — partial local Story Hub
 
+Three bundled original **text-only** worlds can be installed as independent copies with NPCs, openings, and Lorebooks from Library. Colab's enriched demo does not overwrite an existing library. [CI #42169215781](https://github.com/Mairon31/novel_ai/actions/runs/42169215781) passed **358 Python / 68 Playwright**. **N-08 and N-09 remain open** for art, external packs, and real immersive QA; N-10 (remote community publishing) is not implemented.
 
-### N-07 — primer corte implementado, alcance restante abierto (2026-11-06)
+- [x] Separate `#/descubrir` route for future remote discovery. Its current catalog remains local, without a community service.
 
-Creator Studio ya incluye asistente de propuesta narrativa de 3 etapas mediante el proveedor de LLM configurado: mundo público/privado, cuatro NPC, tres Lorebooks y tres aperturas, con previsualización y confirmación de instalación SQLite. No confundir con generación integral de novelas ilustradas. Faltan edición granular del borrador, regeneración por componente, planes visuales, portadas, fondos, sprites, TTS y QA de historias extensas con GPU real. Ver STORY_HUB.md y TODO.md.
+## N-07 — first AI-assisted Creator Studio slice (November 6)
 
-- [x] Pruebas del asistente y confirmación: [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437), **365 Python + 72 Playwright y build Vite PASS** para `3be0b5c`. Incluye edición de NPC, Lorebook, etiquetas y aperturas.
+Creator Studio can request a structured, editable proposal from the configured LLM in three stages: public/private world, four NPCs, three Lorebook entries, and three openings, with review before transactional SQLite installation. This is **not complete automatic illustrated-novel creation**. Further per-section regeneration and editing were later implemented; visual plans, covers, backgrounds, sprites, speech casting, and long-run physical-GPU QA remain open.
 
+- [x] Initial assistant/confirmation tests: [CI #42180655437](https://github.com/Mairon31/novel_ai/actions/runs/42180655437), **365 Python / 72 Playwright / Vite PASS** for `3be0b5c`, including editing NPCs/Lorebooks/tags/openings.
 
-## Prioridades de experiencia anime/roleplay y arranque visual — 2026-11-06 (planificado, NO implementado)
+## Anime roleplay and illustrated-story preparation — November 6 (planned)
 
-La retroalimentación de uso real, incluidas dos capturas del cuadro de entrada, cambia el foco hacia historias de fantasía/anime jugables y completas antes de optimizaciones cosméticas. El [plan detallado](PLAN_HISTORIAS_ANIME_2026_11_06.md) y el [TODO N-16 a N-24](../TODO.md) son los requisitos fuente.
+Real-use feedback and two composer screenshots increased priority for engaging anime/fantasy stories rather than superficial UI polish. [Detailed narrative experience plan](PLAN_HISTORIAS_ANIME_2026_11_06.md) and [TODO N-16–N-24](../TODO.md) are the source requirements.
 
-1. **Autoría fiable:** wizard con parámetros esenciales, plantillas anime/fantasía, validación front/server y previsualización editable (N-23).
-2. **Todo en uno:** instalar/seleccionar/configurar modelos de ilustración y TTS y controlar recursos y colas **desde Noble AI**, no obligar a usar una interfaz externa para la experiencia normal (N-21; depende de N-01, N-03 y N-11).
-3. **Historia ilustrada lista antes de interactuar:** al crear o abrir una historia sin imágenes, generar portada, primer fondo y sprites necesarios, mostrar «Preparando historia», persistir/reanudar trabajos y habilitar entrada/LLM únicamente tras verificar los recursos exigidos (N-22, N-23). Ante un error, reintentar o cambiar expresamente a texto; no inventar fondos ni quedar bloqueado para siempre.
-4. **Narrador director, no modelo complaciente:** arcos, canon, reglas de mundo, NPC autónomos, consecuencias e intervención fuera de personaje tratada explícitamente (N-18); elección graduada de libertad sin romper la coherencia narrativa.
-5. **Interfaz enfocada en roleplay:** barra superior del editor con acciones Hablar/Actuar/Pensar/Observar/Interactuar, ajustes por historia y separación de reintentar/borrar; rediseño responsive de la zona mostrada en las capturas (N-19).
-6. **Arte y contenido:** fantasía/anime como estilo inicial, worldbuilding, capítulos y tono propios del género; prompts, fondos, sprites y portadas visualmente consistentes (N-20).
-7. **Audio con reparto:** ampliar Piper con Pocket TTS, OmniVoice, Kokoro TTS y Qwen3 TTS tras investigar compatibilidad/licencia/ES-LA; voz distinta por NPC y narrador (N-16/N-17).
-8. **Puertas QA (N-24):** pruebas de no complacencia y acciones imposibles a lo largo de 10–20 turnos; screenshots escritorio/móvil; preflight/errores/recuperación y ejecución física Windows/Colab. No marcar [x] por diseñar los flujos.
+1. **Reliable authoring:** validated story wizard, essential fields, anime/fantasy templates, front/server validation, editable previews (N-23).
+2. **All-in-one experience:** install/select/configure image and speech models and manage queues/resources *inside Noble AI*, not another application's interface for routine use (N-21; depends on N-01/N-03/N-11).
+3. **Illustrated stories prepared before interaction:** new or opened illustrated stories missing media should enter **Preparing story**, schedule cover/background/sprites, persist/recover jobs, and only activate LLM/player input when requirements pass; allow explicit retry or text-only choice (N-22/N-23).
+4. **Narrative director, not an agreeable chatbot:** arcs, canon, world constraints, autonomous NPCs, consequences, and out-of-character handling (N-18).
+5. **Roleplay composer:** integrated Speak/Act/Think/Observe/Interact toolbar, per-story settings, separated Retry/Delete, responsive screenshots (N-19).
+6. **Artwork/content:** anime/fantasy by default, worldbuilding, narrative arcs, coherent prompt styles, backgrounds, sprites, covers (N-20).
+7. **Cast voices:** expand Piper with Pocket TTS, OmniVoice, Kokoro, Qwen3-TTS after licensing/ES-LA/runtime checks; distinct narrator/NPC voices (N-16/N-17).
+8. **QA gates:** impossible-action and non-sycophancy tests over 10–20 turns, desktop/mobile evidence, failures/recovery, and real Windows/Colab runs. **Do not mark complete because an item is designed.**
 
-Los sistemas de Piper, ComfyUI, Creator Studio y Story Hub existentes se reutilizarán; su disponibilidad parcial no acredita este conjunto de requisitos.
+Existing Piper/ComfyUI/Creator Studio/Story Hub components remain valuable building blocks but do not yet satisfy this full scope.
 
-### Reorganización de Ajustes N-25 — implementada y validada (2026-11-06)
+### N-25 — Separate settings pages (implemented and validated November 6)
 
-Se implementó la separación física de la navegación y los componentes antes de ampliar los parámetros de imagen/TTS de N-21: **Imágenes** y **Voz / TTS** como pantallas independientes. Dividir asimismo **Acerca de Noble AI** y **Actualizaciones**, antes reunidas en «Sobre y actualizaciones». Mantener todo integrado dentro de Noble AI, **no** volver a juntar opciones no relacionadas por ahorrar pestañas. Preservar preferencias actuales, instalación de Piper/ComfyUI, controles de actualización y acceso móvil. `WorkspaceSettings.tsx` presenta navegación independiente; `CreativeSettings.tsx` fue eliminado y sustituido por componentes separados. [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131): 381 Python + 80 Playwright + Vite PASS. [Diseño y pruebas de aceptación](PLAN_HISTORIAS_ANIME_2026_11_06.md#9-n-25-separacion-de-paginas-de-configuracion).
+Before expanding N-21 controls, separated previously combined sections into **Images**, **Voice / TTS**, **About Noble AI**, and **Updates** as independently navigable destinations. Do not merge unrelated options again merely to reduce the tab count. Preserve settings, Piper/ComfyUI functions, update checks, and mobile navigation.
 
+`WorkspaceSettings.tsx` holds independent navigation; `CreativeSettings.tsx` was replaced by the distinct components. [CI #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131) passed **381 Python / 80 Playwright / Vite**. See [settings acceptance](CONFIGURACION_APARTADOS.md).
 
-### N-21 · Primer tramo técnico: muestreo real y presets anime (2026-11-06)
+### N-21 — First sampling/style implementation (November 6)
 
-Código publicado: presets visuales aplicados al prompt, muestreador/scheduler persistidos y enviados a KSampler, consulta manual de compatibilidad y bloqueo de selección no válida antes de inferencia. Se mantiene **pendiente** el resto de N-21: instalación/gestión de checkpoints desde Noble, selección por historia/escena, parámetros de referencia/LoRA y TTS avanzado. [Documentación](CONTROLES_IMAGEN.md). CI final aún por observar.
+Persisted image sampler/scheduler values are sent to KSampler. Anime presets affect prompts, and manual runtime capability inspection rejects unsupported non-default combinations before inference. Advanced image settings, per-story/scene settings, multi-model installation and new TTS providers remain open. [Image controls](CONTROLES_IMAGEN.md).
 
+### N-01/N-21 — First image checkpoint installer (November 6)
 
-### N-01 / N-21 · Primer instalador de checkpoint de imagen dentro de Noble AI (2026-11-06)
+Implemented on `master`: Hugging Face repo inspection of eligible individual public safetensors with SHA-256, durable jobs, transfer pause/resume/cancel, safetensors validation, managed storage, and ComfyUI model-path YAML. Images settings exposes this without requiring an external downloader.
 
-Implementación publicada en `master`: catálogo por repositorio HF, solo safetensors individuales con SHA-256, cola duradera y controles de transferencia, prevalidación de formato, carpeta Noble y archivo de integración ComfyUI. El panel Imágenes expone estas funciones sin abrir otra interfaz para descargas/ajustes. **Falta** que el propio Noble arranque/gestione ComfyUI y registre la nueva ruta automáticamente, además de familias y accesorios de modelos, per-historia y prueba GPU física. Por tanto **N-01 y N-21 maestros continúan abiertos**. [Contrato y límites](CHECKPOINTS_IMAGEN.md). [CI #42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206) PASS para el primer flujo (393 Python, 82 Playwright y Vite); cambios posteriores en validación.
+Full model-family support, LoRA/VAE/accessories, per-story settings, automated **ComfyUI app installation**, and physical GPU rendering remain open. [Checkpoint guide](CHECKPOINTS_IMAGEN.md). [CI #42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206) reported **393 Python / 82 Playwright / Vite PASS** for the initial flow.
 
+### N-01 — Managed local ComfyUI runtime (second increment)
 
-### N-01 · Segundo tramo: inicio y control del runtime ComfyUI local (2026-11-06)
+Noble AI can validate an **existing** ComfyUI directory and Python executable, configure port/VRAM mode, launch `main.py` using fixed safe arguments with `--listen 127.0.0.1` and `--extra-model-paths-config`, check `/system_stats`, inspect logs, and stop only its own process. A separately installed ComfyUI instance no longer needs to be started manually when managed launch is configured.
 
-Implementación en `master`: gestor de proceso propio y ajustes persistentes en Imágenes. Valida instalación existente, Python, puerto, modo VRAM; inicia `main.py` con argv fijo `--listen 127.0.0.1 --port ... --extra-model-paths-config ...`, comprueba `/system_stats`, expone logs y detiene solo el proceso que abrió Noble. Ya no es obligatorio arrancar ComfyUI a mano si está instalado localmente. No hay instalación automática del código ni dependencias, instalación de complementos, soporte explícito SDXL/Flux, ni QA físico con GPU. [Guía](COMFY_UI_INTEGRACION.md). CI final pendiente.
-
-
-**N-01 segundo tramo validado:** [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171) PASS (398 Python, 84 Playwright y Vite). El gestor de procesos Comfy existente queda implementado, incluida defensa de solicitudes cross-site; no equivale a tener el instalador oficial Comfy/PyTorch dentro de Noble ni al render GPU. Tercer tramo de instalación/actualización integral documentado en TODO.
+This does **not** install/upgrade ComfyUI or dependencies, automatically install plugins, certify SDXL/Flux compatibility, or prove real GPU generation. [Runtime guide](COMFY_UI_INTEGRACION.md). [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171) passed **398 Python / 84 Playwright / Vite**, including browser cross-site start/stop protections. Third-increment installation/upgrades remain in TODO.
