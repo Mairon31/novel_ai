@@ -1122,7 +1122,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </label>
               </div>
               <label>Sinopsis breve para lectores
-                <textarea rows={3} aria-label="Sinopsis para lectores" maxLength={250}
+                <textarea rows={3} aria-label="Reader synopsis" maxLength={250}
                   value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}
                   placeholder="What players see when they discover the story."/>
               </label>

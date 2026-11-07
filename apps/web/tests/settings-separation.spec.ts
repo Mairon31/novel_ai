@@ -30,8 +30,8 @@ test('four settings panels are independent, deep-linkable and responsive', async
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toBeVisible();
   await expect(page.getByLabel('Default Piper voice')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Sobre y actualizaciones' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Images y voz' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'About and updates' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Images and voice' })).toHaveCount(0);
   expect(imageRequests).toBeGreaterThan(0);
   expect(voiceRequests).toBe(0);
   expect(downloadActions).toBe(0);

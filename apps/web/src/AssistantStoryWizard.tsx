@@ -269,7 +269,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           <h4>Lorebook ({draft.lore.length})</h4>
           {draft.lore.map((entry, index) => <details key={index}
             className="creator-ai-editable-item">
-            <summary>{entry.title || 'Entrada ' + (index + 1)} · Edit lore</summary>
+            <summary>{entry.title || 'Entry ' + (index + 1)} · Edit lore</summary>
             <label>Title
               <input aria-label={'Lorebook title ' + (index + 1)}
                 maxLength={100} value={entry.title}

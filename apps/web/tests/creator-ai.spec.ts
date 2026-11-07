@@ -98,34 +98,34 @@ test('AI Creator previews a whole world before an explicit local install', async
   });
   await page.getByLabel('Section to regenerate').selectOption('openings');
   await page.getByLabel('Regeneration instructions').fill('Aperturas con más misterio');
-  await page.getByRole('button', { name: 'Regenerar sección' }).click();
+  await page.getByRole('button', { name: 'Regenerate section' }).click();
   await expect(page.getByLabel('Generated opening 1')).toHaveValue(/llave brillante/);
   await expect(page.getByLabel('NPC description 1')).toHaveValue(/Sara conoce los antiguos pactos/);
-  await expect(page.getByRole('button', { name: 'Restaurar versión anterior' })).toBeVisible();
-  await page.getByRole('button', { name: 'Restaurar versión anterior' }).click();
+  await expect(page.getByRole('button', { name: 'Restore previous version' })).toBeVisible();
+  await page.getByRole('button', { name: 'Restore previous version' }).click();
   await expect(page.getByLabel('Generated opening 1')).toHaveValue(/carta del farero/);
   await page.getByLabel('Section to regenerate').selectOption('plot');
-  await page.getByRole('button', { name: 'Regenerar sección' }).click();
+  await page.getByRole('button', { name: 'Regenerate section' }).click();
   await expect(page.getByLabel('Editable public plot')).toHaveValue(/muelle ha sido cerrado/);
   await expect(page.getByLabel('Editable generated synopsis')).toHaveValue(/conspiración/);
   await expect(page.getByLabel('NPC description 1')).toHaveValue(/Sara conoce los antiguos pactos/);
   await expect(page.getByLabel('Generated opening 1')).toHaveValue(/carta del farero/);
   await expect(page.getByLabel('Estimated generation budget')).toBeVisible();
   await page.getByLabel('Regeneration instructions').fill('verificar edición concurrente');
-  await page.getByRole('button', { name: 'Regenerar sección' }).click();
+  await page.getByRole('button', { name: 'Regenerate section' }).click();
   await page.getByLabel('Editable generated synopsis').fill(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );
-  await expect(page.getByRole('alert')).toContainText('borrador cambió durante la solicitud');
+  await expect(page.getByRole('alert')).toContainText('draft changed while the request was running');
   await expect(page.getByLabel('Editable generated synopsis')).toHaveValue(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );
-  await page.getByRole('button', { name: 'Create story con esta propuesta' }).click();
+  await page.getByRole('button', { name: 'Create story from this draft' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Characters \(4\)/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Lorebook \(3\)/ })).toBeVisible();
   await page.getByRole('button', { name: 'Plot and context', exact: true }).click();
-  await expect(page.getByLabel('Sinopsis para lectores')).toHaveValue(
+  await expect(page.getByLabel('Reader synopsis')).toHaveValue(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );
   await page.screenshot({
