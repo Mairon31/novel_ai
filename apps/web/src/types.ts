@@ -241,6 +241,23 @@ export type CheckpointInstalled = {
   model_dir: string; config_path: string; comfyui_argument: string[];
   requires_runtime_restart: boolean;
 };
+export type ComfyLaunchConfig = {
+  install_dir: string; python_executable: string; port: number;
+  memory_mode: 'auto' | 'lowvram' | 'normalvram' | 'highvram' | 'cpu';
+};
+export type ComfyLaunchValidation = {
+  valid: boolean; install_dir: string; python_executable: string;
+  model_paths_config: string; base_url: string; memory_mode: ComfyLaunchConfig['memory_mode'];
+};
+export type ComfyRuntimeStatus = {
+  status: 'stopped' | 'starting' | 'ready' | 'exited';
+  owns_process: boolean; pid: number | null; exit_code: number | null;
+  base_url: string; diagnostics: {
+    comfyui_version: string; python_version: string;
+    devices: Array<{name: string; type: string}>;
+  } | null;
+};
+export type ComfyRuntimeLogs = { text: string; truncated: boolean };
 export type ImageSamplerOptions = {
   online: boolean; sampler_name: string[]; scheduler: string[]; error: string | null;
 };

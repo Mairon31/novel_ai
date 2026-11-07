@@ -1,4 +1,4 @@
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, ComfyLaunchConfig, ComfyLaunchValidation, ComfyRuntimeStatus, ComfyRuntimeLogs, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch('/api/v1' + path, {
@@ -121,6 +121,21 @@ export const api = {
     '/images/config', { method: 'PUT', body: JSON.stringify(config) }),
   imageStatus: () => request<ImageStatus>('/images/status'),
   imageSamplerOptions: () => request<ImageSamplerOptions>('/images/sampler-options'),
+  comfyRuntimeConfig: () => request<ComfyLaunchConfig>('/images/runtime/config'),
+  comfyRuntimeValidate: (config: ComfyLaunchConfig) =>
+    request<ComfyLaunchValidation>('/images/runtime/validate', json(config)),
+  comfyRuntimeSave: (config: ComfyLaunchConfig) =>
+    request<ComfyLaunchConfig>('/images/runtime/config', {
+      method: 'PUT', body: JSON.stringify(config),
+    }),
+  comfyRuntimeStatus: () => request<ComfyRuntimeStatus>('/images/runtime/status'),
+  comfyRuntimeStart: () => request<ComfyRuntimeStatus>('/images/runtime/start', {
+    method: 'POST',
+  }),
+  comfyRuntimeStop: () => request<ComfyRuntimeStatus>('/images/runtime/stop', {
+    method: 'POST',
+  }),
+  comfyRuntimeLogs: () => request<ComfyRuntimeLogs>('/images/runtime/logs'),
   checkpointLookup: (repo_id: string) => request<CheckpointCatalog>(
     '/images/checkpoints/lookup?repo_id=' + encodeURIComponent(repo_id)),
   checkpointInstalled: () => request<CheckpointInstalled>('/images/checkpoints/installed'),
