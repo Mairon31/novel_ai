@@ -81,8 +81,13 @@ class CheckpointInstaller:
     def __init__(self, store: Store, catalog: HfCatalog):
         self.store = store
         self.catalog = catalog
-        self.base = (store.models_dir / "comfyui").resolve()
+        intended = store.models_dir / "comfyui"
+        self.base = intended.resolve()
+        if intended.is_symlink() or not self.base.is_relative_to(store.models_dir.resolve()):
+            raise RuntimeError("Ruta de modelos ComfyUI fuera del almacenamiento de Noble")
         self.root = self.base / "checkpoints"
+        if self.root.is_symlink():
+            raise RuntimeError("No se administran carpetas de modelos enlazadas")
         self.root.mkdir(parents=True, exist_ok=True)
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="noble-image-checkpoints")
         self.lock = threading.Lock()
@@ -225,6 +230,10 @@ class CheckpointInstaller:
         if file is None:
             raise HTTPException(422, "Modelo sin SHA-256 o tamaño verificable en catálogo")
         target = self._path(body.repo_id, body.filename)
+        free_bytes = shutil.disk_usage(self.base).free
+        reserve = min(128 * 1024 * 1024, file["size_bytes"] // 20)
+        if free_bytes < file["size_bytes"] + reserve:
+            raise HTTPException(507, "Espacio insuficiente para verificar el checkpoint")
         if target.is_symlink() or target.exists():
             raise HTTPException(409, "El checkpoint ya existe y no será sobrescrito")
         with self.lock:
