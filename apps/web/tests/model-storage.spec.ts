@@ -38,7 +38,7 @@ test('installed Model Hub reports real disk usage, partials and absent files', a
   if (await wizard.isVisible())
     await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
-  await page.getByRole('tab', { name: /Instalados/ }).click();
+  await page.getByRole('tab', { name: /Installed/ }).click();
   const storage = page.getByRole('region', { name: 'Almacenamiento de modelos' });
   await expect(storage).toBeVisible();
   await expect(storage.getByText('Espacio de modelos')).toBeVisible();
