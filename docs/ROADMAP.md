@@ -296,3 +296,8 @@ Código publicado: presets visuales aplicados al prompt, muestreador/scheduler p
 ### N-01 / N-21 · Primer instalador de checkpoint de imagen dentro de Noble AI (2026-11-06)
 
 Implementación publicada en `master`: catálogo por repositorio HF, solo safetensors individuales con SHA-256, cola duradera y controles de transferencia, prevalidación de formato, carpeta Noble y archivo de integración ComfyUI. El panel Imágenes expone estas funciones sin abrir otra interfaz para descargas/ajustes. **Falta** que el propio Noble arranque/gestione ComfyUI y registre la nueva ruta automáticamente, además de familias y accesorios de modelos, per-historia y prueba GPU física. Por tanto **N-01 y N-21 maestros continúan abiertos**. [Contrato y límites](CHECKPOINTS_IMAGEN.md). [CI #42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206) PASS para el primer flujo (393 Python, 82 Playwright y Vite); cambios posteriores en validación.
+
+
+### N-01 · Segundo tramo: inicio y control del runtime ComfyUI local (2026-11-06)
+
+Implementación en `master`: gestor de proceso propio y ajustes persistentes en Imágenes. Valida instalación existente, Python, puerto, modo VRAM; inicia `main.py` con argv fijo `--listen 127.0.0.1 --port ... --extra-model-paths-config ...`, comprueba `/system_stats`, expone logs y detiene solo el proceso que abrió Noble. Ya no es obligatorio arrancar ComfyUI a mano si está instalado localmente. No hay instalación automática del código ni dependencias, instalación de complementos, soporte explícito SDXL/Flux, ni QA físico con GPU. [Guía](COMFY_UI_INTEGRACION.md). CI final pendiente.

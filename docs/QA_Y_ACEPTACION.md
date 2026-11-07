@@ -397,3 +397,13 @@ La tarea de implementación se puede cerrar con CI automática, pero la tarea de
 - Configuración extra-model-paths generada sin tocar carpeta ajena. Mostrar que registrar el path y reiniciar ComfyUI externo sigue siendo necesario; **no** confundir instalado en Noble con detectado/compatible en ComfyUI.
 - UI escritorio/móvil: buscar repositorio, información de licencia/hash/tamaño, progreso, controlar, rechazar selección cuando ComfyUI no lo ve, seleccionar y guardar cuando Comfy sí lo ve; comprobar no descargas al entrar.
 - QA físico pendiente: modelo abierto real y su licencia, checkpoint reconocido al arrancar ComfyUI con config generada, render real en GPU y límites de memoria, fallo y recuperación sin corrupción. No marcar tarea maestra N-01 completada por mocks.
+
+
+## N-01 · Gate de ejecución de ComfyUI desde Noble AI (verificación final pendiente)
+
+- Confirmar ruta absoluta de ComfyUI con marcadores (`main.py`, `server.py`, `folder_paths.py`, `comfy/cli_args.py`) y ejecutable Python, sin abrir scripts `.bat` ni shell. Rechazar rutas relativas/simbólicas, puertos usados/reservados, modos VRAM inválidos y reemplazos de una instancia activa.
+- Verificar argv real `--listen 127.0.0.1`, `--port`, `--disable-auto-launch`, `--extra-model-paths-config`; ningún acceso externo accidental ni descarga al entrar en el panel. El usuario debe pulsar **Iniciar ComfyUI**.
+- En estado listo, la instancia propia responde `/system_stats` y Noble conserva los demás valores de `image_preferences` al actualizar base URL. No confundir proceso inicializando con listo ni mostrar un `status=stopped` como instancias remotas controladas.
+- **Detener** únicamente el proceso creado con Popen por Noble, con terminate/kill controlado; no detener servicios ComfyUI ajenos ni reiniciar otros workers. Logs solo desde `data/logs/comfyui.log`, fragmento final limitado y rechazo de enlaces simbólicos.
+- Validación UI Playwright escritorio/móvil: validación → guardar → iniciar → estado → logs → detener; recarga de preferencias, navegación a Voz/TTS sin efecto en imagen, ruta directa y ausencia de ejecución automática.
+- Verificar CI Python/frontend y, antes de marcar el runtime plenamente operativo, arranque físico en Windows y/o Colab con un ComfyUI real, detección de checkpoint y render final en GPU. **CI mock no demuestra compatibilidad de GPU.**

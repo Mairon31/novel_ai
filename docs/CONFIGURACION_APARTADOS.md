@@ -55,3 +55,8 @@ Velocidad (`length_scale`), variación de voz (`noise_scale`) y variación de fo
 
 
 **Evidencia N-21, segundo tramo:** [CI #42340597543](https://github.com/Mairon31/novel_ai/actions/runs/42340597543) PASS. Los controles de velocidad y variación Piper se encuentran exclusivamente en Voz/TTS; el test cubre que no se produzca audio al abrir Ajustes y que los cambios deban guardarse antes de probar.
+
+
+## Arranque administrado de ComfyUI (N-01, segundo tramo)
+
+Imágenes contiene también el componente `ComfyRuntimePanel.tsx`, que gestiona un ComfyUI ya instalado en el equipo. Los ajustes del runtime (directorio, Python, puerto, perfil VRAM) persisten en SQLite y permiten validar, iniciar, consultar estado, leer logs y detener únicamente el proceso iniciado por Noble. Se usa una URL local y la ruta de modelos `noble_extra_model_paths.yaml` automática; nunca se inicia al navegar al panel. El módulo Voz/TTS no comparte esos controles. [Guía](COMFY_UI_INTEGRACION.md). La instalación automática de ComfyUI/requirements, extensiones y pruebas físicas de GPU siguen pendientes.

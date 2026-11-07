@@ -12,7 +12,7 @@ La API no admite archivos de otras extensiones ni rutas con subdirectorios en el
 
 ## Conectar los checkpoints con ComfyUI
 
-Noble genera el archivo `data/models/comfyui/noble_extra_model_paths.yaml` con su carpeta de checkpoints. **ComfyUI, que por ahora es un proceso externo, debe arrancarse con:**
+Noble genera el archivo `data/models/comfyui/noble_extra_model_paths.yaml` con su carpeta de checkpoints. Desde esta fase existen **dos maneras de conectarlo**: (1) **Configuración → Imágenes → Ejecutar ComfyUI desde Noble AI**: valida una instalación ComfyUI ya existente, guarda sus rutas y pulsa **Iniciar ComfyUI**. Noble pasa automáticamente `--extra-model-paths-config` y configura su URL local; (2) si prefieres administrar ComfyUI por tu cuenta, arráncalo manualmente con:
 
 ```text
 --extra-model-paths-config "<ruta-absoluta-mostrada-por-Noble>"
@@ -20,7 +20,7 @@ Noble genera el archivo `data/models/comfyui/noble_extra_model_paths.yaml` con s
 
 La UI enseña la ruta exacta en tu instalación; ComfyUI quizá necesite reiniciarse para actualizar el catálogo. Después pulsa **Buscar checkpoints**. Solo cuando ComfyUI devuelve el nombre relativo `autor/modelo/archivo.safetensors` en su inventario se habilita **Seleccionar checkpoint**. Guarda entonces los ajustes de imagen; el botón Ilustrar utiliza exactamente el checkpoint reconocido, con el muestreador y el estilo anime que configuraste.
 
-**No se debe editar manualmente la carpeta de otros programas** y Noble no mueve el archivo a una ruta ComfyUI elegida arbitrariamente. Arrancar/actualizar ComfyUI y gestionar modelos especializados desde el panel Noble continúan pendientes de N-01/N-21.
+**No se debe editar manualmente la carpeta de otros programas** y Noble no mueve el archivo a una ruta ComfyUI elegida arbitrariamente. **Iniciar y detener ComfyUI ya instalado desde Noble AI está implementado**; sigue pendiente la **instalación/actualización automática del propio ComfyUI**, modelos avanzados, familias y pruebas físicas de GPU. [Más información](COMFY_UI_INTEGRACION.md).
 
 ## Endpoints
 
@@ -44,3 +44,8 @@ La revisión se fija a un SHA de 40 caracteres; el hash de 64 caracteres es obli
 ## Pendiente
 
 Soporte de checkpoints almacenados en subcarpetas HF, filtros de familias compatibles (SD1.5/SDXL/Illustrious/Flux), administración de LoRA/VAE, instalación automática/launcher de ComfyUI y validación visual real en Windows/Colab. Los hitos maestros N-01 y N-21 siguen sin completarse.
+
+
+## Gestor de procesos ComfyUI
+
+La administración de un **ComfyUI existente** está ahora integrada en **Configuración → Imágenes**, sin ejecutar `.bat` ni shell: carpeta, Python, puerto y VRAM; inicio explícito, diagnóstico, registros y parada del proceso propio. Es un segundo tramo distinto de la instalación de checkpoints, con [instrucciones y límites](COMFY_UI_INTEGRACION.md). La descarga/instalación del programa ComfyUI sigue pendiente.

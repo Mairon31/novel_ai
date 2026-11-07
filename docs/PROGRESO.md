@@ -927,3 +927,11 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] Tests `tests/test_checkpoint_installer.py` (HF simulado: validación, hash, symlinks, pausa/reanudación, formato y ausencia de descarga automática) y `apps/web/tests/checkpoint-installer.spec.ts` (desktop/móvil, consulta/instalación, controles, conexión ComfyUI y persistencia).
 - [x] **[CI #42342017206](https://github.com/Mairon31/novel_ai/actions/runs/42342017206): 393 Python, 82 Playwright escritorio/móvil, build Vite PASS**. Corrección posterior de path relativo Windows (\) y publicación atómica `os.link` todavía con CI más reciente en ejecución.
 - [ ] Instalación física de checkpoint HF/ComfyUI en Windows/Colab pendiente; siguen pendientes LoRA/VAE, compatibilidad por familia SDXL/Flux/Illustrious, launcher interno Comfy y control de recursos.
+
+
+## 2026-11-06 · N-01 segundo tramo, ejecutar ComfyUI desde Noble AI (CI pendiente)
+
+- [x] Componente `ComfyRuntimePanel.tsx` embebido solo en Configuración → Imágenes, con campos carpeta de ComfyUI, ejecutable Python (detección de venv/portable), puerto, memoria auto/lowvram/normalvram/highvram/cpu, validación explícita, guardado, iniciar, detener, estado y registros.
+- [x] `comfy_process.py` y API `/api/v1/images/runtime/*`: ajustes en SQLite, verifica archivos reales del código ComfyUI, Python y ruta local, puerto libre y reservado, arranque seguro sin shell y en loopback, configuración automática de las rutas de checkpoints Noble, detección de salud por `/system_stats`, logs acotados y parada solo de su proceso hijo. No se controla ComfyUI iniciado por otra aplicación.
+- [x] Una vez iniciado el proceso, el backend cambia la URL de imagen a su propia `http://127.0.0.1:puerto`; no cambia checkpoint, CFG ni preset anime guardados. No se ejecuta ni descarga ComfyUI al abrir Ajustes o validar. `test_comfy_process.py` y `comfy-runtime.spec.ts` cubren rutas inseguras, puertos, banderas efectivas, guardado, diagnóstico, salida, logs y navegación desktop/móvil.
+- [ ] CI final de esta fase en curso; una prueba física de arranque con ComfyUI real, Python con PyTorch y una generación GPU en Windows/Colab es pendiente. La descarga/instalación automática del propio runtime ComfyUI también permanece abierta en N-01/N-21.
