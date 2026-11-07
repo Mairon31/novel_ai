@@ -47,24 +47,24 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   expect(selected.cover_image_url).toContain('/creator/assets/');
   expect(selected.scene_image_url).toBeNull();
 
-  await page.getByRole('button', { name: 'Ir a Library' }).click();
+  await page.getByRole('button', { name: 'Go to Library' }).click();
   const book = page.locator('.noble-library-cover').filter({ hasText: title });
   await expect(book).toBeVisible();
   await expect(book.locator('.noble-library-cover-art'))
     .toHaveCSS('background-image', /creator\/assets/);
   await book.click();
-  await expect(page.getByRole('region', { name: 'Detalle de ' + title })
+  await expect(page.getByRole('region', { name: 'Details of ' + title })
     .locator('.noble-story-detail-cover')).toHaveCSS('background-image', /creator\/assets/);
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
     '-fixed-editorial-cover.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Editar en Creator Studio' }).click();
   await page.getByRole('button', { name: /Images \(1\)/ }).click();
-  await page.getByRole('button', { name: 'Quitar portada' }).click();
+  await page.getByRole('button', { name: 'Remove cover' }).click();
   await expect(page.getByText('No custom cover')).toBeVisible();
   const updated = await page.request.get('/api/v1/stories/' + storyId);
   expect((await updated.json() as { cover_asset_id: string | null }).cover_asset_id).toBeNull();
-  await page.getByRole('button', { name: 'Ir a Library' }).click();
+  await page.getByRole('button', { name: 'Go to Library' }).click();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toBeVisible();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })
     .locator('.noble-library-cover-art')).not.toHaveCSS('background-image', /creator\/assets/);

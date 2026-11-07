@@ -84,20 +84,20 @@ test('Creator Studio stages five AI expressions for author review before approva
       });
 
     const section = page.getByRole('region', { name: 'Borrador de sprites Aira' });
-    await expect(section.getByRole('button', { name: 'Aprobar cinco expresiones' })).toBeDisabled();
+    await expect(section.getByRole('button', { name: 'Approve five expressions' })).toBeDisabled();
     await section.getByRole('button', { name: 'Generate missing expressions' }).click();
     await expect(section.getByText('Aira · 5/5 expresiones')).toBeVisible();
     await expect(section.locator('img')).toHaveCount(5);
     expect(generated).toBe(5);
     await expect(section.getByText(/Variaciones importantes de encuadre/)).toBeVisible();
     await expect(section.getByRole('button', {
-      name: 'Aprobar cinco expresiones',
+      name: 'Approve five expressions',
     })).toBeDisabled();
     await section.getByRole('checkbox', {
       name: 'I accepted draft differences for Aira',
     }).check();
     await expect(section.getByRole('button', {
-      name: 'Aprobar cinco expresiones',
+      name: 'Approve five expressions',
     })).toBeEnabled();
     await page.screenshot({
       path: 'test-results/' + test.info().project.name + '-sprite-review.png',
@@ -115,7 +115,7 @@ test('Creator Studio stages five AI expressions for author review before approva
           approved: true, count: 5, assets: [],
         } });
       });
-    await section.getByRole('button', { name: 'Aprobar cinco expresiones' }).click();
+    await section.getByRole('button', { name: 'Approve five expressions' }).click();
     await expect(page.getByText(/Aprobadas 5 expresiones/)).toBeVisible();
     expect(approved).toBe(true);
     // The UI fixture does not create server-side sprite files: cleanup the real draft.

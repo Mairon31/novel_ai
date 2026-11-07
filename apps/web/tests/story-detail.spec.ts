@@ -24,7 +24,7 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
   await expect(page.getByRole('heading', { name: /Stories to experience/ })).toBeVisible();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
 
-  const detail = page.getByRole('region', { name: 'Detalle de ' + title });
+  const detail = page.getByRole('region', { name: 'Details of ' + title });
   await expect(detail).toBeVisible();
   await expect(detail.getByRole('heading', { name: title })).toBeVisible();
   await expect(detail.getByText('Lia descubre el secreto del faro bajo la tormenta.')).toBeVisible();
@@ -42,7 +42,7 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
   await expect(page.getByLabel('Sinopsis para lectores'))
     .toHaveValue('Lia descubre el secreto del faro bajo la tormenta.');
 
-  await page.getByRole('button', { name: 'Ir a Library' }).click();
+  await page.getByRole('button', { name: 'Go to Library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   await page.getByRole('button', { name: 'Start story' }).click();
   await expect(page.locator('.noble-reader-layout')).toBeVisible();

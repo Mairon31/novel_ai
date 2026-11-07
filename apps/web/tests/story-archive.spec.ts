@@ -18,8 +18,8 @@ test('library exports an archive and rejects duplicate restoration without losin
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Import .noble.zip backup' })).toBeVisible();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
-  await expect(page.getByRole('region', { name: 'Detalle de ' + title })).toBeVisible();
-  const archiveLink = page.getByRole('link', { name: 'Descargar respaldo completo' });
+  await expect(page.getByRole('region', { name: 'Details of ' + title })).toBeVisible();
+  const archiveLink = page.getByRole('link', { name: 'Download full backup' });
   await expect(archiveLink).toHaveAttribute('download', 'noble-family.noble.zip');
   await expect(archiveLink).toHaveAttribute('href',
     '/api/v1/stories/' + story.id + '/archive.noble.zip');

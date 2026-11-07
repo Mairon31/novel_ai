@@ -64,11 +64,11 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   expect(samplingChecks).toBe(1);
   await expect(page.getByText('KSampler compatibility: compatible selection.')).toBeVisible();
   await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_sde');
-  await expect(page.getByRole('button', { name: 'Guardar ajustes de imagen' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Save image settings' })).toBeDisabled();
   await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_2m');
   await page.getByLabel('Planificador ComfyUI').selectOption('karras');
   await page.getByLabel('Illustration style').selectOption('anime_cinematic');
-  await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
+  await page.getByRole('button', { name: 'Save image settings' }).click();
   // Wait for the actual PUT response and saved UI state before reading SQLite.
   await expect(page.getByText('ComfyUI settings saved.')).toBeVisible();
   const configured = await page.request.get('/api/v1/images/config');

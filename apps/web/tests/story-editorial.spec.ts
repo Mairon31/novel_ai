@@ -64,16 +64,16 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
     await page.getByRole('button', { name: 'Open menu' }).click();
   await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
-  const detail = page.getByRole('region', { name: 'Detalle de ' + title });
+  const detail = page.getByRole('region', { name: 'Details of ' + title });
   await expect(detail).toBeVisible();
   await expect(detail.getByText('Dos caminos llevan al antiguo observatorio.')).toBeVisible();
   await expect(detail.getByText('Nora llega a la ciudad durante una tormenta de nieve.')).toBeVisible();
-  await expect(detail.getByRole('heading', { name: 'Characters de este mundo' })).toBeVisible();
+  await expect(detail.getByRole('heading', { name: 'Characters in this world' })).toBeVisible();
   await expect(detail.getByRole('img', { name: 'Retrato de Iria' })).toBeVisible();
   await expect(detail.getByRole('img', { name: 'Observatorio nevado' })).toBeVisible();
   await expect(detail.getByText(/El guardia oculta un secreto/)).toHaveCount(0);
 
-  const openings = detail.getByRole('region', { name: 'Escenas de apertura' });
+  const openings = detail.getByRole('region', { name: 'Opening scenes' });
   await expect(openings.getByText(/Las puertas del observatorio se abren para Nora/)).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
     '-story-editorial.png', fullPage: true });
@@ -92,5 +92,5 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   await page.getByRole('button', { name: 'Return to library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   await expect(detail.getByRole('button', { name: 'Continue historia' })).toBeVisible();
-  await expect(detail.getByRole('region', { name: 'Escenas de apertura' })).toHaveCount(0);
+  await expect(detail.getByRole('region', { name: 'Opening scenes' })).toHaveCount(0);
 });
