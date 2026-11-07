@@ -26,6 +26,9 @@ class ComfyFixture:
         self.lora_inventory_invalid = False
         self.lora_offline = False
         self.last_workflow = None
+        self.sampler_choices = ["euler", "euler_ancestral", "dpmpp_2m", "heun"]
+        self.scheduler_choices = ["normal", "karras", "simple"]
+        self.invalid_sampler_inventory = False
 
     def __call__(self, request: httpx.Request):
         self.requests.append(request)
@@ -42,6 +45,12 @@ class ComfyFixture:
                 {"incorrect": "format"} if self.lora_inventory_invalid else
                 ["other.safetensors"] if self.missing_lora else
                 ["aira.safetensors", "bel.safetensors", "cora.safetensors"]))
+        if path == "/object_info/KSampler":
+            if self.invalid_sampler_inventory:
+                return httpx.Response(200, json={"KSampler": {"input": {"required": {}}}})
+            return httpx.Response(200, json={"KSampler": {"input": {"required": {
+                "sampler_name": [self.sampler_choices], "scheduler": [self.scheduler_choices],
+            }}}})
         if path == "/object_info/LoraLoader":
             if not self.lora_nodes_available:
                 return httpx.Response(200, json={})
@@ -476,6 +485,105 @@ class ComfySceneTests(unittest.TestCase):
         self.assertTrue(repeated.json()["cached"])
         self.assertEqual(len([request for request in self.fixture.requests
                               if request.url.path=="/upload/image"]),1)
+
+    def test_sampling_and_anime_style_change_real_comfy_workflow(self):
+        self.setup_comfy()
+        base = self.client.get("/api/v1/images/config").json()
+        self.assertEqual(base["style_preset"], "anime_fantasy")
+        self.assertEqual(base["sampler_name"], "euler")
+        self.assertEqual(base["scheduler"], "normal")
+        endpoint = f"/api/v1/stories/{self.story}/illustrate"
+        first = self.client.post(endpoint, json={
+            "prompt": "Un castillo al anochecer", "seed": 15012})
+        self.assertEqual(first.status_code, 200, first.text)
+        self.assertIn("anime fantasy illustration",
+                      self.fixture.last_workflow["2"]["inputs"]["text"])
+        self.assertFalse(any(r.url.path == "/object_info/KSampler"
+                             for r in self.fixture.requests))
+        tuned = self.client.put("/api/v1/images/config", json={
+            **base, "checkpoint": "my-story-checkpoint.safetensors",
+            "sampler_name": "dpmpp_2m", "scheduler": "karras",
+            "style_preset": "anime_cinematic"})
+        self.assertEqual(tuned.status_code, 200, tuned.text)
+        self.assertEqual(self.client.get("/api/v1/images/config").json()
+                         ["sampler_name"], "dpmpp_2m")
+        second = self.client.post(endpoint, json={
+            "prompt": "Un castillo al anochecer", "seed": 15012})
+        self.assertEqual(second.status_code, 200, second.text)
+        self.assertFalse(second.json()["cached"])
+        self.assertNotEqual(second.json()["asset_id"], first.json()["asset_id"])
+        graph = self.fixture.last_workflow
+        self.assertEqual(graph["5"]["inputs"]["sampler_name"], "dpmpp_2m")
+        self.assertEqual(graph["5"]["inputs"]["scheduler"], "karras")
+        self.assertIn("cinematic anime key visual", graph["2"]["inputs"]["text"])
+        self.assertIn("Un castillo al anochecer", graph["2"]["inputs"]["text"])
+        visual = self.client.get(
+            f"/api/v1/stories/{self.story}/visual-state").json()
+        asset = next(a for a in visual["assets"]
+                     if a["id"] == second.json()["asset_id"])
+        self.assertEqual(asset["render_details"]["sampler_name"], "dpmpp_2m")
+        self.assertEqual(asset["render_details"]["scheduler"], "karras")
+        self.assertEqual(asset["render_details"]["style_preset"], "anime_cinematic")
+        again = self.client.post(endpoint, json={
+            "prompt": "Un castillo al anochecer", "seed": 15012})
+        self.assertEqual(again.status_code, 200, again.text)
+        self.assertTrue(again.json()["cached"])
+
+    def test_k_sampler_capabilities_and_invalid_runtime_block_generation(self):
+        self.setup_comfy()
+        inventory = self.client.get("/api/v1/images/sampler-options")
+        self.assertEqual(inventory.status_code, 200)
+        self.assertTrue(inventory.json()["online"])
+        self.assertIn("dpmpp_2m", inventory.json()["sampler_name"])
+        self.assertIn("karras", inventory.json()["scheduler"])
+        config = self.client.get("/api/v1/images/config").json()
+        configured = self.client.put("/api/v1/images/config", json={
+            **config, "sampler_name": "dpmpp_2m", "scheduler": "karras"})
+        self.assertEqual(configured.status_code, 200)
+        self.fixture.sampler_choices = ["euler"]
+        rejected = self.client.post(f"/api/v1/stories/{self.story}/illustrate",
+                                    json={"prompt": "Un castillo al anochecer"})
+        self.assertEqual(rejected.status_code, 422, rejected.text)
+        self.assertIn("Muestreador no disponible", rejected.text)
+        self.assertFalse(any(r.url.path == "/prompt"
+                             for r in self.fixture.requests))
+        self.fixture.sampler_choices = ["euler", "dpmpp_2m"]
+        self.fixture.scheduler_choices = ["normal"]
+        rejected_scheduler = self.client.post(
+            f"/api/v1/stories/{self.story}/illustrate",
+            json={"prompt": "Un castillo al anochecer"})
+        self.assertEqual(rejected_scheduler.status_code, 422)
+        self.assertIn("Planificador no disponible", rejected_scheduler.text)
+        self.fixture.invalid_sampler_inventory = True
+        broken = self.client.get("/api/v1/images/sampler-options")
+        self.assertEqual(broken.status_code, 200)
+        self.assertFalse(broken.json()["online"])
+        blocked = self.client.post(f"/api/v1/stories/{self.story}/illustrate",
+                                   json={"prompt": "Un castillo al anochecer"})
+        self.assertEqual(blocked.status_code, 422)
+        self.assertIn("KSampler", blocked.text)
+        self.assertFalse(any(r.url.path == "/prompt" for r in self.fixture.requests))
+
+    def test_image_parameters_reject_unsupported_values_without_mutating_saved_settings(self):
+        before = self.client.get("/api/v1/images/config").json()
+        for field, value in [
+            ("sampler_name", "script:custom"), ("scheduler", "fabricated"),
+            ("style_preset", "photorealistic"), ("steps", -1),
+        ]:
+            invalid = self.client.put("/api/v1/images/config", json={
+                **before, field: value})
+            self.assertEqual(invalid.status_code, 422, invalid.text)
+            self.assertEqual(self.client.get("/api/v1/images/config").json(), before)
+        self.setup_comfy()
+        valid = self.client.put("/api/v1/images/config", json={
+            **self.client.get("/api/v1/images/config").json(),
+            "style_preset": "none"})
+        self.assertEqual(valid.status_code, 200, valid.text)
+        response = self.client.post(f"/api/v1/stories/{self.story}/illustrate",
+            json={"prompt": "Un castillo al anochecer"})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertNotIn("anime fantasy illustration",
+                         self.fixture.last_workflow["2"]["inputs"]["text"])
 
     def test_security_and_model_validation(self):
         invalid = self.client.put("/api/v1/images/config", json={
