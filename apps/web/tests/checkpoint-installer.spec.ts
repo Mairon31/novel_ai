@@ -88,7 +88,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   await expect(page.getByText('Detectado en ComfyUI')).toBeVisible();
   await page.getByRole('button', { name: 'Select checkpoint' }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveValue(comfyReportedName);
-  await page.getByRole('button', { name: 'Guardar ajustes de imagen' }).click();
+  await page.getByRole('button', { name: 'Save image settings' }).click();
   await expect.poll(async () =>
     (await (await page.request.get('/api/v1/images/config')).json()).checkpoint)
     .toBe(comfyReportedName);

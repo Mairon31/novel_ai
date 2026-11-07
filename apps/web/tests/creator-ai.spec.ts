@@ -124,7 +124,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Characters \(4\)/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Lorebook \(3\)/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Trama y contexto', exact: true }).click();
+  await page.getByRole('button', { name: 'Plot and context', exact: true }).click();
   await expect(page.getByLabel('Sinopsis para lectores')).toHaveValue(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );

@@ -62,11 +62,11 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   expect(launches).toBe(0);
   expect(validations).toBe(0);
   expect(stopping).toBe(0);
-  await expect(panel.getByRole('button', { name: 'Iniciar ComfyUI' })).toBeDisabled();
-  await panel.getByLabel('Carpeta local de ComfyUI').fill('/home/test/ComfyUI');
-  await panel.getByLabel('Python para ComfyUI').fill('/home/test/venv/bin/python');
-  await panel.getByLabel('Puerto de ComfyUI').fill('19080');
-  await panel.getByLabel('Perfil de VRAM ComfyUI').selectOption('lowvram');
+  await expect(panel.getByRole('button', { name: 'Start ComfyUI' })).toBeDisabled();
+  await panel.getByLabel('Local ComfyUI directory').fill('/home/test/ComfyUI');
+  await panel.getByLabel('ComfyUI Python').fill('/home/test/venv/bin/python');
+  await panel.getByLabel('ComfyUI port').fill('19080');
+  await panel.getByLabel('ComfyUI VRAM profile').selectOption('lowvram');
   await expect(panel.getByText('Hay cambios sin guardar')).toBeVisible();
   await panel.getByRole('button', { name: 'Validate installation' }).click();
   await expect(panel.getByText('ComfyUI installation and Python executable verified.')).toBeVisible();
@@ -74,7 +74,7 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   expect(launches).toBe(0);
   await panel.getByRole('button', { name: 'Save ComfyUI launch' }).click();
   await expect(panel.getByText('ComfyUI settings saved.')).toBeVisible();
-  await panel.getByRole('button', { name: 'Iniciar ComfyUI' }).click();
+  await panel.getByRole('button', { name: 'Start ComfyUI' }).click();
   await expect(panel.getByText('Ready', { exact: true })).toBeVisible();
   await expect(panel.getByText('mock GPU', { exact: false })).toBeVisible();
   await expect(page.getByLabel('ComfyUI local')).toHaveValue('http://127.0.0.1:19080');
@@ -86,8 +86,8 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   await expect(panel.getByText('Stopped', { exact: true })).toBeVisible();
   expect(stopping).toBe(1);
   await page.reload();
-  await expect(panel.getByLabel('Puerto de ComfyUI')).toHaveValue('19080');
-  await expect(panel.getByLabel('Perfil de VRAM ComfyUI')).toHaveValue('lowvram');
+  await expect(panel.getByLabel('ComfyUI port')).toHaveValue('19080');
+  await expect(panel.getByLabel('ComfyUI VRAM profile')).toHaveValue('lowvram');
   expect(launches).toBe(1);
   await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();

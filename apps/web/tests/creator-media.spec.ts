@@ -45,28 +45,28 @@ test('author art library overlays caption-matched background and transparent spr
   });
   await page.getByRole('button', { name: 'Import image' }).click();
   await expect(page.getByRole('button', { name: /Images \(2\)/ })).toBeVisible();
-  await expect(page.getByText('Expresión: joy · Pose: waving')).toBeVisible();
+  await expect(page.getByText('Expression: joy · Pose: waving')).toBeVisible();
 
   await page.getByRole('button', { name: 'Aperturas' }).click();
-  await page.getByLabel('Nueva apertura').fill(
+  await page.getByLabel('New opening').fill(
     'Llegaron al castillo iluminado en la ciudad. Aira sonríe y se acerca a Luna.');
-  await page.getByRole('button', { name: 'Añadir apertura' }).click();
+  await page.getByRole('button', { name: 'Add opening' }).click();
   await page.getByRole('button', { name: 'Save openings' }).click();
-  await page.getByRole('button', { name: 'Utilizar como inicio de esta historia' }).click();
+  await page.getByRole('button', { name: 'Use as story opening' }).click();
   await expect(page.getByText(/Opening saved as the first turn/)).toBeVisible();
 
-  await page.getByRole('button', { name: 'Ir a Library' }).click();
+  await page.getByRole('button', { name: 'Go to Library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
-  await expect(page.getByRole('region', { name: 'Detalle de ' + title })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Details of ' + title })).toBeVisible();
   await page.getByRole('button', { name: 'Continue historia' }).click();
-  const portrait = page.getByRole('img', { name: 'Personaje presente: Aira feliz' });
+  const portrait = page.getByRole('img', { name: 'Present character: Aira feliz' });
   await expect(portrait).toBeVisible();
   await expect(portrait).toHaveAttribute('data-expression', 'joy');
   await expect(portrait).toHaveAttribute('data-pose', 'waving');
   await expect(page.locator('.noble-scene-background'))
     .toHaveCSS('background-image', /creator\/assets/);
   // On narrow screens the stage footer may intentionally hide captions.
-  await expect(page.getByText('Recursos del creador según la escena')).toHaveCount(1);
+  await expect(page.getByText('Creator assets matched to the scene')).toHaveCount(1);
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
     '-creator-visual-stage.png', fullPage: true });
 });

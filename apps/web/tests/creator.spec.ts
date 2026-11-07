@@ -29,26 +29,26 @@ test('Creator Studio keeps author-only story data separate from reader', async (
     'El antiguo alcalde esconde la llave detrás del castillo.');
   await page.getByLabel('Directrices de narración').fill(
     'No controles las decisiones de Luna; describe las reacciones de los NPC.');
-  await page.getByRole('button',{name:'Guardar trama y contexto'}).click();
+  await page.getByRole('button',{name:'Save plot and context'}).click();
   await expect(page.getByText(/Contenido del creador guardado/)).toBeVisible();
 
   await page.getByRole('button',{name:/Characters \(0\)/}).click();
   await page.getByLabel('Name de NPC').fill('Aira');
   await page.getByLabel('Descripción de NPC').fill(
     'Una bibliotecaria dedicada que protege los registros secretos de la ciudad.');
-  await page.getByLabel('Personalidad de NPC').fill('Sarcástica, reservada y muy observadora.');
+  await page.getByLabel('NPC personality').fill('Sarcástica, reservada y muy observadora.');
   await page.getByRole('button',{name:'Add character'}).click();
   await expect(page.getByText(/Ficha narrativa del personaje guardada/)).toBeVisible();
   await expect(page.getByRole('button',{name:/Characters \(1\)/})).toBeVisible();
 
   await page.getByRole('button',{name:'Aperturas'}).click();
-  await page.getByLabel('Nueva apertura').fill(
+  await page.getByLabel('New opening').fill(
     '{{user}} despierta en una biblioteca y escucha los pasos del bibliotecario.');
-  await page.getByRole('button',{name:'Añadir apertura'}).click();
+  await page.getByRole('button',{name:'Add opening'}).click();
   await page.getByRole('button',{name:'Save openings'}).click();
-  await expect(page.getByRole('button',{name:'Utilizar como inicio de esta historia'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Use as story opening'})).toBeVisible();
 
-  await page.getByRole('button',{name:'Trama y contexto'}).click();
+  await page.getByRole('button',{name:'Plot and context'}).click();
   await expect(page.getByLabel('Contexto interno de la IA')).toHaveValue(
     'El antiguo alcalde esconde la llave detrás del castillo.');
   await page.screenshot({

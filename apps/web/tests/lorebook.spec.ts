@@ -66,7 +66,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
 
   await page.getByRole('button', { name: 'Create project', exact: true }).click();
   const creation = page.getByRole('dialog', { name: 'Create story project' });
-  const title = 'Testigo del sello ' + test.info().project.name;
+  const title = 'Witness del sello ' + test.info().project.name;
   await creation.getByLabel('Title').fill(title);
   await creation.getByLabel('World premise').fill(
     'Dos personajes exploran una ciudad donde solo uno conoce un antiguo secreto.');
@@ -87,7 +87,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
     'La última llave del sello permanece bajo una estatua en el palacio.');
   await page.getByLabel('Lorebook keys').fill('sello');
   await page.getByLabel('Visibilidad de Lorebook').selectOption('witnesses');
-  await page.getByRole('checkbox', { name: 'Testigo Aira' }).check();
+  await page.getByRole('checkbox', { name: 'Witness Aira' }).check();
   await page.getByRole('button', { name: 'Create Lorebook entry' }).click();
   await expect(page.getByText(/Entrada de Lorebook guardada/)).toBeVisible();
   await page.getByLabel('Simulate Lorebook activation').fill('Busco el sello con Aira.');
