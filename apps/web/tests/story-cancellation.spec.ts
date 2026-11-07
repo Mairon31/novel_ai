@@ -56,13 +56,13 @@ test('Stop signals the backend for the exact story and request without committin
   await page.getByRole('textbox', { name: 'Your input in the story' })
     .fill('Inspecciono el libro que hay sobre la mesa.');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Stop generación' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop generation' })).toBeVisible();
   await expect.poll(() => requestId).toMatch(/^[a-f0-9-]{36}$/);
 
-  await page.getByRole('button', { name: 'Stop generación' }).click();
+  await page.getByRole('button', { name: 'Stop generation' }).click();
   await expect.poll(() => cancelledRequestId).toBe(requestId);
   expect(cancelledStoryId).toBe(storyId);
-  await expect(page.getByText(/Cancelación solicitada/)).toBeVisible();
+  await expect(page.getByText(/Cancellation requested/)).toBeVisible();
   await expect(page.locator('.noble-reader-stream')).toHaveCount(0);
   releaseBlockedGeneration?.();
 

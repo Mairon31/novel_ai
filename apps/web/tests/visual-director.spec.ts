@@ -48,7 +48,7 @@ test('visual director registers and reuses existing background without ComfyUI',
 
     const before = await (await page.request.get(base + '/visual-state')).json();
     await result.getByRole('button', { name: 'Reuse background without generating' }).click();
-    await expect(inspector).toContainText('Fondo reutilizado desde la galería');
+    await expect(inspector).toContainText('Background reused from Gallery');
     const after = await (await page.request.get(base + '/visual-state')).json();
     expect(after.assets).toHaveLength(before.assets.length);
     expect(after.selected_asset_id).toBe(before.selected_asset_id);
@@ -62,7 +62,7 @@ test('visual director registers and reuses existing background without ComfyUI',
       .selectOption('event');
     await inspector.getByRole('button', { name: 'Evaluate visual director' }).click();
     await expect(result).toContainText('Suggest a special event illustration');
-    await expect(result).toContainText('no se ha producido ninguna imagen automáticamente');
+    await expect(result).toContainText('No image has been generated automatically');
 
     await page.screenshot({
       path: 'test-results/' + test.info().project.name + '-visual-director.png',

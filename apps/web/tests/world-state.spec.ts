@@ -47,9 +47,9 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.getByRole('button', { name: 'Add fact' }).click();
   await page.getByLabel('Fact text 1').fill(
     'La llave secreta del rey está escondida bajo el faro.');
-  await page.getByRole('checkbox', { name: 'Hecho público 1' }).uncheck();
+  await page.getByRole('checkbox', { name: 'Public fact 1' }).uncheck();
   await page.getByRole('checkbox', { name: 'Witness Aira for fact 1' }).check();
-  await page.getByRole('button', { name: 'Guardar estado del mundo' }).click();
+  await page.getByRole('button', { name: 'Save world state' }).click();
   await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('State confirmed.');
 
   const response = await page.request.get('/api/v1/stories');
@@ -79,7 +79,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   const turnId = (await opening.json() as { id: string }).id;
 
   await page.getByLabel('World location').fill('Bosque del futuro');
-  await page.getByRole('button', { name: 'Guardar estado del mundo' }).click();
+  await page.getByRole('button', { name: 'Save world state' }).click();
   await expect(page.locator('.world-state-editor .narrative-saved[role="status"]')).toContainText('State confirmed.');
   const archived = await page.request.get(base + '/world-state/turns/' + turnId);
   expect(archived.ok()).toBeTruthy();
@@ -97,7 +97,7 @@ test('Creator world-state saves witnesses and restores an immutable turn snapsho
   await page.locator('.creator-project').filter({ hasText: title }).first().click();
   await page.getByRole('button', { name: 'World state' }).click();
   await expect(page.getByLabel('World location')).toHaveValue('Bosque del futuro');
-  await page.getByText('History de instantáneas por turno').click();
+  await page.getByText('Turn snapshot history').click();
   await page.getByLabel('Historical world turn').selectOption(turnId);
   await page.getByRole('button', { name: 'View snapshot' }).click();
   await expect(page.getByText('Lugar: Puerto de niebla')).toBeVisible();

@@ -45,8 +45,8 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
     expect((await cast.json()).characters[0].visual_character_id).toBe(visual.id);
     await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('Expression-sheet character').selectOption({ label: 'Aira' });
-    await page.getByLabel('Contexto de hoja').fill('Aira castillo cristal');
-    await page.getByLabel('Archivo de hoja de expresiones').setInputFiles({
+    await page.getByLabel('Sheet context').fill('Aira castillo cristal');
+    await page.getByLabel('Expression-sheet file').setInputFiles({
       name: 'expressions.png', mimeType: 'image/png', buffer: spriteSheet,
     });
     await page.getByRole('button', { name: 'Import five expressions' }).click();

@@ -78,7 +78,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await page.getByLabel('URL del worker').fill(address);
   await page.getByLabel('Token del worker').fill('a-long-fixture-bearer-secret');
   await page.getByRole('button', { name: 'Registrar worker' }).click();
-  await expect(page.getByText('Worker registrado. Comprueba su conexión antes de activarlo.')).toBeVisible();
+  await expect(page.getByText('Worker registered. Check its connection before activation.')).toBeVisible();
   await expect(page.getByLabel('Token del worker')).toHaveValue('');
   await page.getByRole('button', { name: 'Test connection' }).click();
   await expect(page.getByText('Worker available and authenticated')).toBeVisible();
@@ -86,7 +86,7 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
   await expect(page.getByText('NVIDIA T4 fixture')).toBeVisible();
   await expect(page.getByText('VRAM 4100 / 15360 MB · GPU 45%')).toBeVisible();
   await page.getByRole('button', { name: 'Medir respuesta real' }).click();
-  await expect(page.getByText('Prueba de generación completada')).toBeVisible();
+  await expect(page.getByText('Generation test completed')).toBeVisible();
   await expect(page.getByText('Primer texto: 221 ms')).toBeVisible();
   await page.getByRole('button', { name: 'Use remote model as narrator' }).click();
   await expect(page.getByText(/Narrator remoto activado: fixture-gguf:4b/)).toBeVisible();

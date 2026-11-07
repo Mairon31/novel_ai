@@ -57,7 +57,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
   await page.goto('/');
   await openSettings();
   await page.getByLabel('Default Piper voice').selectOption('voice-b.onnx');
-  await page.getByRole('button', { name: 'Guardar voz predeterminada' }).click();
+  await page.getByRole('button', { name: 'Save default voice' }).click();
   await expect(page.getByText('Default reader voice saved.')).toBeVisible();
   expect(writes).toBe(1);
   expect(selected).toBe('voice-b.onnx');

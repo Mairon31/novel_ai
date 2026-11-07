@@ -24,7 +24,7 @@ test('shareable story URLs survive reload and browser Back/Forward', async ({ pa
   await expect(page.getByRole('region', { name: 'Details of ' + story.title }))
     .toBeVisible();
 
-  await page.getByRole('button', { name: /Start story|Continue historia/ }).click();
+  await page.getByRole('button', { name: /Start story|Continue story/ }).click();
   await expect(page).toHaveURL(new RegExp('#/historia/' + story.id + '/leer$'));
   await expect(page.locator('.noble-reader-chapter')).toContainText(story.title);
   const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });

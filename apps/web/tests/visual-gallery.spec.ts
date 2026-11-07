@@ -36,7 +36,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByLabel('Lugar actual').fill('Library antigua');
   await page.getByRole('button', { name: 'Confirm scene' }).click();
   await expect(page.getByText('Escenas registradas: 2.')).toBeVisible();
-  await page.getByLabel('Describe la escena que quieres ilustrar')
+  await page.getByLabel('Describe the scene to illustrate')
     .fill('Aira en la biblioteca iluminada por velas antiguas');
   await page.getByRole('button', { name: 'View complete prompt and profiles' }).click();
   await expect(page.getByText(/Cabello plateado largo, ojos verdes intensos/)).toBeVisible();
@@ -66,17 +66,17 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByRole('checkbox', { name: 'Personaje visible Aira' }).check();
   await page.getByRole('combobox', { name: 'Scene shot' }).selectOption('closeup');
   await page.getByRole('combobox', { name: 'Scene lighting' }).selectOption('sunset');
-  await page.getByLabel('Atmósfera visual').fill('misterio y esperanza');
-  await page.getByLabel('Dirección de escena').fill('Aira levanta el medallón.');
+  await page.getByLabel('Visual mood').fill('misterio y esperanza');
+  await page.getByLabel('Scene direction').fill('Aira levanta el medallón.');
   const focus = page.getByRole('combobox', { name: 'Foco visual' });
   const airaValue = await focus.locator('option').nth(1).getAttribute('value');
   expect(airaValue).toBeTruthy();
   await focus.selectOption(airaValue!);
   await page.getByRole('button', { name: 'Save scene plan' }).click();
-  await expect(page.getByText(/Plan de escena guardado/)).toBeVisible();
+  await expect(page.getByText(/Scene plan saved/)).toBeVisible();
   await page.getByRole('button', { name: 'View complete prompt and profiles' }).click();
-  await expect(page.getByText(/Plano: primer plano/)).toBeVisible();
-  await expect(page.getByText(/luz cálida del atardecer/)).toBeVisible();
+  await expect(page.getByText(/Shot: close-up/)).toBeVisible();
+  await expect(page.getByText(/warm sunset light/)).toBeVisible();
   await page.getByLabel('Image seed').fill('1739');
   await expect(page.getByRole('checkbox', { name: 'Apply character LoRAs' }))
     .not.toBeChecked();
