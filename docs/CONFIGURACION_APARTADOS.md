@@ -47,3 +47,8 @@ La pestaña **Imágenes** ahora contiene tres controles efectivos: muestreador, 
 El botón **Comprobar muestreo ComfyUI** consulta `GET /api/v1/images/sampler-options`, que utiliza el endpoint local `/object_info/KSampler`, limita los resultados a los métodos conocidos por Noble y expone error si ComfyUI no responde. **Al generar**, los muestreadores/planificadores distintos de Euler/Normal se comprueban de nuevo contra el runtime, evitando enviar valores no disponibles. Euler/Normal mantiene compatibilidad con un ComfyUI que no exponga introspección.
 
 La semilla se sigue eligiendo por solicitud de escena, no como ajuste global en esta fase. La caché y los metadatos de galería diferencian el estilo y los parámetros, preservando imágenes antiguas. No incluye instalación de checkpoints, LoRA global por modelo, render automático inicial ni perfiles por historia; tareas N-21/N-22 pendientes. Ver [guía detallada](CONTROLES_IMAGEN.md).
+
+
+### Ajustes propios de Voz / TTS (N-21, tramo Piper)
+
+Velocidad (`length_scale`), variación de voz (`noise_scale`) y variación de fonemas (`noise_w`) son parámetros internos de Piper visibles únicamente en Voz/TTS. Se guardan aparte de la voz predeterminada y de la configuración de imágenes, afectan tanto a la prueba de voz como a Escuchar y pasan directamente a argumentos válidos de Piper. No se inicia síntesis con solo cambiar la pestaña o guardar.

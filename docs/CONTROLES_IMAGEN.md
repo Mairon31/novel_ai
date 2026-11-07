@@ -1,6 +1,6 @@
 # Noble AI — Controles de muestreo y estética de las ilustraciones
 
-**Estado:** primer tramo de N-21 implementado en `master`; CI de esta iteración pendiente de cierre. Esto es una descripción del control local, no una prueba de calidad artística con GPU real.
+**Estado:** primer tramo de N-21 implementado en `master`; [CI #42340226265](https://github.com/Mairon31/novel_ai/actions/runs/42340226265) aprobado (385 Python / 80 Playwright / Vite). Esto es una descripción del control local, no una prueba de calidad artística con GPU real.
 
 ## Configuración
 

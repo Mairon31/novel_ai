@@ -897,11 +897,20 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - [x] **N-25 cerrado en código y CI:** [run #42280194131](https://github.com/Mairon31/novel_ai/actions/runs/42280194131) con **381/381 Python + 80/80 Playwright** desktop/móvil y Vite PASS, incluyendo capturas de Imágenes, Voz, Acerca y Actualizaciones y pruebas de deep link/aislamiento API. Las pruebas de navegador usan API local, pero no incluyen revisión humana de capturas ni instalaciones físicas GPU/Piper (pendientes N-21/N-24).
 
 
-## 2026-11-06 · N-21, controles avanzados de ilustración anime (CI pendiente)
+## 2026-11-06 · N-21, controles avanzados de ilustración anime (CI aprobada)
 
 - [x] `ImageSettings` extiende persistencia SQLite con `sampler_name`, `scheduler` y `style_preset`; validación Pydantic restringe los valores admitidos. Configuraciones anteriores se leen aplicando defaults y utilidades antiguas de grafo conservan Euler/Normal.
 - [x] `workflow()` usa realmente los valores en KSampler; `styled_prompt()` añade ADN visual elegido solo al invocar una ilustración, con anime de fantasía como preset global inicial, y `none` que no modifica el prompt.
 - [x] Endpoint explícito `GET /api/v1/images/sampler-options`: inspecciona el `object_info/KSampler` del ComfyUI configurado, expone intersección de métodos probados y valida métodos no predeterminados antes de enviar el prompt, fallando con 422 si no están instalados.
 - [x] Metadatos del render y firma de caché guardan muestreador, scheduler y estilo, con compatibilidad de archivos antiguos; pruebas de importación de procedencia malformada previenen datos no autorizados.
 - [x] UI Imágenes incluye desplegables, comprobación manual de compatibilidad, guardado y aviso de no compatibilidad sin abrir otra interfaz. Test navegador verifica persistencia entre paneles y bloqueo de ajustes conocidos no compatibles.
-- [ ] CI integral pendiente y prueba física con ComfyUI real sin mocks pendiente. N-21 completo sigue abierto: instalación de modelos de imagen y ajustes por historia/escena y TTS de múltiples proveedores.
+- [x] CI [#42340226265](https://github.com/Mairon31/novel_ai/actions/runs/42340226265) PASS (385 Python / 80 Playwright escritorio-móvil / Vite). La prueba física con ComfyUI real sin mocks sigue pendiente. N-21 completo sigue abierto: instalación de modelos de imagen y ajustes por historia/escena y TTS de múltiples proveedores.
+
+
+## 2026-11-06 · N-21, controles avanzados Piper (CI pendiente)
+
+- [x] API `GET/PUT /api/v1/tts/synthesis-config` con Pydantic y SQLite, `length_scale` (0.5–2), `noise_scale` (0–1.5) y `noise_w` (0–1.5). Rechazo de campos inválidos y persistencia sin afectar a voz predeterminada.
+- [x] Previsualización puntual y lectura de turnos comparten parámetros Piper reales `--length_scale`, `--noise_scale`, `--noise_w` y respetan la ejecución bajo demanda. La firma del audio cacheado incorpora la configuración para generar nuevas versiones sin perder originales.
+- [x] Voz/TTS (panel separado de Imágenes) expone los controles, guardado explícito, señal de cambios pendientes y deshabilitación de muestra hasta guardarlos; audio previo invalidado tras cambiar parámetros.
+- [x] Pruebas Python con ejecutable falso validan argumentos, persistencia, rechazo de valores, cambios de caché y WAV temporal; test Playwright valida guardar/recargar y ausencia de síntesis implícita.
+- [ ] CI final y ensayo real con una voz ONNX y el ejecutable Piper en Windows/Colab pendientes. Motores TTS adicionales y asignación de voces por personaje siguen abiertos.

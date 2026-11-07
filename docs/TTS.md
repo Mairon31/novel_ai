@@ -60,3 +60,12 @@ Noble AI debe operar como un producto integral con selección, descarga, configu
 - **Evidencia requerida:** 10 frases con pronunciación ES-LA, turno con narrador y 3+ NPC, cambio y ausencia de voz, sincronización, cancelación, memoria y latencia en Colab/Windows, y pruebas unitarias de los adaptadores.
 
 Ver [plan detallado N-16/N-17/N-21](PLAN_HISTORIAS_ANIME_2026_11_06.md) y [tareas maestras](../TODO.md). Estas tareas no sustituyen ni marcan terminado el instalador parcial de voces Piper descrito en [PIPER_VOICES.md](PIPER_VOICES.md).
+
+
+## N-21, controles de síntesis Piper dentro de Voz/TTS (2026-11-06)
+
+Se implementaron tres parámetros específicos de Piper en **Configuración → Voz / TTS**, separados de los ajustes de Imágenes. El nuevo endpoint `GET/PUT /api/v1/tts/synthesis-config` guarda `length_scale` (0.5 a 2, predeterminado 1.0), `noise_scale` (0 a 1.5, predeterminado 0.667) y `noise_w` (0 a 1.5, predeterminado 0.8) en la configuración local SQLite. Esta selección se aplica tanto al botón **Probar voz seleccionada** como a **Escuchar** en las historias. Los valores corresponden a los argumentos oficiales de Piper: [CLI Python](https://github.com/rhasspy/piper/blob/master/src/python_run/piper/__main__.py) y [CLI C++](https://github.com/rhasspy/piper/blob/master/src/cpp/main.cpp).
+
+Un `length_scale` menor reproduce fonemas más rápido; los otros dos parámetros modulan el ruido del generador y la variación de longitudes fonéticas. La UI obliga a guardar los cambios antes de generar una nueva muestra. Cambiar parámetros invalida la coincidencia de caché del WAV de los turnos: no se devuelve una grabación producida con otra velocidad/variación, ni se borran las versiones de audio ya creadas. Las APIs rechazan parámetros fuera de límites, campos desconocidos y valores no finitos.
+
+**No equivale a un ecualizador de voz, asignación de voz por personaje, motor neural distinto ni clonación.** Requiere un Piper instalado para comprobar físicamente los cambios; pruebas automatizadas de CLI y WAV usan un ejecutable ficticio. La verificación CI de esta nueva parte se actualizará en `docs/PROGRESO.md`.
