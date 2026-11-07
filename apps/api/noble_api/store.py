@@ -58,7 +58,7 @@ class Store:
                     role TEXT PRIMARY KEY, installed_id TEXT NOT NULL
                 );
             """)
-            conn.execute("UPDATE downloads SET status='paused', error='Interrumpida al cerrar la aplicación' WHERE status IN ('queued','downloading','verifying')")
+            conn.execute("UPDATE downloads SET status='paused', error='Interrupted on application shutdown' WHERE status IN ('queued','downloading','verifying')")
             for key, value in DEFAULT_SETTINGS.items():
                 conn.execute("INSERT OR IGNORE INTO settings VALUES (?,?)", (key, json.dumps(value)))
 
@@ -75,13 +75,13 @@ class Store:
         with self._conn() as conn:
             for name, value in changes.items():
                 if name not in DEFAULT_SETTINGS:
-                    raise ValueError("Configuración desconocida: " + name)
+                    raise ValueError("Unknown setting: " + name)
                 if name in ("tts_enabled", "tts_autoread", "setup_complete") and not isinstance(value, bool):
-                    raise ValueError(name + " debe ser booleano")
+                    raise ValueError(name + " must be a boolean")
                 if name == "language" and value not in ("es-419", "en"):
-                    raise ValueError("Idioma no disponible")
+                    raise ValueError("Language unavailable")
                 if name == "image_mode" and value not in ("scene", "manual", "off"):
-                    raise ValueError("Modo de imagen no disponible")
+                    raise ValueError("Image mode unavailable")
                 conn.execute("UPDATE settings SET value=? WHERE name=?",
                              (json.dumps(value), name))
         return self.settings()
@@ -153,7 +153,7 @@ class Store:
                     "UPDATE downloads SET status='paused', received_bytes=?, error=?, updated_at=? "
                     "WHERE id=?",
                     (part.stat().st_size,
-                     "Archivo recuperado tras interrupción; reanudar para verificar SHA-256",
+                     "File recovered after interruption; resume to verify SHA-256",
                      time.time(), job_id),
                 )
         except Exception:
@@ -165,7 +165,7 @@ class Store:
     def update_download(self, job_id, **fields):
         allowed = {"status", "received_bytes", "error"}
         if not set(fields).issubset(allowed):
-            raise ValueError("Campos de descarga inválidos")
+            raise ValueError("Invalid download fields")
         fields["updated_at"] = time.time()
         sql = ", ".join(key + "=?" for key in fields)
         with self._conn() as conn:
@@ -180,7 +180,7 @@ class Store:
         cancelled transfer through a time-of-check/time-of-use race.
         """
         if not from_statuses or not set(fields).issubset({"error", "received_bytes"}):
-            raise ValueError("Transición de descarga inválida")
+            raise ValueError("Invalid download state transition")
         placeholders = ",".join("?" for _ in from_statuses)
         values = {"status": to_status, "updated_at": time.time(), **fields}
         setters = ", ".join(key + "=?" for key in values)
@@ -211,7 +211,7 @@ class Store:
                 # Never replace a previous final GGUF, even if this job was
                 # manually resumed after a startup conflict was reported.
                 if target.exists() or target.is_symlink():
-                    raise RuntimeError("Existe un GGUF final; recuperación manual requerida")
+                    raise RuntimeError("A final GGUF file exists; manual recovery required")
                 part.replace(target)
                 moved = True
                 previous = conn.execute(
@@ -273,15 +273,15 @@ class Store:
             model = conn.execute("SELECT * FROM installed WHERE id=?",
                                  (installed_id,)).fetchone()
             if model is None:
-                raise ValueError("El modelo no está instalado")
+                raise ValueError("Model is not installed")
             model_path = Path(model["filepath"])
             if (model_path.is_symlink() or
                     not model_path.resolve().is_relative_to(self.models_dir.resolve())):
-                raise ValueError("El modelo está fuera del directorio administrado")
+                raise ValueError("Model is outside the managed directory")
             if not model_path.is_file():
-                raise ValueError("El archivo del modelo ya no existe")
+                raise ValueError("Model file no longer exists")
             if role not in ("narrator", "world_state"):
-                raise ValueError("La asignación de imágenes y voces llegará con sus adaptadores")
+                raise ValueError("Image and voice assignment will be available with their adapters")
             conn.execute("INSERT INTO model_roles VALUES (?,?) "
                          "ON CONFLICT(role) DO UPDATE SET installed_id=excluded.installed_id",
                          (role, installed_id))

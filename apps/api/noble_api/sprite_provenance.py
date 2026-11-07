@@ -19,7 +19,7 @@ def normalize_sprite_generation(value: object) -> dict:
     if (not isinstance(value, dict) or
             not mandatory <= set(value) or
             set(value) - mandatory - {"adapter", "matting"}):
-        raise ValueError("Procedencia de sprite inválida")
+        raise ValueError("Invalid sprite provenance")
     adapter = value.get("adapter")
     matting = value.get("matting")
     version = value["workflow_version"]
@@ -29,38 +29,38 @@ def normalize_sprite_generation(value: object) -> dict:
         else "comfy-sprite-v2-ipadapter" if adapter is not None
         else "comfy-sprite-v1")
     if version != expected_version:
-        raise ValueError("Versión de generador de sprites inválida")
+        raise ValueError("Invalid sprite generator version")
     if ("adapter" in value and adapter is None or
             "matting" in value and matting is None):
-        raise ValueError("Procedencia de adaptadores vacía")
+        raise ValueError("Empty adapter provenance")
     checkpoint, seed, digest = (value["checkpoint"], value["seed"],
                                 value["prompt_sha256"])
     if (not isinstance(checkpoint, str) or not 1 <= len(checkpoint) <= 240 or
             any(ord(c) < 32 or ord(c) == 127 for c in checkpoint)):
-        raise ValueError("Checkpoint de sprite inválido")
+        raise ValueError("Invalid sprite checkpoint")
     if type(seed) is not int or not 0 <= seed <= 2**53 - 1:
-        raise ValueError("Semilla de sprite inválida")
+        raise ValueError("Invalid sprite seed")
     if not isinstance(digest, str) or not SHA.fullmatch(digest):
-        raise ValueError("Huella de prompt de sprite inválida")
+        raise ValueError("Invalid sprite prompt fingerprint")
     lora = value["lora"]
     if lora is not None:
         if not isinstance(lora, dict) or set(lora) != {
                 "character_name", "lora_name", "strength"}:
-            raise ValueError("LoRA de sprite inválida")
+            raise ValueError("Invalid sprite LoRA")
         name, filename, weight = (lora["character_name"], lora["lora_name"],
                                    lora["strength"])
         if not isinstance(name, str) or not 1 <= len(name) <= 80:
-            raise ValueError("Nombre de NPC LoRA inválido")
+            raise ValueError("Invalid LoRA NPC name")
         if not isinstance(filename, str) or not LORA_FILENAME.fullmatch(filename):
-            raise ValueError("Archivo de LoRA de sprite inválido")
+            raise ValueError("Invalid sprite LoRA filename")
         if (isinstance(weight, bool) or not isinstance(weight, (float, int))
                 or not math.isfinite(weight) or not 0 < weight <= 2):
-            raise ValueError("Intensidad de LoRA de sprite inválida")
+            raise ValueError("Intensidad de Invalid sprite LoRA")
         lora = {"character_name": name, "lora_name": filename, "strength": float(weight)}
     quality = value["quality"]
     if not isinstance(quality, dict) or set(quality) != {
             "method", "coverage", "requires_author_review", "author_approved"}:
-        raise ValueError("Metadatos de recorte inválidos")
+        raise ValueError("Invalid cutout metadata")
     coverage = quality["coverage"]
     if (quality["method"] not in {
             "alpha_original", "border_chroma_key",
@@ -69,11 +69,11 @@ def normalize_sprite_generation(value: object) -> dict:
             or not math.isfinite(coverage) or not 0.04 <= coverage <= 0.82
             or quality["requires_author_review"] is not True
             or quality["author_approved"] is not True):
-        raise ValueError("Calidad/aprobación de sprite inválida")
+        raise ValueError("Invalid sprite quality/approval")
     if adapter is not None:
         if not isinstance(adapter, dict) or set(adapter) != {
                 "preset", "weight", "reference_sha256", "reference_kind"}:
-            raise ValueError("Configuración IPAdapter no válida")
+            raise ValueError("Invalid IPAdapter configuration")
         preset, weight = adapter["preset"], adapter["weight"]
         ref_digest, kind = adapter["reference_sha256"], adapter["reference_kind"]
         if (preset not in PRESETS or isinstance(weight, bool) or
@@ -81,7 +81,7 @@ def normalize_sprite_generation(value: object) -> dict:
                 not math.isfinite(weight) or not 0.1 <= weight <= 1.5 or
                 not isinstance(ref_digest, str) or not SHA.fullmatch(ref_digest) or
                 kind not in ("gallery", "sprite")):
-            raise ValueError("IPAdapter de procedencia inválido")
+            raise ValueError("Invalid provenance IPAdapter")
         adapter = {"preset": preset, "weight": float(weight),
                    "reference_sha256": ref_digest, "reference_kind": kind}
     if matting is not None:
@@ -90,10 +90,10 @@ def normalize_sprite_generation(value: object) -> dict:
                 or matting["mode"] not in MODELS
                 or matting["model"] != MODELS[matting["mode"]]["model"]
                 or quality["method"] != MODELS[matting["mode"]]["method"]):
-            raise ValueError("Procedencia del recorte neuronal incompatible")
+            raise ValueError("Incompatible neural cutout provenance")
         matting = dict(matting)
     elif quality["method"] in {"neural_rmbg", "neural_birefnet"}:
-        raise ValueError("Sprite neuronal sin modelo de procedencia")
+        raise ValueError("Neural sprite is missing its provenance model")
     result = {"workflow_version": version, "checkpoint": checkpoint,
               "seed": seed, "prompt_sha256": digest, "lora": lora,
               "quality": {"method": quality["method"], "coverage": float(coverage),

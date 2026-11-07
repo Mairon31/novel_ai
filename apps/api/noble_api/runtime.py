@@ -66,34 +66,34 @@ class KoboldManager:
               gpu_layers: int = -1, contextsize: int = 4096, port: int = 5001):
         with self._lock:
             if self._owned():
-                raise RuntimeFailure("Noble AI ya tiene un KoboldCpp activo. Deténlo antes de cambiar modelo.")
+                raise RuntimeFailure("Noble AI is already running KoboldCpp. Stop it before switching models.")
             exe = Path(executable).expanduser().resolve(strict=False)
             allowed = (
                 exe.name.lower().startswith("koboldcpp")
                 and (exe.suffix.lower() == ".exe" or exe.name.lower() == "koboldcpp-linux-x64")
             )
             if not allowed or not exe.is_file():
-                raise RuntimeFailure("Selecciona un ejecutable KoboldCpp válido (.exe o koboldcpp-linux-x64)")
+                raise RuntimeFailure("Select a valid KoboldCpp executable (.exe or koboldcpp-linux-x64)")
             if not (-1 <= gpu_layers <= 256):
                 raise RuntimeFailure("Capas GPU fuera de rango (-1 a 256)")
             if not (512 <= contextsize <= 32768):
                 raise RuntimeFailure("Contexto fuera de rango (512 a 32768)")
             if not (1024 <= port <= 65535) or port in (4173, 5173, 8000):
-                raise RuntimeFailure("Puerto inválido o reservado para Noble AI")
+                raise RuntimeFailure("Invalid port or one reserved for Noble AI")
             model = self.store.installed_one(installed_id)
             if model is None:
                 raise RuntimeFailure("Debes seleccionar un modelo registrado por Noble AI")
             filepath = Path(model["filepath"]).resolve(strict=False)
             if not filepath.is_relative_to(self.store.models_dir.resolve()):
-                raise RuntimeFailure("Modelo fuera de la biblioteca administrada")
+                raise RuntimeFailure("Model is outside the managed library")
             if not filepath.is_file() or filepath.suffix.lower() != ".gguf":
-                raise RuntimeFailure("El GGUF ya no existe en la biblioteca")
+                raise RuntimeFailure("GGUF file no longer exists in the library")
             if filepath.stat().st_size != model["size_bytes"]:
-                raise RuntimeFailure("El tamaño del modelo difiere del registro")
+                raise RuntimeFailure("Model size differs from the registered value")
             # Avoid hijacking an existing local server. Still subject to a normal
             # TOCTOU race, handled by process exit and status diagnostics.
             if not self._port_available(port):
-                raise RuntimeFailure("El puerto ya está ocupado. Elige otro.")
+                raise RuntimeFailure("Port is already in use. Choose another.")
             command = [
                 str(exe), "--model", str(filepath),
                 "--host", "127.0.0.1",
@@ -114,7 +114,7 @@ class KoboldManager:
             except (OSError, ValueError) as exc:
                 self.log_stream.close()
                 self.log_stream = None
-                raise RuntimeFailure("No se pudo iniciar KoboldCpp: " + str(exc)) from exc
+                raise RuntimeFailure("Could not start KoboldCpp: " + str(exc)) from exc
             self.port = port
             self.model_filename = filepath.name
             self.gpu_layers = gpu_layers
@@ -128,7 +128,7 @@ class KoboldManager:
     def activate_model(self) -> dict:
         state = self.status()
         if state["status"] != "ready":
-            raise RuntimeFailure("El modelo todavía no está listo")
+            raise RuntimeFailure("Model is not ready yet")
         url = state["base_url"] + "/v1/models"
         try:
             with httpx.Client(trust_env=False, timeout=3) as client:
@@ -140,7 +140,7 @@ class KoboldManager:
                 if not model_id:
                     raise RuntimeFailure("KoboldCpp no informa un modelo activo")
         except (httpx.HTTPError, ValueError) as exc:
-            raise RuntimeFailure("No se pudo leer el modelo cargado en KoboldCpp") from exc
+            raise RuntimeFailure("Could not read the model loaded in KoboldCpp") from exc
         return {"provider": "koboldcpp", "base_url": state["base_url"],
                 "model": model_id, "device": "auto"}
 

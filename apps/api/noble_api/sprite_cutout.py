@@ -23,25 +23,25 @@ def _green(rgb: tuple[int, int, int]) -> bool:
 def transparent_sprite(data: bytes) -> tuple[bytes, dict]:
     """Decode, remove only border-connected chroma, and quality-gate a preview."""
     if not 0 < len(data) <= MAX_MEDIA_BYTES:
-        raise ValueError("El render supera el límite de 12 MiB")
+        raise ValueError("Render exceeds the 12 MiB limit")
     try:
         with Image.open(io.BytesIO(data)) as original:
             if original.format not in {"PNG", "JPEG", "WEBP"}:
-                raise ValueError("ComfyUI devolvió un formato de imagen no admitido")
+                raise ValueError("ComfyUI returned an unsupported image format")
             width, height = original.size
             if min(width, height) < 128 or width * height > MAX_MEDIA_PIXELS:
-                raise ValueError("Tamaño de sprite IA fuera de los límites")
+                raise ValueError("AI sprite size is out of bounds")
             original.load()
             photo = ImageOps.exif_transpose(original).convert("RGBA")
     except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
-        raise ValueError("ComfyUI devolvió una imagen no válida") from exc
+        raise ValueError("ComfyUI returned an invalid image") from exc
 
     width, height = photo.size
     alpha = photo.getchannel("A")
     amin, amax = alpha.getextrema()
     if amin < 255:
         if amax == 0:
-            raise ValueError("El sprite generado está totalmente transparente")
+            raise ValueError("Generated sprite is completely transparent")
         method = "alpha_original"
     else:
         rgb = photo.convert("RGB")
@@ -53,12 +53,12 @@ def transparent_sprite(data: bytes) -> tuple[bytes, dict]:
         green_ratio = sum(_green(values[index]) for index in border) / len(border)
         if green_ratio < 0.9:
             raise ValueError(
-                "Fondo no uniforme: genera un personaje aislado sobre verde sólido")
+                "Nonuniform background: generate an isolated character on solid green")
         # Check *before* MinFilter/GaussianBlur: filtering can erase a
         # one-pixel contact and falsely make a clipped figure appear valid.
         if green_ratio < 1.0:
             raise ValueError(
-                "El recorte no es fiable: la silueta toca el borde del lienzo")
+                "Unreliable cutout: silhouette touches the canvas edge")
         visited = bytearray(width * height)
         background = bytearray(width * height)
         queue = deque()
@@ -102,7 +102,7 @@ def transparent_sprite(data: bytes) -> tuple[bytes, dict]:
     if not 0.04 <= coverage <= 0.82 or (
             sum(value > 32 for value in border_alpha) / len(border_alpha) > 0.06):
         raise ValueError(
-            "El recorte no es fiable: personaje debe quedar completo y separado del borde")
+            "Unreliable cutout: character must be fully visible and separated from the edge")
     out = io.BytesIO()
     photo.save(out, "PNG", optimize=True)
     if out.tell() > MAX_MEDIA_BYTES:
@@ -127,25 +127,25 @@ def transparent_sprite_from_matte(
         raise ValueError("Motor neuronal desconocido")
     if (not 0 < len(image_bytes) <= MAX_MEDIA_BYTES or
             not 0 < len(mask_bytes) <= MAX_MEDIA_BYTES):
-        raise ValueError("Imagen o máscara excede el límite de 12 MiB")
+        raise ValueError("Image or mask exceeds the 12 MiB limit")
     try:
         with Image.open(io.BytesIO(image_bytes)) as original, Image.open(
                 io.BytesIO(mask_bytes)) as mask_source:
             if original.format not in {"PNG", "JPEG", "WEBP"} or mask_source.format != "PNG":
-                raise ValueError("Imagen/máscara de ComfyUI en formato no admitido")
+                raise ValueError("ComfyUI image/mask has an unsupported format")
             width, height = original.size
             if (min(width, height) < 128 or
                     width * height > MAX_MEDIA_PIXELS or
                     mask_source.size != original.size):
-                raise ValueError("La máscara neuronal no coincide con la imagen")
+                raise ValueError("Neural mask does not match the image")
             original.load()
             mask_source.load()
             photo = ImageOps.exif_transpose(original).convert("RGB")
             matte = mask_source.convert("L")
             if photo.size != matte.size:
-                raise ValueError("Máscara e imagen no tienen la misma orientación")
+                raise ValueError("Mask and image have different orientations")
     except (OSError, UnidentifiedImageError, Image.DecompressionBombError) as exc:
-        raise ValueError("Imagen o máscara neuronal inválida") from exc
+        raise ValueError("Invalid image or neural mask") from exc
 
     histogram = matte.histogram()
     coverage = sum(histogram[192:]) / (width * height)
@@ -160,13 +160,13 @@ def transparent_sprite_from_matte(
     edge_ratio = sum(value > 32 for value in border) / len(border)
     if (not 0.04 <= coverage <= 0.82 or edge_ratio > 0.06):
         raise ValueError(
-            "Máscara neuronal no fiable: fondo, silueta o bordes incorrectos")
+            "Unreliable neural mask: incorrect background, silhouette, or edges")
     result = photo.convert("RGBA")
     result.putalpha(matte)
     out = io.BytesIO()
     result.save(out, "PNG", optimize=True)
     if out.tell() > MAX_MEDIA_BYTES:
-        raise ValueError("PNG con máscara neuronal demasiado grande")
+        raise ValueError("PNG with neural mask is too large")
     return out.getvalue(), {
         "method": MODELS[mode]["method"],
         "coverage": round(coverage, 4),

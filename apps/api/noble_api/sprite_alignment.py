@@ -15,12 +15,12 @@ EXPRESSION_NAMES = ("neutral", "joy", "anger", "sadness", "surprise")
 
 def silhouette_geometry(image: Image.Image) -> dict:
     if image.mode != "RGBA":
-        raise ValueError("La silueta debe ser RGBA")
+        raise ValueError("Silhouette must be RGBA")
     alpha = image.getchannel("A")
     visible = alpha.point(lambda a: 255 if a >= 128 else 0)
     bounds = visible.getbbox()
     if bounds is None:
-        raise ValueError("Sprite sin silueta visible")
+        raise ValueError("Sprite has no visible silhouette")
     width, height = image.size
     left, top, right, bottom = bounds
     return {
@@ -60,11 +60,11 @@ def alignment_warnings(geometry: dict[str, dict]) -> list[str]:
             bw, bh = base["size"]
             iw, ih = item["size"]
             if any(not math.isfinite(v) or v <= 0 for v in (bw, bh, iw, ih)):
-                raise ValueError("Geometría degenerada")
+                raise ValueError("Degenerate geometry")
             if dx > 0.15 or dy > 0.15:
-                result.append(name + ": posición de silueta muy distinta")
+                result.append(name + ": silhouette position differs significantly")
             if max(iw / bw, bw / iw, ih / bh, bh / ih) > 1.65:
                 result.append(name + ": escala de silueta muy distinta")
         except (TypeError, KeyError, ValueError, ZeroDivisionError):
-            result.append(name + ": no se pudo comparar geometría")
+            result.append(name + ": geometry could not be compared")
     return result

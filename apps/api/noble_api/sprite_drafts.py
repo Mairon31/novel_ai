@@ -107,9 +107,9 @@ class SpriteDraftService:
         try:
             if (str(uuid.UUID(story_id)) != story_id or
                     str(uuid.UUID(draft_id)) != draft_id):
-                raise ValueError("UUID de borrador no canónico")
+                raise ValueError("Noncanonical draft UUID")
         except (ValueError, TypeError, AttributeError) as exc:
-            raise ValueError("Identificador de borrador inválido") from exc
+            raise ValueError("Invalid draft identifier") from exc
         root = self.store.root.resolve()
         base = root / "sprite-drafts"
         story_dir = base / story_id
@@ -121,14 +121,14 @@ class SpriteDraftService:
 
     def _file(self, story_id: str, draft_id: str, expression: str, name: str) -> Path:
         if expression not in EXPRESSIONS or not isinstance(name, str):
-            raise ValueError("Expresión de borrador inválida")
+            raise ValueError("Invalid draft expression")
         match = re.fullmatch(re.escape(expression) + r"-([0-9a-f-]{36})\.png", name)
         if not match or str(uuid.UUID(match.group(1))) != match.group(1):
-            raise ValueError("Nombre de archivo temporal inválido")
+            raise ValueError("Invalid temporary filename")
         path = self._folder(story_id, draft_id) / name
         if path.is_symlink() or not path.resolve().is_relative_to(
                 self._folder(story_id, draft_id).resolve()):
-            raise ValueError("Archivo temporal fuera del directorio de borradores")
+            raise ValueError("Temporary file is outside the drafts directory")
         return path
 
     def _delete(self, row) -> None:
@@ -159,7 +159,7 @@ class SpriteDraftService:
                 "SELECT * FROM sprite_drafts WHERE id=? AND story_id=?",
                 (draft_id, story_id)).fetchone()
         if row is None:
-            raise ValueError("Borrador no encontrado en esta historia")
+            raise ValueError("Draft not found in this story")
         return row
 
     def _summary(self, row) -> dict:
@@ -225,18 +225,18 @@ class SpriteDraftService:
         pose = validate_pose(body.pose)
         caption = body.caption.strip()
         if len(caption) < 3:
-            raise ValueError("Especifica el contexto del sprite")
+            raise ValueError("Specify sprite context")
         with self.store._conn() as db:
             count = db.execute(
                 "SELECT COUNT(*) FROM sprite_drafts WHERE story_id=?",
                 (story_id,)).fetchone()[0]
             if count >= MAX_DRAFTS_PER_STORY:
-                raise ValueError("Máximo tres borradores por historia; descarta uno")
+                raise ValueError("Maximum three drafts per story; discard one")
             character = db.execute(
                 "SELECT config_json FROM creator_characters "
                 "WHERE story_id=? AND id=?", (story_id, character_id)).fetchone()
         if character is None:
-            raise ValueError("Personaje de otra historia o inexistente")
+            raise ValueError("Character belongs to another story or does not exist")
         npc = json.loads(character["config_json"])
         dna = npc.get("visual_dna") or {}
         appearance = ", ".join(dna.get("tags") or [])
@@ -257,9 +257,9 @@ class SpriteDraftService:
         sprite_id = (str(body.reference_sprite_asset_id)
                      if body.reference_sprite_asset_id else None)
         if reference_id and sprite_id:
-            raise ValueError("Selecciona solo una referencia por borrador")
+            raise ValueError("Select only one reference per draft")
         if body.reference_mode == "ipadapter" and not (reference_id or sprite_id):
-            raise ValueError("IPAdapter requiere una imagen de referencia")
+            raise ValueError("IPAdapter requires a reference image")
         reference_sha = None
         if reference_id:
             _, reference_sha = self.images.narrative.visual.reference_bytes(
@@ -269,13 +269,13 @@ class SpriteDraftService:
             if (source["kind"] != "foreground" or
                     source["character_id"] != character_id):
                 raise ValueError(
-                    "Solo puede usarse un sprite publicado del mismo NPC")
+                    "Only an approved sprite from the same NPC can be used")
             file = self.media._path(story_id, sprite_id, "foreground")
             if not file.is_file() or file.is_symlink():
-                raise ValueError("El sprite de referencia no está disponible")
+                raise ValueError("Reference sprite is unavailable")
             data = file.read_bytes()
             if not 0 < len(data) <= MAX_MEDIA_BYTES:
-                raise ValueError("El sprite de referencia supera el tamaño admitido")
+                raise ValueError("Reference sprite exceeds the supported size")
             reference_sha = hashlib.sha256(data).hexdigest()
         lora = None
         if body.use_lora:
@@ -284,12 +284,12 @@ class SpriteDraftService:
             if (not isinstance(filename, str) or not LORA_FILENAME.fullmatch(filename)
                     or not isinstance(strength, (float, int))
                     or isinstance(strength, bool) or not 0 < strength <= 2):
-                raise ValueError("El NPC requiere LoRA válida y fuerza superior a cero")
+                raise ValueError("NPC requires a valid LoRA with nonzero weight")
             lora = {"character_name": npc["name"], "lora_name": filename,
                     "strength": float(strength)}
         config = self.images.config()
         if not config["checkpoint"]:
-            raise ValueError("Selecciona un checkpoint en Ajustes de imágenes")
+            raise ValueError("Select a checkpoint in Image Settings")
         saved = {
             "character_name": npc["name"], "appearance": appearance[:650],
             "caption": caption, "pose": pose, "style": body.style.strip()[:220],
@@ -338,9 +338,9 @@ class SpriteDraftService:
                        body: SpriteStep) -> dict:
         row = self._require(story_id, draft_id)
         if expression not in EXPRESSIONS:
-            raise ValueError("Expresión no admitida")
+            raise ValueError("Unsupported expression")
         if self.images.lock.locked():
-            raise HTTPException(409, "ComfyUI está procesando otra imagen")
+            raise HTTPException(409, "ComfyUI is processing another image")
         await self.images.lock.acquire()
         self.active = draft_id
         lease = False
@@ -348,23 +348,23 @@ class SpriteDraftService:
             settings = json.loads(row["settings_json"])
             comfy = settings["comfy"]
             if self.images.config() != comfy:
-                raise HTTPException(409, "La configuración de ComfyUI cambió; inicia otro borrador")
+                raise HTTPException(409, "ComfyUI configuration changed; start a new draft")
             if self.images.resources is not None:
                 await asyncio.to_thread(self.images.resources.allow_image_request,
                                         body.allow_low_vram)
                 lease = await self.images.resources.claim_local_gpu("ComfyUI sprites")
             status = await self.images.status()
             if not status["online"]:
-                raise HTTPException(503, "ComfyUI no está disponible")
+                raise HTTPException(503, "ComfyUI is unavailable")
             if comfy["checkpoint"] not in status["checkpoints"]:
-                raise HTTPException(422, "El checkpoint del borrador ya no está instalado")
+                raise HTTPException(422, "Draft checkpoint is no longer installed")
             loras = [settings["lora"]] if settings["lora"] else []
             if loras:
                 inventory = await self.images.lora_status()
                 if not inventory["online"]:
-                    raise HTTPException(503, "No se pudo consultar LoRAs instalados")
+                    raise HTTPException(503, "Could not list installed LoRAs")
                 if loras[0]["lora_name"] not in inventory["loras"]:
-                    raise HTTPException(422, "El LoRA del NPC no está instalado")
+                    raise HTTPException(422, "NPC LoRA is not installed")
                 await self.images.validate_lora_nodes()
             adapter_mode = settings.get("reference_mode") == "ipadapter"
             if adapter_mode:
@@ -396,17 +396,17 @@ class SpriteDraftService:
                     if (source["kind"] != "foreground" or
                             source["character_id"] != row["character_id"]):
                         raise HTTPException(422,
-                            "El sprite de referencia ya no pertenece al NPC")
+                            "Reference sprite no longer belongs to this NPC")
                     file = self.media._path(story_id, sprite_id, "foreground")
                     if not file.is_file() or file.is_symlink():
-                        raise HTTPException(422, "La referencia de sprite desapareció")
+                        raise HTTPException(422, "Sprite reference disappeared")
                     reference = file.read_bytes()
                     if not 0 < len(reference) <= MAX_MEDIA_BYTES:
-                        raise HTTPException(422, "Referencia de sprite inválida")
+                        raise HTTPException(422, "Invalid sprite reference")
                     digest = hashlib.sha256(reference).hexdigest()
                 if reference is not None:
                     if digest != settings["reference_sha256"]:
-                        raise HTTPException(409, "La referencia visual del borrador cambió")
+                        raise HTTPException(409, "Draft visual reference changed")
                     png = (identity_reference_png(
                         reference, comfy["width"], comfy["height"])
                         if adapter_mode or settings.get("reference_sprite_asset_id")
@@ -422,14 +422,14 @@ class SpriteDraftService:
                     reference_name = reply.get("name") if isinstance(reply, dict) else None
                     if not isinstance(reference_name, str) or not re.fullmatch(
                             r"[A-Za-z0-9_.-]{1,180}", reference_name):
-                        raise HTTPException(502, "Nombre de referencia ComfyUI inválido")
+                        raise HTTPException(502, "Invalid ComfyUI reference name")
                 nodes = workflow(
                     workflow_config, prompt, settings["seed"],
                     reference_name if not adapter_mode else None,
                     settings["denoise"], loras)
                 if adapter_mode:
                     if reference_name is None:
-                        raise HTTPException(422, "La referencia IPAdapter está ausente")
+                        raise HTTPException(422, "IPAdapter reference is missing")
                     inject_ipadapter(
                         nodes, reference_name,
                         settings.get("ipadapter_preset", DEFAULT_PRESET),
@@ -463,7 +463,7 @@ class SpriteDraftService:
                         "SELECT slots_json FROM sprite_drafts "
                         "WHERE story_id=? AND id=?", (story_id, draft_id)).fetchone()
                     if not current:
-                        raise ValueError("Borrador eliminado durante la generación")
+                        raise ValueError("Draft was deleted during generation")
                     slots = json.loads(current["slots_json"])
                     slots[expression] = {
                         "file": new_name, "quality": quality,
@@ -485,7 +485,7 @@ class SpriteDraftService:
                     pass
             return self.get(story_id, draft_id)
         except httpx.HTTPError as exc:
-            raise HTTPException(502, "Error comunicando con ComfyUI: " +
+            raise HTTPException(502, "Error communicating with ComfyUI: " +
                                 str(exc)[:160]) from exc
         finally:
             self.active = None
@@ -497,7 +497,7 @@ class SpriteDraftService:
         row = self._require(story_id, draft_id)
         entries = json.loads(row["slots_json"])
         if expression not in EXPRESSIONS or expression not in entries:
-            raise ValueError("Expresión aún no generada")
+            raise ValueError("Expression has not been generated yet")
         file = self._file(story_id, draft_id, expression,
                           entries[expression]["file"])
         if not file.is_file():
@@ -510,15 +510,15 @@ class SpriteDraftService:
                 accept_alignment_warnings: bool = False) -> dict:
         row = self._require(story_id, draft_id)
         if self.active == draft_id:
-            raise HTTPException(409, "El borrador está generando una expresión")
+            raise HTTPException(409, "Draft is generating an expression")
         with self.store._conn() as db:
             if not db.execute(
                 "SELECT 1 FROM creator_characters WHERE story_id=? AND id=?",
                 (story_id, row["character_id"])).fetchone():
-                raise ValueError("El NPC ya no existe en esta historia")
+                raise ValueError("NPC no longer exists in this story")
         entries = json.loads(row["slots_json"])
         if any(name not in entries for name in EXPRESSIONS):
-            raise ValueError("Genera las cinco expresiones antes de aprobar")
+            raise ValueError("Generate all five expressions before approving")
         frames = []
         geometry = {}
         dims = None
@@ -526,26 +526,26 @@ class SpriteDraftService:
             location = self._file(
                 story_id, draft_id, name, entries[name]["file"])
             if not location.is_file() or location.stat().st_size > MAX_MEDIA_BYTES:
-                raise ValueError("Falta una vista previa válida")
+                raise ValueError("A valid preview is missing")
             raw = location.read_bytes()
             expected_sha = entries[name].get("content_sha256")
             if (expected_sha is not None and
                     hashlib.sha256(raw).hexdigest() != expected_sha):
                 raise HTTPException(409,
-                    "Una vista previa cambió después de generarse: " + name)
+                    "A preview changed after it was generated: " + name)
             with Image.open(io.BytesIO(raw)) as image:
                 image.load()
                 if image.format != "PNG" or image.mode != "RGBA":
-                    raise ValueError("Vista previa de sprite inválida")
+                    raise ValueError("Invalid sprite preview")
                 if dims is not None and dims != image.size:
-                    raise ValueError("Las cinco expresiones tienen tamaños diferentes")
+                    raise ValueError("The five expressions have different sizes")
                 dims = image.size
                 frames.append(image.copy())
                 geometry[name] = silhouette_geometry(image)
         warnings = alignment_warnings(geometry)
         if warnings and not accept_alignment_warnings:
             raise HTTPException(409,
-                "Revisa las diferencias de silueta antes de aprobar: " +
+                "Review silhouette differences before approving: " +
                 "; ".join(warnings[:5]))
         sheet = Image.new("RGBA", (dims[0] * 5, dims[1]))
         for index, image in enumerate(frames):
@@ -593,7 +593,7 @@ class SpriteDraftService:
     def discard(self, story_id: str, draft_id: str) -> None:
         row = self._require(story_id, draft_id)
         if self.active == draft_id:
-            raise HTTPException(409, "No se puede descartar durante una generación")
+            raise HTTPException(409, "Cannot discard during generation")
         self._delete(row)
 
 

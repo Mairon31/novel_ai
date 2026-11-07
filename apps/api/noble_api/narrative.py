@@ -45,12 +45,12 @@ DEFAULT_LLM = {
 }
 
 PROMPT = (
-    "Eres el narrador de una novela visual interactiva. Respeta siempre "
-    "el idioma de salida establecido en las preferencias. Mantén continuidad, "
-    "personalidades y consecuencias de la historia. Narra acciones de NPC, "
-    "escenarios y sus diálogos; nunca decidas lo que hará, sentirá o dirá "
-    "el protagonista controlado por el jugador. No repitas ni resumas "
-    "constantemente. Termina dejando espacio a la intervención del jugador."
+    "You are the narrator of an interactive visual novel. Always respect "
+    "the output language selected in preferences. Maintain the story's continuity, "
+    "character personalities, and consequences. Narrate NPC actions, "
+    "settings, and dialogue; never decide what the player-controlled "
+    "protagonist will do, feel, or say. Do not repeat or summarize "
+    "constantly. End with room for the player to respond."
 )
 
 
@@ -62,9 +62,9 @@ def validate_endpoint(value: str) -> str:
                 or u.username or u.password or u.path not in {"", "/"}
                 or u.query or u.fragment or u.port is None
                 or not (1 <= u.port <= 65535)):
-            raise ValueError("Solo se permiten endpoints HTTP locales con puerto, sin rutas")
+            raise ValueError("Only local HTTP endpoints with a port and no path are allowed")
     except (ValueError, AttributeError) as exc:
-        raise ValueError("URL no admitida. Usa http://127.0.0.1:11434 o :5001") from exc
+        raise ValueError("Unsupported URL. Use http://127.0.0.1:11434 or :5001") from exc
     # Never store a path to avoid accidental duplicate /v1 segments.
     return value.strip().rstrip("/")
 
@@ -95,7 +95,7 @@ class CanonChange(BaseModel):
 class CreateStory(BaseModel):
     title: str = Field(min_length=2, max_length=100)
     premise: str = Field(min_length=10, max_length=4000)
-    protagonist_name: str = Field(default="Protagonista", min_length=1, max_length=60)
+    protagonist_name: str = Field(default="Protagonist", min_length=1, max_length=60)
 
 
 class TurnRequest(BaseModel):
@@ -168,23 +168,23 @@ class NarrativeService:
     def configure(self, settings: LlmSettings) -> dict:
         data = settings.model_dump()
         if data["provider"] not in ("ollama", "koboldcpp", "openrouter", "worker"):
-            raise ValueError("El proveedor debe ser Ollama, KoboldCpp u OpenRouter")
+            raise ValueError("Provider must be Ollama, KoboldCpp, or OpenRouter")
         if data["reasoning_mode"] not in ("auto", "off"):
-            raise ValueError("Modo de razonamiento no admitido")
+            raise ValueError("Unsupported reasoning mode")
         if data["device"] not in ("auto", "cpu"):
-            raise ValueError("Dispositivo no soportado; Auto o CPU")
+            raise ValueError("Unsupported device; use Auto or CPU")
         if data["provider"] == "koboldcpp" and data["device"] != "auto":
-            raise ValueError("KoboldCpp configura GPU/CPU al iniciar el ejecutable, no por API")
+            raise ValueError("KoboldCpp configures GPU/CPU at launch, not through the API")
         if data["provider"] == "openrouter":
             if data["device"] != "auto":
-                raise ValueError("OpenRouter administra el hardware en la nube")
+                raise ValueError("OpenRouter manages hardware in the cloud")
             data["base_url"] = "https://openrouter.ai/api/v1"
         elif data["provider"] == "worker":
             if self.workers is None or not data["worker_id"]:
-                raise ValueError("Selecciona primero un worker registrado")
+                raise ValueError("Select a registered worker first")
             endpoint, _ = self.workers.endpoint(data["worker_id"])
             if data["device"] != "auto":
-                raise ValueError("El worker configura sus propios recursos de GPU")
+                raise ValueError("The worker configures its own GPU resources")
             data["base_url"] = endpoint
         else:
             data["base_url"] = validate_endpoint(data["base_url"])
@@ -209,7 +209,7 @@ class NarrativeService:
         if cfg["provider"] == "worker":
             if self.workers is None:
                 return {"online": False, "provider": "worker", "models": [],
-                        "selected": cfg["model"], "error": "No existe registro de workers"}
+                        "selected": cfg["model"], "error": "No workers registered"}
             result = await self.workers.probe(cfg["worker_id"])
             return {"online": result["online"], "provider": "worker", "models": result["models"],
                     "selected": cfg["model"], "device": "auto", "error": result.get("error")}
@@ -220,7 +220,7 @@ class NarrativeService:
         if remote and not token:
             return {"online": False, "provider": "openrouter", "models": [],
                     "selected": cfg["model"], "device": "auto",
-                    "error": "Configura una clave OpenRouter antes de consultar modelos"}
+                    "error": "Configure an OpenRouter key before listing models"}
         try:
             data = await self._get_json(base + route,
                 headers={"Authorization": "Bearer " + token} if remote else None)
@@ -235,7 +235,7 @@ class NarrativeService:
                     "selected": cfg["model"], "device": cfg["device"],
                     "error": str(exc)[:240]}
 
-    def create_story(self, title: str, premise: str, protagonist_name: str = "Protagonista") -> dict:
+    def create_story(self, title: str, premise: str, protagonist_name: str = "Protagonist") -> dict:
         story_id, now = str(uuid.uuid4()), time.time()
         with self.store._conn() as db:
             db.execute("INSERT INTO stories (id,title,premise,created_at,updated_at,protagonist_name) VALUES (?,?,?,?,?,?)",
@@ -277,7 +277,7 @@ class NarrativeService:
         """Directory holding only Noble-created UUID branch transaction markers."""
         root = self.store.root / "fork-staging"
         if root.is_symlink() or not root.resolve().is_relative_to(self.store.root):
-            raise ValueError("Directorio de staging de ramas no confiable")
+            raise ValueError("Untrusted branch staging directory")
         return root
 
     @staticmethod
@@ -290,7 +290,7 @@ class NarrativeService:
         if os.name != "posix":
             return False
         if folder.is_symlink() or not folder.is_dir():
-            raise ValueError("Directorio no confiable al sincronizar rama")
+            raise ValueError("Untrusted directory while syncing branch")
         flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
         flags |= getattr(os, "O_NOFOLLOW", 0)
         fd = os.open(folder, flags)
@@ -313,14 +313,14 @@ class NarrativeService:
         if (folder.is_symlink() or not folder.is_dir() or
                 assets_root.is_symlink() or
                 folder.resolve().parent != assets_root.resolve()):
-            raise ValueError("Directorio de rama no confiable al sincronizar archivos")
+            raise ValueError("Untrusted branch directory while syncing files")
         dirs = [folder]
         count = 0
         # Only traverse the new UUID-scoped branch, never user directories.
         for path in sorted(folder.rglob("*"),
                            key=lambda item: len(item.parts), reverse=True):
             if path.is_symlink() or not path.resolve().is_relative_to(folder.resolve()):
-                raise ValueError("Enlace simbólico inesperado en archivos de rama")
+                raise ValueError("Unexpected symlink in branch files")
             if path.is_dir():
                 dirs.append(path)
             elif path.is_file():
@@ -329,7 +329,7 @@ class NarrativeService:
                     os.fsync(stream.fileno())
                 count += 1
             else:
-                raise ValueError("Tipo de archivo no permitido en rama")
+                raise ValueError("Unsupported file type in branch")
         for directory in dirs:
             self._fsync_directory(directory)
         self._fsync_directory(assets_root)
@@ -349,7 +349,7 @@ class NarrativeService:
             return report
         assets_root = self.store.root / "story-assets"
         if assets_root.is_symlink():
-            raise ValueError("Directorio de historias no confiable")
+            raise ValueError("Untrusted stories directory")
         with self.store._conn() as db:
             db.execute("BEGIN IMMEDIATE")
             for marker in staging.glob("*.pending"):
@@ -358,16 +358,16 @@ class NarrativeService:
                     if (str(uuid.UUID(candidate)) != candidate or
                             marker.is_symlink() or not marker.is_file() or
                             marker.read_text(encoding="utf-8").strip() != candidate):
-                        raise ValueError("Marcador de rama no confiable")
+                        raise ValueError("Untrusted branch marker")
                     folder = assets_root / candidate
                     if folder.is_symlink() or not folder.resolve().is_relative_to(assets_root):
-                        raise ValueError("Carpeta de rama fuera del almacenamiento")
+                        raise ValueError("Branch folder is outside storage")
                     exists = db.execute(
                         "SELECT 1 FROM stories WHERE id=?", (candidate,)
                     ).fetchone() is not None
                     if not exists and folder.exists():
                         if not folder.is_dir():
-                            raise ValueError("La ruta de rama incompleta no es un directorio")
+                            raise ValueError("Incomplete branch path is not a directory")
                         shutil.rmtree(folder)
                         # The orphan's directory entry must also be flushed;
                         # otherwise a second crash may resurrect its filename.
@@ -381,7 +381,7 @@ class NarrativeService:
                     report["retained_stories" if exists else "removed_orphans"] += 1
                 except (ValueError, OSError) as exc:
                     report["conflicts"] += 1
-                    LOG.warning("No se limpió staging de rama %s: %s", candidate, exc)
+                    LOG.warning("Could not clean branch staging %s: %s", candidate, exc)
         return report
 
     def fork_story(self, story_id: str, until_turn_id: str | None = None) -> dict:
@@ -396,7 +396,7 @@ class NarrativeService:
         """
         source = self.get_story(story_id)
         if source is None:
-            raise ValueError("La historia original no existe")
+            raise ValueError("Original story not found")
         # Legacy art migration and creation of source's initial scene can
         # perform DB writes. Finish those BEFORE opening BEGIN IMMEDIATE to
         # avoid self-deadlock through VisualState's separate connections.
@@ -406,7 +406,7 @@ class NarrativeService:
         new_id = str(uuid.uuid4())
         copied_dir = self.store.root / "story-assets" / new_id
         if copied_dir.exists() or copied_dir.is_symlink():
-            raise ValueError("El directorio de la nueva rama ya existe")
+            raise ValueError("New branch directory already exists")
         stage_root = self._fork_stage_root()
         marker = stage_root / (new_id + ".pending")
         try:
@@ -430,7 +430,7 @@ class NarrativeService:
                     "SELECT * FROM stories WHERE id=?", (story_id,)
                 ).fetchone()
                 if actual is None:
-                    raise ValueError("La historia original ya no existe")
+                    raise ValueError("Original story no longer exists")
                 existing = [dict(row) for row in db.execute(
                     "SELECT * FROM story_turns WHERE story_id=? "
                     "ORDER BY created_at,id", (story_id,)
@@ -440,7 +440,7 @@ class NarrativeService:
                                  if turn["id"] == until_turn_id]
                     if not positions:
                         raise ValueError(
-                            "La intervención seleccionada no pertenece a esta historia")
+                            "Selected message does not belong to this story")
                     existing = existing[:positions[0] + 1]
 
                 now = time.time()
@@ -450,7 +450,7 @@ class NarrativeService:
                      canon,origin_story_id,origin_turn_id)
                     VALUES (?,?,?,?,?,?,?,?,?)""",
                     (new_id, label, actual["premise"], now, now,
-                     actual["protagonist_name"] or "Protagonista",
+                     actual["protagonist_name"] or "Protagonist",
                      actual["canon"] or "", story_id, until_turn_id))
                 turn_map = {}
                 for idx, turn in enumerate(existing):
@@ -510,14 +510,14 @@ class NarrativeService:
                     shutil.rmtree(copied_dir)
                 cleaned = True
             except OSError:
-                LOG.exception("No se pudo limpiar el directorio de rama fallida %s", new_id)
+                LOG.exception("Could not clean failed branch directory %s", new_id)
             if cleaned:
                 try:
                     marker.unlink(missing_ok=True)
                     if stage_root.is_dir():
                         self._fsync_directory(stage_root)
                 except (OSError, ValueError):
-                    LOG.exception("No se pudo limpiar marcador de rama %s", new_id)
+                    LOG.exception("Could not clean branch marker %s", new_id)
             # If cleanup failed, leave the marker for startup reconciliation.
             raise
         try:
@@ -526,12 +526,12 @@ class NarrativeService:
         except (OSError, ValueError):
             # A committed story must remain usable. Next startup can remove
             # the stale marker without touching the committed directory.
-            LOG.exception("La rama está confirmada pero falta limpiar marcador %s", new_id)
+            LOG.exception("Branch is committed but marker cleanup is pending %s", new_id)
         return self.get_story(new_id)
 
     def set_canon(self, story_id: str, canon: str) -> dict:
         if len(canon) > 5000:
-            raise ValueError("El canon no puede superar 5000 caracteres")
+            raise ValueError("Canon cannot exceed 5,000 characters")
         with self.store._conn() as db:
             db.execute("UPDATE stories SET canon=?,updated_at=? WHERE id=?",
                        (canon.strip(), time.time(), story_id))
@@ -591,18 +591,18 @@ class NarrativeService:
     def messages(self, story: dict, instruction: str, mode: str) -> list[dict]:
         preferences = self.preferences()
         language = preferences.get("target_language", "es-419")
-        styles = {"natural": "natural y conversacional", "literary": "literario y descriptivo",
-                  "concise": "breve y dinámico"}
-        output_preferences = ("Idioma de salida obligatorio: " + language +
-                       ". Estilo narrativo: " + styles.get(preferences.get("narration_style"), "natural") + ".")
+        styles = {"natural": "natural and conversational", "literary": "literary and descriptive",
+                  "concise": "concise and dynamic"}
+        output_preferences = ("Required output language: " + language +
+                       ". Narrative style: " + styles.get(preferences.get("narration_style"), "natural") + ".")
         if preferences.get("translation_mode") == "target_output":
             source = preferences.get("source_language", "auto")
-            output_preferences += (" Idioma de entrada: " +
-                            ("detecta automáticamente" if source == "auto" else source) +
-                            ". Conserva el significado del contenido entrante y "
-                            "escribe la respuesta únicamente en el idioma de salida.")
+            output_preferences += (" Input language: " +
+                            ("detect automatically" if source == "auto" else source) +
+                            ". Preserve the meaning of incoming content and "
+                            "write the response only in the output language.")
         canon = story.get("canon", "").strip()
-        world_rules = "\nCanon persistente confirmado de la historia: " + canon if canon else ""
+        world_rules = "\nConfirmed persistent story canon: " + canon if canon else ""
         recent_turns = self.turns(story["id"], limit=16)
         creator_context = self.creator.context(story) if self.creator is not None else ""
         # Only the current user intention and a bounded recent history activate
@@ -616,10 +616,10 @@ class NarrativeService:
                             if self.lorebook is not None else "")
         world_context = (self.world.context(story["id"]) if self.world is not None else "")
         messages = [{"role": "system", "content": PROMPT + "\n" + output_preferences +
-                     "\nPremisa: " + story["premise"] + "\nProtagonista: " +
-                     story.get("protagonist_name", "Protagonista") + world_rules +
+                     "\nPremise: " + story["premise"] + "\nProtagonist: " +
+                     story.get("protagonist_name", "Protagonist") + world_rules +
                      ("\n\n" + creator_context if creator_context else "") +
-                     ("\n\nLorebook activado para esta escena (conocimiento del mundo):\n" +
+                     ("\n\nLorebook activated for this scene (world knowledge):\n" +
                       lorebook_context if lorebook_context else "") +
                      ("\n\n" + world_context if world_context else "")}]
         # Old player-authored interventions are appended as *user* messages,
@@ -631,33 +631,33 @@ class NarrativeService:
                 exclude_turn_ids={t["id"] for t in recent_turns})["episodes"]
             for event in sorted(past, key=lambda item: (item["created_at"], item["turn_id"])):
                 messages.append({"role": "user",
-                                 "content": "[Recuerdo de una intervención pasada del jugador; "
-                                            "no constituye conocimiento automático de NPC] "
+                                 "content": "[Memory of a past player message; "
+                                            "does not constitute automatic NPC knowledge] "
                                             + event["mode"] + ": " + event["input_text"]})
         for t in recent_turns:
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
-        line = {"say": "El protagonista dice", "do": "El protagonista hace",
-                "story": "El jugador dirige la historia", "continue": "Continúa la escena"
+        line = {"say": "The protagonist says", "do": "The protagonist does",
+                "story": "The player directs the story", "continue": "Continue the scene"
                 }[mode]
-        messages.append({"role": "user", "content": line + ": " + (instruction or "Prosigue desde aquí")})
+        messages.append({"role": "user", "content": line + ": " + (instruction or "Proceed from here")})
         return messages
 
     async def generate(self, config: dict, messages: list[dict]):
         model = config["model"].strip()
         if not model:
-            raise ValueError("Selecciona un modelo disponible en el proveedor antes de generar")
+            raise ValueError("Select an available provider model before generating")
         remote = config["provider"] == "openrouter"
         worker = config["provider"] == "worker"
         if worker:
             if self.workers is None:
-                raise ValueError("No existe un registro de workers")
+                raise ValueError("No workers registered")
             base, token = self.workers.endpoint(config["worker_id"])
         else:
             base = "https://openrouter.ai/api/v1" if remote else validate_endpoint(config["base_url"])
             token = self.secrets.read() if remote else ""
         if remote and not token:
-            raise ValueError("Falta la clave de OpenRouter. Configúrala en Ajustes.")
+            raise ValueError("OpenRouter key is missing. Configure it in Settings.")
         if config["provider"] == "ollama":
             path = "/api/chat"
             options = {"temperature": config["temperature"], "top_p": config["top_p"],
@@ -717,7 +717,7 @@ class NarrativeService:
                         yield chunk
                 if not finished:
                     raise ValueError(
-                        "El motor terminó la conexión sin confirmar el final de la generación")
+                        "Engine connection ended without confirming generation completion")
 
     async def prepare(self) -> dict:
         """Explicit warm-up without adding content to any story.
@@ -727,9 +727,9 @@ class NarrativeService:
         """
         config = self.config()
         if config["provider"] == "openrouter":
-            raise ValueError("OpenRouter no ofrece precalentamiento persistente. Genera normalmente.")
+            raise ValueError("OpenRouter does not support persistent warmup. Generate normally.")
         if not config["model"].strip():
-            raise ValueError("Primero selecciona y guarda un modelo narrativo")
+            raise ValueError("Select and save a narrator model first")
         warm = {**config, "max_tokens": 24, "temperature": 0.0}
         started = time.monotonic()
         first = None
@@ -738,10 +738,10 @@ class NarrativeService:
         try:
             if (self.resources is not None and config["provider"] in {"ollama", "koboldcpp"}
                     and config["device"] != "cpu"):
-                lease = await self.resources.claim_local_gpu("preparación del narrador")
+                lease = await self.resources.claim_local_gpu("narrator warmup")
             async for text in self.generate(warm, [
-                {"role": "system", "content": "Responde brevemente en español."},
-                {"role": "user", "content": "Responde únicamente: Listo."},
+                {"role": "system", "content": "Reply briefly in English."},
+                {"role": "user", "content": "Reply with only: Ready."},
             ]):
                 if first is None:
                     first = round((time.monotonic() - started) * 1000, 1)
@@ -750,13 +750,13 @@ class NarrativeService:
             if self.resources is not None:
                 self.resources.release_local_gpu(lease)
         if count == 0:
-            raise ValueError("El modelo no devolvió una respuesta de preparación")
+            raise ValueError("Model returned no warmup response")
         return {
             "ready": True,
             "provider": config["provider"], "model": config["model"],
             "duration_ms": round((time.monotonic() - started) * 1000, 1),
             "first_text_ms": first,
-            "message": "Preparación completada; el motor puede descargar memoria si está inactivo.",
+            "message": "Warmup complete; the engine may unload memory when idle.",
         }
 
     async def _generate_until_disconnect(self, config: dict, messages: list[dict],
@@ -794,7 +794,7 @@ class NarrativeService:
     def register_generation(self, story_id: str, request_id: str) -> asyncio.Event:
         key = (story_id, request_id)
         if key in self._active_generations:
-            raise HTTPException(409, "Esta solicitud narrativa ya está en curso")
+            raise HTTPException(409, "This narrative request is already running")
         stopped = asyncio.Event()
         self._active_generations[key] = stopped
         return stopped
@@ -835,22 +835,22 @@ class NarrativeService:
                 return
             story = self.get_story(story_id)
             if not story:
-                yield encode_event("error", {"message": "Historia inexistente"})
+                yield encode_event("error", {"message": "Story not found"})
                 return
             config = self.config()
             collected: list[str] = []
             lease = False
             try:
                 yield encode_event("status", {
-                    "phase": "preparing", "message": "Preparando contexto de la historia..."})
+                    "phase": "preparing", "message": "Preparing story context..."})
                 messages = self.messages(story, instruction, mode)
                 yield encode_event("status", {
-                    "phase": "connecting", "message": "Conectando con el modelo narrador..."})
+                    "phase": "connecting", "message": "Connecting to narrator model..."})
                 first_piece = True
                 total_length = 0
                 if (self.resources is not None and config["provider"] in {"ollama", "koboldcpp"}
                         and config["device"] != "cpu"):
-                    lease = await self.resources.claim_local_gpu("narración local")
+                    lease = await self.resources.claim_local_gpu("local narration")
                 async with aclosing(self._generate_until_disconnect(
                         config, messages, should_stop)) as generated:
                     async for piece in generated:
@@ -858,16 +858,16 @@ class NarrativeService:
                             return
                         if first_piece:
                             yield encode_event("status", {
-                                "phase": "streaming", "message": "Narración en curso..."})
+                                "phase": "streaming", "message": "Generating narration..."})
                             first_piece = False
                         collected.append(piece)
                         total_length += len(piece)
                         if total_length > 40000:
-                            raise ValueError("La salida excedió el límite de longitud")
+                            raise ValueError("Output exceeded the length limit")
                         yield encode_event("delta", {"text": piece})
                 text = "".join(collected).strip()
                 if not text:
-                    raise ValueError("El modelo no produjo narración")
+                    raise ValueError("Model produced no narration")
                 if should_stop is not None and await should_stop():
                     return
                 turn = self.append(story_id, request_id, mode, instruction, text, config["model"])
@@ -917,7 +917,7 @@ def mount_narrative_routes(app, narrative: NarrativeService):
     def get_story(story_id: uuid.UUID):
         story = narrative.get_story(str(story_id))
         if not story:
-            raise HTTPException(404, "Historia inexistente")
+            raise HTTPException(404, "Story not found")
         return story
 
     @app.post("/api/v1/stories/{story_id}/fork", status_code=201)
@@ -931,23 +931,23 @@ def mount_narrative_routes(app, narrative: NarrativeService):
     @app.patch("/api/v1/stories/{story_id}/canon")
     def set_canon(story_id: uuid.UUID, body: CanonChange):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia inexistente")
+            raise HTTPException(404, "Story not found")
         return narrative.set_canon(str(story_id), body.canon)
 
     @app.get("/api/v1/stories/{story_id}/turns")
     def get_turns(story_id: uuid.UUID):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia inexistente")
+            raise HTTPException(404, "Story not found")
         return {"turns": narrative.turns(str(story_id))}
 
     @app.post("/api/v1/stories/{story_id}/generate")
     async def stream_story(story_id: uuid.UUID, body: TurnRequest, request: Request):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia inexistente")
+            raise HTTPException(404, "Story not found")
         if body.mode not in {"say", "do", "story", "continue"}:
-            raise HTTPException(422, "Modo de interacción inválido")
+            raise HTTPException(422, "Invalid interaction mode")
         if body.mode != "continue" and not body.input_text.strip():
-            raise HTTPException(422, "Debes escribir una acción, diálogo o indicación")
+            raise HTTPException(422, "Enter an action, dialogue, or instruction")
         sid, rid = str(story_id), str(body.request_id)
         stopped = narrative.register_generation(sid, rid)
 
@@ -969,6 +969,6 @@ def mount_narrative_routes(app, narrative: NarrativeService):
     @app.post("/api/v1/stories/{story_id}/generate/{request_id}/cancel")
     async def cancel_story_generation(story_id: uuid.UUID, request_id: uuid.UUID):
         if not narrative.get_story(str(story_id)):
-            raise HTTPException(404, "Historia inexistente")
+            raise HTTPException(404, "Story not found")
         # Signalling is best-effort; an already committed turn is not undone.
         return narrative.cancel_generation(str(story_id), str(request_id))

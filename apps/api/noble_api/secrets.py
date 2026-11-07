@@ -28,20 +28,20 @@ class Secrets:
 
     def set(self, value: str) -> dict:
         if os.getenv("NOBLE_OPENROUTER_API_KEY"):
-            raise ValueError("La credencial está gestionada por NOBLE_OPENROUTER_API_KEY")
+            raise ValueError("Credential is managed by NOBLE_OPENROUTER_API_KEY")
         value = value.strip()
         if len(value) < 12 or len(value) > 4096:
-            raise ValueError("La clave debe contener entre 12 y 4096 caracteres")
+            raise ValueError("Key must contain 12–4,096 characters")
         try:
             import keyring
             keyring.set_password(SERVICE, NAME, value)
         except Exception as exc:
-            raise ValueError("No hay un almacén de credenciales disponible; configura NOBLE_OPENROUTER_API_KEY") from exc
+            raise ValueError("No system credential store is available; configure NOBLE_OPENROUTER_API_KEY") from exc
         return self.status()
 
     def delete(self) -> dict:
         if os.getenv("NOBLE_OPENROUTER_API_KEY"):
-            raise ValueError("La credencial está gestionada por una variable de entorno")
+            raise ValueError("Credential is managed by an environment variable")
         try:
             import keyring
             keyring.delete_password(SERVICE, NAME)

@@ -22,17 +22,17 @@ class ContextPreviewInput(BaseModel):
 
 def _label_system(part: str, index: int) -> str:
     if index == 0:
-        return "Instrucciones, premisa y canon"
-    if part.startswith(("Contexto interno de la historia", "Directrices de narración",
-                        "NPC controlados por el narrador", "Recordatorio persistente")):
+        return "Instructions, premise, and canon"
+    if part.startswith(("Private story context", "Narration guidelines",
+                        "Narrator-controlled NPCs", "Persistent creator reminder")):
         return "Creator and characters"
-    if part.startswith("Lorebook activado"):
+    if part.startswith("Lorebook activated"):
         return "Lorebook"
-    if part.startswith(("Estado estructurado confirmado", "Lugar:", "Momento:",
-                        "Clima:", "Personajes presentes:", "Inventario confirmado:",
-                        "Indicadores confirmados:")):
+    if part.startswith(("Confirmed structured state", "Location:", "Time:",
+                        "Weather:", "Present characters:", "Confirmed inventory:",
+                        "Confirmed flags:")):
         return "World state"
-    return "Sistema y contexto"
+    return "System and context"
 
 
 def _approx_tokens(text: str) -> int:
@@ -62,14 +62,14 @@ def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
             # Separate the fixed narrator prefix, public premise and optional
             # canonical facts without changing a single byte of the prompt.
             fragments = re.split(
-                r"(?=\nPremisa: |\nCanon persistente confirmado de la historia: )",
+                r"(?=\nPremise: |\nConfirmed persistent story canon: )",
                 part)
             for index, fragment in enumerate(fragments):
                 if not fragment:
                     continue
-                name = ("Premisa y protagonista" if fragment.startswith("\nPremisa:")
-                        else "Canon fijo" if fragment.startswith("\nCanon persistente")
-                        else "Sistema y preferencias")
+                name = ("Premise and protagonist" if fragment.startswith("\nPremisa:")
+                        else "Fixed canon" if fragment.startswith("\nCanon persistente")
+                        else "System and preferences")
                 add(name, prefix + fragment if index == 0 else fragment)
         else:
             add(_label_system(part, i), prefix + part)
@@ -77,10 +77,10 @@ def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
         content = message["content"]
         if idx == len(messages) - 1:
             name = "Current message"
-        elif content.startswith("[Recuerdo de una intervención pasada"):
-            name = "Episodios recuperados"
+        elif content.startswith("[Memory of a past player message"):
+            name = "Retrieved episodes"
         else:
-            name = "Historial reciente"
+            name = "Recent history"
         add(name, content)
 
     # Add small message-boundary overhead, not a model-specific guarantee.

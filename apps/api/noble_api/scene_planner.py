@@ -17,16 +17,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from .visual_state import VisualState
 
 SHOT_LABELS = {
-    "wide": "plano general, ambiente completo",
-    "medium": "plano medio, personajes y entorno",
-    "closeup": "primer plano, rostro y expresión",
+    "wide": "wide shot, full environment",
+    "medium": "medium shot, characters and setting",
+    "closeup": "close-up, face and expression",
 }
 LIGHT_LABELS = {
-    "natural": "iluminación natural suave",
-    "sunset": "luz cálida del atardecer",
-    "night": "iluminación nocturna y sombras controladas",
-    "interior": "iluminación interior difusa",
-    "dramatic": "iluminación cinematográfica de alto contraste",
+    "natural": "soft natural lighting",
+    "sunset": "warm sunset light",
+    "night": "night lighting with controlled shadows",
+    "interior": "diffused interior lighting",
+    "dramatic": "high-contrast cinematic lighting",
 }
 MAX_CAST = 6
 
@@ -73,16 +73,16 @@ class ScenePlanner:
 
     def save(self, story_id: str, form: ScenePlanInput) -> dict:
         if form.shot not in SHOT_LABELS or form.lighting not in LIGHT_LABELS:
-            raise ValueError("Plano o iluminación no admitido")
+            raise ValueError("Unsupported shot or lighting")
         ids = [str(value) for value in form.visible_character_ids]
         if len(set(ids)) != len(ids):
-            raise ValueError("Los personajes de la escena no pueden repetirse")
+            raise ValueError("Scene characters cannot be duplicated")
         cast = {character["id"]: character for character in self.visual.characters(story_id)}
         if any(ident not in cast for ident in ids):
-            raise ValueError("Un personaje no pertenece a esta historia")
+            raise ValueError("A character does not belong to this story")
         focus = str(form.reference_character_id) if form.reference_character_id else None
         if focus and focus not in ids:
-            raise ValueError("El personaje de referencia debe aparecer en la escena")
+            raise ValueError("Reference character must appear in the scene")
         scene = self.visual.scene(story_id)
         import json
         with self.visual.store._conn() as db:
@@ -118,28 +118,28 @@ class ScenePlanner:
         scene = self.visual.scene(story_id)
         cast = self.selected_cast(story_id, prompt)
         lines = [
-            f"Ubicación de la escena: {scene['location']}.",
-            "Plano: " + SHOT_LABELS[plan["shot"]] + ".",
-            "Luz: " + LIGHT_LABELS[plan["lighting"]] + ".",
+            f"Scene location: {scene['location']}.",
+            "Shot: " + SHOT_LABELS[plan["shot"]] + ".",
+            "Lighting: " + LIGHT_LABELS[plan["lighting"]] + ".",
         ]
         if plan["mood"]:
-            lines.append("Atmósfera: " + plan["mood"] + ".")
+            lines.append("Mood: " + plan["mood"] + ".")
         if plan["direction"]:
-            lines.append("Composición y acción: " + plan["direction"] + ".")
+            lines.append("Composition and action: " + plan["direction"] + ".")
         if cast:
-            lines.append("Personajes presentes (" + str(len(cast)) +
-                         ", no inventar personajes adicionales):")
+            lines.append("Present characters (" + str(len(cast)) +
+                         ", do not invent additional characters):")
             lines.extend(f"{row['name']}: {row['appearance']}; "
-                         f"ropa: {row['outfit']}; rasgos: "
+                         f"outfit: {row['outfit']}; features: "
                          f"{row['distinguishing_features']}" for row in cast)
         else:
-            lines.append("No se indican personajes presentes.")
+            lines.append("No present characters specified.")
         identity = self.visual.creator_visual_identity_lines(
             story_id, prompt, {row["id"] for row in cast})
         if identity:
-            lines.append("Etiquetas de identidad visual del creador:")
+            lines.append("Creator visual identity tags:")
             lines.extend(identity)
-        lines.append("Solicitud visual: " + prompt.strip())
+        lines.append("Visual request: " + prompt.strip())
         return "\n".join(lines)
 
     def automatic_reference(self, story_id: str) -> str | None:
@@ -195,7 +195,7 @@ def mount_scene_plan_routes(app, planner: ScenePlanner):
     def preview_scene_plan(story_id: uuid.UUID, body: dict):
         prompt = body.get("prompt")
         if not isinstance(prompt, str) or not 8 <= len(prompt) <= 2400:
-            raise HTTPException(422, "Describe la escena en 8–2400 caracteres")
+            raise HTTPException(422, "Describe the scene in 8–2,400 characters")
         try:
             plan = planner.read(str(story_id))
             return {"prompt": planner.prompt(str(story_id), prompt),

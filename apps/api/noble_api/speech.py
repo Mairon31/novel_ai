@@ -111,26 +111,26 @@ class SpeechService:
 
     def voice_path(self, voice_id: str) -> Path:
         if not voice_id.endswith(".onnx") or "/" in voice_id or "\\" in voice_id or voice_id.startswith("."):
-            raise HTTPException(422, "Nombre de voz inválido")
+            raise HTTPException(422, "Invalid voice name")
         target = self.root / voice_id
         if not target.is_file() or target.is_symlink():
-            raise HTTPException(422, "La voz Piper no está instalada")
+            raise HTTPException(422, "Piper voice is not installed")
         sidecar = Path(str(target) + ".json")
         if not sidecar.is_file() or sidecar.is_symlink():
-            raise HTTPException(422, "Falta la configuración JSON de la voz Piper")
+            raise HTTPException(422, "Piper voice JSON configuration is missing")
         return target
 
     async def preview(self, body: VoicePreviewRequest) -> Response:
         """Synthesize an explicitly requested short sample without saving it."""
         if body.request_source != "preview_button" or not body.text.strip():
-            raise HTTPException(422, "La prueba de voz requiere una solicitud explícita y texto")
+            raise HTTPException(422, "Voice preview requires an explicit request and text")
         model = self.voice_path(body.voice_id)
         synthesis = self.synthesis_config()
         executable = shutil.which("piper")
         if not executable:
-            raise HTTPException(503, "Piper no está instalado en PATH")
+            raise HTTPException(503, "Piper is not installed on PATH")
         if self.lock.locked():
-            raise HTTPException(409, "El motor Piper está ocupado")
+            raise HTTPException(409, "Piper engine is busy")
         await self.lock.acquire()
         try:
             with tempfile.TemporaryDirectory(prefix=".noble-piper-test-", dir=self.root) as directory:
@@ -147,15 +147,15 @@ class SpeechService:
                 except asyncio.TimeoutError:
                     process.kill()
                     await process.communicate()
-                    raise HTTPException(504, "Piper agotó el tiempo de prueba de voz")
+                    raise HTTPException(504, "Piper voice preview timed out")
                 if process.returncode != 0 or not target.is_file():
-                    raise HTTPException(502, "Piper no pudo generar la prueba: " +
+                    raise HTTPException(502, "Piper could not generate the preview: " +
                                         stderr.decode("utf-8", errors="replace")[:160])
                 if not 44 < target.stat().st_size <= 16 * 1024 * 1024:
-                    raise HTTPException(502, "La prueba WAV tiene tamaño inválido")
+                    raise HTTPException(502, "Preview WAV has an invalid size")
                 data = target.read_bytes()
                 if data[:4] != b"RIFF" or data[8:12] != b"WAVE":
-                    raise HTTPException(502, "Piper devolvió audio WAV inválido")
+                    raise HTTPException(502, "Piper returned invalid WAV audio")
                 return Response(data, media_type="audio/wav", headers={
                     "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
                 })
@@ -165,26 +165,26 @@ class SpeechService:
     async def synthesize(self, story_id: str, turn_id: str,
                          request: SpeechRequest) -> FileResponse:
         if request.request_source != "listen_button":
-            raise HTTPException(422, "El audio debe solicitarse expresamente")
+            raise HTTPException(422, "Audio must be explicitly requested")
         settings = self.narrative.store.settings()
         if not settings.get("tts_enabled"):
-            raise HTTPException(403, "Activa el TTS desde Ajustes para escuchar la narración")
+            raise HTTPException(403, "Enable TTS in Settings to hear narration")
         if not self.narrative.get_story(story_id):
-            raise HTTPException(404, "Historia no encontrada")
+            raise HTTPException(404, "Story not found")
         with self.narrative.store._conn() as db:
             turn = db.execute("SELECT assistant_text FROM story_turns WHERE id=? AND story_id=?",
                               (turn_id, story_id)).fetchone()
         if not turn:
-            raise HTTPException(404, "La intervención solicitada no existe")
+            raise HTTPException(404, "Requested message does not exist")
         text = str(turn["assistant_text"]).strip()
         if not text:
-            raise HTTPException(422, "La intervención no tiene texto")
+            raise HTTPException(422, "Message contains no text")
         if len(text) > 3500:
-            raise HTTPException(413, "El texto supera el límite por síntesis de 3500 caracteres")
+            raise HTTPException(413, "Text exceeds the 3,500-character per-synthesis limit")
         model = self.voice_path(request.voice_id)
         executable = shutil.which("piper")
         if not executable:
-            raise HTTPException(503, "Piper no está instalado en PATH")
+            raise HTTPException(503, "Piper is not installed on PATH")
         synthesis = self.synthesis_config()
         signature = f"{model.name}:{model.stat().st_mtime_ns}:{model.stat().st_size}"
         key = hashlib.sha256((signature + "\n" + text + "\n" +
@@ -195,7 +195,7 @@ class SpeechService:
             return FileResponse(target, media_type="audio/wav",
                 headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"})
         if self.lock.locked():
-            raise HTTPException(409, "El motor Piper ya está sintetizando otra voz")
+            raise HTTPException(409, "Piper is already synthesizing another voice")
         await self.lock.acquire()
         try:
             if not target.is_file() or target.stat().st_size <= 44:
@@ -213,14 +213,14 @@ class SpeechService:
                     except asyncio.TimeoutError:
                         process.kill()
                         await process.communicate()
-                        raise HTTPException(504, "Piper superó el tiempo máximo de síntesis")
+                        raise HTTPException(504, "Piper synthesis timed out")
                     if process.returncode != 0 or not tmp.is_file():
-                        raise HTTPException(502, "Piper no pudo sintetizar el audio: " +
+                        raise HTTPException(502, "Piper could not synthesize audio: " +
                             stderr.decode("utf-8", errors="replace")[:180])
                     # Reject incomplete WAV instead of publishing a corrupt audio.
                     with tmp.open("rb") as audio:
                         if audio.read(4) != b"RIFF" or tmp.stat().st_size <= 44:
-                            raise HTTPException(502, "Piper devolvió un WAV inválido")
+                            raise HTTPException(502, "Piper returned invalid WAV audio")
                     tmp.replace(target)
                 finally:
                     tmp.unlink(missing_ok=True)

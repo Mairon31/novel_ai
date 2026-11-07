@@ -192,25 +192,25 @@ class CreatorService:
         """World bible and character voices are explicit and reviewed by author."""
         data=self.get(story["id"])
         npc=self.characters(story["id"])
-        name=story.get("protagonist_name") or "Protagonista"
+        name=story.get("protagonist_name") or "Protagonist"
         replace=lambda text: text.replace("{{user}}",name)
         chunks=[]
         if data["ai_plot"].strip():
-            chunks.append("Contexto interno de la historia (hechos y reglas):\n"+
+            chunks.append("Private story context (facts and rules):\n"+
                           replace(data["ai_plot"][:12000]))
         if data["guidelines"].strip():
-            chunks.append("Directrices de narración (estilo, ritmo, límites del narrador):\n"+
+            chunks.append("Narration guidelines (style, pace, narrator boundaries):\n"+
                           replace(data["guidelines"][:4000]))
         if npc:
             lines=[]
             for character in npc[:30]:
-                lines.append("Personaje: "+character["name"]+"\nDescripción: "+
-                             replace(character["description"])+"\nPersonalidad: "+
-                             replace(character["personality"])+"\nEjemplos de diálogo: "+
+                lines.append("Character: "+character["name"]+"\nDescription: "+
+                             replace(character["description"])+"\nPersonality: "+
+                             replace(character["personality"])+"\nDialogue examples: "+
                              replace(character["dialogue_examples"]))
-            chunks.append("NPC controlados por el narrador:\n"+"\n\n".join(lines))
+            chunks.append("Narrator-controlled NPCs:\n"+"\n\n".join(lines))
         if data["reminder"].strip():
-            chunks.append("Recordatorio persistente del creador:\n"+
+            chunks.append("Persistent creator reminder:\n"+
                           replace(data["reminder"][:1200]))
         return "\n\n".join(chunks)[:30000]
 
@@ -221,7 +221,7 @@ class CreatorService:
             raise ValueError("Opening not found")
         if self.narrative.turns(story_id,limit=1):
             raise ValueError("The story has already started; its opening cannot be replaced")
-        name=self.narrative.get_story(story_id).get("protagonist_name","Protagonista")
+        name=self.narrative.get_story(story_id).get("protagonist_name","Protagonist")
         content=scenarios[index].replace("{{user}}",name)
         return self.narrative.append(story_id,str(uuid.uuid4()),"story","",
                                      content,"inicio-del-creador")
