@@ -29,40 +29,40 @@ def select_gguf_file(files: list[str], requested: str) -> str:
             return candidates[0]
         if len(candidates) > 1:
             raise ValueError(
-                f"Hay {len(candidates)} archivos con cuantización {quant.group('quant')}; "
-                "selecciona el nombre completo: " + ", ".join(candidates[:10]))
+                f"There are {len(candidates)} files with quantization {quant.group('quant')}; "
+                "select the full filename: " + ", ".join(candidates[:10]))
     raise FileNotFoundError(
-        f"El archivo solicitado {requested!r} no existe o su cuantización no está "
-        "disponible. Archivos GGUF del repositorio: " +
-        (", ".join(available[:40]) if available else "(ninguno)"))
+        f"Requested file {requested!r} does not exist or its quantization is not "
+        "available. Repository GGUF files: " +
+        (", ".join(available[:40]) if available else "(none)"))
 
 
 def fetch_model(repo: str, requested: str, folder: str, output_json: str) -> dict:
     from huggingface_hub import HfApi, hf_hub_download
 
     api = HfApi()
-    print(f"[HF] Consultando archivos reales de {repo}...", flush=True)
+    print(f"[HF] Checking actual repository files for {repo}...", flush=True)
     record = api.model_info(repo, files_metadata=False)
     revision = record.sha
     if not revision:
-        raise ValueError("Hugging Face no devolvió una revisión de modelo")
+        raise ValueError("Hugging Face did not return a model revision")
     listing = [entry.rfilename for entry in (record.siblings or [])
                if getattr(entry, "rfilename", None)]
     if not listing:
         listing = api.list_repo_files(repo, revision=revision)
-    print(f"[HF] Revisión {revision}, archivos publicados: {len(listing)}", flush=True)
+    print(f"[HF] Revision {revision}, published files: {len(listing)}", flush=True)
 
     filename = select_gguf_file(listing, requested)
     if filename != requested:
-        print(f"[HF] Nombre solicitado no encontrado; mismo quant disponible: {filename}",
+        print(f"[HF] Requested filename not found; available file with matching quantization: {filename}",
               flush=True)
-    print(f"[HF] Descargando archivo verificado en catálogo: {filename}", flush=True)
+    print(f"[HF] Downloading catalog-verified file: {filename}", flush=True)
     model = Path(hf_hub_download(
         repo_id=repo, filename=filename, revision=revision, local_dir=folder))
     if not model.is_file() or model.stat().st_size < 1024 * 1024:
-        raise ValueError("El archivo GGUF descargado está ausente o es demasiado pequeño")
+        raise ValueError("Downloaded GGUF file is missing or too small")
 
-    print(f"[HF] Descarga completa: {model.stat().st_size / 1048576:.1f} MiB", flush=True)
+    print(f"[HF] Download complete: {model.stat().st_size / 1048576:.1f} MiB", flush=True)
     digest = hashlib.sha256()
     with model.open("rb") as source:
         for chunk in iter(lambda: source.read(8 * 1024 * 1024), b""):
@@ -78,14 +78,14 @@ def fetch_model(repo: str, requested: str, folder: str, output_json: str) -> dic
     temporary.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n",
                          encoding="utf-8")
     temporary.replace(target)
-    print(f"[HF] SHA256 del modelo: {metadata['sha256']}", flush=True)
-    print(f"[HF] Metadatos: {target}", flush=True)
+    print(f"[HF] Model SHA256: {metadata['sha256']}", flush=True)
+    print(f"[HF] Metadata: {target}", flush=True)
     return metadata
 
 
 def main() -> None:
     if len(sys.argv) != 5:
-        raise SystemExit("Uso: colab_hf_model.py REPO ARCHIVO_GGUF DIRECTORIO METADATOS_JSON")
+        raise SystemExit("Usage: colab_hf_model.py REPO GGUF_FILE DIRECTORY METADATA_JSON")
     fetch_model(*sys.argv[1:])
 
 

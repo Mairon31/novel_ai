@@ -14,7 +14,7 @@ def main():
     try:
         result = catalog.search("Qwen", "narrator", 6)
         if not result["results"]:
-            raise RuntimeError("Hugging Face devolvió cero resultados para Qwen GGUF")
+            raise RuntimeError("Hugging Face returned no results for Qwen GGUF")
         item = result["results"][0]
         details = catalog.details(item["repo_id"])
         print(json.dumps({

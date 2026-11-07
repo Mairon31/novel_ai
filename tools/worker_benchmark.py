@@ -33,13 +33,13 @@ def percentile(values: list[float], p: float) -> float | None:
 def safe_base(url: str) -> str:
     parsed = urlsplit(url)
     if parsed.scheme not in ("https", "http") or not parsed.hostname:
-        raise ValueError("URL inválida")
+        raise ValueError("Invalid URL")
     if parsed.username or parsed.password or parsed.query or parsed.fragment:
-        raise ValueError("No incluyas credenciales en URL")
+        raise ValueError("Do not include credentials in the URL")
     if parsed.scheme == "http" and parsed.hostname not in ("127.0.0.1", "localhost"):
-        raise ValueError("HTTP solo está permitido en loopback")
+        raise ValueError("HTTP is only permitted on loopback")
     if parsed.path not in ("", "/"):
-        raise ValueError("Escribe la URL base, sin rutas")
+        raise ValueError("Provide the base URL without paths")
     return url.rstrip("/")
 
 
@@ -76,7 +76,7 @@ async def benchmark(base: str, token: str, runs: int, timeout: int,
             headers={"Authorization": "Bearer intentionally-wrong-token"},
             follow_redirects=False)
         if bad.status_code not in (401, 403):
-            raise RuntimeError("La URL no rechaza tokens erróneos; no ejecutes el benchmark")
+            raise RuntimeError("The URL does not reject invalid tokens; do not run the benchmark")
 
         available = await client.get(base + "/v1/models", headers=headers,
                                      follow_redirects=False)
@@ -85,7 +85,7 @@ async def benchmark(base: str, token: str, runs: int, timeout: int,
         ids = [item.get("id") for item in models
                if isinstance(item, dict) and isinstance(item.get("id"), str)]
         if not ids:
-            raise RuntimeError("El worker no anunció modelos en /v1/models")
+            raise RuntimeError("The worker did not advertise any models at /v1/models")
         model = ids[0]
         report["model"] = model
         initial = await snapshot(client, base, headers)
@@ -171,7 +171,7 @@ async def benchmark(base: str, token: str, runs: int, timeout: int,
                         "tokens_per_second": round(
                             completion_tokens / max(duration_ms / 1000, 0.001), 2
                         ) if completion_tokens is not None else None,
-                        "error": None if valid else "Sin contenido o sin marcador [DONE]",
+                        "error": None if valid else "No content or missing [DONE] marker",
                     }
                 except (httpx.HTTPError, ValueError) as exc:
                     record = {
@@ -213,17 +213,17 @@ def main():
         parser.error("runs: 1..20; timeout: 10..600")
     token = os.getenv("NOBLE_WORKER_TOKEN", "")
     if len(token) < 24:
-        parser.error("Exporta NOBLE_WORKER_TOKEN con al menos 24 caracteres")
+        parser.error("Set NOBLE_WORKER_TOKEN with at least 24 characters")
     result = asyncio.run(benchmark(safe_base(options.url), token,
                                    options.runs, options.timeout))
     location = Path(options.output).expanduser()
     location.parent.mkdir(parents=True, exist_ok=True)
     location.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n",
                         encoding="utf-8")
-    print("Pruebas:", result["runs_succeeded"], "/", result["runs_requested"])
+    print("Tests:", result["runs_succeeded"], "/", result["runs_requested"])
     print("TTFT P50 / P95 (ms):", result["ttft_p50_ms"], "/", result["ttft_p95_ms"])
-    print("VRAM máxima observada (MB):", result["gpu_peak_used_mb"])
-    print("Reporte:", location)
+    print("Maximum observed VRAM (MB):", result["gpu_peak_used_mb"])
+    print("Report:", location)
 
 
 if __name__ == "__main__":
