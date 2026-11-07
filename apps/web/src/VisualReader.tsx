@@ -820,12 +820,12 @@ export function VisualReader({
           <h4>Scene and location</h4>
           {visual && <p className="noble-inspector-hint">
             {visual.current_scene.detection === 'heuristic' ?
-              'Cambio detectado por texto: verifica que el lugar sea correcto.' :
+              'Location change detected from text: verify the location.' :
               'Location confirmed for this story.'}
-            {' '}Escenas registradas: {visual.scenes.length}.
+            {' '}Registered scenes: {visual.scenes.length}.
           </p>}
-          <label className="noble-inspector-field">Lugar actual
-            <input aria-label="Lugar actual" value={sceneLocation} maxLength={120}
+          <label className="noble-inspector-field">Current location
+            <input aria-label="Current location" value={sceneLocation} maxLength={120}
               onChange={e => setSceneLocation(e.target.value)}/></label>
           <button className="secondary-button" disabled={visualBusy || sceneLocation.trim().length < 2}
             onClick={() => void saveSceneLocation()}><Check size={15}/> Confirm scene</button>
@@ -833,14 +833,14 @@ export function VisualReader({
           <p className="noble-inspector-hint">Plan each scene before requesting
             an image. The selected cast is saved for each scene.</p>
           {scenePlan && <>
-            <label className="noble-inspector-field">Tipo de plano
+            <label className="noble-inspector-field">Shot type
               <select aria-label="Scene shot" value={scenePlan.shot}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, shot: e.target.value as ScenePlan['shot'],
                 } : plan)}>
-                <option value="wide">General</option>
-                <option value="medium">Medio</option>
-                <option value="closeup">Primer plano</option>
+                <option value="wide">Wide</option>
+                <option value="medium">Medium</option>
+                <option value="closeup">Close-up</option>
               </select>
             </label>
             <label className="noble-inspector-field">Scene lighting

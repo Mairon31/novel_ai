@@ -71,7 +71,7 @@ export function StoryDetail({
             <Play size={17}/> {turns.length ? 'Continue story' : 'Start story'} <ArrowRight size={16}/>
           </button>}
           <button className="secondary-button" onClick={onEdit}>
-            <PencilLine size={16}/> Editar en Creator Studio
+            <PencilLine size={16}/> Edit in Creator Studio
           </button>
           <a className="secondary-button" role="link"
             href={'/api/v1/stories/' + encodeURIComponent(story.id) + '/archive.noble.zip'}
@@ -102,7 +102,7 @@ export function StoryDetail({
     {branches.length > 1 && <section className="noble-detail-section"
       aria-label="Narrative branch tree">
       <div className="noble-detail-section-heading">
-        <span className="overline"><GitBranch size={16}/> HISTORIAS CONECTADAS</span>
+        <span className="overline"><GitBranch size={16}/> CONNECTED STORIES</span>
         <h2>Branch tree <small>{branches.length}</small></h2>
         <p>Explore saved branches without modifying their turns or choices.</p>
       </div>

@@ -459,7 +459,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       }
       setAssets((await api.creatorAssets(active.id)).assets);
       if (editingAsset === asset.id) resetMediaEditor();
-      setNotice('Recurso visual eliminado.');
+      setNotice('Visual asset deleted.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }

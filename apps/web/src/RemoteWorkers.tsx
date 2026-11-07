@@ -119,13 +119,13 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
           maxLength={512} onChange={e => setToken(e.target.value)}/></label>
       <button className="secondary-button" disabled={busy || name.trim().length < 2
         || !url.startsWith('https://') || token.trim().length < 12} onClick={() => void add()}>
-        <Plus size={16}/> Registrar worker</button>
+        <Plus size={16}/> Register worker</button>
     </div>
     <div className="noble-worker-controls">
-      <label className="workspace-pref-field">Worker registrado
+      <label className="workspace-pref-field">Registered worker
         <select aria-label="Select worker" value={selected} disabled={busy || loading}
           onChange={e => { setSelected(e.target.value); setProbe(null); setModel(''); }}>
-          <option value="">Selecciona un worker</option>
+          <option value="">Select a worker</option>
           {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
         </select></label>
       <div className="noble-worker-controls-actions">

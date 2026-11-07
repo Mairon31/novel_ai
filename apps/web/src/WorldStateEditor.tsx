@@ -107,7 +107,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
   if (!draft || !document) return <div role="alert" className="narrative-error">
     {error || 'Could not load world state.'}
     <button className="secondary-button" onClick={() => void reload()}>
-      <RotateCcw size={15}/> Reintentar</button>
+      <RotateCcw size={15}/> Retry</button>
   </div>;
 
   const canSave = draft.facts.every(fact =>
@@ -219,7 +219,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       {draft.facts.map((fact, index) =>
         <div key={fact.id} className="world-fact">
           <div className="world-fact-title">
-            <strong>Hecho {index + 1}</strong>
+            <strong>Fact {index + 1}</strong>
             <button className="secondary-button" aria-label={'Delete fact ' + (index + 1)}
               onClick={() => patch({ facts: draft.facts.filter(item => item.id !== fact.id) })}>
               <Trash2 size={15}/>
@@ -237,7 +237,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
             <span>Public · everyone may know this</span>
           </label>
           {!fact.public && <div className="world-witnesses">
-            <strong>Characters que presenciaron este hecho</strong>
+            <strong>Characters who witnessed this fact</strong>
             {characters.map(character => <label className="world-check" key={character.id}>
               <input type="checkbox" aria-label={'Witness ' + character.name + ' for fact ' + (index + 1)}
                 checked={fact.witness_character_ids.includes(character.id)}

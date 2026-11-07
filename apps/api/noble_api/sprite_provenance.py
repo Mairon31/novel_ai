@@ -55,7 +55,7 @@ def normalize_sprite_generation(value: object) -> dict:
             raise ValueError("Invalid sprite LoRA filename")
         if (isinstance(weight, bool) or not isinstance(weight, (float, int))
                 or not math.isfinite(weight) or not 0 < weight <= 2):
-            raise ValueError("Intensidad de Invalid sprite LoRA")
+            raise ValueError("Invalid sprite LoRA weight")
         lora = {"character_name": name, "lora_name": filename, "strength": float(weight)}
     quality = value["quality"]
     if not isinstance(quality, dict) or set(quality) != {

@@ -101,7 +101,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">ComfyUI directory
         <input aria-label="Local ComfyUI directory" value={config.install_dir}
-          placeholder="Ruta absoluta hasta ComfyUI/main.py"
+          placeholder="Absolute path to ComfyUI/main.py"
           disabled={busy || !!running}
           onChange={e => change('install_dir', e.target.value)}/>
       </label>

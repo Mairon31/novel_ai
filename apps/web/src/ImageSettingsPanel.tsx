@@ -205,14 +205,12 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       }}/>
     <div className="workspace-panel">
       <h3>GPU memory and admission</h3>
-      <p>Consulta la VRAM libre observada con nvidia-smi. Puedes avisar o impedir una
-        solicitud de ComfyUI por debajo de una reserva configurada. Esto no calcula
-        la memoria real que necesita el checkpoint ni detiene otros procesos.</p>
+      <p>Check observed free VRAM with nvidia-smi. You can warn or block ComfyUI requests below a configured reserve. This does not estimate a checkpoint's actual memory requirements or stop other processes.</p>
       {resourceStatus && <p role="status">
         {resourceStatus.selected_gpu
           ? resourceStatus.selected_gpu.name + ' · ' +
-            resourceStatus.selected_gpu.free_mib + ' MiB libres / ' +
-            resourceStatus.selected_gpu.total_mib + ' MiB totales'
+            resourceStatus.selected_gpu.free_mib + ' MiB free / ' +
+            resourceStatus.selected_gpu.total_mib + ' MiB total'
           : 'GPU telemetry unavailable (CPU or another provider).'}
         {' · '}{resourceStatus.message}
       </p>}
@@ -222,20 +220,20 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       </p>}
       {resources && <label className="workspace-pref-toggle">
         <span>Coordinate the local narrator and ComfyUI (one GPU operation at a time)</span>
-        <input type="checkbox" aria-label="Coordinar GPU local"
+        <input type="checkbox" aria-label="Coordinate local GPU"
           checked={resources.serialize_local_gpu}
           onChange={e => setResources(x => x ? {
             ...x, serialize_local_gpu: e.target.checked,
           } : x)}/>
       </label>}
       {resources && <div className="workspace-field-grid">
-        <label className="workspace-pref-field">Modo
-          <select aria-label="Modo de reserva GPU" value={resources.mode}
+        <label className="workspace-pref-field">Mode
+          <select aria-label="GPU reservation mode" value={resources.mode}
             onChange={e => setResources(x => x ? {
               ...x, mode: e.target.value as ResourceConfig['mode'],
             } : x)}>
-            <option value="monitor">Solo supervisar</option>
-            <option value="guard">Bloquear si hay menos VRAM que la reserva</option>
+            <option value="monitor">Monitor only</option>
+            <option value="guard">Block below the VRAM reserve</option>
           </select>
         </label>
         <label className="workspace-pref-field">GPU (nvidia-smi index)
@@ -246,7 +244,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         </label>
         <label className="workspace-pref-field">Minimum free reserve (MiB)
           <input type="number" min={0} max={65536} step={256}
-            value={resources.minimum_free_mib} aria-label="Reserva GPU en MiB"
+            value={resources.minimum_free_mib} aria-label="GPU reserve in MiB"
             onChange={e => setResources(x => x ? {
               ...x, minimum_free_mib: Number(e.target.value),
             } : x)}/>

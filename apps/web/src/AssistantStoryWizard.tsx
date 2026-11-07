@@ -134,7 +134,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     }
   }
 
-  return <section className="creator-ai-wizard" aria-label="Asistente IA de historias">
+  return <section className="creator-ai-wizard" aria-label="AI Story Assistant">
     <div className="creator-ai-header">
       <div>
         <span className="overline"><Sparkles size={15}/> AI-ASSISTED CREATION</span>

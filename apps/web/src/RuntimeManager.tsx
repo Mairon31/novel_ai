@@ -80,28 +80,28 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     {!running && <>
       <div className="narrative-settings-grid">
         <label className="settings-span"><span><HardDrive size={14}/> Registered GGUF model</span>
-          <select aria-label="GGUF para ejecutar" value={installedId}
+          <select aria-label="GGUF to run" value={installedId}
             onChange={e => setInstalledId(e.target.value)}>
             <option value="">Select model...</option>
             {models.map(model => <option key={model.id} value={model.id}>
               {model.filename} — {size(model.size_bytes)}</option>)}
           </select>
         </label>
-        <label className="settings-span">Ruta al ejecutable KoboldCpp
-          <input aria-label="Ruta de KoboldCpp" value={executable}
-            placeholder="C:\\Herramientas\\koboldcpp.exe"
+        <label className="settings-span">KoboldCpp executable path
+          <input aria-label="KoboldCpp path" value={executable}
+            placeholder="C:\\Tools\\koboldcpp.exe"
             onChange={e => setExecutable(e.target.value)}/>
         </label>
-        <label>Capas que se ejecutan en GPU
-          <select aria-label="Capas GPU KoboldCpp" value={gpuLayers}
+        <label>Layers to run on GPU
+          <select aria-label="KoboldCpp GPU layers" value={gpuLayers}
             onChange={e => setGpuLayers(Number(e.target.value))}>
             <option value={-1}>Automatic (auto-fit)</option>
-            <option value={0}>Solo CPU</option>
-            {[12, 24, 36, 48, 64, 96, 128].map(n => <option key={n} value={n}>{n} capas GPU</option>)}
+            <option value={0}>CPU only</option>
+            {[12, 24, 36, 48, 64, 96, 128].map(n => <option key={n} value={n}>{n} GPU layers</option>)}
           </select>
         </label>
-        <label>Contexto
-          <select aria-label="Contexto KoboldCpp" value={contextSize}
+        <label>Context size
+          <select aria-label="KoboldCpp context" value={contextSize}
             onChange={e => setContextSize(Number(e.target.value))}>
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n} tokens</option>)}
           </select>

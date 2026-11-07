@@ -233,19 +233,19 @@ def _validate_pack(pack: dict) -> tuple[CreatorBlueprint, list[CreatorCharacter]
     })
     if not 1 <= len(blueprint.opening_scenarios) <= 6 or any(
             not 15 <= len(item) <= 3000 for item in blueprint.opening_scenarios):
-        raise ValueError("Inicios de paquete inválidos")
+        raise ValueError("Invalid story pack openings")
     characters = [CreatorCharacter.model_validate({
         "name": name, "description": description,
         "personality": personality, "dialogue_examples": dialogue,
     }) for name, description, personality, dialogue in pack["characters"]]
     if len(characters) < 3:
-        raise ValueError("La historia necesita personajes reales")
+        raise ValueError("Story requires actual characters")
     lore = [LorebookService._clean(LorebookEntryInput(
         title=title, content=content, keys=keys,
         priority=55,
     )) for title, content, keys in pack["lore"]]
     if len(lore) < 2:
-        raise ValueError("La historia necesita mundo documentado")
+        raise ValueError("Story requires a documented world")
     return blueprint, characters, lore
 
 
@@ -290,12 +290,12 @@ class StoryHubService:
         try:
             return public_pack(PACK_BY_ID[pack_id])
         except KeyError as exc:
-            raise HTTPException(404, "Historia del catálogo inexistente") from exc
+            raise HTTPException(404, "Catalog story not found") from exc
 
     def install(self, pack_id: str, request: InstallStoryPack) -> dict:
         pack = PACK_BY_ID.get(pack_id)
         if pack is None:
-            raise HTTPException(404, "Historia del catálogo inexistente")
+            raise HTTPException(404, "Catalog story not found")
         actor = (request.protagonist_name or pack["protagonist"]).strip()
         return self.install_pack(pack, actor, pack_id)
 
@@ -303,7 +303,7 @@ class StoryHubService:
         """Atomically install one validated author-owned world."""
         blueprint, chars, lore = _validate_pack(pack)
         if not actor or len(actor) > 60 or not pack["title"].strip() or len(pack["title"]) > 100:
-            raise HTTPException(422, "Título o protagonista inválido")
+            raise HTTPException(422, "Invalid title or protagonist")
         new_id = str(uuid.uuid4())
         now = time.time()
         # Build the package in one transaction. If any row or validation fails,

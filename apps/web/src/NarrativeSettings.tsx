@@ -169,7 +169,7 @@ export function NarrativeSettings() {
           <select aria-label="Narrator device" disabled={config.provider !== 'ollama'} value={config.device}
             onChange={e => update('device', e.target.value as NarrativeConfig['device'])}>
             <option value="auto">Automatic — use GPU if available</option>
-            <option value="cpu">Solo CPU</option>
+            <option value="cpu">CPU only</option>
           </select>
         </label>
       </div>
@@ -199,15 +199,11 @@ export function NarrativeSettings() {
           {preparing ? 'Preparing model… ' + prepareElapsed + ' s' : 'Prepare model now'}
         </button>
       </div>
-      <p className="narrative-helper">«Prepare model now» hace una inferencia corta
-        only when you press the button; no turn is added to story history.
-        Puede tardar en la primera carga. No se aplica a APIs remotas de OpenRouter.</p>
-      <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
-        need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.</p>
+      <p className="narrative-helper">“Prepare model now” runs a short inference only when you press the button; it does not add a turn to story history. The first load may take longer. This does not apply to remote OpenRouter APIs.</p>
+      <p className="narrative-helper"><RefreshCw size={14}/> Models installed from Model Hub need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.</p>
       <section className="narrative-context-inspector" aria-label="Narrative context inspector">
         <h3>Narrative context inspector</h3>
-        <p className="narrative-helper">Consulta los mensajes exactos preparados para el
-          provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
+        <p className="narrative-helper">Inspect the exact messages prepared for the provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
         {stories.length ? <>
           <div className="narrative-settings-grid">
             <label>Story to inspect
@@ -222,7 +218,7 @@ export function NarrativeSettings() {
                 <option value="do">Action</option>
                 <option value="say">Dialogue</option>
                 <option value="story">Direction</option>
-                <option value="continue">Continuar</option>
+                <option value="continue">Continue</option>
               </select>
             </label>
           </div>
@@ -241,10 +237,8 @@ export function NarrativeSettings() {
           </div>
           {inspectorError && <p role="alert" className="narrative-error">{inspectorError}</p>}
           {inspectorData && <div role="status" className="creator-hint">
-            <strong>Presupuesto estimado del prompt</strong>
-            <p>{inspectorData.estimated_prompt_tokens} tokens aproximados de entrada
-              + {inspectorData.reserved_output_tokens} reservados de salida
-              / {inspectorData.context_window_tokens} de ventana configurada.</p>
+            <strong>Estimated prompt budget</strong>
+            <p>{inspectorData.estimated_prompt_tokens} estimated input tokens + {inspectorData.reserved_output_tokens} reserved output tokens / {inspectorData.context_window_tokens} configured context-window tokens.</p>
             {inspectorData.estimated_overflow && <p role="alert">
               Posible desbordamiento: entrada + salida estimadas superan la ventana.
             </p>}
