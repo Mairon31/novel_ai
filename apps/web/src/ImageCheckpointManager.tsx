@@ -88,7 +88,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
       solo se instala si se verifica su SHA-256 y su estructura.</p>
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">Repositorio de Hugging Face
-        <input aria-label="Repositorio de checkpoint" placeholder="autor/modelo"
+        <input aria-label="Repositorio Hugging Face" placeholder="autor/modelo"
           value={repo} disabled={busy || !!changing}
           onChange={e => { setRepo(e.target.value); setCatalog(null); }}/>
       </label>

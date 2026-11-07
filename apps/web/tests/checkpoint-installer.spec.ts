@@ -66,7 +66,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   await expect(page.getByRole('heading', { name: 'Checkpoints desde Noble AI' })).toBeVisible();
   expect(installs).toBe(0);
   expect(statusChecks).toBe(0);
-  await page.getByLabel('Repositorio de checkpoint').fill(repo);
+  await page.getByLabel('Repositorio Hugging Face').fill(repo);
   await page.getByRole('button', { name: 'Buscar archivos del checkpoint' }).click();
   await expect(page.getByText(filename).first()).toBeVisible();
   expect(installs).toBe(0);
