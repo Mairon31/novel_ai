@@ -263,7 +263,7 @@ class SpriteDraftApiTests(unittest.TestCase):
         self.mock.bad_background = True
         denied = self.generate(draft, "neutral")
         self.assertEqual(denied.status_code, 422, denied.text)
-        self.assertIn("Recorte no aceptado", denied.text)
+        self.assertIn("Cutout rejected", denied.text)
         self.assertEqual(self.client.get(preview).content, original)
         self.mock.bad_background = False
         self.mock.offline = True
