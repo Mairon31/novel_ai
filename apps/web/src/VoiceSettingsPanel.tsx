@@ -41,7 +41,7 @@ export function VoiceSettingsPanel() {
       const nextUrl = URL.createObjectURL(blob);
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = nextUrl; setPreviewUrl(nextUrl);
-      setMessage('Muestra generada. Pulsa Reproducir para escucharla.');
+      setMessage('Sample generated. Press Play to listen.');
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setPreviewBusy(false); }
@@ -98,7 +98,7 @@ export function VoiceSettingsPanel() {
     try {
       await api.controlPiperVoice(job.id, action);
       await refreshVoiceDownloads();
-      setMessage(action === 'pause' ? 'Descarga pausada.' :
+      setMessage(action === 'pause' ? 'Download paused.' :
         action === 'resume' ? 'Download resumed.' : 'Installation canceled.');
     } catch (exc) {
       setError((exc as Error).message);
@@ -110,7 +110,7 @@ export function VoiceSettingsPanel() {
     setBusy(true); setError(''); setMessage('');
     try {
       setVoicePreferences(await api.saveSpeechPreferences(voicePreferences.default_voice_id));
-      setMessage('Voz predeterminada guardada para el lector.');
+      setMessage('Default reader voice saved.');
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setBusy(false); }
@@ -139,7 +139,7 @@ export function VoiceSettingsPanel() {
     setSetup(current => current ? { ...current, tts_enabled: enabled, tts_autoread: false } : current);
     try {
       setSetup(await api.patchSettings({ tts_enabled: enabled, tts_autoread: false }));
-      setMessage(enabled ? 'TTS activado solo para los botones Escuchar.' : 'TTS desactivado.');
+      setMessage(enabled ? 'TTS enabled only for explicit Listen actions.' : 'TTS disabled.');
     } catch (exc) {
       setSetup(previous);
       setError((exc as Error).message);
@@ -155,7 +155,7 @@ export function VoiceSettingsPanel() {
       {error || <><Check size={15}/>{message}</>}</p>}
     <div className="workspace-panel">
       <h3><Volume2 size={18}/> Voz local con Piper</h3>
-      <p>Instala una voz de español latinoamericano desde el catálogo o añade manualmente el modelo <code>.onnx</code> y su configuración <code>.onnx.json</code>. La síntesis ocurre únicamente cuando pulsas «Escuchar».</p>
+      <p>Install a Latin American Spanish voice from the catalog or manually add the <code>.onnx</code> and its configuration <code>.onnx.json</code>. Synthesis runs only when you press Listen.</p>
       <div className="noble-voice-library" aria-label="Piper voice catalog">
         <h4>Latin American Spanish voices</h4>
         <p className="noble-inspector-hint">Explicit Hugging Face downloads with pinned revisions and file verification. Install the Piper engine separately.</p>
@@ -184,20 +184,20 @@ export function VoiceSettingsPanel() {
                 job && active ? <>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'pause')}>
-                    Pausar descarga</button>
+                    Pause descarga</button>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
-                    Cancelar descarga</button>
+                    Cancel descarga</button>
                 </> : job && (status === 'paused' || status === 'failed') ? <>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'resume')}>
-                    Reanudar descarga</button>
+                    Resume descarga</button>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
-                    Cancelar descarga</button>
+                    Cancel descarga</button>
                 </> : <button type="button" className="secondary-button"
                     disabled={!!voiceAction || busy} onClick={() => void installVoice(voice.id)}>
-                    {voiceAction === voice.id ? 'Iniciando...' : 'Instalar voz'}</button>}
+                    {voiceAction === voice.id ? 'Iniciando...' : 'Install voz'}</button>}
             </div>
           </div>;
         })}
@@ -221,13 +221,12 @@ export function VoiceSettingsPanel() {
           (!!voicePreferences.default_voice_id &&
            !voices?.voices.some(v => v.id === voicePreferences.default_voice_id))}
           onClick={() => void saveDefaultVoice()} type="button">
-          <Check size={16}/> Guardar voz predeterminada
+          <Check size={16}/> Save voz predeterminada
         </button>
       </div>}
       <div className="noble-voice-synthesis workspace-field-grid">
         <h4>Piper synthesis settings</h4>
-        <p>Estos parámetros se aplican a las muestras y a cada narración nueva.
-          No reproducen audio automáticamente.</p>
+        <p>These settings affect previews and newly generated speech. They never play audio automatically.</p>
         {synthesisConfig && <>
           <label className="workspace-pref-field">Speed (phoneme duration)
             <input aria-label="Velocidad Piper" type="number" min={0.5} max={2}
@@ -274,7 +273,7 @@ export function VoiceSettingsPanel() {
           preload="none" src={previewUrl}/>}
         {synthesisDirty && <small role="status">Save the updated settings before testing the voice.</small>}
         <small>Solo genera la muestra al pulsar Probar. Necesita Piper instalado y
-          una voz ONNX/JSON válida; el audio no se añade a ninguna historia.</small>
+          a valid ONNX/JSON voice; preview audio is not added to any story.</small>
       </div>
       <label className="workspace-pref-toggle">
         <span>Activar botones de voz bajo demanda</span>

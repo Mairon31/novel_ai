@@ -152,7 +152,7 @@ export function StoryDetail({
       <div className="noble-detail-section-heading">
         <span className="overline"><Feather size={15}/> YOUR FIRST DECISION</span>
         <h2>Choose how the story begins</h2>
-        <p>Selecciona una escena de apertura. Al comenzar, se guardará como
+        <p>Choose an opening scene. It will be saved as
           el primer turno de esta historia, sin generar texto adicional.</p>
       </div>
       <div className="noble-detail-openings-grid">

@@ -139,22 +139,22 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <div>
         <span className="overline"><Sparkles size={15}/> AI-ASSISTED CREATION</span>
         <h2>Construye un mundo con IA</h2>
-        <p>Genera una base jugable con trama pública, secretos para el narrador,
+        <p>Generate a playable foundation with public plot and private narrator secrets,
           cuatro personajes, tres Lorebooks y tres comienzos. Primero revisas
-          la propuesta; después decides si deseas guardarla.</p>
+          the proposal, then decide whether to save it.</p>
       </div>
       <button className="secondary-button" onClick={onCancel} disabled={!!busy}
         type="button"><X size={16}/> Cerrar</button>
     </div>
     <div className="creator-ai-fields">
       <label>Idea para la historia
-        <textarea aria-label="Idea para generar historia" rows={5} maxLength={2500}
+        <textarea aria-label="Story idea" rows={5} maxLength={2500}
           placeholder="Describe el conflicto, el mundo, sus reglas, el tipo de decisiones y los personajes que imaginas..."
           value={idea} onChange={e => { setIdea(e.target.value); reset(); }}/>
       </label>
       <div className="creator-ai-row">
         <label>Protagonista
-          <input aria-label="Protagonista de historia IA" maxLength={60}
+          <input aria-label="AI story protagonist" maxLength={60}
             value={protagonist} onChange={e => { setProtagonist(e.target.value); reset(); }}/>
         </label>
         <label>Genre (optional)
@@ -163,7 +163,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             onChange={e => { setGenre(e.target.value); reset(); }}/>
         </label>
         <label>Tono (opcional)
-          <input aria-label="Tono de historia IA" maxLength={120}
+          <input aria-label="AI story tone" maxLength={120}
             value={tone} placeholder="Suspenseful, melancholic..."
             onChange={e => { setTone(e.target.value); reset(); }}/>
         </label>
@@ -177,12 +177,12 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           {busy === 'draft' ? 'Generando trama, reparto y Lorebook...' : 'Generar propuesta'}
         </button>
         <small>Utiliza el narrador configurado en Ajustes. No descarga modelos ni guarda
-          nada durante la generación. Las ilustraciones y voces se añaden después.</small>
+          nothing during generation. Illustrations and voices can be added afterward.</small>
       </div>
     </div>
 
     {error && <p role="alert" className="narrative-error">{error}</p>}
-    {draft && <div className="creator-ai-preview" aria-label="Revisión del mundo generado">
+    {draft && <div className="creator-ai-preview" aria-label="Generated world review">
       <div className="creator-ai-preview-head">
         <span className="overline"><Check size={14}/> TRES ETAPAS TERMINADAS</span>
         <h3>Revisa el mundo antes de crearlo</h3>
@@ -193,13 +193,13 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           onChange={e => updateDraft({ ...draft, title: e.target.value })}/>
       </label>
       <label>Public synopsis
-        <textarea aria-label="Sinopsis generada editable" rows={3} maxLength={250}
+        <textarea aria-label="Editable generated synopsis" rows={3} maxLength={250}
           value={draft.synopsis} onChange={e =>
             updateDraft({ ...draft, synopsis: e.target.value })}/>
       </label>
       <div className="creator-ai-row">
         <label>Protagonista del mundo
-          <input aria-label="Protagonista del borrador" maxLength={60}
+          <input aria-label="Draft protagonist" maxLength={60}
             value={draft.protagonist_name} onChange={e =>
               updateDraft({ ...draft, protagonist_name: e.target.value })}/>
         </label>
@@ -209,7 +209,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
               updateDraft({ ...draft, genre: e.target.value })}/>
         </label>
         <label>Etiquetas (separadas por coma)
-          <input aria-label="Etiquetas generadas editables"
+          <input aria-label="Editable generated tags"
             value={tagsText} onChange={e => {
               const value = e.target.value;
               setTagsText(value);
@@ -225,17 +225,17 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             onChange={e => updateDraft({ ...draft, player_plot: e.target.value })}/>
         </label>
         <label>Trama privada del narrador
-          <textarea aria-label="Trama secreta generada editable" rows={6}
+          <textarea aria-label="Editable generated private plot" rows={6}
             maxLength={12000} value={draft.ai_plot}
             onChange={e => updateDraft({ ...draft, ai_plot: e.target.value })}/>
         </label>
         <label>Directrices del narrador
-          <textarea aria-label="Directrices generadas editables" rows={3}
+          <textarea aria-label="Editable generated guidelines" rows={3}
             maxLength={4000} value={draft.guidelines}
             onChange={e => updateDraft({ ...draft, guidelines: e.target.value })}/>
         </label>
         <label>Recordatorio de continuidad
-          <textarea aria-label="Recordatorio generado editable" rows={2}
+          <textarea aria-label="Editable generated reminder" rows={2}
             maxLength={1200} value={draft.reminder}
             onChange={e => updateDraft({ ...draft, reminder: e.target.value })}/>
         </label>
@@ -251,17 +251,17 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
                 maxLength={80} value={npc.name}
                 onChange={e => editCharacter(index, 'name', e.target.value)}/>
             </label>
-            <label>Descripción
+            <label>Description
               <textarea aria-label={'NPC description ' + (index + 1)}
                 rows={3} maxLength={3000} value={npc.description}
                 onChange={e => editCharacter(index, 'description', e.target.value)}/>
             </label>
             <label>Personalidad
-              <textarea aria-label={'Personalidad NPC ' + (index + 1)}
+              <textarea aria-label={'NPC personality ' + (index + 1)}
                 rows={2} maxLength={1500} value={npc.personality}
                 onChange={e => editCharacter(index, 'personality', e.target.value)}/>
             </label>
-            <label>Ejemplos de diálogo
+            <label>Dialogue examples
               <textarea aria-label={'NPC dialogue ' + (index + 1)}
                 rows={3} maxLength={3000} value={npc.dialogue_examples}
                 onChange={e => editCharacter(index, 'dialogue_examples', e.target.value)}/>
@@ -273,18 +273,18 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           {draft.lore.map((entry, index) => <details key={index}
             className="creator-ai-editable-item">
             <summary>{entry.title || 'Entrada ' + (index + 1)} · Editar conocimiento</summary>
-            <label>Título
+            <label>Title
               <input aria-label={'Lorebook title ' + (index + 1)}
                 maxLength={100} value={entry.title}
                 onChange={e => editLore(index, 'title', e.target.value)}/>
             </label>
             <label>Contenido
-              <textarea aria-label={'Contenido Lorebook ' + (index + 1)}
+              <textarea aria-label={'Lorebook content ' + (index + 1)}
                 rows={4} maxLength={3500} value={entry.content}
                 onChange={e => editLore(index, 'content', e.target.value)}/>
             </label>
             <label>Activadores (por coma)
-              <input aria-label={'Activadores Lorebook ' + (index + 1)}
+              <input aria-label={'Lorebook triggers ' + (index + 1)}
                 value={loreKeysText[index] ?? entry.keys.join(', ')}
                 onChange={e => {
                   const value = e.target.value;
@@ -299,7 +299,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <div className="creator-ai-openings">
         {draft.openings.map((opening, index) => <label key={index}>
           Inicio {index + 1}
-          <textarea aria-label={'Apertura generada ' + (index + 1)}
+          <textarea aria-label={'Generated opening ' + (index + 1)}
             rows={4} maxLength={3000} value={opening}
             onChange={e => editOpening(index, e.target.value)}/>
         </label>)}
@@ -308,7 +308,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         <h4><Sparkles size={16}/> Regenerate one section</h4>
         <p>Conserva el resto del borrador, incluidos tus cambios manuales.
           Review the new version before installing it.</p>
-        <label>Sección
+        <label>Section
           <select aria-label="Section to regenerate" value={regenerationSection}
             disabled={!!busy} onChange={e => setRegenerationSection(
               e.target.value as 'plot' | 'openings' | 'characters' | 'lore')}>
@@ -319,7 +319,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           </select>
         </label>
         <label>Indicaciones para mejorar (opcional)
-          <textarea aria-label="Indicaciones para regenerar" rows={2} maxLength={1000}
+          <textarea aria-label="Regeneration instructions" rows={2} maxLength={1000}
             value={regenerationInstruction}
             onChange={e => setRegenerationInstruction(e.target.value)}
             placeholder="For example: scenes with more tension and meaningful choices."/>

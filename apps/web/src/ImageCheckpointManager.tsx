@@ -177,9 +177,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
           </button>
         </div>;
       })}
-      <p className="noble-inspector-hint">Integración inicial: para que ComfyUI reconozca
-        estos archivos, inícialo con el argumento indicado y después pulsa
-        «Buscar checkpoints». Noble AI no instala ni reinicia ComfyUI automáticamente.</p>
+      <p className="noble-inspector-hint">Initial integration: for ComfyUI to recognize these files, start it with the indicated argument and then select Find checkpoints. Noble AI does not automatically install or restart ComfyUI.</p>
       <code className="noble-model-path">--extra-model-paths-config "{installed.config_path}"</code>
       <p>Models: <code>{installed.model_dir}</code></p>
     </>}

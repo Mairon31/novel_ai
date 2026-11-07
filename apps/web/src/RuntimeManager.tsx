@@ -47,7 +47,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     setBusy(true); setError(''); setMessage('');
     try {
       setStatus(await api.koboldStop());
-      setMessage('Se detuvo el KoboldCpp iniciado por Noble AI.');
+      setMessage('Noble AI-managed KoboldCpp stopped.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -56,7 +56,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     try {
       const config = await api.koboldActivate();
       onActivated();
-      setMessage('Narrador activo: ' + config.model + '. Ya puedes abrir Biblioteca.');
+      setMessage('Active narrator: ' + config.model + '. You can now open Library.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }

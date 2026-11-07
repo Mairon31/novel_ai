@@ -48,7 +48,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
   async function save() {
     if (!image) return;
     setBusy(true); setError(''); setMessage('');
-    try { setImage(await api.saveImageConfig(image)); setMessage('Ajustes de ComfyUI guardados.'); }
+    try { setImage(await api.saveImageConfig(image)); setMessage('ComfyUI settings saved.'); }
     catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -57,8 +57,8 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     try {
       const result = await api.imageStatus();
       setStatus(result);
-      if (!result.online) setError(result.error || 'ComfyUI no responde');
-      else setMessage('ComfyUI conectado. Checkpoints disponibles: ' + result.checkpoints.length);
+      if (!result.online) setError(result.error || 'ComfyUI is not responding');
+      else setMessage('ComfyUI connected. Available checkpoints: ' + result.checkpoints.length);
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -67,7 +67,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     try {
       const options = await api.imageSamplerOptions();
       setSamplerOptions(options);
-      if (!options.online) setError(options.error || 'No se pudo consultar KSampler');
+      if (!options.online) setError(options.error || 'Could not query KSampler');
       else setMessage('ComfyUI: ' + options.sampler_name.length +
         ' muestreadores y ' + options.scheduler.length + ' planificadores admitidos.');
     } catch (exc) { setError((exc as Error).message); }
@@ -90,7 +90,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
 
   return <div className="creative-settings image-settings-panel">
     <div className="setting-section-intro">
-      <h2>Imágenes</h2>
+      <h2>Images</h2>
       <p>Illustrations, models, scenes, and visual generation resources.</p>
     </div>
     {(error || message) && <p role="status" className={error ? 'narrative-error' : 'narrative-saved'}>
@@ -98,11 +98,11 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     <ComfyRuntimePanel onRuntimeStarted={url => {
       setImage(previous => previous ? { ...previous, base_url: url } : previous);
       setStatus(null);
-      setMessage('ComfyUI administrado por Noble AI iniciado en ' + url);
+      setMessage('Noble AI-managed ComfyUI started at ' + url);
     }}/>
     <div className="workspace-panel">
       <h3><Image size={18}/> Escenas con ComfyUI</h3>
-      <p>Puedes iniciar ComfyUI desde este mismo apartado, o conectar uno externo. Necesita un checkpoint compatible. El botón «Ilustrar» del lector genera una imagen y sustituye la escena únicamente si finaliza correctamente.</p>
+      <p>You can start an existing ComfyUI installation here or connect an external one. A compatible checkpoint is required. The reader's Illustrate action replaces the current scene only after a successful render.</p>
       <label className="workspace-pref-field">Illustration policy
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
@@ -188,7 +188,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             !samplerOptions.scheduler.includes(image.scheduler)))}
           onClick={() => void save()}>
           {busy ? <LoaderCircle size={16} className="rotating"/> : <Check size={16}/>}
-          Guardar ajustes de imagen</button>
+          Save ajustes de imagen</button>
       </div>
       {samplerOptions?.online && image && <p role="status">
         Compatibilidad KSampler: {samplerOptions.sampler_name.includes(image.sampler_name) &&
@@ -196,12 +196,12 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           ? 'compatible selection' : 'this selection is unavailable in the current ComfyUI instance'}.
       </p>}
       <p className="noble-inspector-hint">El estilo modifica el prompt real de cada imagen; cambiar el muestreador o planificador modifica el nodo KSampler. Las opciones distintas de Euler/Normal se validan en el motor antes de generar.</p>
-      {status?.online && <p>Detected checkpoint(s): {status.checkpoints.length}. El modelo se cargará cuando pulses «Ilustrar».</p>}
+      {status?.online && <p>Detected checkpoint(s): {status.checkpoints.length}. The model will load when you select Illustrate.</p>}
     </div>
     <ImageCheckpointManager availableInComfy={status?.online ? status.checkpoints : []}
       onSelectCheckpoint={name => {
         change('checkpoint', name);
-        setMessage('Checkpoint seleccionado. Guarda los ajustes de imagen para aplicarlo.');
+        setMessage('Checkpoint selected. Save image settings to apply it.');
       }}/>
     <div className="workspace-panel">
       <h3>GPU memory and admission</h3>
@@ -218,7 +218,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       </p>}
       {resourceStatus?.workload.active && <p role="status">
         Active local operation: {resourceStatus.workload.active.kind}.
-        Las solicitudes simultáneas al mismo recurso recibirán un aviso.
+        Simultaneous requests for the same resource will receive a warning.
       </p>}
       {resources && <label className="workspace-pref-toggle">
         <span>Coordinate the local narrator and ComfyUI (one GPU operation at a time)</span>

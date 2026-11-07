@@ -84,7 +84,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     setBusy(true); setError(''); setMessage('');
     try {
       setStatus(await api.comfyRuntimeStop());
-      setMessage('Proceso ComfyUI iniciado por Noble AI detenido.');
+      setMessage('Noble AI-managed ComfyUI process stopped.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -131,7 +131,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
         onClick={() => void verify()}><Check size={16}/> Validate installation</button>
       <button type="button" className="secondary-button"
         disabled={busy || !!running || !dirty} onClick={() => void save()}>
-        Guardar arranque de ComfyUI
+        Save arranque de ComfyUI
       </button>
       <button type="button" className="primary-button"
         disabled={busy || !!running || dirty || !saved.install_dir}

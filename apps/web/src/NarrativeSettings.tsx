@@ -100,7 +100,7 @@ export function NarrativeSettings() {
     <div className="narrative-section-title">
       <span className="setting-icon"><BookOpen size={22}/></span>
       <div><h2 id="narrative-settings-heading">Narrative engine</h2>
-        <p>Selecciona un motor local, OpenRouter o un worker GPU autenticado. Ajusta parámetros según las capacidades reales del proveedor.</p></div>
+        <p>Choose a local runtime, OpenRouter, or an authenticated GPU worker. Configure only parameters supported by the provider.</p></div>
     </div>
     {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading settings...</div> : <>
       <div className="narrative-settings-grid">
@@ -128,7 +128,7 @@ export function NarrativeSettings() {
           <datalist id="noble-local-models">
             {status?.models.map(item => <option key={item} value={item}/>)}
           </datalist>
-          {status?.online && <small>Models found: {status.models.length}. Escribe o selecciona uno del catálogo local.</small>}
+          {status?.online && <small>Models found: {status.models.length}. Enter or select a model from the local catalog.</small>}
         </label>
         <label>Temperatura <span className="field-value">{config.temperature.toFixed(2)}</span>
           <input type="range" min={0} max={2} step={0.05} value={config.temperature}
@@ -174,10 +174,10 @@ export function NarrativeSettings() {
         </label>
       </div>
       {config.provider === 'koboldcpp' && <p className="narrative-helper">
-        KoboldCpp establece sus capas GPU desde el panel de runtime. Top-K, penalizaciones y razonamiento adicionales no están disponibles a través del adaptador actual.
+        KoboldCpp GPU layers are configured in Runtime settings. Additional Top-K, penalties, and reasoning settings are not exposed by the current adapter.
       </p>}
-      {config.provider === 'openrouter' && <p className="narrative-helper">Las solicitudes saldrán del equipo hacia OpenRouter y pueden generar costos. Guarda tu clave desde Configuración → Proveedores; visión y razonamiento específicos dependen del modelo remoto.</p>}
-      {config.provider === 'worker' && <p className="narrative-helper">Este modelo se ha activado desde Red y workers. El servidor remoto decide el hardware; Noble AI envía únicamente la petición narrativa autenticada.</p>}
+      {config.provider === 'openrouter' && <p className="narrative-helper">Requests go to OpenRouter and may incur charges. Save your key under Settings → Providers; vision and reasoning depend on the remote model.</p>}
+      {config.provider === 'worker' && <p className="narrative-helper">This model was activated under Network & Workers. The remote server manages its hardware; Noble AI sends only the authenticated narrative request.</p>}
       {status && <div className={'narrative-connect ' + (status.online ? 'connected' : 'disconnected')}>
         <Cpu size={17}/>
         <span>{status.online ? 'Server available' : 'Cannot connect to the server'}
@@ -200,15 +200,14 @@ export function NarrativeSettings() {
         </button>
       </div>
       <p className="narrative-helper">«Preparar modelo ahora» hace una inferencia corta
-        únicamente cuando pulsas el botón; no agrega ningún turno al historial.
+        only when you press the button; no turn is added to story history.
         Puede tardar en la primera carga. No se aplica a APIs remotas de OpenRouter.</p>
       <p className="narrative-helper"><RefreshCw size={14}/> Los modelos instalados en Model Hub
-        necesitan un runtime local para su ejecución. Ollama puede cargar su propio modelo al generar; KoboldCpp puede arrancarse desde Noble AI. OpenRouter usa su infraestructura remota y los workers utilizan una GPU externa autenticada.</p>
+        need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.</p>
       <section className="narrative-context-inspector" aria-label="Inspector de contexto narrativo">
         <h3>Inspector del contexto narrativo</h3>
         <p className="narrative-helper">Consulta los mensajes exactos preparados para el
-          proveedor antes de una generación. Incluye contexto privado del creador:
-          úsalo únicamente para revisar tus historias. No ejecuta modelos ni guarda turnos.</p>
+          provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
         {stories.length ? <>
           <div className="narrative-settings-grid">
             <label>Historia a inspeccionar
@@ -220,9 +219,9 @@ export function NarrativeSettings() {
             <label>Input mode
               <select aria-label="Modo para inspeccionar" value={inspectMode}
                 onChange={e => { setInspectMode(e.target.value as typeof inspectMode); setInspectorData(null); }}>
-                <option value="do">Acción</option>
-                <option value="say">Diálogo</option>
-                <option value="story">Dirección</option>
+                <option value="do">Action</option>
+                <option value="say">Dialogue</option>
+                <option value="story">Direction</option>
                 <option value="continue">Continuar</option>
               </select>
             </label>

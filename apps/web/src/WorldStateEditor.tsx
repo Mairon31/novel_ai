@@ -83,7 +83,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       setNotice('State confirmed. The next turn will snapshot these values.');
     } catch (cause) {
       setError((cause as Error).message +
-        ' Si se modificó desde otra pestaña, recarga antes de guardar.');
+        ' If this was edited in another tab, reload before saving.');
     } finally { setBusy(false); }
   }
 
@@ -119,7 +119,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <p>Actualiza ubicación, personajes presentes, inventario y hechos de forma explícita.
         El narrador no puede convertir suposiciones en canon por sí solo. Cada turno
         conserva una instantánea que permite reconstruir el estado de una rama.</p>
-      <small>Revisión guardada: {document.revision} · Cada cambio se valida antes de guardar</small>
+      <small>Saved revision: {document.revision} · Changes are validated before saving</small>
     </div>
 
     {error && <p className="narrative-error" role="alert">{error}</p>}
@@ -154,7 +154,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     <section className="world-section">
       <h4><Users size={17}/> Personajes presentes</h4>
       <p>Solo los personajes marcados como presentes pueden activar hechos que presenciaron.
-        El texto privado de un personaje ausente no se envía al narrador.</p>
+        Private text for an absent character is not sent to the narrator.</p>
       <div className="world-npc-grid">
         {characters.map(character => <label className="world-check" key={character.id}>
           <input type="checkbox" aria-label={'Presente ' + character.name}
@@ -164,7 +164,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           <span>{character.name}</span>
         </label>)}
         {!characters.length && <p className="creator-hint">
-          Crea personajes en la pestaña Personajes antes de definir testigos.</p>}
+          Create characters under Characters before assigning witnesses.</p>}
       </div>
       {!!characters.length && <div className="world-relations">
         <h4>Relaciones confirmadas</h4>
@@ -262,18 +262,18 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     <div className="creator-actions">
       <button className="primary-button" disabled={busy || !canSave}
         onClick={() => void save()}><Save size={16}/>
-        {busy ? 'Guardando...' : 'Guardar estado del mundo'}</button>
+        {busy ? 'Guardando...' : 'Save estado del mundo'}</button>
       <button className="secondary-button" disabled={busy}
         onClick={() => void reload()}><RotateCcw size={16}/> Recargar desde disco</button>
     </div>
     {!canSave && <p className="creator-hint">
       Revisa los hechos: cada uno necesita al menos 10 caracteres y, si es privado,
-      uno o más testigos.</p>}
+      one or more witnesses.</p>}
 
     <details className="world-history">
       <summary><History size={16}/> Turn snapshot history</summary>
       <p>Selecciona un turno para consultar su estado original, incluso si la historia
-        ha cambiado después. Los turnos anteriores a este sistema podrían no tener snapshot.</p>
+        has since changed. Turns before this feature may not have snapshots.</p>
       <div className="world-add-row">
         <select aria-label="Historical world turn" value={turnId}
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>

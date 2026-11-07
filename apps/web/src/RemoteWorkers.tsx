@@ -59,9 +59,9 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       setProbe(status);
       if (status.online) {
         setModel(status.models[0] || '');
-        setMessage('Worker autenticado. ' + status.models.length + ' modelos anunciados.');
+        setMessage('Worker authenticated. ' + status.models.length + ' models advertised.');
       } else {
-        setError(status.error || 'El worker no responde o no acepta el token.');
+        setError(status.error || 'The worker is not responding or rejects the token.');
       }
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
@@ -73,7 +73,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     try {
       const result = await api.activateWorker(selected, model);
       onActivated();
-      setMessage('Narrador remoto activado: ' + result.model + '. Abre Biblioteca para usarlo.');
+      setMessage('Remote narrator activated: ' + result.model + '. Open Library to use it.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -84,7 +84,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     try {
       const result = await api.benchmarkWorker(selected, model);
       setBenchmark(result);
-      if (!result.success) setError(result.error || 'Error al medir el worker');
+      if (!result.success) setError(result.error || 'Worker benchmark failed');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -96,7 +96,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       await api.removeWorker(selected);
       await refresh();
       setProbe(null); setModel('');
-      setMessage('Worker eliminado. Su token guardado fue retirado.');
+      setMessage('Worker removed. Its stored token was cleared.');
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -160,7 +160,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
           ? 'Sin datos' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
         <span>Total duration: {benchmark.duration_ms.toFixed(0)} ms</span>
         <span>Caracteres de salida: {benchmark.output_characters}</span>
-        <small>Es un único turno de prueba. Para estadísticas P50/P95 y VRAM muestreada
+        <small>This is one test request. For p50/p95 latency and sampled VRAM
           utiliza el benchmark del notebook Colab.</small>
       </div>}
 
@@ -168,7 +168,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     {probe?.online && <div className="noble-worker-health">
       <h4>Estado del worker remoto</h4>
       <div className="noble-worker-health-stats">
-        <div><span>Conexión</span><strong>{probe.latency_ms === undefined
+        <div><span>Connection</span><strong>{probe.latency_ms === undefined
           ? 'No disponible' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
         <div><span>Motor</span><strong>{probe.health?.engine_status === 'ready'
           ? 'Disponible' : probe.health?.engine_status === 'unavailable'
