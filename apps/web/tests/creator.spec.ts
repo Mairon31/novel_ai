@@ -16,9 +16,9 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   const dialog=page.getByRole('dialog',{name:'Crear proyecto narrativo'});
   const projectTitle = 'El mundo de Aira '+test.info().project.name;
   await dialog.getByLabel('Título').fill(projectTitle);
-  await dialog.getByLabel('Premisa del mundo').fill(
+  await dialog.getByLabel('World premise').fill(
     'La aventura comienza en una biblioteca secreta bajo una montaña encantada.');
-  await dialog.getByLabel('Protagonista').fill('Luna');
+  await dialog.getByLabel('Protagonist').fill('Luna');
   await dialog.getByRole('button',{name:'Crear proyecto',exact:true}).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading',{name:projectTitle})).toBeVisible();

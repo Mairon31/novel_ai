@@ -50,7 +50,7 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
             gpu_share:1,disk_ok:true,note:'Cabe según la estimación.'},
           {filename:'Qwen3-8B-Q2_K.gguf',quantization:'Q2_K',fit:'cpu',
             estimated_required_bytes:3758096384,estimated_kv_bytes:536870912,
-            gpu_share:0,disk_ok:true,note:'Solo CPU en el ejemplo.'},
+            gpu_share:0,disk_ok:true,note:'CPU only en el ejemplo.'},
         ],
       } }),
     });
@@ -72,7 +72,7 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await expect(page.getByText('Gemma-4-GGUF')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-catalog-cards.png', fullPage: true });
   await page.getByRole('button', { name: /Qwen3-8B-GGUF/ }).click();
-  const dialog = page.getByRole('dialog', { name: 'Detalles del modelo' });
+  const dialog = page.getByRole('dialog', { name: 'Model details' });
   await expect(dialog).toBeVisible();
   if (test.info().project.name === 'desktop') {
     await expect(page.locator('.app-shell')).toHaveClass(/model-inspector-active/);
@@ -86,18 +86,18 @@ test('catalog cards and GGUF detail drawer (visual fixture, real UI)', async ({ 
   await page.getByRole('button', { name: 'CPU', exact: true }).click();
   await expect(page.getByText('Qwen3-8B-Q2_K.gguf')).toBeVisible();
   await expect(page.getByText('Qwen3-8B-Q4_K_M.gguf')).toBeHidden();
-  await page.getByRole('button', { name: 'Todas', exact: true }).click();
+  await page.getByRole('button', { name: 'All', exact: true }).click();
   await page.getByRole('button', { name: /Qwen3-8B-Q8_0.gguf/ }).click();
   await expect(page.getByText('Variante seleccionada: Q8_0')).toBeVisible();
-  await page.getByRole('button', { name: 'Leer ficha completa' }).click();
+  await page.getByRole('button', { name: 'Read full model card' }).click();
   const modelReadme = page.locator('.hub-model-readme');
   await expect(modelReadme).toContainText('Modelo de ejemplo');
   await expect(modelReadme).toContainText('<script>window.badCode=1</script>');
   await expect(page.locator('script').filter({ hasText: 'window.badCode=1' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Ocultar ficha' }).click();
+  await page.getByRole('button', { name: 'Hide model card' }).click();
   await expect(modelReadme).toHaveCount(0);
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-catalog-detail.png', fullPage: true });
-  await page.getByRole('button', { name: 'Cerrar detalles' }).click();
+  await page.getByRole('button', { name: 'Close details' }).click();
   await page.getByRole('button', { name: /Qwen3-8B-GGUF/ }).click();
   await expect(dialog).toBeVisible();
   expect(detailRequests).toBe(1); // Session cache avoids a repeated metadata request.

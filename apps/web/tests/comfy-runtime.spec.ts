@@ -73,9 +73,9 @@ test('managed ComfyUI remains opt-in and gives distinct control from image and v
   expect(validations).toBe(1);
   expect(launches).toBe(0);
   await panel.getByRole('button', { name: 'Guardar arranque de ComfyUI' }).click();
-  await expect(panel.getByText('Configuración de ComfyUI guardada.')).toBeVisible();
+  await expect(panel.getByText('Settings de ComfyUI guardada.')).toBeVisible();
   await panel.getByRole('button', { name: 'Iniciar ComfyUI' }).click();
-  await expect(panel.getByText('Listo', { exact: true })).toBeVisible();
+  await expect(panel.getByText('Ready', { exact: true })).toBeVisible();
   await expect(panel.getByText('mock GPU', { exact: false })).toBeVisible();
   await expect(page.getByLabel('ComfyUI local')).toHaveValue('http://127.0.0.1:19080');
   expect(launches).toBe(1);

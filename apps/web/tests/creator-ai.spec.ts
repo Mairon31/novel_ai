@@ -72,7 +72,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await page.getByLabel('Idea para generar historia').fill(
     'En una bahía costera, tres faros guardan los recuerdos de sus habitantes. Las decisiones cambian la memoria del lugar y el destino de sus vecinos.'
   );
-  await page.getByLabel('Protagonista de historia IA').fill('Luna');
+  await page.getByLabel('Protagonist de historia IA').fill('Luna');
   await page.getByRole('button', { name: 'Generar propuesta' }).click();
   await expect(page.getByRole('heading', { name: 'Revisa el mundo antes de crearlo' })).toBeVisible();
   await expect(page.getByText('Modelo: test-mock')).toBeVisible();
@@ -120,7 +120,7 @@ test('AI Creator previews a whole world before an explicit local install', async
   await expect(page.getByLabel('Sinopsis generada editable')).toHaveValue(
     'Una bahía con una conspiración cuyos secretos cambian tras la última decisión del jugador.'
   );
-  await page.getByRole('button', { name: 'Crear historia con esta propuesta' }).click();
+  await page.getByRole('button', { name: 'Create story con esta propuesta' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
   await expect(page.getByRole('button', { name: /Personajes \(4\)/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Lorebook \(3\)/ })).toBeVisible();

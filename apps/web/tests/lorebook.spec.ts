@@ -14,9 +14,9 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   const dialog = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
   const title = 'Archivo de los mapas ' + test.info().project.name;
   await dialog.getByLabel('Título').fill(title);
-  await dialog.getByLabel('Premisa del mundo').fill(
+  await dialog.getByLabel('World premise').fill(
     'Una exploradora visita las ruinas perdidas en un reino lleno de secretos.');
-  await dialog.getByLabel('Protagonista').fill('Luna');
+  await dialog.getByLabel('Protagonist').fill('Luna');
   await dialog.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
@@ -68,9 +68,9 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   const creation = page.getByRole('dialog', { name: 'Crear proyecto narrativo' });
   const title = 'Testigo del sello ' + test.info().project.name;
   await creation.getByLabel('Título').fill(title);
-  await creation.getByLabel('Premisa del mundo').fill(
+  await creation.getByLabel('World premise').fill(
     'Dos personajes exploran una ciudad donde solo uno conoce un antiguo secreto.');
-  await creation.getByLabel('Protagonista').fill('Luna');
+  await creation.getByLabel('Protagonist').fill('Luna');
   await creation.getByRole('button', { name: 'Crear proyecto', exact: true }).click();
   await expect(creation).toBeHidden();
 

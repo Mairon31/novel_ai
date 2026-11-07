@@ -9,22 +9,22 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
     await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
     await expect(wizard).toBeHidden();
   }
-  await expect(page.getByRole('heading', { name: /Centro de modelos/ })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Buscar modelos' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Model Hub/ })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Search models' })).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-model-hub.png', fullPage: true });
 
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Descargas', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /Descargas/ })).toBeVisible();
-  await expect(page.getByText('Sin descargas todavía')).toBeVisible();
+  await page.getByRole('button', { name: 'Downloads', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Downloads/ })).toBeVisible();
+  await expect(page.getByText('No downloads yet')).toBeVisible();
 
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  await expect(page.getByRole('heading', { name: /Configuración/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('heading', { name: /Settings/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Tu espacio de trabajo, a tu manera' }))
     .toBeVisible();
   await page.locator('.workspace-overview-card').filter({ hasText: 'Motor narrativo' }).click();
@@ -40,8 +40,8 @@ test('setup, model browser, downloads and diagnostics in the real UI', async ({ 
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Diagnóstico' }).click();
-  await expect(page.getByRole('heading', { name: /Diagnóstico/ })).toBeVisible();
-  await expect(page.getByText('ESTADO DEL BACKEND')).toBeVisible();
+  await page.getByRole('button', { name: 'Diagnostics' }).click();
+  await expect(page.getByRole('heading', { name: /Diagnostics/ })).toBeVisible();
+  await expect(page.getByText('BACKEND STATUS')).toBeVisible();
   await page.screenshot({ path: 'test-results/' + test.info().project.name + '-diagnostico.png', fullPage: true });
 });

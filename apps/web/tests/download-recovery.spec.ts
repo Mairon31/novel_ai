@@ -14,11 +14,11 @@ test('Downloads displays reconciled files and non-destructive startup conflicts'
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Descargas', exact: true }).click();
+  await page.getByRole('button', { name: 'Downloads', exact: true }).click();
   const recovery = page.locator('.workspace-note[role="status"]');
   await expect(recovery).toBeVisible();
   await expect(recovery).toContainText('2 descarga(s) recuperada(s) tras un reinicio');
   await expect(recovery).toContainText('1 conflicto(s) detectado(s)');
   await expect(recovery).toContainText('sin sobrescribir archivos');
-  await expect(page.getByRole('heading', { name: /^Descargas/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Downloads/ })).toBeVisible();
 });

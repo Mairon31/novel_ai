@@ -54,9 +54,9 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   }
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'Imágenes', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Imágenes', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Images', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Activar botones de voz bajo demanda')).toHaveCount(0);
   await page.getByRole('button', { name: 'Buscar checkpoints' }).click();
   await page.getByLabel('Checkpoint').fill('story-model.safetensors');
@@ -80,7 +80,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await expect(page.getByText('Ajustes de ComfyUI guardados.')).toBeVisible();
   await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voz / TTS' })).toBeVisible();
-  await page.getByRole('button', { name: 'Imágenes', exact: true }).click();
+  await page.getByRole('button', { name: 'Images', exact: true }).click();
   await expect(page.getByLabel('Muestreador ComfyUI')).toHaveValue('dpmpp_2m');
   await expect(page.getByLabel('Planificador ComfyUI')).toHaveValue('karras');
   await expect(page.getByLabel('Illustration style')).toHaveValue('anime_cinematic');
@@ -93,14 +93,14 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await page.getByRole('button', { name: 'Nueva historia' }).click();
-  const wizard = page.getByRole('dialog', { name: 'Crear una nueva historia' });
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'New story' }).click();
+  const wizard = page.getByRole('dialog', { name: 'Create a new story' });
   await wizard.getByLabel('Título').fill('Laboratorio multimedia');
-  await wizard.getByLabel('Premisa del mundo').fill('Una biblioteca escondida bajo la montaña.');
-  await wizard.getByRole('button', { name: 'Elegir protagonista' }).click();
-  await wizard.getByLabel('Nombre del protagonista').fill('Luna');
-  await wizard.getByRole('button', { name: 'Empezar historia' }).click();
+  await wizard.getByLabel('World premise').fill('Una biblioteca escondida bajo la montaña.');
+  await wizard.getByRole('button', { name: 'Choose protagonist' }).click();
+  await wizard.getByLabel('Protagonist name').fill('Luna');
+  await wizard.getByRole('button', { name: 'Start story' }).click();
   await expect(wizard).toBeHidden();
   expect(requests).toEqual([]);
 

@@ -39,23 +39,23 @@ test('installed Model Hub reports real disk usage, partials and absent files', a
     await wizard.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
   await page.getByRole('tab', { name: /Installed/ }).click();
-  const storage = page.getByRole('region', { name: 'Almacenamiento de modelos' });
+  const storage = page.getByRole('region', { name: 'Model storage' });
   await expect(storage).toBeVisible();
-  await expect(storage.getByText('Espacio de modelos')).toBeVisible();
+  await expect(storage.getByText('Model storage')).toBeVisible();
   const metrics = storage.locator('.hub-storage-metrics > div');
   await expect(metrics.nth(0).getByText('5.0 GB', { exact: true })).toBeVisible();
   await expect(metrics.nth(1).getByText('64.0 MB', { exact: true })).toBeVisible();
   await expect(metrics.nth(2).getByText('145.0 GB', { exact: true })).toBeVisible();
-  await expect(storage.getByRole('meter', {name:'Espacio ocupado por archivos de Noble'}))
+  await expect(storage.getByRole('meter', {name:'Space occupied by Noble AI files'}))
     .toHaveAttribute('aria-valuenow','3');
 
-  await storage.getByText('Ver archivos contabilizados (3)').click();
+  await storage.getByText('View counted files (3)').click();
   await expect(storage.getByText('Missing.gguf · No encontrado')).toBeVisible();
   await expect(page.getByText('Archivo no encontrado: revisa la instalación.')).toBeVisible();
   const missing = page.locator('.installed-row').filter({hasText:'Missing.gguf'});
-  await expect(missing.getByRole('button', {name:'Elegir narrador'})).toBeDisabled();
+  await expect(missing.getByRole('button', {name:'Choose narrator'})).toBeDisabled();
   const installed = page.locator('.installed-row').filter({hasText:'Model-A-Q4_K_M.gguf'});
-  await expect(installed.getByRole('button', {name:'Elegir narrador'})).toBeEnabled();
+  await expect(installed.getByRole('button', {name:'Choose narrator'})).toBeEnabled();
   await page.screenshot({
     path:'test-results/'+test.info().project.name+'-models-storage.png',
     fullPage:true,

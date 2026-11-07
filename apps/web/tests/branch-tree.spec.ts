@@ -24,7 +24,7 @@ test('story detail shows a non-destructive branch tree and reader switches route
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.locator('.noble-library-cover').filter({
     has: page.locator('.noble-library-cover-copy strong').getByText(title, { exact: true }),
   }).click();
@@ -35,7 +35,7 @@ test('story detail shows a non-destructive branch tree and reader switches route
   await region.getByRole('button', { name: 'Abrir ruta ' + grandson.title }).click();
   await expect(page.getByRole('heading', { name: grandson.title, exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Comenzar historia|Continuar historia/ }).click();
-  const selector = page.getByRole('combobox', { name: 'Cambiar ruta narrativa' });
+  const selector = page.getByRole('combobox', { name: 'Switch narrative branch' });
   await expect(selector).toBeVisible();
   await expect(selector.locator('option')).toHaveCount(3);
   await selector.selectOption(story.id);

@@ -15,8 +15,8 @@ test('author can inspect full prepared prompt without running an LLM', async ({ 
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Configuración' }).click();
-  await page.getByRole('button', { name: 'Narración', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Narration', exact: true }).click();
   const inspector = page.getByRole('region', { name: 'Inspector de contexto narrativo' });
   await expect(inspector).toBeVisible();
   await inspector.getByLabel('Historia para inspeccionar').selectOption(story.id);
