@@ -59,7 +59,7 @@ def say(stage: str, message: str) -> None:
 def valid_revision(value: str) -> str:
     if not isinstance(value, str) or not (
             value == "master" or re.fullmatch(r"[a-f0-9]{40}", value)):
-        raise ValueError("Usa master o SHA completo (40 caracteres) del repositorio")
+        raise ValueError("Use master or a complete repository SHA (40 characters)")
     return value
 
 
@@ -121,7 +121,7 @@ def shell(cmd: list[str], *, cwd: Path | None = None,
           timeout: int = 3600, reporter=say) -> None:
     """Stream real subprocess output to Colab and a per-stage logfile."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    reporter("INSTALAR", "Running: " + " ".join(cmd[:3]) + " …")
+    reporter("INSTALL", "Running: " + " ".join(cmd[:3]) + " …")
     logfile = LOG_DIR / (log_name + ".log")
     with logfile.open("a", encoding="utf-8") as log:
         proc = subprocess.Popen(cmd, cwd=cwd, env=env,
@@ -146,7 +146,7 @@ def shell(cmd: list[str], *, cwd: Path | None = None,
                             print("  " + line.strip()[-300:], flush=True)
                     last_heartbeat = now
                 elif now - last_heartbeat >= 20:
-                    reporter("ESTADO", log_name + " is still running; " +
+                    reporter("STATUS", log_name + " is still running; " +
                              str(int(now-started)) + " s · " + str(logfile))
                     last_heartbeat = now
                 if now - started > timeout:
@@ -247,7 +247,7 @@ def restart_api_for_revision(new_sha: str) -> None:
     try:
         previous = json.loads(state_file.read_text(encoding="utf-8"))
         if previous.get("source_revision") == new_sha:
-            say("VERSIÓN", "Server from this commit is already running; reusing it.")
+            say("VERSION", "Server from this commit is already running; reusing it.")
             return
     except (OSError, ValueError, TypeError):
         pass
@@ -266,13 +266,13 @@ def restart_api_for_revision(new_sha: str) -> None:
             "Port 8000 is occupied by a process that I cannot "
             "verify. It was not stopped. Use another runtime or stop that process "
             "manually.") from exc
-    say("ACTUALIZAR", "Stopping only the previous FastAPI process to apply the new commit.")
+    say("UPDATE", "Stopping only the previous FastAPI process to apply the new commit.")
     os.kill(pid, signal.SIGTERM)
     timeout_at = time.monotonic() + 25
     while time.monotonic() < timeout_at:
         if not ready("http://127.0.0.1:8000/api/v1/health",
                      lambda d: d.get("model_hub") == "available"):
-            say("ACTUALIZAR", "Previous API stopped; data was preserved.")
+            say("UPDATE", "Previous API stopped; data was preserved.")
             return
         time.sleep(1)
     raise TimeoutError("Previous Uvicorn process did not release port 8000")
@@ -294,11 +294,11 @@ def gpu_info() -> tuple[str | None, int | None]:
 
 def ensure_git(revision: str) -> str:
     BASE.mkdir(parents=True, exist_ok=True)
-    say("FUENTE", "Fetching Noble AI " + revision)
+    say("SOURCE", "Fetching Noble AI " + revision)
     for command in github_fetch_commands(revision, APP_DIR):
         shell(command, log_name="git")
     sha = git_revision(APP_DIR)
-    say("VERSIÓN", sha)
+    say("VERSION", sha)
     return sha
 
 
@@ -362,7 +362,7 @@ def ensure_ollama(data_root: Path, requested: str,
         with request.urlopen(OLLAMA_INSTALL_URL, timeout=30) as response:
             script.write_bytes(response.read(90_000))
         if script.stat().st_size >= 90_000:
-            raise ValueError("Instalador de Ollama inesperadamente grande")
+            raise ValueError("Ollama installer is unexpectedly large")
         shell(["sh", str(script)], log_name="ollama-install")
     endpoint = "http://127.0.0.1:11434/api/tags"
     if not ready(endpoint, lambda d: isinstance(d.get("models"), list)):
@@ -376,7 +376,7 @@ def ensure_ollama(data_root: Path, requested: str,
     tags = json_request(endpoint).get("models", [])
     known = {entry.get("name") for entry in tags if isinstance(entry, dict)}
     if model not in known:
-        say("MODELO", "Downloading " + model + " (first run).")
+        say("MODEL", "Downloading " + model + " (first run).")
         try:
             shell(["ollama", "pull", model], log_name="ollama-pull",
                   timeout=3600)
@@ -384,7 +384,7 @@ def ensure_ollama(data_root: Path, requested: str,
             if requested != "auto" or model == "qwen3:1.7b":
                 raise
             model = "qwen3:1.7b"
-            say("MODELO", "Trying a smaller alternative: " + model)
+            say("MODEL", "Trying a smaller alternative: " + model)
             shell(["ollama", "pull", model], log_name="ollama-pull-fallback",
                   timeout=3600)
     tags = json_request(endpoint).get("models", [])
@@ -398,18 +398,18 @@ def configure_narrative(model: str) -> None:
     config = json_request(root + "/api/v1/narrative/config")
     existing = config.get("model")
     if existing and config.get("provider") != "ollama":
-        say("NARRADOR", "Keeping the previously configured provider.")
+        say("NARRATOR", "Keeping the previously configured provider.")
         return
     models = json_request(root + "/api/v1/narrative/models")
     if existing and existing in models.get("models", []):
-        say("NARRADOR", "Keeping the previously configured model: " + existing)
+        say("NARRATOR", "Keeping the previously configured model: " + existing)
         return
     config.update({"provider": "ollama", "base_url": "http://127.0.0.1:11434",
                    "model": model, "reasoning_mode": "off"})
     result = json_request(root + "/api/v1/narrative/config", config)
     if result.get("model") != model:
         raise RuntimeError("Noble AI did not confirm the narrator model")
-    say("NARRADOR", "Configurado: " + model)
+    say("NARRATOR", "Configured: " + model)
 
 
 def verify_web_bundle() -> None:
@@ -435,7 +435,7 @@ def ensure_demo_story() -> str | None:
     if not isinstance(stories, list):
         raise ValueError("Library did not return a list of stories")
     if stories:
-        say("BIBLIOTECA", "Keeping " + str(len(stories)) +
+        say("LIBRARY", "Keeping " + str(len(stories)) +
             " existing stories; no demo will be added.")
         return None
     # Reuse the bundled, authored story package rather than creating a bare
@@ -450,7 +450,7 @@ def ensure_demo_story() -> str | None:
             result.get("openings_installed", 0) < 3 or
             result.get("lore_installed", 0) < 2):
         raise ValueError("Noble AI did not confirm the complete story pack")
-    say("BIBLIOTECA", "Starter story ready: NPCs, Lorebook, and three openings.")
+    say("LIBRARY", "Starter story ready: NPCs, Lorebook, and three openings.")
     return ident
 
 
@@ -460,17 +460,17 @@ def verify_narrator() -> bool:
     config = json_request(root + "/api/v1/narrative/config")
     if config.get("provider") != "ollama" or not config.get("model"):
         return False
-    say("INFERENCIA", "Testing the Ollama model without saving story turns.")
+    say("INFERENCE", "Testing the Ollama model without saving story turns.")
     try:
         warmed = json_request(root + "/api/v1/narrative/prepare",
                               method="POST", body={}, timeout=200)
         if warmed.get("ready") is not True:
             raise ValueError("Inference did not confirm any content")
-        say("INFERENCIA", "Verified actual response · " +
+        say("INFERENCE", "Verified actual response · " +
             str(warmed.get("duration_ms")) + " ms.")
         return True
     except (OSError, ValueError, urllib.error.URLError) as exc:
-        say("INFERENCIA", "Could not verify generation: " +
+        say("INFERENCE", "Could not verify generation: " +
             type(exc).__name__ + ". The application remains available.")
         return False
 
@@ -485,10 +485,10 @@ def checksum_file(path: Path) -> str:
 
 def ensure_comfy() -> str:
     if not (COMFY_DIR / ".git").is_dir():
-        say("IMÁGENES", "Cloning ComfyUI from the official repository.")
+        say("IMAGES", "Cloning ComfyUI from the official repository.")
         shell(["git", "clone", "--depth", "1", COMFY_REPO,
                str(COMFY_DIR)], log_name="comfy-git")
-    say("IMÁGENES", "Installing ComfyUI dependencies.")
+    say("IMAGES", "Installing ComfyUI dependencies.")
     shell([sys.executable, "-m", "pip", "install", "-r",
            str(COMFY_DIR / "requirements.txt")], log_name="comfy-deps")
     shell([sys.executable, "-m", "pip", "install", "huggingface_hub", "hf_xet"],
@@ -497,7 +497,7 @@ def ensure_comfy() -> str:
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     target = checkpoint_dir / COMFY_HF_FILE
     if not target.is_file() or checksum_file(target) != COMFY_SHA256:
-        say("IMÁGENES", "Downloading checkpoint SD1.5 FP16 de ~2.1 GB.")
+        say("IMAGES", "Downloading SD1.5 FP16 checkpoint (~2.1 GB).")
         from huggingface_hub import hf_hub_download
         downloaded = Path(hf_hub_download(
             repo_id=COMFY_HF_REPO, filename=COMFY_HF_FILE,
@@ -521,7 +521,7 @@ def ensure_comfy() -> str:
         start = time.monotonic()
         while time.monotonic() - start < 180:
             if proc.poll() is not None:
-                raise RuntimeError("ComfyUI terminó; check logs/comfyui.log")
+                raise RuntimeError("ComfyUI exited; check logs/comfyui.log")
             if checkpoint_ready():
                 break
             time.sleep(3)
@@ -538,7 +538,7 @@ def ensure_comfy() -> str:
             "http://127.0.0.1:8000/api/v1/images/config", current)
         if result.get("checkpoint") != COMFY_HF_FILE:
             raise RuntimeError("Could not save the checkpoint")
-    say("IMÁGENES", "ComfyUI ready; checkpoint: " + COMFY_HF_FILE)
+    say("IMAGES", "ComfyUI ready; checkpoint: " + COMFY_HF_FILE)
     return COMFY_HF_FILE
 
 
@@ -549,7 +549,7 @@ def ensure_spanish_voice(*, enable_for_fresh_data: bool) -> str:
     configured voice and never re-enable TTS if the user previously disabled it.
     """
     if not shutil.which("piper"):
-        say("VOZ", "Installing Piper for on-demand turn playback.")
+        say("VOICE", "Installing Piper for on-demand turn playback.")
         shell([sys.executable, "-m", "pip", "install", "piper-tts"],
               log_name="piper-deps", timeout=1200)
     voice_dir = DATA_DIR / "models" / "voices"
@@ -558,7 +558,7 @@ def ensure_spanish_voice(*, enable_for_fresh_data: bool) -> str:
     sidecar = voice_dir / (PIPER_VOICE + ".json")
     if not target.is_file() or checksum_file(target) != PIPER_SHA256 or (
             not sidecar.is_file()):
-        say("VOZ", "Downloading ONNX español latinoamericano (~63 MB).")
+        say("VOICE", "Downloading a Latin American Spanish ONNX voice (~63 MB).")
         shell([sys.executable, "-m", "pip", "install", "huggingface_hub", "hf_xet"],
               log_name="voice-hf-deps", timeout=1200)
         from huggingface_hub import hf_hub_download
@@ -593,7 +593,7 @@ def ensure_spanish_voice(*, enable_for_fresh_data: bool) -> str:
         if not app_settings.get("tts_enabled"):
             json_request("http://127.0.0.1:8000/api/v1/settings",
                          {"tts_enabled": True}, method="PATCH")
-    say("VOZ", "Piper " + PIPER_VOICE + " ready; listening is optional.")
+    say("VOICE", "Piper " + PIPER_VOICE + " ready; listening is optional.")
     return PIPER_VOICE
 
 
@@ -664,7 +664,7 @@ def display_colab_ui(port: int = NOBLE_PORT) -> None:
         from IPython.display import HTML, display
         from html import escape
     except ImportError:
-        say("ACCESO", "Open this notebook in Google Colab to access the UI.")
+        say("ACCESS", "Open this notebook in Google Colab to access the UI.")
         return
     try:
         # A top-level link uses the notebook-authenticated kernel proxy and
@@ -678,16 +678,16 @@ def display_colab_ui(port: int = NOBLE_PORT) -> None:
             '">Open Noble AI in a new tab</a></p>'
             '<p>You can also use the app inside the notebook:</p>'))
     except Exception as exc:
-        say("ACCESO", "New-tab link unavailable: " +
+        say("ACCESS", "New-tab link unavailable: " +
             type(exc).__name__ + ". Trying the embedded view.")
     # The iframe is independent: an unavailable top-level proxy link must
     # not prevent using the application inside the same Colab notebook.
     try:
         output.serve_kernel_port_as_iframe(port, height="840px")
-        say("ACCESO", "Reader view available while Colab remains connected.")
+        say("ACCESS", "Reader view available while Colab remains connected.")
     except Exception as exc:
-        say("ACCESO", "Could not open the iframe: " + type(exc).__name__)
-        say("ACCESO", "Check Colab cookie permissions and reopen the notebook.")
+        say("ACCESS", "Could not open the iframe: " + type(exc).__name__)
+        say("ACCESS", "Check Colab cookie permissions and reopen the notebook.")
 
 
 def launch(args) -> dict:
@@ -730,14 +730,14 @@ def launch(args) -> dict:
         configure_narrative(model)
     except (RuntimeError, TimeoutError, OSError, ValueError,
             urllib.error.URLError) as exc:
-        say("NARRADOR", "Could not configure Ollama: " + str(exc)[:250])
-        say("NARRADOR", "La interfaz sigue accesible; check logs/ollama*.log")
+        say("NARRATOR", "Could not configure Ollama: " + str(exc)[:250])
+        say("NARRATOR", "The interface remains accessible; check logs/ollama*.log")
     # Make the playable story and narrator available BEFORE the optional 2GB+
     # ComfyUI install, so image downloads never block opening the reader.
     try:
         ensure_demo_story()
     except (OSError, ValueError, urllib.error.URLError) as exc:
-        say("BIBLIOTECA", "Could not prepare the starter story: " +
+        say("LIBRARY", "Could not prepare the starter story: " +
             type(exc).__name__)
     infer_ready = verify_narrator() if model else False
     state = {
@@ -752,7 +752,7 @@ def launch(args) -> dict:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     (LOG_DIR / "launch_state.json").write_text(
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    say("LISTO", "Reader and narrator are ready to use.")
+    say("READY", "Reader and narrator are ready to use.")
     display_colab_ui()
     # Voice and image providers are best-effort extras after the playable UI.
     voice = None
@@ -761,10 +761,10 @@ def launch(args) -> dict:
             voice = ensure_spanish_voice(enable_for_fresh_data=fresh_library)
         except (RuntimeError, TimeoutError, OSError, ValueError,
                 urllib.error.URLError, ImportError) as exc:
-            say("VOZ", "Optional installation incomplete: " + str(exc)[:220])
-            say("VOZ", "You can continue reading and enable listening after installation.")
+            say("VOICE", "Optional installation incomplete: " + str(exc)[:220])
+            say("VOICE", "You can continue reading and enable listening after installation.")
     else:
-        say("VOZ", "Piper installation disabled.")
+        say("VOICE", "Piper installation disabled.")
     state["voice"] = voice
     (LOG_DIR / "launch_state.json").write_text(
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -772,14 +772,14 @@ def launch(args) -> dict:
     image_checkpoint = None
     if args.images == "on" or args.images == "auto" and vram is not None:
         try:
-            say("IMÁGENES", "Preparing ComfyUI; the interface is already open.")
+            say("IMAGES", "Preparing ComfyUI; the interface is already open.")
             image_checkpoint = ensure_comfy()
         except (RuntimeError, TimeoutError, OSError, ValueError,
                 urllib.error.URLError, ImportError) as exc:
-            say("IMÁGENES", "Optional installation not completed: " + str(exc)[:220])
-            say("IMÁGENES", "Reader and narrator remain available.")
+            say("IMAGES", "Optional installation not completed: " + str(exc)[:220])
+            say("IMAGES", "Reader and narrator remain available.")
     else:
-        say("IMÁGENES", "ComfyUI disabled for this session.")
+        say("IMAGES", "ComfyUI disabled for this session.")
     state["image_checkpoint"] = image_checkpoint
     (LOG_DIR / "launch_state.json").write_text(
         json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -789,10 +789,10 @@ def launch(args) -> dict:
                                  Path("/content/drive/MyDrive/NobleAI-Colab"))
         except (OSError, sqlite3.Error) as exc:
             say("DRIVE", "Initial backup pending: " + type(exc).__name__)
-    say("TERMINADO", "Noble AI commit " + sha[:10])
-    say("TERMINADO", "Narration: " + (model or "requires configuration"))
-    say("TERMINADO", "Images: " + (image_checkpoint or "no automatically installed checkpoint"))
-    say("TERMINADO", "Voice: " + (voice or "no automatically installed Piper"))
+    say("DONE", "Noble AI commit " + sha[:10])
+    say("DONE", "Narration: " + (model or "requires configuration"))
+    say("DONE", "Images: " + (image_checkpoint or "no automatically installed checkpoint"))
+    say("DONE", "Voice: " + (voice or "no automatically installed Piper"))
     return state
 
 def main(argv: list[str] | None = None) -> int:

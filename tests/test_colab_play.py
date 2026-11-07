@@ -145,7 +145,7 @@ class ColabPlayTests(unittest.TestCase):
         ):
             with patch.object(launcher.request, "urlopen",
                               return_value=response):
-                with self.assertRaisesRegex(RuntimeError, "React compilado"):
+                with self.assertRaisesRegex(RuntimeError, "React built"):
                     launcher.verify_web_bundle()
 
     def test_drive_backup_uses_online_sqlite_backup_and_restores_media(self):
@@ -210,7 +210,7 @@ class ColabPlayTests(unittest.TestCase):
             return {"story": {"id": "uuid"}, "characters_installed": 0,
                     "lore_installed": 0, "openings_installed": 0}
         with patch.object(launcher, "json_request", side_effect=response):
-            with self.assertRaisesRegex(ValueError, "paquete de historia completo"):
+            with self.assertRaisesRegex(ValueError, "complete story pack"):
                 launcher.ensure_demo_story()
 
     def test_inference_warmup_requires_real_model_output(self):
@@ -267,7 +267,7 @@ class ColabPlayTests(unittest.TestCase):
                 kill.assert_not_called()
                 with patch.object(Path, "read_bytes",
                                   return_value=b"python\x00other-server\x00"):
-                    with self.assertRaisesRegex(RuntimeError, "no puedo verificar"):
+                    with self.assertRaisesRegex(RuntimeError, "cannot verify"):
                         launcher.restart_api_for_revision("c" * 40)
                 kill.assert_not_called()
 
@@ -298,7 +298,7 @@ class ColabPlayTests(unittest.TestCase):
         source = LAUNCHER.read_text(encoding="utf-8")
         self.assertIn("google.colab.kernel.proxyPort(", source)
         self.assertIn("serve_kernel_port_as_iframe", source)
-        self.assertIn("URL de proxy", source)
+        self.assertIn("proxy URL", source)
 
 
 if __name__ == "__main__":
