@@ -20,8 +20,8 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /Historias para vivir/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /Stories to experience/ })).toBeVisible();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
 
   const detail = page.getByRole('region', { name: 'Detalle de ' + title });
@@ -42,12 +42,12 @@ test('bookshelf opens a separate story detail, the reader and the matching creat
   await expect(page.getByLabel('Sinopsis para lectores'))
     .toHaveValue('Lia descubre el secreto del faro bajo la tormenta.');
 
-  await page.getByRole('button', { name: 'Ir a Biblioteca' }).click();
+  await page.getByRole('button', { name: 'Ir a Library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   await page.getByRole('button', { name: 'Comenzar historia' }).click();
   await expect(page.locator('.noble-reader-layout')).toBeVisible();
   await expect(page.locator('.noble-library-cover-grid')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
+  await page.getByRole('button', { name: 'Return to library' }).click();
   await expect(page.locator('.noble-story-detail')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: /My stories/ })).toBeVisible();
 });

@@ -23,15 +23,15 @@ test('four settings panels are independent, deep-linkable and responsive', async
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
   const nav = page.getByRole('navigation', { name: 'Settings sections' });
-  await expect(nav.getByRole('button', { name: 'Imágenes', exact: true })).toBeVisible();
+  await expect(nav.getByRole('button', { name: 'Images', exact: true })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Voz / TTS' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'About Noble AI' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Updates', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Imágenes', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toBeVisible();
   await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sobre y actualizaciones' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Imágenes y voz' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Images y voz' })).toHaveCount(0);
   expect(imageRequests).toBeGreaterThan(0);
   expect(voiceRequests).toBe(0);
   expect(downloadActions).toBe(0);
@@ -58,7 +58,7 @@ test('four settings panels are independent, deep-linkable and responsive', async
   expect(imageRequests).toBe(imagesBeforeReload);
   await page.goBack();
   await expect(page).toHaveURL(/#\/configuracion\/images$/);
-  await expect(page.getByRole('heading', { name: 'Imágenes', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
 
   await nav.getByRole('button', { name: 'About Noble AI' }).click();
   await expect(page).toHaveURL(/#\/configuracion\/about$/);
@@ -90,7 +90,7 @@ test('legacy combined multimedia deep link opens images without displaying TTS',
   if (await welcome.isVisible()) {
     await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   }
-  await expect(page.getByRole('heading', { name: 'Imágenes', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Checkpoint')).toBeVisible();
   await expect(page.getByLabel('Voz predeterminada de Piper')).toHaveCount(0);
 });

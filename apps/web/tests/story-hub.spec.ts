@@ -66,7 +66,7 @@ test('Discover Stories has its own shareable route and installs into the library
       await welcome.getByRole('button', { name: /Continuar al Model Hub/ }).click();
     await expect(page).toHaveURL(/#\/descubrir$/);
     await expect(page.getByRole('region', { name: 'Catálogo de historias' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Historias para jugar' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Playable stories' })).toBeVisible();
     await page.reload();
     await expect(page.getByRole('region', { name: 'Catálogo de historias' })).toBeVisible();
     const hub = page.getByRole('region', { name: 'Discover playable stories' });

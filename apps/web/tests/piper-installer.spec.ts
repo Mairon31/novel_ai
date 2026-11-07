@@ -56,19 +56,19 @@ test('Piper voice catalog installs only after click and tracks pause/resume/comp
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Configuración' }).click();
+  await page.getByRole('button', { name: 'Settings' }).click();
   await page.getByRole('button', { name: 'Voz / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Latin American Spanish voices' })).toBeVisible();
   expect(downloads).toBe(0);  // opening settings must not trigger a download
   await page.getByRole('button', { name: 'Instalar voz' }).click();
-  await expect(page.getByRole('button', { name: 'Pausar descarga' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pause descarga' })).toBeVisible();
   expect(downloads).toBe(1);
-  await page.getByRole('button', { name: 'Pausar descarga' }).click();
-  await expect(page.getByRole('button', { name: 'Reanudar descarga' })).toBeVisible();
-  await page.getByRole('button', { name: 'Reanudar descarga' }).click();
-  await expect(page.getByRole('button', { name: 'Pausar descarga' })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause descarga' }).click();
+  await expect(page.getByRole('button', { name: 'Resume descarga' })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume descarga' }).click();
+  await expect(page.getByRole('button', { name: 'Pause descarga' })).toBeVisible();
   status = 'completed'; installed = true;
-  await page.getByRole('button', { name: 'Actualizar voces' }).click();
+  await page.getByRole('button', { name: 'Refresh voces' }).click();
   await expect(page.getByText('Lista para seleccionar')).toBeVisible();
   await page.getByLabel('Voz predeterminada de Piper').selectOption(voice);
   expect(downloads).toBe(1);

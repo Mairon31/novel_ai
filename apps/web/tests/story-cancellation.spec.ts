@@ -10,17 +10,17 @@ test('Stop signals the backend for the exact story and request without committin
   if (test.info().project.name === 'mobile') {
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await page.getByRole('button', { name: 'Nueva historia' }).click();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'New story' }).click();
 
-  const creator = page.getByRole('dialog', { name: 'Crear una nueva historia' });
+  const creator = page.getByRole('dialog', { name: 'Create a new story' });
   await creator.getByLabel('Título').fill('Cancelación del narrador ' + test.info().project.name);
-  await creator.getByLabel('Premisa del mundo').fill(
+  await creator.getByLabel('World premise').fill(
     'Una biblioteca encantada custodia manuscritos y puertas a mundos lejanos.'
   );
-  await creator.getByRole('button', { name: 'Elegir protagonista' }).click();
-  await creator.getByLabel('Nombre del protagonista').fill('Luna');
-  await creator.getByRole('button', { name: 'Empezar historia' }).click();
+  await creator.getByRole('button', { name: 'Choose protagonist' }).click();
+  await creator.getByLabel('Protagonist name').fill('Luna');
+  await creator.getByRole('button', { name: 'Start story' }).click();
   await expect(creator).toBeHidden();
 
   let requestId = '';

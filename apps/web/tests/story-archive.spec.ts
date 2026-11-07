@@ -15,8 +15,8 @@ test('library exports an archive and rejects duplicate restoration without losin
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Importar respaldo .noble.zip' })).toBeVisible();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Import .noble.zip backup' })).toBeVisible();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   await expect(page.getByRole('region', { name: 'Detalle de ' + title })).toBeVisible();
   const archiveLink = page.getByRole('link', { name: 'Descargar respaldo completo' });
@@ -32,8 +32,8 @@ test('library exports an archive and rejects duplicate restoration without losin
   await archiveLink.click();
   expect((await save).suggestedFilename()).toBe('noble-family.noble.zip');
 
-  await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
-  await page.getByLabel('Archivo de respaldo Noble')
+  await page.getByRole('button', { name: 'Return to library' }).click();
+  await page.getByLabel('Noble backup file')
     .setInputFiles({ name: 'noble-family.noble.zip', mimeType: 'application/zip',
       buffer: archive });
   await expect(page.getByRole('alert')).toContainText('ya existe');
@@ -42,7 +42,7 @@ test('library exports an archive and rejects duplicate restoration without losin
   await page.getByRole('checkbox', {
     name: 'Importar como copia independiente (nuevos identificadores)',
   }).check();
-  await page.getByLabel('Archivo de respaldo Noble')
+  await page.getByLabel('Noble backup file')
     .setInputFiles({ name: 'noble-family.noble.zip', mimeType: 'application/zip',
       buffer: archive });
   await expect(page.getByRole('status')).toContainText('Copia independiente creada: 1 historias');

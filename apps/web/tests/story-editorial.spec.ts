@@ -62,7 +62,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
 
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   const detail = page.getByRole('region', { name: 'Detalle de ' + title });
   await expect(detail).toBeVisible();
@@ -89,7 +89,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   expect(turns[0].assistant_text).toBe(
     'Las puertas del observatorio se abren para Nora al sonar una campana.');
 
-  await page.getByRole('button', { name: 'Volver a biblioteca' }).click();
+  await page.getByRole('button', { name: 'Return to library' }).click();
   await page.locator('.noble-library-cover').filter({ hasText: title }).click();
   await expect(detail.getByRole('button', { name: 'Continuar historia' })).toBeVisible();
   await expect(detail.getByRole('region', { name: 'Escenas de apertura' })).toHaveCount(0);

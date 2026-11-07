@@ -8,16 +8,16 @@ test('reader exports its current story as a standalone HTML attachment', async (
     await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Biblioteca', exact: true }).click();
-  await page.getByRole('button', { name: 'Nueva historia' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Crear una nueva historia' });
+  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'New story' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Create a new story' });
   const title = 'HTML portátil ' + test.info().project.name;
   await dialog.getByLabel('Título').fill(title);
-  await dialog.getByLabel('Premisa del mundo').fill(
+  await dialog.getByLabel('World premise').fill(
     'Una exploradora descubre un reino antiguo y escribe sus recuerdos en un libro.');
-  await dialog.getByRole('button', { name: 'Elegir protagonista' }).click();
-  await dialog.getByLabel('Nombre del protagonista').fill('Luna');
-  await dialog.getByRole('button', { name: 'Empezar historia' }).click();
+  await dialog.getByRole('button', { name: 'Choose protagonist' }).click();
+  await dialog.getByLabel('Protagonist name').fill('Luna');
+  await dialog.getByRole('button', { name: 'Start story' }).click();
   await expect(dialog).toBeHidden();
 
   const link = page.getByRole('link', { name: 'Exportar historia HTML' });

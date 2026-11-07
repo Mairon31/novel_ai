@@ -26,7 +26,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
 
   await navigate('Creator Studio');
   await page.locator('.creator-project').filter({ hasText: title }).click();
-  await page.getByRole('button', { name: /Imágenes \(0\)/ }).click();
+  await page.getByRole('button', { name: /Images \(0\)/ }).click();
   const section = page.locator('.creator-media-library');
   await expect(section.getByText('Sin portada personalizada')).toBeVisible();
   await page.getByLabel('Tipo de recurso visual').selectOption('cover');
@@ -47,7 +47,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   expect(selected.cover_image_url).toContain('/creator/assets/');
   expect(selected.scene_image_url).toBeNull();
 
-  await page.getByRole('button', { name: 'Ir a Biblioteca' }).click();
+  await page.getByRole('button', { name: 'Ir a Library' }).click();
   const book = page.locator('.noble-library-cover').filter({ hasText: title });
   await expect(book).toBeVisible();
   await expect(book.locator('.noble-library-cover-art'))
@@ -59,12 +59,12 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
     '-fixed-editorial-cover.png', fullPage: true });
 
   await page.getByRole('button', { name: 'Editar en Creator Studio' }).click();
-  await page.getByRole('button', { name: /Imágenes \(1\)/ }).click();
+  await page.getByRole('button', { name: /Images \(1\)/ }).click();
   await page.getByRole('button', { name: 'Quitar portada' }).click();
   await expect(page.getByText('Sin portada personalizada')).toBeVisible();
   const updated = await page.request.get('/api/v1/stories/' + storyId);
   expect((await updated.json() as { cover_asset_id: string | null }).cover_asset_id).toBeNull();
-  await page.getByRole('button', { name: 'Ir a Biblioteca' }).click();
+  await page.getByRole('button', { name: 'Ir a Library' }).click();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toBeVisible();
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })
     .locator('.noble-library-cover-art')).not.toHaveCSS('background-image', /creator\/assets/);

@@ -31,7 +31,7 @@ test('Creator Studio stages five AI expressions for author review before approva
     const setup = page.getByRole('dialog', { name: /Welcome and initial setup/ });
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
-    await page.getByRole('button', { name: /Imágenes/ }).click();
+    await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('NPC para generar expresiones').selectOption(npc.id);
     await page.getByLabel('Contexto de sprites IA').fill('Aira castillo de cristal');
     await page.getByLabel('Estilo visual de sprites IA').fill('watercolor anime');

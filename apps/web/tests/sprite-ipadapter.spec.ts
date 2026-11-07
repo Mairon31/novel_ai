@@ -62,7 +62,7 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     if (await setup.isVisible())
       await setup.getByRole('button', { name: /Continuar al Model Hub/ }).click();
 
-    await page.getByRole('button', { name: /Imágenes/ }).click();
+    await page.getByRole('button', { name: /Images/ }).click();
     await page.getByLabel('NPC para generar expresiones').selectOption(npc);
     await page.getByLabel('Contexto de sprites IA').fill('Aira cuidando el castillo');
     await page.getByLabel('Modo de referencia IA').selectOption('ipadapter');
@@ -73,7 +73,7 @@ test('Creator Studio selects an approved NPC sprite as IPAdapter reference witho
     await page.getByLabel('Recorte de fondo para sprites IA')
       .selectOption('neural_birefnet_portrait');
     await page.getByRole('button', { name: 'Comprobar modelos de recorte' }).click();
-    await expect(page.getByText('BiRefNet-portrait: Listo')).toBeVisible();
+    await expect(page.getByText('BiRefNet-portrait: Ready')).toBeVisible();
     await page.getByLabel('Preset IPAdapter de sprites IA').selectOption(
       'STANDARD (medium strength)');
     await page.getByLabel('Fuerza IPAdapter de sprites IA').fill('0.9');
