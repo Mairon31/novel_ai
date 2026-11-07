@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Literal
 
 import httpx
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from .images import ImageSettings, SceneImageService
@@ -279,6 +279,18 @@ class ComfyProcessManager:
 
 
 def mount_comfy_process_routes(app, runtime: ComfyProcessManager):
+    def guard_local_action(request: Request):
+        # Cross-origin HTML forms can POST with no preflight. Never let an
+        # unrelated website start or kill a locally configured runtime.
+        origin = request.headers.get("origin")
+        allowed = {
+            str(request.base_url).rstrip("/"),
+            "http://127.0.0.1:5173", "http://localhost:5173",
+            "http://127.0.0.1:4173", "http://localhost:4173",
+        }
+        if (origin and origin not in allowed) or request.headers.get("sec-fetch-site") == "cross-site":
+            raise HTTPException(403, "La administración de ComfyUI requiere el origen de Noble AI")
+
     @app.get("/api/v1/images/runtime/config")
     def config():
         return runtime.config()
@@ -296,11 +308,13 @@ def mount_comfy_process_routes(app, runtime: ComfyProcessManager):
         return runtime.status()
 
     @app.post("/api/v1/images/runtime/start")
-    def start():
+    def start(request: Request):
+        guard_local_action(request)
         return runtime.start()
 
     @app.post("/api/v1/images/runtime/stop")
-    def stop():
+    def stop(request: Request):
+        guard_local_action(request)
         return runtime.stop()
 
     @app.get("/api/v1/images/runtime/logs")
