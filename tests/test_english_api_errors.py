@@ -61,5 +61,31 @@ class EnglishApiErrorsTests(unittest.TestCase):
         self.assertEqual(errors, [], "\n".join(errors))
 
 
+    def test_other_backend_literals_are_english(self):
+        """Prevent Spanish diagnostics outside explicitly multilingual narrative data."""
+        # These modules intentionally contain Spanish story fixtures, text recognition,
+        # or multilingual grammar tokens. Never translate user/story content.
+        multilingual_data = {
+            "story_hub.py",       # bundled Spanish-language interactive stories
+            "creator_media.py",   # expression recognition in Spanish
+            "visual_state.py",    # multilingual negation recognition
+            "episodic_memory.py", # multilingual memory-search stopwords
+        }
+        errors = []
+        for source in MODULES.glob("*.py"):
+            if source.name in multilingual_data:
+                continue
+            module = ast.parse(source.read_text(encoding="utf-8"))
+            for fragment in ast.walk(module):
+                if (isinstance(fragment, ast.Constant)
+                        and isinstance(fragment.value, str)
+                        and SPANISH_ERROR.search(fragment.value)):
+                    errors.append(
+                        f"{source.name}:{fragment.lineno}: {fragment.value[:120]}"
+                    )
+        self.assertEqual(errors, [], "\n".join(errors))
+
+
+
 if __name__ == "__main__":
     unittest.main()

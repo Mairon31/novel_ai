@@ -38,9 +38,14 @@ function isInterfaceCopy(value) {
   return true;
 }
 
-for (const filename of readdirSync(src).filter(name => name.endsWith('.tsx')).sort()) {
+// API-client and routing errors are displayed in the UI too, even though they
+// live in plain TypeScript rather than React components.
+const uiSources = readdirSync(src).filter(name =>
+  name.endsWith('.tsx') || name === 'api.ts' || name === 'workspaceRoute.ts');
+for (const filename of uiSources.sort()) {
   const content = readFileSync(path.join(src, filename), 'utf8');
-  const sf = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const kind = filename.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sf = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, true, kind);
 
   function report(node, kind, value) {
     const clean = normalized(value);
