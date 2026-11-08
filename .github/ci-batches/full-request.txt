@@ -5,4 +5,9 @@ latest_functional_sha=673e47363a1f3f7ee89edaa53ebd0b83334ae526
 policy_ledger_sha=4f00436e41f66cbb9fabb95dc146671edfd51864
 scope=full
 requested_date=2026-11-08
-reason=Verify five completed implementations in one GitHub Actions run; no per-commit CI.
+reason=Retry full B001 after consolidating both observed test failures.
+
+attempt=2
+retry_of_run=42464879028
+fixes_commits=59d590e91dedf5ea7bf9b7826d01eb6024320a90,4981c672362be14f5a17352be03a68331f936527
+reason=Validate consolidated context-inspector compatibility and full Pillow-verified gallery fixture.
