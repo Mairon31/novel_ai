@@ -1447,3 +1447,14 @@
 .noble-interface-language.is-compact select{min-width:0;width:164px;max-width:24vw}
 @media(max-width:780px){.noble-interface-language.is-compact label{display:none}.noble-interface-language.is-compact select{width:123px;max-width:31vw;padding:8px 6px}.top-actions{gap:6px}}
 @media(max-width:400px){.noble-interface-language.is-compact select{max-width:108px}.topbar{padding-left:14px;padding-right:14px}}
+
+/* Explicit media preflight is not a synthetic generation-progress indicator. */
+.noble-visual-start-gate { margin:18px auto;max-width:780px;width:min(100%,780px);padding:22px;border:1px solid #4e526f;border-radius:16px;background:#1c2033;color:#e8e9fc;display:grid;gap:12px; }
+.noble-visual-start-gate header { display:flex;align-items:flex-start;gap:12px; }
+.noble-visual-start-gate header svg { flex-shrink:0;color:#b4a7ff; }
+.noble-visual-start-gate h2 {font-size:18px;margin:0 0 8px}
+.noble-visual-start-gate p { margin:0;color:#c8cce0;line-height:1.5; }
+.noble-visual-start-gate ul { padding-left:23px;margin:0;line-height:1.7;color:#f5d9b4; }
+.noble-visual-start-actions {display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.noble-visual-start-gate small {color:#a9b0c7;line-height:1.45}
+@media(max-width:540px){.noble-visual-start-gate {padding:16px;margin:12px auto}.noble-visual-start-actions button {max-width:100%}}

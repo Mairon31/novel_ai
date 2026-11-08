@@ -376,7 +376,14 @@ export type ScenePlanInput = Pick<ScenePlan, 'shot' | 'lighting' | 'mood' | 'dir
 export type CreatorBlueprint = {
   story_id: string; synopsis: string; player_plot: string; ai_plot: string;
   guidelines: string; reminder: string; opening_scenarios: string[];
-  genre: string; tags: string[]; language: string; updated_at: number | null;
+  genre: string; tags: string[]; language: string;
+  visual_start: 'text' | 'cover_background' | 'cover_background_cast';
+  updated_at: number | null;
+};
+export type VisualPreflightStatus = {
+  story_id: string; mode: CreatorBlueprint['visual_start'];
+  ready: boolean; has_started: boolean; text_only: boolean;
+  missing: Array<{kind: 'cover' | 'background' | 'character'; character_id?: string; name?: string}>;
 };
 export type CreatorBlueprintDraft = Omit<CreatorBlueprint, 'story_id'|'updated_at'>;
 export type VisualDNA = {

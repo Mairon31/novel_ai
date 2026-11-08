@@ -19,7 +19,7 @@ type Section = 'story' | 'cast' | 'lorebook' | 'world' | 'openings' | 'media';
 
 const blankBlueprint: CreatorBlueprintDraft = {
   synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
-  opening_scenarios: [], genre: '', tags: [], language: 'es-419',
+  opening_scenarios: [], genre: '', tags: [], language: 'es-419', visual_start: 'text',
 };
 const blankCharacter: CreatorCharacterDraft = {
   name: '', description: '', personality: '', dialogue_examples: '',
@@ -141,9 +141,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       .then(([data, cast, media, lorebook, visuals, draftResult]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
-          opening_scenarios, genre, tags, language } = data;
+          opening_scenarios, genre, tags, language, visual_start } = data;
         setBlueprint({ synopsis, player_plot, ai_plot, guidelines, reminder,
-          opening_scenarios, genre, tags, language });
+          opening_scenarios, genre, tags, language, visual_start });
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
         setVisualCharacters(visuals.characters);
@@ -187,6 +187,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         ai_plot: saved.ai_plot, guidelines: saved.guidelines,
         reminder: saved.reminder, opening_scenarios: saved.opening_scenarios,
         genre: saved.genre, tags: saved.tags, language: saved.language,
+        visual_start: saved.visual_start,
       });
       setTagsInput(saved.tags.join(', '));
       setNotice(t('feedback.creatorSaved'));
@@ -1114,6 +1115,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </select>
                 </label>
               </div>
+              <label>{t('visualStart.creatorModeLabel')}
+                <select aria-label={t('visualStart.creatorModeLabel')} value={blueprint.visual_start}
+                  onChange={event => update('visual_start',
+                    event.target.value as CreatorBlueprintDraft['visual_start'])}>
+                  <option value="text">{t('visualStart.modeText')}</option>
+                  <option value="cover_background">{t('visualStart.modeIllustrated')}</option>
+                  <option value="cover_background_cast">{t('visualStart.modeIllustratedCast')}</option>
+                </select>
+                <small>{t('visualStart.creatorModeHint')}</small>
+              </label>
               <label>{t('creator.synopsis')}
                 <textarea rows={3} aria-label={t('uiField.creatorStudio.readerSynopsis')} maxLength={250}
                   value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}

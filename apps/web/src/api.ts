@@ -1,5 +1,6 @@
 import i18n from './i18n';
 import { fetchWithApiError, responseFailure } from './apiErrors';
+import type { VisualPreflightStatus } from './types';
 import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, ComfyLaunchConfig, ComfyLaunchValidation, ComfyRuntimeStatus, ComfyRuntimeLogs, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -277,6 +278,11 @@ export const api = {
       encodeURIComponent(assetId), { method: 'DELETE' }),
   creatorBlueprint: (id: string) => request<CreatorBlueprint>(
     '/stories/' + encodeURIComponent(id) + '/creator'),
+  visualPreflight: (id: string) => request<VisualPreflightStatus>(
+    '/stories/' + encodeURIComponent(id) + '/visual-preflight'),
+  chooseVisualMode: (id: string, text_only: boolean) => request<VisualPreflightStatus>(
+    '/stories/' + encodeURIComponent(id) + '/visual-preflight/choice',
+    { method: 'PUT', body: JSON.stringify({ text_only }) }),
   saveCreatorBlueprint: (id: string, input: CreatorBlueprintDraft) => request<CreatorBlueprint>(
     '/stories/' + encodeURIComponent(id) + '/creator',
     { method: 'PUT', body: JSON.stringify(input) }),

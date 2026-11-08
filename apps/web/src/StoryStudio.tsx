@@ -4,9 +4,10 @@ import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, P
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
+import { VisualStartGate } from './VisualStartGate';
 import { streamFailure } from './apiErrors';
 import { StoryHub } from './StoryHub';
-import type { BranchTree, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn } from './types';
+import type { BranchTree, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn, VisualPreflightStatus } from './types';
 
 interface StoryStudioProps {
   onOpenSettings: () => void;
@@ -31,6 +32,10 @@ export function StoryStudio({
   const [branchTree, setBranchTree] = useState<BranchTree | null>(null);
   const [openingBusy, setOpeningBusy] = useState(false);
   const [turnsLoading, setTurnsLoading] = useState(false);
+  const [visualPreflight, setVisualPreflight] = useState<VisualPreflightStatus | null>(null);
+  const [visualCheckPending, setVisualCheckPending] = useState(false);
+  const [visualCheckError, setVisualCheckError] = useState('');
+  const [visualChoiceBusy, setVisualChoiceBusy] = useState(false);
   const [turns, setTurns] = useState<StoryTurn[]>([]);
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -133,6 +138,59 @@ export function StoryStudio({
     return () => { alive = false; };
   }, [active?.id]);
 
+  useEffect(() => {
+    let live = true;
+    setVisualPreflight(null);
+    setVisualCheckError('');
+    setVisualCheckPending(Boolean(active));
+    if (active) {
+      void api.visualPreflight(active.id).then(status => {
+        if (live) setVisualPreflight(status);
+      }).catch((exc: Error) => {
+        if (live) setVisualCheckError(exc.message);
+      }).finally(() => { if (live) setVisualCheckPending(false); });
+    }
+    return () => { live = false; };
+  }, [active?.id]);
+
+  async function refreshVisualPreflight() {
+    if (!active || visualChoiceBusy) return;
+    const storyId = active.id;
+    setVisualCheckPending(true); setVisualCheckError('');
+    try {
+      const status = await api.visualPreflight(storyId);
+      if (activeStoryId.current === storyId) setVisualPreflight(status);
+    } catch (exc) {
+      if (activeStoryId.current === storyId) setVisualCheckError((exc as Error).message);
+    } finally {
+      if (activeStoryId.current === storyId) setVisualCheckPending(false);
+    }
+  }
+  async function chooseVisualMode(textOnly: boolean) {
+    if (!active || visualChoiceBusy) return;
+    const storyId = active.id;
+    setVisualChoiceBusy(true); setVisualCheckError('');
+    try {
+      const next = await api.chooseVisualMode(storyId, textOnly);
+      if (activeStoryId.current === storyId) setVisualPreflight(next);
+    } catch (exc) {
+      if (activeStoryId.current === storyId) setVisualCheckError((exc as Error).message);
+    } finally {
+      setVisualChoiceBusy(false);
+    }
+  }
+  const currentPreflight = visualPreflight?.story_id === active?.id ? visualPreflight : null;
+  const visualStartBlocked = Boolean(active && turns.length === 0 &&
+    (visualCheckPending || visualCheckError || !currentPreflight?.ready));
+  const startGate = <VisualStartGate
+    status={currentPreflight}
+    busy={visualCheckPending || visualChoiceBusy}
+    error={visualCheckError}
+    onRefresh={() => void refreshVisualPreflight()}
+    onTextOnly={() => void chooseVisualMode(true)}
+    onIllustrated={() => void chooseVisualMode(false)}
+    onEdit={() => { if (active) onEditStory?.(active.id); }}/>;
+
   async function importArchive(file: File) {
     setRestoring(true);
     setError(''); setNotice('');
@@ -165,7 +223,7 @@ export function StoryStudio({
   }
 
   async function submit(continueOnly = false) {
-    if (!active || generating || (!continueOnly && !draft.trim())) return;
+    if (!active || generating || visualStartBlocked || (!continueOnly && !draft.trim())) return;
     const controllerLocal = new AbortController();
     const requestId = crypto.randomUUID();
     controller.current = controllerLocal;
@@ -205,7 +263,7 @@ export function StoryStudio({
   }
 
   async function startOpening(index: number) {
-    if (!active || openingBusy || turnsLoading || turns.length) return;
+    if (!active || openingBusy || turnsLoading || turns.length || visualStartBlocked) return;
     const storyId = active.id;
     setOpeningBusy(true);
     setError('');
@@ -299,7 +357,9 @@ export function StoryStudio({
         </option>)}
       </select>}
       <button className="noble-reader-settings-link" onClick={onOpenSettings}>{t("common.settings")}</button>
-    </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
+    </div> : active ? <>
+      {visualStartBlocked && startGate}
+      <StoryDetail story={active} turns={turns} metadata={storyMetadata}
       characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
       error={error}
       onBack={() => { setActive(null); setReading(false); onRouteChange?.(null, false); }}
@@ -307,7 +367,8 @@ export function StoryStudio({
       onStartOpening={index => void startOpening(index)}
       branches={branchTree?.branches || []}
       onChooseBranch={id => void switchBranch(id)}
-      onEdit={() => onEditStory?.(active.id)}/> : <div className="noble-library-home">
+      onEdit={() => onEditStory?.(active.id)}/>
+      </> : <div className="noble-library-home">
       <div className="noble-library-hero">
         <div><span className="eyebrow"><Feather size={15}/> {t("library.universe")}</span>
           <h1>{t("library.headline")}</h1>
@@ -371,7 +432,7 @@ export function StoryStudio({
         </div>}
       </div>
     </div>}
-    {active && reading && <VisualReader active={active} turns={turns}
+    {active && reading && (visualStartBlocked ? startGate : <VisualReader active={active} turns={turns}
       mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
       streamText={streamText} generating={generating} generationMessage={t(generationMessageKey)}
       onCancel={cancelGeneration} onFork={createBranch} notice={notice} error={error}
@@ -382,7 +443,7 @@ export function StoryStudio({
         // A slow image upload or generation must not jump back to an old story.
         setActive(current => current?.id === next.id ? next : current);
         setStories(old => old.map(item => item.id === next.id ? next : item));
-      }}/>}
+      }}/>)}
     {creating && <div className="welcome-scrim"><section className="welcome-panel" role="dialog"
       aria-modal="true" aria-label={t("library.createDialog")}>
       <div className="story-create-heading"><div className="welcome-icon"><Feather size={29}/></div>
