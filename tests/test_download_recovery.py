@@ -114,7 +114,7 @@ class CrashRecoveryTests(unittest.TestCase):
         manager.control(self.job["id"], "resume")
         failed = self.await_terminal()
         self.assertEqual(failed["status"], "failed", failed)
-        self.assertIn("GGUF final", failed["error"])
+        self.assertIn("A completed GGUF already exists", failed["error"])
         self.assertEqual(self.target.read_bytes(), PAYLOAD)
         self.assertEqual(self.part.read_bytes(), different_partial)
         self.assertEqual(manager.store.installed(), [])
