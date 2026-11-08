@@ -140,11 +140,11 @@ def create_app(
         finally:
             await image_jobs.shutdown()
             downloads.shutdown()
-        voice_installer.shutdown()
-        comfy_process.shutdown()
-        checkpoints.shutdown()
-        kobold.stop()
-        catalog.close()
+            voice_installer.shutdown()
+            comfy_process.shutdown()
+            checkpoints.shutdown()
+            kobold.stop()
+            catalog.close()
 
     service = FastAPI(title="Noble AI Model Hub", version="0.1.0",
                       lifespan=lifespan)
