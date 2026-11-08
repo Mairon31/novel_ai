@@ -1631,5 +1631,7 @@
   "apiClient.showTechnicalDetails": "显示技术详情",
   "apiClient.unknownSize": "大小未知",
   "jobs.unknown": "未知状态",
-  "settings.networkUnknown": "服务器报告了无法识别的网络模式。共享工作区前请检查诊断信息。"
+  "settings.networkUnknown": "服务器报告了无法识别的网络模式。共享工作区前请检查诊断信息。",
+  "wizard.discardLocalDraft": "丢弃本地草稿",
+  "wizard.localDraftRestored": "已恢复此浏览器中保存的草稿。你可以继续编辑或将其丢弃。"
 }

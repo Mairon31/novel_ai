@@ -133,3 +133,54 @@ test('AI Creator previews a whole world before an explicit local install', async
     fullPage: true,
   });
 });
+
+
+test('Creator AI draft survives reload, preserves manual edits, and can be discarded locally', async ({ page }) => {
+  const sample = {
+    title: 'Draft saved in browser',
+    synopsis: 'A coastal fantasy mystery with a carefully preserved premise and meaningful choices.',
+    player_plot: 'The sea remembers every promise, but none of the people do.',
+    ai_plot: 'The lighthouse guardian hides a promise that costs a memory to reveal.',
+    guidelines: 'Keep character motives distinct and player decisions independent.',
+    reminder: 'The lighthouse cannot be activated twice in one night.',
+    genre: 'Fantasy', tags: ['lighthouse', 'memory'], protagonist_name: 'Luna',
+    characters: [{ name: 'Aira', description: 'A lighthouse guardian with a long-standing secret.',
+      personality: 'Cautious', dialogue_examples: 'You cannot open that door without a promise.' }],
+    lore: [{ title: 'The lantern', content: 'The lantern captures a memory once each evening.', keys: ['light'] }],
+    openings: ['Luna arrives at the harbor to find the lighthouse abandoned and the bell ringing.'],
+  };
+  await page.route('**/api/v1/creator/assistant/draft', route =>
+    route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ draft: sample, saved: false, model: 'offline-mock' }) }));
+  await page.goto('/');
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
+  if (await welcome.isVisible()) {
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
+  }
+  if (test.info().project.name === 'mobile') {
+    await page.getByRole('button', { name: 'Open menu' }).click();
+  }
+  await page.getByRole('button', { name: 'Creator Studio' }).click();
+  await page.getByRole('button', { name: 'Create with AI' }).click();
+  await page.getByLabel('Story idea').fill(
+    'A long enough adventure premise about a lighthouse and a secret locked inside the harbor.');
+  await page.getByRole('button', { name: 'Generate proposal' }).click();
+  await expect(page.getByLabel('Editable generated title')).toHaveValue(sample.title);
+  await page.getByLabel('Editable generated title').fill('Edited after generation');
+  await page.getByLabel('Editable generated tags').fill('light, sea, a new tag');
+  await page.reload();
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+  await page.getByRole('button', { name: 'Create with AI' }).click();
+  await expect(page.getByText('Recovered the draft saved in this browser.')).toBeVisible();
+  await expect(page.getByLabel('Editable generated title')).toHaveValue('Edited after generation');
+  await expect(page.getByLabel('Editable generated tags')).toHaveValue('light, sea, a new tag');
+  await expect(page.getByLabel('Story idea')).toContainText('lighthouse and a secret');
+  await page.getByRole('button', { name: 'Discard local draft' }).click();
+  await expect(page.getByLabel('Editable generated title')).toHaveCount(0);
+  await expect(page.getByLabel('Story idea')).toHaveValue('');
+  await expect(page.evaluate(() => localStorage.getItem('noble-ai-creator-draft-v1'))).resolves.toBeNull();
+  await page.reload();
+  await page.getByRole('button', { name: 'Create with AI' }).click();
+  await expect(page.getByLabel('Editable generated title')).toHaveCount(0);
+});

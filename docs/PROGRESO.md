@@ -938,3 +938,10 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - [x] **Seguridad del gestor verificada:** `POST /api/v1/images/runtime/start` y `/stop` bloquean `Origin` ajeno y `Sec-Fetch-Site: cross-site` antes de ejecutar o terminar el proceso. [CI #42343797171](https://github.com/Mairon31/novel_ai/actions/runs/42343797171) PASS: **398 Python, 84 Playwright escritorio/móvil y Vite**, con prueba de cross-site.
 - [x] Prueba `multimedia.spec.ts` reforzada con espera del guardado confirmado y disponibilidad del toggle TTS al entrar en otra pestaña; corrección de condiciones de carrera vista en CI intermedia. Último CI de esta estabilización todavía en curso.
+
+
+## 2026-11-08 — Retoma de funcionalidades (pendiente de CI del commit)
+
+- La auditoría i18n restante se registra por separado en `TODO.md` con tareas I18N-01 a I18N-07. No se alteran documentación existente de arquitectura ni historias almacenadas.
+- **N-07, borradores locales recuperables (primer tramo):** nueva capa `creatorDraftPersistence.ts` guarda automáticamente propuesta del asistente, NPC/Lorebook, aperturas, cambios manuales y versión previa. Rechaza formatos incompatibles, datos excesivos y snapshots con más de 30 días. La UI permite descartar y elimina el borrador local después de una instalación confirmada. No sustituye persistencia transaccional del servidor ni sincroniza entre dispositivos.
+- Añadida prueba Playwright en escritorio y móvil para editar → recargar → recuperar → descartar. Validación completa de GitHub Actions debe verificarse antes de convertir la subtarea en [x].

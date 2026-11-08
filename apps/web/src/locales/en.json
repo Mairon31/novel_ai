@@ -1631,5 +1631,7 @@
   "apiClient.showTechnicalDetails": "Show technical details",
   "apiClient.unknownSize": "Unknown size",
   "jobs.unknown": "Unknown status",
-  "settings.networkUnknown": "The server reported an unrecognized network mode. Review diagnostics before sharing this workspace."
+  "settings.networkUnknown": "The server reported an unrecognized network mode. Review diagnostics before sharing this workspace.",
+  "wizard.discardLocalDraft": "Discard local draft",
+  "wizard.localDraftRestored": "Recovered the draft saved in this browser. You can continue editing or discard it."
 }

@@ -1631,5 +1631,7 @@
   "apiClient.showTechnicalDetails": "Mostrar detalhes técnicos",
   "apiClient.unknownSize": "Tamanho desconhecido",
   "jobs.unknown": "Status desconhecido",
-  "settings.networkUnknown": "O servidor informou um modo de rede não reconhecido. Verifique os diagnósticos antes de compartilhar este ambiente."
+  "settings.networkUnknown": "O servidor informou um modo de rede não reconhecido. Verifique os diagnósticos antes de compartilhar este ambiente.",
+  "wizard.discardLocalDraft": "Descartar rascunho local",
+  "wizard.localDraftRestored": "O rascunho salvo neste navegador foi recuperado. Você pode continuar editando ou descartá-lo."
 }

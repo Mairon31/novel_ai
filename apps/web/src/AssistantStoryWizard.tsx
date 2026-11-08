@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BookOpen, Check, LoaderCircle, Sparkles, Users, X } from 'lucide-react';
 import { api } from './api';
+import { clearCreatorDraft, readCreatorDraft, saveCreatorDraft } from './creatorDraftPersistence';
 import type { GeneratedStoryDraft, Story } from './types';
 
 interface Props {
@@ -11,26 +12,46 @@ interface Props {
 
 export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
   const { t, i18n } = useTranslation();
-  const [idea, setIdea] = useState('');
-  const [protagonist, setProtagonist] = useState('Alex');
-  const [genre, setGenre] = useState('');
-  const [tone, setTone] = useState('');
-  const [draft, setDraft] = useState<GeneratedStoryDraft | null>(null);
-  const [tagsText, setTagsText] = useState('');
-  const [loreKeysText, setLoreKeysText] = useState<Record<number, string>>({});
-  const [model, setModel] = useState('');
-  const [regenerationInstruction, setRegenerationInstruction] = useState('');
+  const [recovery] = useState(() => readCreatorDraft());
+  const [restored, setRestored] = useState(Boolean(recovery));
+  const [idea, setIdea] = useState(recovery?.idea ?? '');
+  const [protagonist, setProtagonist] = useState(recovery?.protagonist ?? 'Alex');
+  const [genre, setGenre] = useState(recovery?.genre ?? '');
+  const [tone, setTone] = useState(recovery?.tone ?? '');
+  const [draft, setDraft] = useState<GeneratedStoryDraft | null>(recovery?.draft ?? null);
+  const [tagsText, setTagsText] = useState(recovery?.tagsText ?? '');
+  const [loreKeysText, setLoreKeysText] = useState<Record<number, string>>(recovery?.loreKeysText ?? {});
+  const [model, setModel] = useState(recovery?.model ?? '');
+  const [regenerationInstruction, setRegenerationInstruction] =
+    useState(recovery?.regenerationInstruction ?? '');
   const [regenerationSection, setRegenerationSection] =
-    useState<'plot' | 'openings' | 'characters' | 'lore'>('openings');
-  const [previousDraft, setPreviousDraft] = useState<GeneratedStoryDraft | null>(null);
-  const [lastRegenerated, setLastRegenerated] = useState('');
-  const [generationBudget, setGenerationBudget] = useState<{
-    context_characters: number; input_tokens_estimate: number;
-    max_output_tokens: number; estimate_only: boolean;
-  } | null>(null);
+    useState<'plot' | 'openings' | 'characters' | 'lore'>(recovery?.regenerationSection ?? 'openings');
+  const [previousDraft, setPreviousDraft] = useState<GeneratedStoryDraft | null>(recovery?.previousDraft ?? null);
+  const [lastRegenerated, setLastRegenerated] = useState(recovery?.lastRegenerated ?? '');
+  const [generationBudget, setGenerationBudget] = useState(recovery?.generationBudget ?? null);
   const revisionRef = useRef(0);
   const [busy, setBusy] = useState<'draft' | 'install' | 'regenerate' | null>(null);
   const [error, setError] = useState('');
+
+  // Recover only settled text and edits, never an in-flight generation or install.
+  useEffect(() => {
+    saveCreatorDraft({
+      idea, protagonist, genre, tone, draft, tagsText, loreKeysText, model,
+      regenerationInstruction, regenerationSection, previousDraft, lastRegenerated,
+      generationBudget,
+    });
+  }, [idea, protagonist, genre, tone, draft, tagsText, loreKeysText, model,
+      regenerationInstruction, regenerationSection, previousDraft, lastRegenerated,
+      generationBudget]);
+
+  function discardDraft() {
+    if (busy) return;
+    clearCreatorDraft();
+    setIdea(''); setProtagonist('Alex'); setGenre(''); setTone('');
+    setModel(''); setRegenerationInstruction(''); setRegenerationSection('openings');
+    setRestored(false);
+    reset();
+  }
 
   function updateDraft(next: Parameters<typeof setDraft>[0]) {
     revisionRef.current += 1;
@@ -128,6 +149,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     setBusy('install'); setError('');
     try {
       const result = await api.installAIDraft(draft);
+      clearCreatorDraft();
       onCreated(result.story);
     } catch (exc) {
       setError((exc as Error).message);
@@ -143,9 +165,16 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         <h2>{t('wizard.title')}</h2>
         <p>{t('wizard.intro')}</p>
       </div>
-      <button className="secondary-button" onClick={onCancel} disabled={!!busy}
-        type="button"><X size={16}/> {t('wizard.close')}</button>
+      <div className="creator-ai-actions">
+        {(idea || draft) && <button className="secondary-button" onClick={discardDraft}
+          disabled={!!busy} type="button">{t('wizard.discardLocalDraft')}</button>}
+        <button className="secondary-button" onClick={onCancel} disabled={!!busy}
+          type="button"><X size={16}/> {t('wizard.close')}</button>
+      </div>
     </div>
+    {restored && <p role="status" className="creator-ai-private-note">
+      {t('wizard.localDraftRestored')}
+    </p>}
     <div className="creator-ai-fields">
       <label>{t('wizard.idea')}
         <textarea aria-label={t('uiField.assistantStoryWizard.storyIdea')} rows={5} maxLength={2500}

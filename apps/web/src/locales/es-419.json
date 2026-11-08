@@ -1631,5 +1631,7 @@
   "apiClient.showTechnicalDetails": "Mostrar detalles técnicos",
   "apiClient.unknownSize": "Tamaño desconocido",
   "jobs.unknown": "Estado desconocido",
-  "settings.networkUnknown": "El servidor informó un modo de red no reconocido. Revisa sus diagnósticos antes de compartir este espacio de trabajo."
+  "settings.networkUnknown": "El servidor informó un modo de red no reconocido. Revisa sus diagnósticos antes de compartir este espacio de trabajo.",
+  "wizard.discardLocalDraft": "Descartar borrador local",
+  "wizard.localDraftRestored": "Se recuperó el borrador guardado en este navegador. Puedes seguir editándolo o descartarlo."
 }
