@@ -26,6 +26,7 @@ from .control import ControlPlane, mount_control_routes
 from .secrets import Secrets
 from .media import mount_media_routes
 from .images import SceneImageService, mount_image_routes
+from .image_jobs import ImageGenerationJobs, mount_image_job_routes
 from .sprite_drafts import SpriteDraftService, mount_sprite_draft_routes
 from .speech import SpeechService, mount_speech_routes
 from .voice_installer import VoiceInstaller, mount_voice_installer_routes
@@ -125,6 +126,7 @@ def create_app(
     episodes = EpisodicMemory(narrative)
     narrative.episodes = episodes
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
+    image_jobs = ImageGenerationJobs(images)
     sprite_drafts = SpriteDraftService(creator_media, images)
     speech = SpeechService(narrative)
     voice_installer = VoiceInstaller(speech, catalog)
@@ -133,8 +135,11 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
-        yield
-        downloads.shutdown()
+        try:
+            yield
+        finally:
+            await image_jobs.shutdown()
+            downloads.shutdown()
         voice_installer.shutdown()
         comfy_process.shutdown()
         checkpoints.shutdown()
@@ -158,6 +163,7 @@ def create_app(
     service.state.narrative = narrative
     service.state.kobold = kobold
     service.state.images = images
+    service.state.image_jobs = image_jobs
     service.state.sprite_drafts = sprite_drafts
     service.state.resources = resources
     service.state.speech = speech
@@ -315,6 +321,7 @@ def create_app(
     mount_visual_preflight_routes(service, visual_preflight)
     mount_sprite_draft_routes(service, sprite_drafts)
     mount_image_routes(service, images)
+    mount_image_job_routes(service, image_jobs)
     mount_resource_routes(service, resources)
     mount_speech_routes(service, speech)
     mount_voice_installer_routes(service, voice_installer)
