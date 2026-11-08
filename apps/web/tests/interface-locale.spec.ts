@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 test('UI locale persists across reload and leaves the story language untouched', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('noble-ui-language', 'en'));
   await page.goto('/#/configuracion/languages');
+  // Set the initial preference once: addInitScript would overwrite a newly
+  // selected language on every navigation and reload.
+  await page.evaluate(() => localStorage.setItem('noble-ui-language', 'en'));
+  await page.reload();
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
   if (await welcome.isVisible()) {

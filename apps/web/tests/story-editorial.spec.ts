@@ -69,7 +69,7 @@ test('editorial detail shows cast and visuals, then persists the chosen opening 
   await expect(detail.getByText('Dos caminos llevan al antiguo observatorio.')).toBeVisible();
   await expect(detail.getByText('Nora llega a la ciudad durante una tormenta de nieve.')).toBeVisible();
   await expect(detail.getByRole('heading', { name: 'Characters in this world' })).toBeVisible();
-  await expect(detail.getByRole('img', { name: 'Retrato de Iria' })).toBeVisible();
+  await expect(detail.getByRole('img', { name: 'Portrait of Iria' })).toBeVisible();
   await expect(detail.getByRole('img', { name: 'Observatorio nevado' })).toBeVisible();
   await expect(detail.getByText(/El guardia oculta un secreto/)).toHaveCount(0);
 

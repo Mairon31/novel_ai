@@ -72,7 +72,8 @@ test('register, test, activate and remove a GPU worker from settings (mock proto
     await page.getByRole('button', { name: 'Open menu' }).click();
   }
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  await page.getByRole('button', { name: 'Network & Workers' }).click();
+  await page.getByRole('navigation', { name: 'Settings sections' })
+    .getByRole('button', { name: 'Network & Workers', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Remote GPU workers' })).toBeVisible();
   await page.getByLabel('Worker name').fill(name);
   await page.getByLabel('Worker URL').fill(address);

@@ -62,7 +62,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByLabel('Checkpoint').fill('story-model.safetensors');
   await page.getByRole('button', { name: 'Check ComfyUI sampling' }).click();
   expect(samplingChecks).toBe(1);
-  await expect(page.getByText(/ComfyUI: \\d+ supported samplers and \\d+ schedulers\\./)).toBeVisible();
+  await expect(page.getByText(/ComfyUI: \d+ supported samplers and \d+ schedulers\./)).toBeVisible();
   await page.getByLabel('ComfyUI sampler').selectOption('dpmpp_sde');
   await expect(page.getByRole('button', { name: 'Save image settings' })).toBeDisabled();
   await page.getByLabel('ComfyUI sampler').selectOption('dpmpp_2m');
