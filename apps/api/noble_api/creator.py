@@ -48,6 +48,11 @@ class CreatorBlueprint(BaseModel):
     visual_start: Literal["text", "cover_background", "cover_background_cast"] = "text"
 
 
+class StoryFreedomUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    freedom_mode: Literal["guided", "flexible", "strict"]
+
+
 class VisualDNA(BaseModel):
     """Canonical identity metadata, never mixed with narrator personality."""
     model_config = ConfigDict(extra="forbid")
@@ -141,6 +146,27 @@ class CreatorService:
                     **json.loads(row["config_json"]),
                     "updated_at":row["updated_at"]}
         return {"story_id":story_id,**CreatorBlueprint().model_dump(),"updated_at":None}
+
+    def set_freedom(self, story_id: str, mode: Literal["guided", "flexible", "strict"]) -> dict:
+        """Atomic story-only freedom patch; never overwrites an editor's draft."""
+        self.get(story_id)
+        now = time.time()
+        with self.store._conn() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute(
+                "SELECT config_json FROM creator_blueprints WHERE story_id=?",
+                (story_id,)
+            ).fetchone()
+            current = (CreatorBlueprint.model_validate_json(row["config_json"])
+                       if row else CreatorBlueprint())
+            updated = current.model_copy(update={"freedom_mode": mode})
+            db.execute(
+                "INSERT INTO creator_blueprints(story_id,config_json,updated_at) "
+                "VALUES(?,?,?) ON CONFLICT(story_id) DO UPDATE SET "
+                "config_json=excluded.config_json,updated_at=excluded.updated_at",
+                (story_id, updated.model_dump_json(), now)
+            )
+        return self.get(story_id)
 
     def save(self, story_id: str, body: CreatorBlueprint) -> dict:
         prior = self.get(story_id)
@@ -398,6 +424,13 @@ def mount_creator_routes(app, creator: CreatorService):
             return creator.save(str(story_id),body)
         except ValueError as exc:
             raise HTTPException(422,str(exc)) from exc
+
+    @app.patch("/api/v1/stories/{story_id}/creator/freedom")
+    def patch_story_freedom(story_id: uuid.UUID, body: StoryFreedomUpdate):
+        try:
+            return creator.set_freedom(str(story_id), body.freedom_mode)
+        except ValueError as exc:
+            raise HTTPException(404, str(exc)) from exc
 
     @app.get("/api/v1/stories/{story_id}/creator/characters")
     def list_creator_characters(story_id: uuid.UUID):
