@@ -241,49 +241,49 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       </div>
       <div className="creator-ai-review-grid">
         <div>
-          <h4><Users size={15}/> Characters ({draft.characters.length})</h4>
+          <h4><Users size={15}/> {t('wizard.characterCount', { amount: draft.characters.length })}</h4>
           {draft.characters.map((npc, index) => <details key={index}
             className="creator-ai-editable-item">
-            <summary>{npc.name || 'Character ' + (index + 1)} · Edit profile</summary>
+            <summary>{npc.name || t('wizard.characterNumber', { number: index + 1 })} · {t('wizard.editProfile')}</summary>
             <label>{t('wizard.name')}
-              <input aria-label={'NPC name ' + (index + 1)}
+              <input aria-label={t('wizard.npcNameIndexed', { number: index + 1 })}
                 maxLength={80} value={npc.name}
                 onChange={e => editCharacter(index, 'name', e.target.value)}/>
             </label>
             <label>{t('wizard.description')}
-              <textarea aria-label={'NPC description ' + (index + 1)}
+              <textarea aria-label={t('wizard.npcDescriptionIndexed', { number: index + 1 })}
                 rows={3} maxLength={3000} value={npc.description}
                 onChange={e => editCharacter(index, 'description', e.target.value)}/>
             </label>
             <label>{t('wizard.personality')}
-              <textarea aria-label={'NPC personality ' + (index + 1)}
+              <textarea aria-label={t('wizard.npcPersonalityIndexed', { number: index + 1 })}
                 rows={2} maxLength={1500} value={npc.personality}
                 onChange={e => editCharacter(index, 'personality', e.target.value)}/>
             </label>
             <label>{t('wizard.dialogue')}
-              <textarea aria-label={'NPC dialogue ' + (index + 1)}
+              <textarea aria-label={t('wizard.npcDialogueIndexed', { number: index + 1 })}
                 rows={3} maxLength={3000} value={npc.dialogue_examples}
                 onChange={e => editCharacter(index, 'dialogue_examples', e.target.value)}/>
             </label>
           </details>)}
         </div>
         <div>
-          <h4>Lorebook ({draft.lore.length})</h4>
+          <h4>{t('wizard.loreCount', { amount: draft.lore.length })}</h4>
           {draft.lore.map((entry, index) => <details key={index}
             className="creator-ai-editable-item">
-            <summary>{entry.title || 'Entry ' + (index + 1)} · Edit lore</summary>
+            <summary>{entry.title || t('wizard.entryNumber', { number: index + 1 })} · {t('wizard.editLore')}</summary>
             <label>{t('wizard.entryTitle')}
-              <input aria-label={'Lorebook title ' + (index + 1)}
+              <input aria-label={t('wizard.loreTitleIndexed', { number: index + 1 })}
                 maxLength={100} value={entry.title}
                 onChange={e => editLore(index, 'title', e.target.value)}/>
             </label>
             <label>{t('wizard.entryContent')}
-              <textarea aria-label={'Lorebook content ' + (index + 1)}
+              <textarea aria-label={t('wizard.loreContentIndexed', { number: index + 1 })}
                 rows={4} maxLength={3500} value={entry.content}
                 onChange={e => editLore(index, 'content', e.target.value)}/>
             </label>
             <label>{t('wizard.triggers')}
-              <input aria-label={'Lorebook triggers ' + (index + 1)}
+              <input aria-label={t('wizard.loreTriggersIndexed', { number: index + 1 })}
                 value={loreKeysText[index] ?? entry.keys.join(', ')}
                 onChange={e => {
                   const value = e.target.value;
@@ -297,8 +297,8 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <h4>{t('wizard.threeOpenings')}</h4>
       <div className="creator-ai-openings">
         {draft.openings.map((opening, index) => <label key={index}>
-          Opening {index + 1}
-          <textarea aria-label={'Generated opening ' + (index + 1)}
+          {t('wizard.openingIndexed', { number: index + 1 })}
+          <textarea aria-label={t('wizard.generatedOpeningIndexed', { number: index + 1 })}
             rows={4} maxLength={3000} value={opening}
             onChange={e => editOpening(index, e.target.value)}/>
         </label>)}
@@ -326,29 +326,28 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           onClick={() => void regenerate()}>
           {busy === 'regenerate' ? <LoaderCircle size={16} className="rotating"/> :
             <Sparkles size={16}/>}
-          {busy === 'regenerate' ? 'Regenerating...' : 'Regenerate section'}
+          {t(busy === 'regenerate' ? 'wizard.regenerating' : 'wizard.regenerateSection')}
         </button>
         {previousDraft && <div className="creator-ai-undo">
-          <p role="status">Regeneration complete ({lastRegenerated}).
-            You can restore the previous version of the entire draft.</p>
+          <p role="status">{t('wizard.regenerationComplete', { section: lastRegenerated })}</p>
           <button type="button" className="secondary-button"
             disabled={!!busy} onClick={undoRegeneration}>
             {t('wizard.restore')}
           </button>
         </div>}
         {generationBudget && <small aria-label={t('uiField.assistantStoryWizard.estimatedGenerationBudget')}>
-          Context: {generationBudget.context_characters.toLocaleString()} characters, approximately {generationBudget.input_tokens_estimate.toLocaleString()} input tokens, and up to {generationBudget.max_output_tokens.toLocaleString()} output tokens. These are estimates, not provider-measured usage.
+          {t('wizard.generationBudget', { characters: generationBudget.context_characters.toLocaleString(),
+            input: generationBudget.input_tokens_estimate.toLocaleString(),
+            output: generationBudget.max_output_tokens.toLocaleString() })}
         </small>}
       </div>
-      <p className="creator-ai-private-note">These data remain in your local library.
-        You can edit every field later in Creator Studio.
-        No cover, image, or speech asset has been generated.</p>
+      <p className="creator-ai-private-note">{t('wizard.privateDataHint')}</p>
       <button className="primary-button" type="button" disabled={!!busy ||
         draft.title.trim().length < 2 || draft.synopsis.trim().length < 25}
         onClick={() => void install()}>
         {busy === 'install' ? <LoaderCircle size={16} className="rotating"/> :
           <Check size={16}/>}
-        {busy === 'install' ? 'Saving world...' : 'Create story from this draft'}
+        {t(busy === 'install' ? 'wizard.savingWorld' : 'wizard.createFromDraft')}
       </button>
     </div>}
   </section>;
