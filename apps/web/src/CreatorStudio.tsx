@@ -9,6 +9,7 @@ import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
 import { AssistantStoryWizard } from './AssistantStoryWizard';
 import { CreatorVisualPreparation } from './CreatorVisualPreparation';
+import { CreatorArcBeatsEditor } from './CreatorArcBeatsEditor';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
   CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft,
@@ -20,7 +21,7 @@ type Section = 'story' | 'cast' | 'lorebook' | 'world' | 'openings' | 'media';
 
 const blankBlueprint: CreatorBlueprintDraft = {
   synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
-  opening_scenarios: [], genre: '', tags: [], language: 'es-419',
+  opening_scenarios: [], arc_beats: [], genre: '', tags: [], language: 'es-419',
   freedom_mode: 'flexible', visual_start: 'text',
 };
 const blankCharacter: CreatorCharacterDraft = {
@@ -144,9 +145,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       .then(([data, cast, media, lorebook, visuals, draftResult]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
-          opening_scenarios, genre, tags, language, freedom_mode, visual_start } = data;
+          opening_scenarios, arc_beats, genre, tags, language, freedom_mode, visual_start } = data;
         setBlueprint({ synopsis, player_plot, ai_plot, guidelines, reminder,
-          opening_scenarios, genre, tags, language, freedom_mode, visual_start });
+          opening_scenarios, arc_beats, genre, tags, language, freedom_mode, visual_start });
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
         setVisualCharacters(visuals.characters);
@@ -189,6 +190,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         synopsis: saved.synopsis, player_plot: saved.player_plot,
         ai_plot: saved.ai_plot, guidelines: saved.guidelines,
         reminder: saved.reminder, opening_scenarios: saved.opening_scenarios,
+        arc_beats: saved.arc_beats,
         genre: saved.genre, tags: saved.tags, language: saved.language,
         freedom_mode: saved.freedom_mode, visual_start: saved.visual_start,
       });
@@ -1183,6 +1185,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onChange={e => update('guidelines', e.target.value)}
                   placeholder={t('uiField.creatorStudio.stylePaceNPCAgencyAndContinuityDetails')}/>
               </label>
+              <CreatorArcBeatsEditor beats={blueprint.arc_beats}
+                onChange={beats => update('arc_beats', beats)} disabled={working}/>
               <label>{t('creator.reminder')}
                 <textarea rows={3} maxLength={1200} aria-label={t('uiField.creatorStudio.persistentReminder')}
                   value={blueprint.reminder} onChange={e => update('reminder', e.target.value)}

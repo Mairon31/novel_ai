@@ -379,9 +379,14 @@ export type ScenePlan = {
 export type ScenePlanInput = Pick<ScenePlan, 'shot' | 'lighting' | 'mood' | 'direction'
   | 'visible_character_ids' | 'reference_character_id'>;
 
+export type ArcBeat = {
+  id: string; title: string; aim: string;
+  status: 'planned' | 'active' | 'resolved';
+};
 export type CreatorBlueprint = {
   story_id: string; synopsis: string; player_plot: string; ai_plot: string;
   guidelines: string; reminder: string; opening_scenarios: string[];
+  arc_beats: ArcBeat[];
   genre: string; tags: string[]; language: string;
   freedom_mode: 'guided' | 'flexible' | 'strict';
   visual_start: 'text' | 'cover_background' | 'cover_background_cast';

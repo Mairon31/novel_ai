@@ -20,6 +20,15 @@ from typing import Literal
 from .narrative import NarrativeService
 
 
+class ArcBeat(BaseModel):
+    """An author-reviewed narrative milestone, not an AI-generated fact."""
+    model_config = ConfigDict(extra="forbid")
+    id: uuid.UUID
+    title: str = Field(min_length=3, max_length=140)
+    aim: str = Field(min_length=8, max_length=500)
+    status: Literal["planned", "active", "resolved"] = "planned"
+
+
 class CreatorBlueprint(BaseModel):
     model_config = ConfigDict(extra="forbid")
     synopsis: str = Field(default="", max_length=250)
@@ -28,6 +37,7 @@ class CreatorBlueprint(BaseModel):
     guidelines: str = Field(default="", max_length=4000)
     reminder: str = Field(default="", max_length=1200)
     opening_scenarios: list[str] = Field(default_factory=list, max_length=6)
+    arc_beats: list[ArcBeat] = Field(default_factory=list, max_length=8)
     genre: str = Field(default="", max_length=80)
     tags: list[str] = Field(default_factory=list, max_length=12)
     language: str = "es-419"
@@ -133,7 +143,17 @@ class CreatorService:
         return {"story_id":story_id,**CreatorBlueprint().model_dump(),"updated_at":None}
 
     def save(self, story_id: str, body: CreatorBlueprint) -> dict:
-        self.get(story_id)
+        prior = self.get(story_id)
+        # Legacy author clients may save only synopsis/guidelines; preserve
+        # reviewed arc milestones instead of silently resetting them.
+        if "arc_beats" not in body.model_fields_set:
+            body = body.model_copy(update={
+                "arc_beats": [ArcBeat.model_validate(item)
+                              for item in prior["arc_beats"]],
+            })
+        ids = [str(beat.id) for beat in body.arc_beats]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Narrative arc milestones cannot share an ID")
         if body.language not in ("es-419","en","ja","ko","pt-BR","fr"):
             raise ValueError("Unsupported story language")
         scenarios = [text.strip() for text in body.opening_scenarios]
@@ -219,6 +239,20 @@ class CreatorService:
         if data["guidelines"].strip():
             chunks.append("Narration guidelines (style, pace, narrator boundaries):\n"+
                           replace(data["guidelines"][:4000]))
+        beats = [item for item in data["arc_beats"] if item["status"] != "resolved"]
+        if beats:
+            lines = [
+                "Narrative director arc beats (author-reviewed, private planning):",
+                "Treat these as unresolved narrative goals, not automatic outcomes. "
+                "NPCs may oppose or delay progress. Do not control the protagonist "
+                "or mark milestones resolved without the creator's explicit review.",
+            ]
+            for beat in beats:
+                lines.append(
+                    f"- {beat['status'].upper()}: {replace(beat['title'])}. "
+                    f"Intended development: {replace(beat['aim'])}"
+                )
+            chunks.append("\n".join(lines))
         if npc:
             lines=[]
             for character in npc[:30]:

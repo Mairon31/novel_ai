@@ -24,7 +24,8 @@ def _label_system(part: str, index: int) -> str:
     if index == 0:
         return "Instructions, premise, and canon"
     if part.startswith(("Private story context", "Narration guidelines",
-                        "Narrator-controlled NPCs", "Persistent creator reminder")):
+                        "Narrator-controlled NPCs", "Persistent creator reminder",
+                        "Narrative director arc beats")):
         return "Creator and characters"
     if part.startswith("Lorebook activated"):
         return "Lorebook"
