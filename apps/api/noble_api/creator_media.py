@@ -198,6 +198,18 @@ class CreatorMediaService:
                            "generation_json TEXT NOT NULL DEFAULT '{}'")
             db.execute("""CREATE INDEX IF NOT EXISTS creator_sprite_variant
                 ON creator_media_assets(story_id,kind,character_id,expression,pose)""")
+            # A gallery illustration can be explicitly approved as a cover once.
+            # The gallery source is never mutated, and deletion of the cover
+            # clears its link rather than leaving an unusable promotion.
+            db.execute("""CREATE TABLE IF NOT EXISTS creator_gallery_cover_promotions(
+                story_id TEXT NOT NULL,
+                gallery_asset_id TEXT NOT NULL,
+                cover_asset_id TEXT NOT NULL UNIQUE
+                    REFERENCES creator_media_assets(id) ON DELETE CASCADE,
+                created_at REAL NOT NULL,
+                PRIMARY KEY(story_id,gallery_asset_id),
+                FOREIGN KEY(story_id) REFERENCES stories(id) ON DELETE CASCADE
+            )""")
 
     def _require_story(self, story_id: str) -> None:
         if not self.narrative.get_story(story_id):
@@ -411,6 +423,101 @@ class CreatorMediaService:
                        (form.label.strip(), form.caption.strip(), expression, pose,
                         story_id, asset_id))
         return next(row for row in self.list(story_id) if row["id"] == asset_id)
+
+    def approve_gallery_as_cover(
+            self, story_id: str, gallery_asset_id: str, label: str,
+            caption: str) -> dict:
+        """Review and promote a validated story-owned gallery image to a cover.
+
+        No inference, silent overwrites, or gallery deletion. Promotion has
+        a durable one-to-one link so a repeated approval reselects the same
+        valid cover. The source must match the SHA-256 recorded by VisualState.
+        """
+        self._require_story(story_id)
+        if not 1 <= len(label.strip()) <= 100 or not 3 <= len(caption.strip()) <= 220:
+            raise ValueError("Cover name or description has an invalid length")
+        if self.narrative.visual is None:
+            raise ValueError("Visual gallery is unavailable")
+        original_bytes, original_sha = self.narrative.visual.reference_bytes(
+            story_id, gallery_asset_id)
+        with self.store._conn() as db:
+            source = db.execute(
+                "SELECT origin,checkpoint,seed FROM visual_assets "
+                "WHERE story_id=? AND id=?", (story_id, gallery_asset_id)
+            ).fetchone()
+            previous = db.execute(
+                "SELECT cover_asset_id FROM creator_gallery_cover_promotions "
+                "WHERE story_id=? AND gallery_asset_id=?",
+                (story_id, gallery_asset_id)
+            ).fetchone()
+        if source is None:
+            raise ValueError("Illustration not found in this story")
+        if previous:
+            old_id = previous["cover_asset_id"]
+            try:
+                old = self.get(story_id, old_id)
+                stored = self._path(story_id, old_id, "cover")
+                if old["kind"] == "cover" and stored.is_file() and not stored.is_symlink():
+                    story = self.set_cover(story_id, old_id)
+                    return {"story": story, "asset": next(
+                        item for item in self.list(story_id) if item["id"] == old_id),
+                        "reused": True}
+            except ValueError:
+                pass
+            # A missing cover may be recreated after its old link is dropped.
+            with self.store._conn() as db:
+                db.execute(
+                    "DELETE FROM creator_gallery_cover_promotions "
+                    "WHERE story_id=? AND gallery_asset_id=?",
+                    (story_id, gallery_asset_id)
+                )
+        imported = self.add(story_id, "cover", label, caption, original_bytes)
+        imported_id = imported["id"]
+        try:
+            # Only a human-approved source receives the 'ai_reviewed' marker.
+            origin = "ai_reviewed" if source["origin"] == "comfyui" else "manual"
+            provenance = json.dumps({
+                "workflow_version": "gallery-cover-promotion-v1",
+                "source_gallery_asset_id": gallery_asset_id,
+                "source_sha256": original_sha,
+                "checkpoint": source["checkpoint"],
+                "seed": source["seed"],
+            }, ensure_ascii=False, sort_keys=True)
+            with self.store._conn() as db:
+                db.execute(
+                    "UPDATE creator_media_assets SET source=?,generation_json=? "
+                    "WHERE story_id=? AND id=?",
+                    (origin, provenance, story_id, imported_id)
+                )
+                db.execute(
+                    "INSERT INTO creator_gallery_cover_promotions "
+                    "(story_id,gallery_asset_id,cover_asset_id,created_at) "
+                    "VALUES(?,?,?,?)",
+                    (story_id, gallery_asset_id, imported_id, time.time())
+                )
+            story = self.set_cover(story_id, imported_id)
+        except sqlite3.IntegrityError:
+            # Concurrent second approval: remove only our new cover, reuse
+            # the winning promotion without altering the existing selection.
+            self.delete(story_id, imported_id)
+            with self.store._conn() as db:
+                winner = db.execute(
+                    "SELECT cover_asset_id FROM creator_gallery_cover_promotions "
+                    "WHERE story_id=? AND gallery_asset_id=?",
+                    (story_id, gallery_asset_id)
+                ).fetchone()
+            if winner is None:
+                raise
+            story = self.set_cover(story_id, winner["cover_asset_id"])
+            return {"story": story, "asset": next(
+                item for item in self.list(story_id)
+                if item["id"] == winner["cover_asset_id"]), "reused": True}
+        except Exception:
+            self.delete(story_id, imported_id)
+            raise
+        return {"story": story, "asset": next(
+            item for item in self.list(story_id) if item["id"] == imported_id),
+            "reused": False}
 
     def set_cover(self, story_id: str, asset_id: str | None) -> dict:
         self._require_story(story_id)
@@ -664,6 +771,13 @@ class CoverSelection(BaseModel):
     asset_id: uuid.UUID | None = None
 
 
+class GalleryCoverApproval(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    gallery_asset_id: uuid.UUID
+    label: str = Field(min_length=1, max_length=100)
+    caption: str = Field(min_length=3, max_length=220)
+
+
 def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
     @app.get("/api/v1/stories/{story_id}/creator/assets")
     def get_assets(story_id: uuid.UUID):
@@ -708,6 +822,14 @@ def mount_creator_media_routes(app, media: CreatorMediaService) -> None:
             assets = media.import_expression_sheet(
                 str(story_id), str(character_id), data, caption, pose, layout)
             return {"assets": assets, "count": len(assets)}
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+
+    @app.post("/api/v1/stories/{story_id}/creator/cover/from-gallery", status_code=201)
+    def approve_gallery_cover(story_id: uuid.UUID, body: GalleryCoverApproval):
+        try:
+            return media.approve_gallery_as_cover(
+                str(story_id), str(body.gallery_asset_id), body.label, body.caption)
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
