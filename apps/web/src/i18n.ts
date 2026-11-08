@@ -69,4 +69,12 @@ export async function changeUiLanguage(input: string): Promise<void> {
     window.localStorage.setItem(STORAGE_KEY, language);
   } catch { /* Language still applies for this session. */ }
 }
+/** Format a UI metric in the currently selected interface language. */
+export function formatUiNumber(value: number, fractionDigits = 0): string {
+  return new Intl.NumberFormat(resolveUiLanguage(i18n.language), {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
+}
+
 export default i18n;

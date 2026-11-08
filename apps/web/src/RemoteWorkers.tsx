@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { formatUiNumber } from './i18n';
 import { useEffect, useState } from 'react';
 import {
   CheckCircle2, Cloud, Cpu, Link2, LoaderCircle, PlugZap, Plus, RefreshCw,
@@ -158,8 +159,8 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       {benchmark && <div className="noble-worker-benchmark" role="status">
         <strong>{t(benchmark.success ? 'workers.generationCompleted' : 'workers.testFailed')}</strong>
         <span>{benchmark.ttft_ms == null ? t('workers.noData') :
-          t('workers.ttftDisplay', { duration: benchmark.ttft_ms.toFixed(0) })}</span>
-        <span>{t('workers.durationDisplay', { duration: benchmark.duration_ms.toFixed(0) })}</span>
+          t('workers.ttftDisplay', { duration: formatUiNumber(benchmark.ttft_ms) })}</span>
+        <span>{t('workers.durationDisplay', { duration: formatUiNumber(benchmark.duration_ms) })}</span>
         <span>{t('workers.outputChars', { count: benchmark.output_characters })}</span>
         <small>{t('workers.benchmarkHint')}</small>
       </div>}
@@ -169,13 +170,13 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <h4>{t('workers.status')}</h4>
       <div className="noble-worker-health-stats">
         <div><span>{t('workers.connection')}</span><strong>{probe.latency_ms === undefined
-          ? t('common.unavailable') : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
+          ? t('common.unavailable') : formatUiNumber(probe.latency_ms) + ' ms'}</strong></div>
         <div><span>{t('workers.engine')}</span><strong>{probe.health?.engine_status === 'ready'
           ? t('workers.statusAvailable') : probe.health?.engine_status === 'unavailable'
             ? t('workers.noResponse') : t('workers.noTelemetry')}</strong></div>
         <div><span>{t('workers.ttfb')}</span><strong>
           {probe.health?.last_ttft_ms == null
-            ? t('workers.noData') : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
+            ? t('workers.noData') : formatUiNumber(probe.health.last_ttft_ms) + ' ms'}
         </strong></div>
         <div><span>{t('workers.completed')}</span><strong>
           {probe.health ? probe.health.completed_requests + ' / ' +

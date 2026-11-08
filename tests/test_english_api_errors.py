@@ -39,5 +39,27 @@ class EnglishApiErrorsTests(unittest.TestCase):
         self.assertEqual(errors, [], "\n".join(errors))
 
 
+    def test_api_response_error_fields_are_english(self):
+        """Catch Spanish diagnostic copy returned as JSON, not only raised errors."""
+        diagnostic_fields = {"error", "message", "detail", "reason"}
+        errors = []
+        for source in MODULES.glob("*.py"):
+            module = ast.parse(source.read_text(encoding="utf-8"))
+            for node in ast.walk(module):
+                if not isinstance(node, ast.Dict):
+                    continue
+                for key, value in zip(node.keys, node.values):
+                    if (isinstance(key, ast.Constant)
+                            and key.value in diagnostic_fields):
+                        for fragment in ast.walk(value):
+                            if (isinstance(fragment, ast.Constant)
+                                    and isinstance(fragment.value, str)
+                                    and SPANISH_ERROR.search(fragment.value)):
+                                errors.append(
+                                    f"{source.name}:{fragment.lineno}: {fragment.value}"
+                                )
+        self.assertEqual(errors, [], "\n".join(errors))
+
+
 if __name__ == "__main__":
     unittest.main()

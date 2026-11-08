@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { formatUiNumber } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Check, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
@@ -6,7 +7,7 @@ import type { Settings, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, P
 
 /** Piper preferences, downloads and samples never initialize image generation. */
 export function VoiceSettingsPanel() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [setup, setSetup] = useState<Settings | null>(null);
   const [voices, setVoices] = useState<SpeechVoices | null>(null);
   const [voicePreferences, setVoicePreferences] = useState<SpeechPreferences | null>(null);
@@ -16,12 +17,19 @@ export function VoiceSettingsPanel() {
   const [voiceJobs, setVoiceJobs] = useState<PiperVoiceJob[]>([]);
   const [voiceAction, setVoiceAction] = useState<string | null>(null);
   const [previewText, setPreviewText] = useState(t('voiceUi.sampleDefault'));
+  const previousSample = useRef(t('voiceUi.sampleDefault'));
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  // Translate the default TTS example on language change, retaining custom text.
+  useEffect(() => {
+    const nextSample = t('voiceUi.sampleDefault');
+    setPreviewText(current => current === previousSample.current ? nextSample : current);
+    previousSample.current = nextSample;
+  }, [i18n.language, t]);
   const synthesisDirty = synthesisConfig && savedSynthesis &&
     (synthesisConfig.length_scale !== savedSynthesis.length_scale ||
      synthesisConfig.noise_scale !== savedSynthesis.noise_scale ||
@@ -177,8 +185,8 @@ export function VoiceSettingsPanel() {
             </div>
             {job && status !== 'installed' && <div className="noble-voice-progress">
               <progress aria-label={t('voiceUi.progress', { name: voice.name })} value={percent} max={100}/>
-              <small>{percent}% · {(job.received_bytes / 1024 / 1024).toFixed(1)} /
-                {(job.total_bytes / 1024 / 1024).toFixed(1)} MiB
+              <small>{percent}% · {formatUiNumber(job.received_bytes / 1024 / 1024, 1)} /
+                {formatUiNumber(job.total_bytes / 1024 / 1024, 1)} MiB
                 {job.error ? ' · ' + job.error : ''}</small>
             </div>}
             <div className="settings-buttons">

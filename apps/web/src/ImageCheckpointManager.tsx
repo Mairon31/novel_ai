@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { formatUiNumber } from './i18n';
 import { useEffect, useState } from 'react';
 import { Check, Download, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
@@ -80,7 +81,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
     finally { setChanging(null); }
   }
 
-  function formatted(bytes: number) { return (bytes / (1024 * 1024)).toFixed(1) + ' MiB'; }
+  function formatted(bytes: number) { return formatUiNumber(bytes / (1024 * 1024), 1) + ' MiB'; }
   const current = catalog?.repo_id;
 
   return <div className="workspace-panel noble-checkpoint-installer">

@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { useEffect, useState } from 'react';
+import { formatUiNumber } from './i18n';
+import { useEffect, useRef, useState } from 'react';
 import { BookOpen, CheckCircle2, Cpu, LoaderCircle, PlugZap, RefreshCw, Save } from 'lucide-react';
 import { api } from './api';
 import type { NarrativeConfig, ProviderModels, ContextPreview, Story } from './types';
@@ -24,9 +25,17 @@ export function NarrativeSettings() {
   const [inspectStory, setInspectStory] = useState('');
   const [inspectMode, setInspectMode] = useState<'do'|'say'|'story'|'continue'>('do');
   const [inspectText, setInspectText] = useState(t('narrativeUi.inspectSample'));
+  const previousSample = useRef(t('narrativeUi.inspectSample'));
   const [inspecting, setInspecting] = useState(false);
   const [inspectorData, setInspectorData] = useState<ContextPreview | null>(null);
   const [inspectorError, setInspectorError] = useState('');
+
+  // Keep untouched example copy in the chosen UI language without replacing edits.
+  useEffect(() => {
+    const nextSample = t('narrativeUi.inspectSample');
+    setInspectText(current => current === previousSample.current ? nextSample : current);
+    previousSample.current = nextSample;
+  }, [i18n.language, t]);
 
   useEffect(() => {
     let alive = true;
@@ -90,7 +99,7 @@ export function NarrativeSettings() {
       await api.saveNarrativeConfig(config);
       const result = await api.prepareNarrator();
       setSaved(t('narrative.modelPrepared', {
-        model: result.model, seconds: (result.duration_ms / 1000).toFixed(1),
+        model: result.model, seconds: formatUiNumber(result.duration_ms / 1000, 1),
       }));
     } catch (exc) { setError((exc as Error).message); }
     finally {
@@ -132,11 +141,11 @@ export function NarrativeSettings() {
           </datalist>
           {status?.online && <small>{t('narrative.modelsFound', { count: status.models.length })}</small>}
         </label>
-        <label>{t('narrative.temperature')} <span className="field-value">{config.temperature.toFixed(2)}</span>
+        <label>{t('narrative.temperature')} <span className="field-value">{formatUiNumber(config.temperature, 2)}</span>
           <input type="range" min={0} max={2} step={0.05} value={config.temperature}
             onChange={e => update('temperature', Number(e.target.value))}/>
         </label>
-        <label>{t('narrative.topP')} <span className="field-value">{config.top_p.toFixed(2)}</span>
+        <label>{t('narrative.topP')} <span className="field-value">{formatUiNumber(config.top_p, 2)}</span>
           <input type="range" min={0.05} max={1} step={0.05} value={config.top_p}
             onChange={e => update('top_p', Number(e.target.value))}/>
         </label>
@@ -145,7 +154,7 @@ export function NarrativeSettings() {
             disabled={config.provider === 'koboldcpp' || config.provider === 'worker'}
             onChange={e => update('top_k', Number(e.target.value))}/>
         </label>
-        <label>{t('narrative.repetition')} <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
+        <label>{t('narrative.repetition')} <span className="field-value">{formatUiNumber(config.repetition_penalty, 2)}</span>
           <input type="range" min={0.5} max={2} step={0.05} value={config.repetition_penalty}
             disabled={config.provider === 'koboldcpp'}
             onChange={e => update('repetition_penalty', Number(e.target.value))}/>

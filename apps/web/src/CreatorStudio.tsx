@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatUiNumber } from './i18n';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
   Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X, BookKey, Globe2,
@@ -800,7 +801,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         <option value="STANDARD (medium strength)">{t('creator.ipStandard')}</option>
                       </select>
                     </label>
-                    <label>{t('creator.ipAdapterStrength', { value: draftAdapterWeight.toFixed(2) })}
+                    <label>{t('creator.ipAdapterStrength', { value: formatUiNumber(draftAdapterWeight, 2) })}
                       <input aria-label={t('uiField.creatorStudio.spriteIPAdapterStrength')}
                         type="number" min={0.1} max={1.5} step={0.05}
                         value={draftAdapterWeight}

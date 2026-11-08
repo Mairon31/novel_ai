@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import i18n from './i18n';
+import i18n, { formatUiNumber } from './i18n';
 import { InterfaceLanguageSelector } from './InterfaceLanguageSelector';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2, Compass,
@@ -578,10 +578,10 @@ export default function App() {
                 <div className="hub-hardware-numbers">
                   <div><span>{t('model.gpuDetected')}</span><strong>{hardware?.gpus[0]?.name || t('app.notDetected')}</strong></div>
                   <div><span>{t('model.freeVRAM')}</span><strong>
-                    {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : t('common.unavailable')}
+                    {hardware?.gpus[0] ? formatUiNumber(hardware.gpus[0].vram_free_mb / 1024, 1)+' GiB' : t('common.unavailable')}
                   </strong></div>
                   <div><span>{t('model.availableRAM')}</span><strong>
-                    {hardware ? (hardware.ram_available_mb / 1024).toFixed(1)+' GiB' : '—'}
+                    {hardware ? formatUiNumber(hardware.ram_available_mb / 1024, 1)+' GiB' : '—'}
                   </strong></div>
                   <div><span>{t('model.freeDisk')}</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
                 </div>
@@ -770,7 +770,7 @@ export default function App() {
               <div><span>{t('model.ggufArchitecture')}</span><strong>{detail.hardware_fit.architecture}</strong></div>}
             {detail.hardware_fit?.parameter_count != null &&
               <div><span>{t('model.parameters')}</span>
-                <strong>{(detail.hardware_fit.parameter_count/1e9).toFixed(2)} B</strong></div>}
+                <strong>{formatUiNumber(detail.hardware_fit.parameter_count / 1e9, 2)} B</strong></div>}
             {detail.library && <div><span>{t('model.library')}</span><strong>{detail.library}</strong></div>}
             {detail.base_model && <div><span>{t('model.baseModel')}</span><strong>
               {Array.isArray(detail.base_model) ? detail.base_model.join(', ') : detail.base_model}
