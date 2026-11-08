@@ -78,7 +78,7 @@ export function StoryDetail({
           <a className="secondary-button" role="link"
             href={'/api/v1/stories/' + encodeURIComponent(story.id) + '/archive.noble.zip'}
             download="noble-family.noble.zip" aria-label={t("reader.downloadBackup")}>
-            <Download size={16}/> Back up story and branches
+            <Download size={16}/> {t('detail.storyBackup')}
           </a>
         </div>
       </div>
@@ -88,8 +88,8 @@ export function StoryDetail({
       <div className="noble-story-detail-overview">
         <div><UserRound size={18}/><span>Protagonist</span><strong>{story.protagonist_name || 'Not assigned'}</strong></div>
         <div><BookOpen size={18}/><span>{t("reader.storyTurns")}</span><strong>{turns.length}</strong></div>
-        <div><CalendarDays size={18}/><span>Created</span><strong>{date(story.created_at, i18n.language)}</strong></div>
-        <div><Clock3 size={18}/><span>Updated</span><strong>{date(story.updated_at, i18n.language)}</strong></div>
+        <div><CalendarDays size={18}/><span>{t('detail.created')}</span><strong>{date(story.created_at, i18n.language)}</strong></div>
+        <div><Clock3 size={18}/><span>{t('detail.updated')}</span><strong>{date(story.updated_at, i18n.language)}</strong></div>
       </div>
       <article className="noble-story-detail-resume">
         <span className="overline">{last ? 'YOUR ADVENTURE' : 'THE WORLD'}</span>
@@ -97,16 +97,16 @@ export function StoryDetail({
         <p>{last ? last.assistant_text.slice(0, 700) :
           preview(publicPlot || story.premise, story.protagonist_name)}</p>
         {last && <button className="noble-story-detail-resume-link" onClick={onContinue}>
-          Continue from this scene <ArrowRight size={16}/>
+          {t('detail.resume')} <ArrowRight size={16}/>
         </button>}
       </article>
     </div>
     {branches.length > 1 && <section className="noble-detail-section"
       aria-label="Narrative branch tree">
       <div className="noble-detail-section-heading">
-        <span className="overline"><GitBranch size={16}/> CONNECTED STORIES</span>
-        <h2>Branch tree <small>{branches.length}</small></h2>
-        <p>Explore saved branches without modifying their turns or choices.</p>
+        <span className="overline"><GitBranch size={16}/> {t('detail.connectedStories')}</span>
+        <h2>{t('detail.branchTree')} <small>{branches.length}</small></h2>
+        <p>{t('detail.branchHint')}</p>
       </div>
       <div className="noble-route-list">
         {branches.map(branch => <button key={branch.id}
@@ -128,9 +128,9 @@ export function StoryDetail({
     {characters.length > 0 && <section className="noble-detail-section"
       aria-label="Story characters">
       <div className="noble-detail-section-heading">
-        <span className="overline"><Users size={15}/> CONOCE AL ELENCO</span>
-        <h2>Characters in this world <small>{characters.length}</small></h2>
-        <p>Meet the characters who may accompany you.</p>
+        <span className="overline"><Users size={15}/> {t('detail.cast')}</span>
+        <h2>{t('detail.characters')} <small>{characters.length}</small></h2>
+        <p>{t('detail.castHint')}</p>
       </div>
       <div className="noble-detail-cast-grid">
         {characters.map(character => {
@@ -138,7 +138,7 @@ export function StoryDetail({
             item.kind === 'foreground' && item.character_id === character.id);
           return <article className="noble-detail-cast-card" key={character.id}>
             <div className="noble-detail-portrait">
-              {portrait ? <img src={portrait.url} alt={'Retrato de ' + character.name}
+              {portrait ? <img src={portrait.url} alt={t('detail.portraitOf', { name: character.name })}
                 loading="lazy"/> : <UserRound size={49} aria-hidden="true"/>}
             </div>
             <div className="noble-detail-cast-copy">
@@ -152,10 +152,9 @@ export function StoryDetail({
     {openings.length > 0 && <section className="noble-detail-section"
       id="noble-story-openings" aria-label="Opening scenes">
       <div className="noble-detail-section-heading">
-        <span className="overline"><Feather size={15}/> YOUR FIRST DECISION</span>
-        <h2>Choose how the story begins</h2>
-        <p>Choose an opening scene. It will be saved as
-          the first turn of this story without generating additional text.</p>
+        <span className="overline"><Feather size={15}/> {t('detail.firstDecision')}</span>
+        <h2>{t('detail.chooseBeginning')}</h2>
+        <p>{t('detail.openingHint')}</p>
       </div>
       <div className="noble-detail-openings-grid">
         {openings.map((opening, index) => <article className="noble-detail-opening" key={index}>
@@ -166,7 +165,7 @@ export function StoryDetail({
           <p>{preview(opening, story.protagonist_name)}</p>
           <button className="secondary-button" disabled={openingBusy}
             onClick={() => onStartOpening(index)}>
-            <Play size={16}/> {openingBusy ? 'Saving opening...' : 'Start with this opening'}
+            <Play size={16}/> {openingBusy ? t('detail.savingOpening') : t('detail.startOpening')}
             <ArrowRight size={16}/>
           </button>
         </article>)}
@@ -175,8 +174,8 @@ export function StoryDetail({
     {media.some(asset => asset.kind !== 'cover') && <section className="noble-detail-section"
       aria-label="Story art gallery">
       <div className="noble-detail-section-heading">
-        <span className="overline"><ImageIcon size={15}/> WORLD GALLERY</span>
-        <h2>Scenes and illustrations</h2>
+        <span className="overline"><ImageIcon size={15}/> {t('detail.gallery')}</span>
+        <h2>{t('detail.scenes')}</h2>
       </div>
       <div className="noble-detail-media-strip">
         {media.filter(asset => asset.kind !== 'cover').slice(0, 8).map(asset => <figure key={asset.id}>

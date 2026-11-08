@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { Check, CircleStop, LoaderCircle, Play, RefreshCcw, Terminal } from 'lucide-react';
 import { api } from './api';
@@ -8,12 +9,12 @@ interface Props { onRuntimeStarted: (baseUrl: string) => void; }
 const DEFAULT: ComfyLaunchConfig = {
   install_dir: '', python_executable: '', port: 8188, memory_mode: 'auto',
 };
-const MODES: Array<{id: ComfyLaunchConfig['memory_mode']; label: string}> = [
-  {id: 'auto', label: 'Automatic (recommended)'},
-  {id: 'lowvram', label: 'VRAM baja'},
-  {id: 'normalvram', label: 'VRAM normal'},
-  {id: 'highvram', label: 'VRAM alta'},
-  {id: 'cpu', label: 'CPU only (slower)'},
+const MODES: Array<{id: ComfyLaunchConfig['memory_mode']; labelKey: string}> = [
+  {id: 'auto', labelKey: 'comfy.auto'},
+  {id: 'lowvram', labelKey: 'comfy.lowVram'},
+  {id: 'normalvram', labelKey: 'comfy.normalVram'},
+  {id: 'highvram', labelKey: 'comfy.highVram'},
+  {id: 'cpu', labelKey: 'comfy.cpu'},
 ];
 function sameSettings(a: ComfyLaunchConfig, b: ComfyLaunchConfig) {
   return a.install_dir === b.install_dir &&
@@ -22,6 +23,7 @@ function sameSettings(a: ComfyLaunchConfig, b: ComfyLaunchConfig) {
 }
 
 export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<ComfyLaunchConfig>(DEFAULT);
   const [saved, setSaved] = useState<ComfyLaunchConfig>(DEFAULT);
   const [status, setStatus] = useState<ComfyRuntimeStatus | null>(null);
@@ -96,63 +98,63 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
   }
 
   return <div className="workspace-panel comfy-runtime-panel">
-    <h3><Terminal size={18}/> Run ComfyUI from Noble AI</h3>
+    <h3><Terminal size={18}/> {t('comfy.title')}</h3>
     <p>Use an existing ComfyUI installation and its local Python environment. Noble AI manages only the processes it starts, without downloading code or launching ComfyUI just by opening Settings.</p>
     <div className="workspace-field-grid">
-      <label className="workspace-pref-field">ComfyUI directory
+      <label className="workspace-pref-field">{t('comfy.directory')}
         <input aria-label="Local ComfyUI directory" value={config.install_dir}
           placeholder="Absolute path to ComfyUI/main.py"
           disabled={busy || !!running}
           onChange={e => change('install_dir', e.target.value)}/>
       </label>
-      <label className="workspace-pref-field">Python executable (optional)
+      <label className="workspace-pref-field">{t('comfy.python')}
         <input aria-label="ComfyUI Python" value={config.python_executable}
           placeholder="Leave empty to detect .venv or Python"
           disabled={busy || !!running}
           onChange={e => change('python_executable', e.target.value)}/>
       </label>
-      <label className="workspace-pref-field">Local port
+      <label className="workspace-pref-field">{t('comfy.port')}
         <input type="number" aria-label="ComfyUI port"
           min={1024} max={65535} value={config.port} disabled={busy || !!running}
           onChange={e => change('port', Number(e.target.value))}/>
       </label>
-      <label className="workspace-pref-field">Memory profile
+      <label className="workspace-pref-field">{t('comfy.memory')}
         <select aria-label="ComfyUI VRAM profile" value={config.memory_mode}
           disabled={busy || !!running}
           onChange={e => change('memory_mode', e.target.value as ComfyLaunchConfig['memory_mode'])}>
-          {MODES.map(mode => <option key={mode.id} value={mode.id}>{mode.label}</option>)}
+          {MODES.map(mode => <option key={mode.id} value={mode.id}>{t(mode.labelKey)}</option>)}
         </select>
       </label>
     </div>
     <div className="settings-buttons">
       <button type="button" className="secondary-button" disabled={busy || !!running}
-        onClick={() => void verify()}><Check size={16}/> Validate installation</button>
+        onClick={() => void verify()}><Check size={16}/> {t('comfy.validate')}</button>
       <button type="button" className="secondary-button"
         disabled={busy || !!running || !dirty} onClick={() => void save()}>
-        Save ComfyUI launch
+        {t('comfy.saveLaunch')}
       </button>
       <button type="button" className="primary-button"
         disabled={busy || !!running || dirty || !saved.install_dir}
         onClick={() => void start()}>
         {busy ? <LoaderCircle size={16} className="rotating"/> : <Play size={16}/>}
-        Start ComfyUI
+        {t('comfy.start')}
       </button>
       <button type="button" className="secondary-button"
         disabled={busy || !running} onClick={() => void stop()}>
-        <CircleStop size={16}/> Stop ComfyUI
+        <CircleStop size={16}/> {t('comfy.stop')}
       </button>
       <button type="button" className="secondary-button" disabled={busy}
         onClick={() => void api.comfyRuntimeStatus().then(setStatus).catch(
           (e: Error) => setError(e.message))}>
-        <RefreshCcw size={16}/> Check process
+        <RefreshCcw size={16}/> {t('comfy.check')}
       </button>
       <button type="button" className="secondary-button" disabled={busy}
         onClick={() => void inspectLogs()}>
-        <Terminal size={16}/> View ComfyUI logs
+        <Terminal size={16}/> {t('comfy.logs')}
       </button>
     </div>
     <p role="status">
-      Status: <strong>{status?.status === 'ready' ? 'Ready' :
+      {t('comfy.status')} <strong>{status?.status === 'ready' ? 'Ready' :
         status?.status === 'starting' ? 'Starting' :
         status?.status === 'exited' ? 'Exited' : 'Stopped'}</strong>.
       {status?.owns_process ? ' Noble AI manages this process.' :
@@ -163,21 +165,18 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
       ComfyUI version: {status.diagnostics.comfyui_version || 'unknown'}.
       {' '}Devices: {status.diagnostics.devices.map(x => x.name).join(', ') || 'not reported'}.
     </p>}
-    {dirty && <p role="status">Unsaved changes. Save before starting ComfyUI.</p>}
+    {dirty && <p role="status">{t('comfy.unsaved')}</p>}
     {validation && <p role="status">
       Python: <code>{validation.python_executable}</code>.
       {' '}Noble AI models: <code>{validation.model_paths_config}</code>.
     </p>}
     {logs && <div className="noble-comfy-log">
-      <h4>Latest process logs</h4>
+      <h4>{t('comfy.latestLogs')}</h4>
       <pre>{logs.text || 'No logs yet.'}</pre>
-      {logs.truncated && <small>Showing the last 16 KiB of the log.</small>}
+      {logs.truncated && <small>{t('comfy.logsLimited')}</small>}
     </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}
     {message && <p role="status" className="narrative-saved">{message}</p>}
-    <p className="noble-inspector-hint">
-      Local startup on 127.0.0.1 without a shell, using Noble AI's model directory.
-      Use Find checkpoints once ComfyUI is ready.
-    </p>
+    <p className="noble-inspector-hint">{t('comfy.startHint')}</p>
   </div>;
 }

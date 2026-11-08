@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { BookOpen, Check, History, Plus, RotateCcw, Save, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { api } from './api';
@@ -16,6 +17,7 @@ function uniqueList(list: string[], item: string, enabled: boolean): string[] {
 }
 
 export function WorldStateEditor({ storyId, characters }: Props) {
+  const { t } = useTranslation();
   const [document, setDocument] = useState<WorldStateDocument | null>(null);
   const [draft, setDraft] = useState<WorldStateData | null>(null);
   const [inventoryInput, setInventoryInput] = useState('');
@@ -103,7 +105,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     finally { setBusy(false); }
   }
 
-  if (loading) return <div className="loading">Loading confirmed world state...</div>;
+  if (loading) return <div className="loading">{t('world.loading')}</div>;
   if (!draft || !document) return <div role="alert" className="narrative-error">
     {error || 'Could not load world state.'}
     <button className="secondary-button" onClick={() => void reload()}>
@@ -115,7 +117,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
 
   return <div className="creator-fields world-state-editor" aria-label="World state">
     <div className="creator-section-intro">
-      <h3>Confirmed world state</h3>
+      <h3>{t('world.title')}</h3>
       <p>Explicitly update location, present characters, inventory, and facts. The narrator cannot silently promote assumptions into canon. Each turn stores a snapshot for restoring branches.</p>
       <small>Saved revision: {document.revision} · Changes are validated before saving</small>
     </div>
@@ -124,25 +126,25 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     {notice && <p className="narrative-saved" role="status"><Check size={15}/>{notice}</p>}
 
     <section className="world-section">
-      <h4>Scene situation</h4>
+      <h4>{t('world.sceneSituation')}</h4>
       <div className="creator-double">
-        <label>Current location
+        <label>{t('world.location')}
           <input aria-label="World location" maxLength={200} value={draft.location}
             placeholder="Star Harbor..."
             onChange={event => patch({ location: event.target.value })}/>
         </label>
-        <label>Time of day
+        <label>{t('world.time')}
           <input aria-label="World time of day" maxLength={80} value={draft.time_of_day}
             placeholder="Anochecer, madrugada..."
             onChange={event => patch({ time_of_day: event.target.value })}/>
         </label>
       </div>
-      <label>Weather
+      <label>{t('world.weather')}
         <input aria-label="World weather" maxLength={100} value={draft.weather}
           placeholder="Lluvia, despejado, tormenta..."
           onChange={event => patch({ weather: event.target.value })}/>
       </label>
-      <label>Confirmed inventory (one item per line)
+      <label>{t('world.inventory')}
         <textarea aria-label="World inventory" rows={4} value={inventoryInput}
           onChange={event => { setInventoryInput(event.target.value); setNotice(''); }}
           placeholder="Silver key\nOld map"/>
@@ -150,9 +152,8 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     </section>
 
     <section className="world-section">
-      <h4><Users size={17}/> Present characters</h4>
-      <p>Only characters marked as present can activate facts they witnessed.
-        Private text for an absent character is not sent to the narrator.</p>
+      <h4><Users size={17}/> {t('world.presentCharacters')}</h4>
+      <p>{t('world.witnessHint')}</p>
       <div className="world-npc-grid">
         {characters.map(character => <label className="world-check" key={character.id}>
           <input type="checkbox" aria-label={'Present ' + character.name}
@@ -162,10 +163,10 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           <span>{character.name}</span>
         </label>)}
         {!characters.length && <p className="creator-hint">
-          Create characters under Characters before assigning witnesses.</p>}
+          {t('world.createCharacters')}</p>}
       </div>
       {!!characters.length && <div className="world-relations">
-        <h4>Confirmed relationships</h4>
+        <h4>{t('world.relationships')}</h4>
         {characters.map(character => <label key={character.id}>
           Relationship of {character.name} with the protagonist
           <input aria-label={'Relationship with ' + character.name} maxLength={160}
@@ -182,8 +183,8 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     </section>
 
     <section className="world-section">
-      <h4>Persistent flags</h4>
-      <p>Store decisions and observable conditions, for example <code>door_open</code>.</p>
+      <h4>{t('world.flags')}</h4>
+      <p>{t('world.flagsHint')} <code>door_open</code>.</p>
       {Object.entries(draft.flags).map(([name, value]) =>
         <div className="world-flag-row" key={name}>
           <label className="world-check">
@@ -209,13 +210,13 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           onClick={() => {
             patch({ flags: { ...draft.flags, [flagName]: false } });
             setFlagName('');
-          }}><Plus size={15}/> Add flag</button>
+          }}><Plus size={15}/> {t('world.addFlag')}</button>
       </div>
     </section>
 
     <section className="world-section">
-      <h4><ShieldCheck size={17}/> Facts and witnesses</h4>
-      <p>Public facts are general knowledge. Private facts enter the narrator's context only when a declared witness is present.</p>
+      <h4><ShieldCheck size={17}/> {t('world.facts')}</h4>
+      <p>{t('world.factsHint')}</p>
       {draft.facts.map((fact, index) =>
         <div key={fact.id} className="world-fact">
           <div className="world-fact-title">
@@ -225,7 +226,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
               <Trash2 size={15}/>
             </button>
           </div>
-          <label>Confirmed content
+          <label>{t('world.confirmedContent')}
             <textarea aria-label={'Fact text ' + (index + 1)} maxLength={360} rows={3}
               value={fact.text} onChange={event =>
                 editFact(index, { text: event.target.value })}/>
@@ -234,10 +235,10 @@ export function WorldStateEditor({ storyId, characters }: Props) {
             <input type="checkbox" aria-label={'Public fact ' + (index + 1)}
               checked={fact.public}
               onChange={event => editFact(index, { public: event.target.checked })}/>
-            <span>Public · everyone may know this</span>
+            <span>{t('world.publicFact')}</span>
           </label>
           {!fact.public && <div className="world-witnesses">
-            <strong>Characters who witnessed this fact</strong>
+            <strong>{t('world.factWitnesses')}</strong>
             {characters.map(character => <label className="world-check" key={character.id}>
               <input type="checkbox" aria-label={'Witness ' + character.name + ' for fact ' + (index + 1)}
                 checked={fact.witness_character_ids.includes(character.id)}
@@ -247,13 +248,13 @@ export function WorldStateEditor({ storyId, characters }: Props) {
                 })}/>
               <span>{character.name}</span>
             </label>)}
-            {!characters.length && <p>A private fact requires registered characters.</p>}
+            {!characters.length && <p>{t('world.privateFactHint')}</p>}
           </div>}
         </div>)}
       <button className="secondary-button" disabled={draft.facts.length >= 120}
         onClick={() => patch({ facts: [...draft.facts, {
           id: crypto.randomUUID(), text: '', public: true, witness_character_ids: [],
-        }] })}><Plus size={16}/> Add fact</button>
+        }] })}><Plus size={16}/> {t('world.addFact')}</button>
     </section>
 
     <div className="creator-actions">
@@ -261,28 +262,26 @@ export function WorldStateEditor({ storyId, characters }: Props) {
         onClick={() => void save()}><Save size={16}/>
         {busy ? 'Saving...' : 'Save world state'}</button>
       <button className="secondary-button" disabled={busy}
-        onClick={() => void reload()}><RotateCcw size={16}/> Reload from disk</button>
+        onClick={() => void reload()}><RotateCcw size={16}/> {t('world.reload')}</button>
     </div>
     {!canSave && <p className="creator-hint">
-      Review the facts: each needs at least 10 characters and, if private,
-      one or more witnesses.</p>}
+      {t('world.reviewFacts')}</p>}
 
     <details className="world-history">
-      <summary><History size={16}/> Turn snapshot history</summary>
-      <p>Select a turn to review its original state, even if the story
-        has since changed. Turns before this feature may not have snapshots.</p>
+      <summary><History size={16}/> {t('world.turnSnapshots')}</summary>
+      <p>{t('world.snapshotHint')}</p>
       <div className="world-add-row">
         <select aria-label="Historical world turn" value={turnId}
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>
-          <option value="">Select turn</option>
+          <option value="">{t('world.selectTurn')}</option>
           {turns.map((turn, index) =>
             <option key={turn.id} value={turn.id}>Turn {index + 1}: {turn.input_text.slice(0, 65)}</option>)}
         </select>
         <button className="secondary-button" disabled={busy || !turnId}
-          onClick={() => void inspectSnapshot()}><BookOpen size={16}/> View snapshot</button>
+          onClick={() => void inspectSnapshot()}><BookOpen size={16}/> {t('world.viewSnapshot')}</button>
       </div>
       {snapshot && <div className="world-snapshot" role="status">
-        <strong>State recorded at that turn</strong>
+        <strong>{t('world.snapshotState')}</strong>
         <span>Location: {snapshot.state.location || 'Not defined'}</span>
         <span>Time: {snapshot.state.time_of_day || 'Not defined'}</span>
         <span>Weather: {snapshot.state.weather || 'Not defined'}</span>
