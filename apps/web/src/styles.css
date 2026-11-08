@@ -1512,3 +1512,10 @@
 .noble-reader-mode-tabs button:focus-visible{outline:2px solid #b6a4ff;outline-offset:2px}
 .noble-reader-mode-hint{display:block;color:#adb6d0;font-size:11px;line-height:1.45;margin-top:7px}
 @media(max-width:520px){.noble-reader-mode-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.noble-reader-mode-tabs button{min-width:0;padding:8px 5px;font-size:11px}}
+
+/* Per-story settings belong to the VN reader, not global preferences. */
+.noble-story-freedom{display:grid;gap:11px;padding:13px;border:1px solid #454966;border-radius:11px;margin-bottom:20px;background:#1b2134}
+.noble-story-freedom h4{margin:0}
+.noble-story-freedom label{display:grid;gap:7px;font-weight:600;font-size:12px}
+.noble-story-freedom select{width:100%;min-width:0;background:#151a2a;border:1px solid #555576;color:#eaeaff;border-radius:8px;padding:9px}
+.noble-story-freedom p,.noble-story-freedom small{margin:0;color:#b1bad5;font-size:11px;line-height:1.5}

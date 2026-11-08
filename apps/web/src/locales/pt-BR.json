@@ -1732,5 +1732,8 @@
   "readerModes.storyHint": "Sugira um rumo narrativo sem reescrever o cânone estabelecido.",
   "readerModes.youThink": "Seus pensamentos",
   "readerModes.youObserve": "Você observa",
-  "readerModes.youInteract": "Você interage"
+  "readerModes.youInteract": "Você interage",
+  "readerModes.storySettings": "Configurações da história",
+  "readerModes.storyFreedomHelp": "Muda como o narrador lida com obstáculos e desvios somente nesta história. Outras histórias e configurações globais não mudam.",
+  "readerModes.storySettingsSaved": "Configuração da história salva."
 }

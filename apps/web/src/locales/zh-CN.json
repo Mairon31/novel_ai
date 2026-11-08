@@ -1732,5 +1732,8 @@
   "readerModes.storyHint": "提出叙事方向，但不改写已经确立的设定。",
   "readerModes.youThink": "你的想法",
   "readerModes.youObserve": "你观察",
-  "readerModes.youInteract": "你互动"
+  "readerModes.youInteract": "你互动",
+  "readerModes.storySettings": "故事设置",
+  "readerModes.storyFreedomHelp": "仅调整本故事中叙述者对障碍和支线的处理方式，不更改其他故事或全局设置。",
+  "readerModes.storySettingsSaved": "故事设置已保存。"
 }

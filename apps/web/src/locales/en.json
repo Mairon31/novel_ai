@@ -1732,5 +1732,8 @@
   "readerModes.storyHint": "Suggest a narrative direction without rewriting established canon.",
   "readerModes.youThink": "Your thoughts",
   "readerModes.youObserve": "You observe",
-  "readerModes.youInteract": "You interact"
+  "readerModes.youInteract": "You interact",
+  "readerModes.storySettings": "Story settings",
+  "readerModes.storyFreedomHelp": "Changes how the narrator handles obstacles and detours in this story only. Other stories and global settings are unchanged.",
+  "readerModes.storySettingsSaved": "Story setting saved."
 }
