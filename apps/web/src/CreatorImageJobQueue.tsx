@@ -94,7 +94,14 @@ export function CreatorImageJobQueue({
     {notice && <p role="status" className="narrative-saved">{notice}</p>}
     {latest && <div role="status" className="noble-image-job">
       <strong>{t('visualPrep.jobStatus', {
-        status: t('visualPrep.status_' + latest.status),
+        status: {
+          queued: t('visualPrep.status_queued'),
+          running: t('visualPrep.status_running'),
+          succeeded: t('visualPrep.status_succeeded'),
+          failed: t('visualPrep.status_failed'),
+          cancelled: t('visualPrep.status_cancelled'),
+          interrupted: t('visualPrep.status_interrupted'),
+        }[latest.status],
       })}</strong>
       <small>{t('visualPrep.jobSeed', { seed: latest.seed })}</small>
       {(latest.status === 'failed' || latest.status === 'interrupted' ||
