@@ -107,13 +107,13 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 
 Possible next priorities: N-22 persistent image generation queue and reviewed cover generation, N-18 scene-beat planning and model-based semantic evaluation, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
 
-## Batch B002 — OPEN (0/5)
+## Batch B002 — OPEN (1/5)
 
 The five verified B001 implementations above are **not** part of this new batch. Record only independently completed new functional units below; do not trigger CI until five units or a critical P0 exception.
 
 | Unit | TODO / scope | Commit(s) | Tests written / executed | State |
 | --- | --- | --- | --- | --- |
-| 1 | — | — | NOT RUN | OPEN |
+| 1 | N-22 — SQLite-backed opt-in ComfyUI image jobs, idempotent request UUID, persistent seed, restart recovery, cancel/retry, and Creator Studio job polling | `a4fd0d1`, `a565571`, `53f9e69`, `c38bd5d`, `f4339f2`, `a61f952`, `1cbcf9d` | New `tests/test_image_jobs.py` and `apps/web/tests/image-job-recovery.spec.ts`, updated `visual-preparation.spec.ts`; all **NOT RUN** until B002. Four-language catalog parity checked structurally (1,707 keys each). | IMPLEMENTED / UNVERIFIED |
 | 2 | — | — | NOT RUN | OPEN |
 | 3 | — | — | NOT RUN | OPEN |
 | 4 | — | — | NOT RUN | OPEN |
