@@ -49,7 +49,8 @@ function ErrorNote({ message, close }: { message: string; close: () => void }) {
     <button aria-label="Dismiss notice" onClick={close}><X size={16}/></button></div>;
 }
 function Loading() {
-  return <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading...</div>;
+  const { t } = useTranslation();
+  return <div className="loading"><LoaderCircle className="rotating" size={18}/> {t('common.loading')}</div>;
 }
 
 // FitCell adapted from Urakatsu (MIT), web/src/components/ModelsPage.tsx.
@@ -503,26 +504,26 @@ export default function App() {
           onOpenLibrary={() => changePage('inicio')}
           onStoryChange={id => navigateRoute({ page: 'crear', storyId: id })}/>}
         {page === 'modelos' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> LOCAL AI ECOSYSTEM</div>
-            <h1>Model Hub<span className="title-dot">.</span></h1>
-            <p>Search, compare, and install Hugging Face models directly in Noble AI.</p>
+          <div className="page-heading"><div className="eyebrow"><Sparkles size={14}/> {t('model.ecosystem')}</div>
+            <h1>{t('model.title')}<span className="title-dot">.</span></h1>
+            <p>{t('model.description')}</p>
           </div>
           <div className="hub-toolbar">
             <div className="tab-buttons" role="tablist">
               <button role="tab" aria-selected={tab === 'discover'} className={tab === 'discover' ? 'active' : ''}
-                onClick={() => { setTab('discover'); closeModelDetail(); }}><Search size={17}/> Discover</button>
+                onClick={() => { setTab('discover'); closeModelDetail(); }}><Search size={17}/> {t('model.discover')}</button>
               <button role="tab" aria-selected={tab === 'installed'} className={tab === 'installed' ? 'active' : ''}
-                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> Installed <span className="mini-count">{installed.length}</span></button>
+                onClick={() => { setTab('installed'); closeModelDetail(); }}><HardDrive size={17}/> {t('model.installed')} <span className="mini-count">{installed.length}</span></button>
             </div>
             <div className="source-tag"><Cloud size={16}/> Hugging Face</div>
           </div>
           {tab === 'discover' ? <>
             <div className="search-row">
               <div className="search-box"><Search size={21}/>
-                <input aria-label="Search models" value={query} onChange={e => setQuery(e.target.value)}
+                <input aria-label={t('model.searchModels')} value={query} onChange={e => setQuery(e.target.value)}
                   placeholder="Search models, families, or authors..."/></div>
               <div className="search-role-wrap"><SlidersHorizontal size={17}/>
-                <select aria-label="Model category" value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
+                <select aria-label={t('model.title')} value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select><ChevronDown size={15}/></div>
             </div>
@@ -533,19 +534,19 @@ export default function App() {
                 {item.title}</button>)}
             </div>
             <div className="section-caption"><div><h2>{selectedRole.subtitle}</h2>
-              <p>Hugging Face catalog · select a model for its analysis</p></div>
-              <div className="noble-model-sort"><label htmlFor="hub-sort">Sort by</label>
+              <p>{t('model.catalog')}</p></div>
+              <div className="noble-model-sort"><label htmlFor="hub-sort">{t('model.sortBy')}</label>
                 <select id="hub-sort" aria-label="Sort models" value={modelSort}
                   onChange={e => setModelSort(e.target.value)}>
-                  <option value="downloads">Downloads</option>
-                  <option value="likes">Most liked</option>
-                  <option value="trendingScore">Trending</option>
-                  <option value="lastModified">Recently updated</option>
+                  <option value="downloads">{t('nav.descargas')}</option>
+                  <option value="likes">{t('model.mostLiked')}</option>
+                  <option value="trendingScore">{t('model.trending')}</option>
+                  <option value="lastModified">{t('model.recent')}</option>
                 </select>
                 {searchLoading && <LoaderCircle className="rotating" size={18}/>}
               </div></div>
             {role !== 'narrator' && <div className="info-note"><Info size={18}/>
-              You can explore these models. Installation is available only through compatible image or voice installers.</div>}
+              {t('model.exploreOnly')}</div>}
             <div className="hub-discovery-layout">
               <div className="model-grid" aria-label="Model results">
                 {searchResults.map(m => <button key={m.repo_id} className={'model-card ' + (detail?.repo_id === m.repo_id ? 'hub-model-selected' : '')}
@@ -568,50 +569,50 @@ export default function App() {
                   <ChevronDown className="hub-model-row-arrow" size={18}/>
                 </button>)}
                 {!searchLoading && searchResults.length === 0 && <div className="empty-state">
-                  <Search size={30}/><strong>No results</strong>
-                  <p>Try a different search or check your Hugging Face connection.</p></div>}
+                  <Search size={30}/><strong>{t('model.noResults')}</strong>
+                  <p>{t('model.searchHint')}</p></div>}
               </div>
               <aside className="hub-hardware-panel">
                 <div className="hub-hardware-title"><Cpu size={20}/>
-                  <div><strong>Hardware compatibility</strong>
-                    <small>Estimate by quantization</small></div></div>
+                  <div><strong>{t('model.hardware')}</strong>
+                    <small>{t('model.quantEstimate')}</small></div></div>
                 <div className="hub-hardware-numbers">
-                  <div><span>Detected GPU</span><strong>{hardware?.gpus[0]?.name || 'Not detected'}</strong></div>
-                  <div><span>Free VRAM</span><strong>
+                  <div><span>{t('model.gpuDetected')}</span><strong>{hardware?.gpus[0]?.name || 'Not detected'}</strong></div>
+                  <div><span>{t('model.freeVRAM')}</span><strong>
                     {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : 'Unavailable'}
                   </strong></div>
-                  <div><span>Available RAM</span><strong>
+                  <div><span>{t('model.availableRAM')}</span><strong>
                     {hardware ? (hardware.ram_available_mb / 1024).toFixed(1)+' GiB' : '—'}
                   </strong></div>
-                  <div><span>Free disk space</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
+                  <div><span>{t('model.freeDisk')}</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
                 </div>
                 <p>Open a model to compare its variants. Noble AI estimates weight sizes,
                   context memory, and runtime headroom. These estimates do not
                   guarantee engine compatibility or performance.</p>
                 <div className="hub-hardware-legend">
-                  <span>Full GPU</span><span>Partial offload</span>
-                  <span>CPU</span><span>Insufficient memory</span>
+                  <span>{t('model.fullGpu')}</span><span>{t('model.partial')}</span>
+                  <span>{t('model.cpu')}</span><span>{t('model.insufficient')}</span>
                 </div>
                 <button className="secondary-button" onClick={() => changePage('ajustes')}>
-                  <Settings2 size={15}/> Engine settings
+                  <Settings2 size={15}/> {t('model.engineSettings')}
                 </button>
               </aside>
             </div>
           </> : <>
-            <div className="section-caption"><div><h2>Models on your computer</h2><p>Only completed installations registered by Noble AI.</p></div></div>
-            {modelStorage && <section className="hub-storage-summary" aria-label="Model storage">
+            <div className="section-caption"><div><h2>{t('model.computer')}</h2><p>{t('model.registeredOnly')}</p></div></div>
+            {modelStorage && <section className="hub-storage-summary" aria-label={t('settings.modelStorage')}>
               <div className="hub-storage-heading">
-                <div><strong>Model storage</strong>
+                <div><strong>{t('settings.modelStorage')}</strong>
                   <small title={modelStorage.models_dir}>{modelStorage.models_dir}</small>
                 </div>
-                <span><HardDrive size={15}/> Local disk</span>
+                <span><HardDrive size={15}/> {t('model.localDisk')}</span>
               </div>
               <div className="hub-storage-metrics">
-                <div><span>Registered models</span><strong>{size(modelStorage.installed.bytes)}</strong>
+                <div><span>{t('model.registered')}</span><strong>{size(modelStorage.installed.bytes)}</strong>
                   <small>{modelStorage.installed.count} in the registry</small></div>
-                <div><span>Partial downloads</span><strong>{size(modelStorage.partial.bytes)}</strong>
+                <div><span>{t('model.partialDownloads')}</span><strong>{size(modelStorage.partial.bytes)}</strong>
                   <small>{modelStorage.partial.count} with .part files</small></div>
-                <div><span>Available space</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
+                <div><span>{t('model.availableSpace')}</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
                   <small>Capacity: {size(modelStorage.disk.total_bytes)}</small></div>
               </div>
               <div className="hub-storage-meter" role="meter" aria-label="Space occupied by Noble AI files"
@@ -645,26 +646,26 @@ export default function App() {
                   <small>{model.integrity_status === 'sha256_verified' ? 'SHA-256 verified against upstream' :
                     'Local hash; the source did not publish SHA-256'}</small>
                   {modelStorage?.items.find(item => item.id === model.id)?.file_present === false &&
-                    <small className="hub-file-missing">File not found: check installation.</small>}
+                    <small className="hub-file-missing">{t('model.missingFile')}</small>}
                 </div>
                 <div className="installed-actions">
-                  {assignments.narrator === model.id && <span className="assigned"><Check size={16}/> Selected narrator</span>}
+                  {assignments.narrator === model.id && <span className="assigned"><Check size={16}/> {t('model.selectedNarrator')}</span>}
                   <button className="secondary-button" disabled={busy || assignments.narrator === model.id ||
                       modelStorage?.items.find(item => item.id === model.id)?.file_present === false}
                     onClick={() => void assignModel(model.id)}>
                     {assignments.narrator === model.id ? 'Assigned' : 'Choose narrator'}</button>
                 </div>
               </article>)}
-              {installed.length === 0 && <div className="empty-state"><Database size={31}/><strong>No models installed yet</strong>
-                <p>Find a GGUF in Discover, select a variant, and download it here.</p>
-                <button className="secondary-button" onClick={() => setTab('discover')}>Search models</button></div>}
+              {installed.length === 0 && <div className="empty-state"><Database size={31}/><strong>{t('model.noInstalled')}</strong>
+                <p>{t('model.noInstalledHint')}</p>
+                <button className="secondary-button" onClick={() => setTab('discover')}>{t('model.searchModels')}</button></div>}
             </div>
           </>}
         </section>}
 
         {page === 'descargas' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><ArrowDownToLine size={14}/> ACTIVITY</div><h1>Downloads<span className="title-dot">.</span></h1>
-            <p>Check installation status and manage transfers.</p></div>
+          <div className="page-heading"><div className="eyebrow"><ArrowDownToLine size={14}/> {t('downloads.activity')}</div><h1>{t('nav.descargas')}<span className="title-dot">.</span></h1>
+            <p>{t('downloads.description')}</p></div>
           {recovery && (recovery.recovered > 0 || recovery.conflicts > 0) &&
             <div className="workspace-note" role="status">
               {recovery.conflicts ? <CircleAlert size={18}/> : <ShieldCheck size={18}/>}
@@ -689,23 +690,23 @@ export default function App() {
                 <span>{job.expected_size ? pct + '%' : 'Unknown total'}</span></div>
               {job.error && <p className="job-error">{job.error}</p>}
               <div className="download-controls">
-                {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> Pause</button>}
-                {['paused', 'failed', 'cancelled'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'resume')}><Play size={16}/> Resume</button>}
-                {['queued', 'downloading', 'paused', 'failed'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'cancel')}><X size={16}/> Cancel</button>}
-                {job.status === 'completed' && <span className="complete"><CheckCircle2 size={16}/> Model registered</span>}
+                {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> {t('downloads.pause')}</button>}
+                {['paused', 'failed', 'cancelled'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'resume')}><Play size={16}/> {t('downloads.resume')}</button>}
+                {['queued', 'downloading', 'paused', 'failed'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'cancel')}><X size={16}/> {t('downloads.cancel')}</button>}
+                {job.status === 'completed' && <span className="complete"><CheckCircle2 size={16}/> {t('downloads.registered')}</span>}
               </div>
             </article>;
           })}
-          {jobs.length === 0 && <div className="empty-state"><ArrowDownToLine size={30}/><strong>No downloads yet</strong>
-            <p>Models installed from Model Hub appear here.</p>
-            <button className="secondary-button" onClick={() => changePage('modelos')}>Open Model Hub</button></div>}
+          {jobs.length === 0 && <div className="empty-state"><ArrowDownToLine size={30}/><strong>{t('downloads.empty')}</strong>
+            <p>{t('downloads.emptyHint')}</p>
+            <button className="secondary-button" onClick={() => changePage('modelos')}>{t('downloads.openHub')}</button></div>}
           </div>
         </section>}
 
         {page === 'descubrir' && <section className="noble-discover-page" aria-label="Story catalog">
           <div className="page-heading">
             <div className="eyebrow"><Compass size={14}/> DISCOVER</div>
-            <h1>Playable stories<span className="title-dot">.</span></h1>
+            <h1>{t('discover.title')}<span className="title-dot">.</span></h1>
             <p>Explore bundled stories and add them to your library as independent projects.
               Community-created stories will be added in a later release.</p>
           </div>
@@ -732,13 +733,13 @@ export default function App() {
         />}
 
         {page === 'diagnostico' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SYSTEM</div><h1>Diagnostics<span className="title-dot">.</span></h1>
-            <p>Detected on the backend computer, not in your browser.</p></div>
+          <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SYSTEM</div><h1>{t('system.title')}<span className="title-dot">.</span></h1>
+            <p>{t('system.description')}</p></div>
           <div className="stat-grid">
-            <div className="stat"><span>BACKEND STATUS</span><strong>{health?.status === 'ok' ? 'Connected' : 'Offline'}</strong><small>API Noble {health?.version || '—'}</small></div>
-            <div className="stat"><span>SYSTEM RAM</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? Math.round(hardware.ram_available_mb / 1024) + ' GB available' : ''}</small></div>
-            <div className="stat"><span>VRAM NVIDIA</span><strong>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB' : 'Not detected'}</strong><small>{hardware?.gpus[0]?.name || 'CPU available'}</small></div>
-            <div className="stat"><span>FREE DISK SPACE</span><strong>{hardware ? hardware.storage_free_gb + ' GB' : '—'}</strong><small>Model directory</small></div>
+            <div className="stat"><span>{t('system.backend')}</span><strong>{health?.status === 'ok' ? 'Connected' : 'Offline'}</strong><small>API Noble {health?.version || '—'}</small></div>
+            <div className="stat"><span>{t('system.ram')}</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? Math.round(hardware.ram_available_mb / 1024) + ' GB available' : ''}</small></div>
+            <div className="stat"><span>{t('system.vram')}</span><strong>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB' : 'Not detected'}</strong><small>{hardware?.gpus[0]?.name || 'CPU available'}</small></div>
+            <div className="stat"><span>{t('system.disk')}</span><strong>{hardware ? hardware.storage_free_gb + ' GB' : '—'}</strong><small>{t('system.modelDir')}</small></div>
           </div>
           <div className="settings-panel"><section><div className="setting-icon"><Cloud size={22}/></div><div className="setting-main">
             <strong>Providers</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? 'Ready' : 'Integration pending'}</p>)}
@@ -749,8 +750,8 @@ export default function App() {
 
     {(detail || detailLoading) && <div className="modal-scrim model-detail-scrim"
       role="presentation" onClick={closeModelDetail}>
-      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label="Model details" onClick={e => e.stopPropagation()}>
-        <div className="detail-top"><span>MODEL DETAILS</span><button className="icon-button" onClick={closeModelDetail} aria-label="Close details"><X size={19}/></button></div>
+      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label={t('model.details')} onClick={e => e.stopPropagation()}>
+        <div className="detail-top"><span>{t('model.details')}</span><button className="icon-button" onClick={closeModelDetail} aria-label="Close details"><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
           <div className="noble-model-detail-heading">
             <div className="detail-avatar"><BookOpen size={32}/></div>
@@ -762,20 +763,20 @@ export default function App() {
           </div>
           {detail.summary && <p className="hub-detail-description">{detail.summary}</p>}
           <div className="hub-detail-stats">
-            <div><span>Downloads</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
-            <div><span>Most liked</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
-            <div><span>License</span><strong>{detail.license}</strong></div>
-            <div><span>Access</span><strong>{detail.gated ? 'Restricted' : 'Public'}</strong></div>
+            <div><span>{t('nav.descargas')}</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
+            <div><span>{t('model.mostLiked')}</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
+            <div><span>{t('model.license')}</span><strong>{detail.license}</strong></div>
+            <div><span>{t('model.access')}</span><strong>{detail.gated ? 'Restricted' : 'Public'}</strong></div>
           </div>
           <div className="hub-detail-metadata">
-            <div><span>Revision</span><code>{detail.revision.slice(0,12)}</code></div>
+            <div><span>{t('model.revision')}</span><code>{detail.revision.slice(0,12)}</code></div>
             {detail.hardware_fit?.architecture &&
-              <div><span>GGUF architecture</span><strong>{detail.hardware_fit.architecture}</strong></div>}
+              <div><span>{t('model.ggufArchitecture')}</span><strong>{detail.hardware_fit.architecture}</strong></div>}
             {detail.hardware_fit?.parameter_count != null &&
-              <div><span>Declared parameters</span>
+              <div><span>{t('model.parameters')}</span>
                 <strong>{(detail.hardware_fit.parameter_count/1e9).toFixed(2)} B</strong></div>}
-            {detail.library && <div><span>Library</span><strong>{detail.library}</strong></div>}
-            {detail.base_model && <div><span>Base model</span><strong>
+            {detail.library && <div><span>{t('model.library')}</span><strong>{detail.library}</strong></div>}
+            {detail.base_model && <div><span>{t('model.baseModel')}</span><strong>
               {Array.isArray(detail.base_model) ? detail.base_model.join(', ') : detail.base_model}
             </strong></div>}
           </div>
@@ -783,16 +784,16 @@ export default function App() {
             {detail.tags.slice(0,10).map(tag => <span key={tag}>{tag}</span>)}
           </div>}
           <a className="external-link" href={detail.url} target="_blank" rel="noreferrer">
-            View original model card on Hugging Face <ExternalLink size={15}/></a>
+            {t('model.viewCard')} <ExternalLink size={15}/></a>
           {role === 'narrator' && detail.variants.length > 0 ? <>
             <section className="hub-fit-analysis">
               <div className="hub-fit-header">
-                <div><h3>Hardware assessment</h3>
+                <div><h3>{t('model.assessment')}</h3>
                   <p>{detail.hardware_fit?.gpu?.name || 'CPU / RAM'} ·
                     {detail.hardware_fit?.metadata_source === 'gguf_header'
                       ? ' KV estimated from GGUF header' : ' Approximate context reserve'}
                   </p></div>
-                <label>Context
+                <label>{t('model.context')}
                   <select aria-label="Compatibility context" value={modelContext}
                     disabled={fitBusy} onChange={e => void selectContext(Number(e.target.value))}>
                     <option value={2048}>2K tokens</option>
@@ -806,10 +807,10 @@ export default function App() {
               {detail.hardware_fit?.recommended_filename ?
                 <div className="hub-best-fit"><CheckCircle2 size={19}/>
                   <div><strong>Suggested quantization: {detail.hardware_fit.recommended_filename}</strong>
-                    <small>Estimate based on observed memory, not a runtime guarantee.</small>
+                    <small>{t('model.estimateDisclaimer')}</small>
                   </div></div> :
                 <div className="hub-fit-caution"><CircleAlert size={18}/>
-                  Could not recommend a quantization from the available data.</div>}
+                  {t('model.noRecommendation')}</div>}
               {selectedFit && <div className="hub-selected-fit">
                 <div className="hub-selected-fit-head">
                   <strong>Selected variant: {selectedFit.quantization || 'GGUF'}</strong>
@@ -833,7 +834,7 @@ export default function App() {
                 </div>
               </div>}
               <div className="hub-variants-toolbar">
-                <h3>Compare GGUF files <small>{detail.variants.length}</small></h3>
+                <h3>{t('model.compare')} <small>{detail.variants.length}</small></h3>
                 <div role="group" aria-label="Filter quantization compatibility">
                   {[
                     {id:'all',label:'All'},
@@ -863,7 +864,7 @@ export default function App() {
                     <small>{fit?.quantization || 'GGUF'} · {size(v.size_bytes)} ·
                       {v.sha256 ? ' published SHA-256' : ' no published hash'}</small>
                     {fit && <small>{fit.note}</small>}
-                    {fit?.disk_ok===false && <small>Not enough disk space to download this file.</small>}
+                    {fit?.disk_ok===false && <small>{t('model.noDisk')}</small>}
                   </span>
                   <span className="hub-variant-aside">
                     {fit && <ModelFitBadge fit={fit}/>}
@@ -871,7 +872,7 @@ export default function App() {
                       ~{size(fit.estimated_required_bytes)} memory
                     </small>}
                     {detail.hardware_fit?.recommended_filename === v.filename &&
-                      <small className="hub-variant-recommended">Recommended for your hardware</small>}
+                      <small className="hub-variant-recommended">{t('model.recommended')}</small>}
                     {selected && <Check size={17}/>}
                   </span>
                 </button>;
@@ -899,43 +900,43 @@ export default function App() {
           </div>}
           <section className="hub-model-card-section">
             <div className="hub-model-card-heading">
-              <div><h3>Model card</h3>
-                <p>Original author document on Hugging Face.</p></div>
+              <div><h3>{t('model.card')}</h3>
+                <p>{t('model.originalAuthor')}</p></div>
               <button type="button" className="secondary-button"
                 aria-expanded={cardVisible} onClick={() => void toggleModelCard()}>
                 {cardVisible ? 'Hide model card' : 'Read full model card'}
               </button>
             </div>
             {cardVisible && (cardBusy ?
-              <p role="status">Loading README.md...</p> : cardData?.available ?
+              <p role="status">{t('model.loadingReadme')}</p> : cardData?.available ?
                 <div>
-                  {cardData.truncated && <p>Showing the first 128 KiB of the document.</p>}
+                  {cardData.truncated && <p>{t('model.truncatedReadme')}</p>}
                   <pre className="hub-model-readme">{cardData.readme || 'Empty document.'}</pre>
-                </div> : <p>This model does not publish a README.md at the selected revision.</p>)}
+                </div> : <p>{t('model.noReadme')}</p>)}
           </section>
         </>}
       </section>
     </div>}
 
-    {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Welcome and initial setup">
-      <div className="welcome-icon"><Sparkles size={31}/></div><span className="overline">WELCOME TO NOBLE AI</span>
-      <h2>Your story studio starts here.</h2>
-      <p>Choose how to prepare your library. Models can be configured now or later; nothing will download without your permission.</p>
+    {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label={t('setup.welcome')}>
+      <div className="welcome-icon"><Sparkles size={31}/></div><span className="overline">{t('setup.welcome')}</span>
+      <h2>{t('setup.title')}</h2>
+      <p>{t('setup.description')}</p>
       <div className="welcome-hardware"><Cpu size={19}/>
         <div><strong>{hardware?.gpus[0]?.name || 'CPU available'}</strong>
           <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM detected' :
             'No NVIDIA GPU detected by the backend'}</small></div></div>
-      <label className="form-label" htmlFor="image-policy">Image generation in future versions</label>
+      <label className="form-label" htmlFor="image-policy">{t('setup.imagesFuture')}</label>
       <select id="image-policy" value={imageMode} onChange={e => setImageMode(e.target.value as 'scene' | 'manual' | 'off')}>
-        <option value="scene">Create images when the scene changes</option>
-        <option value="manual">Only when I request them</option>
-        <option value="off">No images</option>
+        <option value="scene">{t('setup.sceneChange')}</option>
+        <option value="manual">{t('setup.onRequest')}</option>
+        <option value="off">{t('setup.noImages')}</option>
       </select>
-      <div className="setup-callout"><ShieldCheck size={18}/> TTS is disabled by default. Your story will not be sent to remote providers in this prototype.</div>
+      <div className="setup-callout"><ShieldCheck size={18}/> {t('setup.ttsDisabled')}</div>
       <button className="primary-button full" disabled={busy} onClick={() => void finishSetup()}>
         {busy ? <LoaderCircle className="rotating" size={18}/> : <ArrowRight size={18}/>}
         Continue to Model Hub</button>
-      <small className="welcome-note">Text generation, images, and speech will be integrated incrementally.</small>
+      <small className="welcome-note">{t('setup.incremental')}</small>
     </section></div>}
   </div>;
 }
