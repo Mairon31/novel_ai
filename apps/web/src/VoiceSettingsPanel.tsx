@@ -27,7 +27,11 @@ export function VoiceSettingsPanel() {
   // Translate the default TTS example on language change, retaining custom text.
   useEffect(() => {
     const nextSample = t('voiceUi.sampleDefault');
-    setPreviewText(current => current === previousSample.current ? nextSample : current);
+    const previous = previousSample.current;
+    if (nextSample !== previous && previewText === previous) {
+      setPreviewText(nextSample);
+      clearPreview();
+    }
     previousSample.current = nextSample;
   }, [i18n.language, t]);
   const synthesisDirty = synthesisConfig && savedSynthesis &&

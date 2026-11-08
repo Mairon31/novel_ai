@@ -33,7 +33,11 @@ export function NarrativeSettings() {
   // Keep untouched example copy in the chosen UI language without replacing edits.
   useEffect(() => {
     const nextSample = t('narrativeUi.inspectSample');
-    setInspectText(current => current === previousSample.current ? nextSample : current);
+    const previous = previousSample.current;
+    if (nextSample !== previous && inspectText === previous) {
+      setInspectText(nextSample);
+      setInspectorData(null);
+    }
     previousSample.current = nextSample;
   }, [i18n.language, t]);
 

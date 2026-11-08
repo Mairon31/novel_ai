@@ -99,3 +99,25 @@ test('Narrator example follows the UI locale without overwriting author input', 
   await language.selectOption('zh-CN');
   await expect(sample).toHaveValue('Custom text should not be overwritten.');
 });
+
+test('Voice preview example follows the UI locale and preserves custom text', async ({ page }) => {
+  await page.goto('/#/configuracion/voice');
+  await page.evaluate(() => localStorage.setItem('noble-ui-language', 'en'));
+  await page.reload();
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
+  if (await welcome.isVisible()) {
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
+    await page.goto('/#/configuracion/voice');
+  }
+  const selector = page.locator('.topbar .noble-interface-language select');
+  const sample = page.locator('.noble-voice-preview input');
+  await expect(sample).toHaveValue('Hello. This is a Noble AI voice test.');
+  await selector.selectOption('es-419');
+  await expect(sample).toHaveValue('Hola. Esta es una prueba de voz de Noble AI.');
+  await selector.selectOption('pt-BR');
+  await expect(sample).toHaveValue('Olá. Este é um teste de voz do Noble AI.');
+  await sample.fill('This is my customized sample.');
+  await selector.selectOption('zh-CN');
+  await expect(sample).toHaveValue('This is my customized sample.');
+});
