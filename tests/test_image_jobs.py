@@ -142,6 +142,35 @@ class ImageJobsTests(unittest.TestCase):
             self.assertEqual(restarted.get(self.url + "/" + finished["id"]).json()["seed"],
                              finished["seed"])
 
+    def test_active_queue_has_a_bounded_capacity(self):
+        # Simulate eight already queued UUID-scoped requests without starting
+        # ComfyUI. An unrelated new ID cannot create a ninth active task.
+        with self.app.state.store._conn() as db:
+            for index in range(8):
+                seed = index + 1
+                db.execute(
+                    "INSERT INTO image_generation_jobs "
+                    "(id,story_id,request_id,input_json,effective_json,"
+                    "status,created_at,updated_at) "
+                    "VALUES(?,?,?,?,?,'queued',?,?)",
+                    (str(uuid.uuid4()), self.story, str(uuid.uuid4()),
+                     '{"prompt":"Queue placeholder"}',
+                     '{"prompt":"Queue placeholder","seed":%d}' % seed,
+                     time.time(), time.time()))
+        response = self.start()
+        self.assertEqual(response.status_code, 429, response.text)
+        self.assertIn("queue is full", response.json()["detail"])
+        with self.app.state.store._conn() as db:
+            db.execute(
+                "UPDATE image_generation_jobs SET status='cancelled' "
+                "WHERE id=(SELECT id FROM image_generation_jobs LIMIT 1)")
+        async def render(_story, body):
+            return {"asset_id": str(uuid.uuid4()), "seed": body.seed}
+        self.app.state.images.illustrate = AsyncMock(side_effect=render)
+        accepted = self.start()
+        self.assertEqual(accepted.status_code, 202, accepted.text)
+        self.wait_for(accepted.json()["id"], "succeeded")
+
     def test_story_scoping_and_request_validation(self):
         other = self.client.post("/api/v1/stories", json={
             "title": "The other island",
