@@ -9,10 +9,7 @@ import { api } from './api';
 import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot, EpisodicSearch, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
-const tabs: { id: Tab; label: string }[] = [
-  { id: 'summary', label: 'Summary' }, { id: 'history', label: 'History' },
-  { id: 'gallery', label: 'Gallery' }, { id: 'reader', label: 'UI/UX' },
-];
+const tabs: Tab[] = ['summary', 'history', 'gallery', 'reader'];
 
 function NarrativeText({ text }: { text: string }) {
   return <>{text.split(/(«[^»]+»|“[^”]+”|"[^"\n]+")/g).map((piece, i) => (
@@ -697,9 +694,9 @@ export function VisualReader({
         <button aria-label={t("reader.closeDetails")} onClick={() => setInspectorOpen(false)}>
           <X size={18}/></button></header>
       <nav className="noble-inspector-tabs" aria-label={t('uiField.visualReader.visualNovelPanel')}>
-        {tabs.map(item => <button key={item.id}
-          className={tab === item.id ? 'selected' : ''} onClick={() => setTab(item.id)}>
-          {t(item.id === 'reader' ? 'reader.uiUx' : 'reader.' + item.id, { defaultValue: item.label })}</button>)}
+        {tabs.map(item => <button key={item}
+          className={tab === item ? 'selected' : ''} onClick={() => setTab(item)}>
+          {t(item === 'reader' ? 'reader.uiUx' : 'reader.' + item)}</button>)}
       </nav>
       <div className="noble-inspector-body">
         {tab === 'summary' && <>

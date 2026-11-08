@@ -59,5 +59,44 @@ class InterfaceLocaleTests(unittest.TestCase):
         self.assertEqual(errors, [], "\n".join(errors))
 
 
+    def test_dynamic_ui_lookup_domains_have_complete_translations(self):
+        """All known dynamic navigation, download, fit and reader keys exist in every locale."""
+        domains = {
+            "nav": ("inicio", "descubrir", "crear", "modelos", "descargas",
+                    "ajustes", "diagnostico"),
+            "jobs": ("queued", "downloading", "verifying", "paused", "failed",
+                     "completed", "cancelled", "canceled", "installed",
+                     "availableToInstall"),
+            "modelFitUi": ("unknown", "full_gpu", "partial_offload", "cpu",
+                           "too_large", "unsupported"),
+            "reader": ("summary", "history", "gallery", "uiUx"),
+        }
+        for language in LANGUAGES:
+            catalog = json.loads((BASE / (language + ".json")).read_text("utf-8"))
+            for namespace, suffixes in domains.items():
+                for suffix in suffixes:
+                    with self.subTest(language=language, key=namespace + "." + suffix):
+                        key = namespace + "." + suffix
+                        self.assertIn(key, catalog)
+                        self.assertTrue(catalog[key].strip())
+
+    def test_primary_ui_surfaces_are_localized_in_every_supported_language(self):
+        """Catch accidental English fallbacks on critical screens."""
+        english = json.loads((BASE / "en.json").read_text("utf-8"))
+        visible = (
+            "nav.inicio", "nav.crear", "nav.ajustes", "model.description",
+            "creator.title", "reader.emptyHint", "jobs.downloading",
+            "modelFitUi.too_large", "settings.workspaceDescription",
+            "voice.description", "reader.summary", "reader.history",
+            "reader.gallery", "reader.uiUx",
+        )
+        for language in LANGUAGES[1:]:
+            catalog = json.loads((BASE / (language + ".json")).read_text("utf-8"))
+            for key in visible:
+                with self.subTest(language=language, key=key):
+                    self.assertIn(key, catalog)
+                    self.assertNotEqual(catalog[key], english[key])
+
+
 if __name__ == "__main__":
     unittest.main()

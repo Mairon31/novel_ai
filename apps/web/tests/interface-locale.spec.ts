@@ -37,3 +37,36 @@ test('UI locale persists across reload and leaves the story language untouched',
   await expect(page.locator('.nav-item').first()).toContainText('Library');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
+
+test('Model Hub and Downloads follow the selected interface locale', async ({ page }) => {
+  await page.goto('/#/modelos');
+  await page.evaluate(() => localStorage.setItem('noble-ui-language', 'en'));
+  await page.reload();
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
+  if (await welcome.isVisible()) {
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
+    await page.goto('/#/modelos');
+  }
+
+  const selector = page.locator('.topbar .noble-interface-language select');
+  await expect(selector).toHaveValue('en');
+  await selector.selectOption('es-419');
+  await expect(page.locator('.page-heading h1')).toContainText('Centro de modelos');
+  await page.goto('/#/descargas');
+  await expect(page.locator('.page-heading h1')).toContainText('Descargas');
+
+  await selector.selectOption('pt-BR');
+  await page.goto('/#/modelos');
+  await expect(page.locator('.page-heading h1')).toContainText('Central de modelos');
+
+  await selector.selectOption('zh-CN');
+  await expect(page.locator('.page-heading h1')).toContainText('模型中心');
+  await page.goto('/#/descargas');
+  await expect(page.locator('.page-heading h1')).toContainText('下载');
+
+  await selector.selectOption('en');
+  await page.goto('/#/modelos');
+  await expect(page.locator('.page-heading h1')).toContainText('Model Hub');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+});

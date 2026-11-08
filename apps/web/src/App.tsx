@@ -28,14 +28,14 @@ const roles: Array<{ id: ModelRole; titleKey: string; subtitleKey: string }> = [
   { id: 'image', titleKey: 'model.roleImage', subtitleKey: 'model.roleImageDescription' },
   { id: 'tts', titleKey: 'model.roleTts', subtitleKey: 'model.roleTtsDescription' },
 ];
-const menu: Array<{ id: Page; label: string; icon: typeof BookOpen }> = [
-  { id: 'inicio', label: 'Library', icon: BookOpen },
-  { id: 'descubrir', label: 'Discover stories', icon: Compass },
-  { id: 'crear', label: 'Creator Studio', icon: Feather },
-  { id: 'modelos', label: 'Model Hub', icon: Layers3 },
-  { id: 'descargas', label: 'Downloads', icon: ArrowDownToLine },
-  { id: 'ajustes', label: 'Settings', icon: Settings2 },
-  { id: 'diagnostico', label: 'Diagnostics', icon: Cpu },
+const menu: Array<{ id: Page; icon: typeof BookOpen }> = [
+  { id: 'inicio', icon: BookOpen },
+  { id: 'descubrir', icon: Compass },
+  { id: 'crear', icon: Feather },
+  { id: 'modelos', icon: Layers3 },
+  { id: 'descargas', icon: ArrowDownToLine },
+  { id: 'ajustes', icon: Settings2 },
+  { id: 'diagnostico', icon: Cpu },
 ];
 const terminal = ['completed', 'failed', 'cancelled', 'paused'];
 function humanStatus(job: DownloadJob) {
