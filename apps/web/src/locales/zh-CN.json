@@ -1604,5 +1604,10 @@
   "apiClient.importIllustrationError": "无法导入插图",
   "apiClient.noStreamError": "提供商未返回数据流。",
   "apiClient.invalidStoryIdentifier": "故事标识符无效",
-  "settings.networkLoopbackExplanation": "Noble AI 服务器仅在本机回环地址运行。你可以通过 HTTPS 连接外部工作节点，但通过局域网或隧道共享工作区需要额外的身份认证。"
+  "settings.networkLoopbackExplanation": "Noble AI 服务器仅在本机回环地址运行。你可以通过 HTTPS 连接外部工作节点，但通过局域网或隧道共享工作区需要额外的身份认证。",
+  "feedback.narratorModelAssigned": "模型已分配。推理集成计划在 P1 阶段实现。",
+  "reader.directorReasonEvent": "请求的事件：创建新的 CG 插图而不替换背景。",
+  "reader.directorReasonEmotion": "仅更换表情，复用已登记的背景。",
+  "reader.directorReasonReused": "已有与当前地点、时间、天气、镜头和光照匹配的手动背景。",
+  "reader.directorReasonNew": "没有符合这些条件的已登记背景；需要明确请求生成图像。"
 }

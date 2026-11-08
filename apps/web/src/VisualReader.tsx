@@ -914,7 +914,12 @@ export function VisualReader({
               GENERATE_NEW_BACKGROUND: 'reader.actionBackground',
               GENERATE_EVENT_CG: 'reader.actionEvent',
             } as const)[directorPreview.action])}</strong>
-            <p>{directorPreview.reason}</p>
+            <p>{t(({
+              REUSE_BACKGROUND: 'reader.directorReasonReused',
+              UPDATE_SPRITE_EMOTION: 'reader.directorReasonEmotion',
+              GENERATE_NEW_BACKGROUND: 'reader.directorReasonNew',
+              GENERATE_EVENT_CG: 'reader.directorReasonEvent',
+            } as const)[directorPreview.action])}</p>
             <small>{t('reader.visualContext', {
               location: directorPreview.context.location || t('reader.noLocation'),
               time: directorPreview.context.time_of_day || t('reader.timeUnconfirmed'),

@@ -140,5 +140,26 @@ class InterfaceLocaleTests(unittest.TestCase):
 
 
 
+    def test_known_backend_status_copy_is_not_rendered_raw(self):
+        """Known English API status prose must be localized at the view boundary."""
+        english = json.loads((BASE / "en.json").read_text("utf-8"))
+        keys = (
+            "feedback.narratorModelAssigned",
+            "reader.directorReasonEvent", "reader.directorReasonEmotion",
+            "reader.directorReasonReused", "reader.directorReasonNew",
+            "settings.networkLoopbackExplanation",
+        )
+        for key in keys:
+            self.assertIn(key, english)
+        app = (BASE.parent / "App.tsx").read_text("utf-8")
+        reader = (BASE.parent / "VisualReader.tsx").read_text("utf-8")
+        network = (BASE.parent / "WorkspaceSettings.tsx").read_text("utf-8")
+        self.assertNotIn("setNotice(result.message)", app)
+        self.assertNotIn("<p>{directorPreview.reason}</p>", reader)
+        self.assertIn("'reader.directorReasonEvent'", reader)
+        self.assertIn("t('settings.networkLoopbackExplanation')", network)
+
+
+
 if __name__ == "__main__":
     unittest.main()

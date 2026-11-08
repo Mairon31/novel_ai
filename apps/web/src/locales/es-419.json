@@ -1604,5 +1604,10 @@
   "apiClient.importIllustrationError": "No se pudo importar la ilustración",
   "apiClient.noStreamError": "El proveedor no devolvió un flujo de datos.",
   "apiClient.invalidStoryIdentifier": "Identificador de historia inválido",
-  "settings.networkLoopbackExplanation": "El servidor de Noble AI permanece en este equipo (conexión local). Puedes conectar un trabajador externo por HTTPS, pero compartir el espacio de trabajo por LAN o túnel requiere autenticación adicional."
+  "settings.networkLoopbackExplanation": "El servidor de Noble AI permanece en este equipo (conexión local). Puedes conectar un trabajador externo por HTTPS, pero compartir el espacio de trabajo por LAN o túnel requiere autenticación adicional.",
+  "feedback.narratorModelAssigned": "Modelo asignado. La integración de inferencia está prevista para P1.",
+  "reader.directorReasonEvent": "Evento solicitado: una ilustración CG nueva sin reemplazar el fondo.",
+  "reader.directorReasonEmotion": "Solo cambia la expresión; se reutiliza el fondo registrado.",
+  "reader.directorReasonReused": "Hay un fondo manual registrado con el mismo lugar, hora, clima, encuadre e iluminación.",
+  "reader.directorReasonNew": "No hay un fondo registrado para estas condiciones; se requiere solicitar la generación de una imagen."
 }

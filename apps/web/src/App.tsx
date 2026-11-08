@@ -405,7 +405,7 @@ export default function App() {
     try {
       const result = await api.assign('narrator', id);
       setAssignments(result.roles);
-      setNotice(result.message);
+      setNotice(t('feedback.narratorModelAssigned'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
