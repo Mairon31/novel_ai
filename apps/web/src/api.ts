@@ -1,7 +1,7 @@
 import i18n from './i18n';
 import { fetchWithApiError, responseFailure } from './apiErrors';
 import type { VisualPreflightStatus, VisualPreparationPlan } from './types';
-import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, ComfyLaunchConfig, ComfyLaunchValidation, ComfyRuntimeStatus, ComfyRuntimeLogs, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
+import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, ComfyLaunchConfig, ComfyLaunchValidation, ComfyRuntimeStatus, ComfyRuntimeLogs, LoraStatus, IllustrationResult, ImageGenerationJob, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetchWithApiError('/api/v1' + path, {
@@ -145,6 +145,14 @@ export const api = {
       encodeURIComponent(jobId) + '/' + action, { method: 'POST' }),
 
   imageLoras: () => request<LoraStatus>('/images/loras'),
+  imageJobs: (storyId: string) => request<{ jobs: ImageGenerationJob[] }>(
+    '/stories/' + encodeURIComponent(storyId) + '/image-jobs'),
+  submitImageJob: (storyId: string, request_id: string, prompt: string) =>
+    request<ImageGenerationJob>('/stories/' + encodeURIComponent(storyId) + '/image-jobs',
+      json({ request_id, prompt })),
+  imageJobAction: (storyId: string, id: string, action: 'cancel' | 'retry') =>
+    request<ImageGenerationJob>('/stories/' + encodeURIComponent(storyId) + '/image-jobs/' +
+      encodeURIComponent(id) + '/' + action, { method: 'POST' }),
   illustrate: (storyId: string, prompt: string, seed?: number,
                reference_asset_id?: string, denoise?: number,
                allow_low_vram = false, apply_character_loras = false) => request<IllustrationResult>(

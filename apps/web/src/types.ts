@@ -268,6 +268,12 @@ export type AppliedCharacterLora = {
   character_name: string; lora_name: string; strength: number;
 };
 export type LoraStatus = { online: boolean; loras: string[]; error: string | null };
+export type ImageGenerationJob = {
+  id: string; story_id: string; request_id: string;
+  status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'interrupted';
+  attempts: number; seed: number; error: string | null;
+  created_at: number; updated_at: number; result: IllustrationResult | null;
+};
 export type IllustrationResult = {
   story: Story; asset_id?: string; seed: number; checkpoint: string;
   duration_ms: number; cached: boolean; applied_loras: AppliedCharacterLora[];

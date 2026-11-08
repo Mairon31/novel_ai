@@ -1484,3 +1484,12 @@
 .noble-visual-prep-cover input,.noble-visual-prep-cover select,.noble-visual-prep-cover textarea {max-width:100%;min-width:0}
 .noble-visual-prep-cover .primary-button {justify-self:start}
 @media(max-width:540px){.noble-visual-prep-cover .primary-button {justify-self:stretch}}
+
+/* Render status is durable and visible again after leaving Creator Studio. */
+.noble-image-job-queue {display:grid;gap:11px;align-items:start}
+.noble-image-job-queue .primary-button {justify-self:start}
+.noble-image-job {display:flex;gap:9px;align-items:center;flex-wrap:wrap;border:1px solid #49536e;border-radius:10px;padding:12px}
+.noble-image-job small {color:#b8c7d8}
+.noble-image-job details {flex-basis:100%;white-space:pre-wrap;overflow-wrap:anywhere}
+.noble-image-job pre {max-height:145px;overflow:auto;white-space:pre-wrap}
+@media(max-width:540px){.noble-image-job-queue .primary-button {justify-self:stretch}}

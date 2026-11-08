@@ -14,10 +14,9 @@ test('Creator Studio previews missing visuals without automatically triggering C
   })).status()).toBe(200);
 
   let generatedCalls = 0;
-  await page.route('**/api/v1/stories/*/illustrate', async route => {
-    generatedCalls += 1;
-    await route.fulfill({ status: 422, contentType: 'application/json',
-      body: JSON.stringify({detail: 'Select a ComfyUI checkpoint in Image Settings'}) });
+  await page.route('**/api/v1/stories/*/image-jobs', async route => {
+    if (route.request().method() === 'POST') generatedCalls += 1;
+    await route.continue();
   });
   await page.goto('/#/creator/' + id);
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
