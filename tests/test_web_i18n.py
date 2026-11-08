@@ -136,7 +136,9 @@ class InterfaceLocaleTests(unittest.TestCase):
                          api_source)
         self.assertNotIn("throw new Error('Invalid story identifier')", route_source)
         self.assertNotIn("'Error HTTP ' + response.status", api_source)
-        self.assertGreaterEqual(api_source.count("i18n.t('apiClient."), 10)
+        self.assertIn("import { fetchWithApiError, responseFailure } from './apiErrors';",
+                      api_source)
+        self.assertGreaterEqual(api_source.count("throw await responseFailure("), 8)
         self.assertEqual(route_source.count("i18n.t('apiClient."), 1)
 
 
