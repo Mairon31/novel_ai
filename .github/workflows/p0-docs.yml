@@ -1,30 +1,60 @@
-name: Noble AI · docs and Model Hub API checks
+name: Noble AI · batched verification
 
+# No regular push/PR CI. Start a batch deliberately after five implementations.
 on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "quick = Python + frontend build; full = also desktop/mobile Playwright"
+        type: choice
+        required: true
+        default: full
+        options:
+          - quick
+          - full
+      batch_id:
+        description: "ID recorded in docs/CI_BATCHES_AND_SESSION_RECOVERY.md"
+        required: false
+        type: string
+      live_catalog_probe:
+        description: "Probe live Hugging Face API (optional, network dependent)"
+        required: false
+        type: boolean
+        default: false
   push:
-  pull_request:
+    tags:
+      - 'qa-batch-*'
+
+permissions:
+  contents: read
 
 concurrency:
-  group: noble-ai-ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: noble-ai-batched-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   python:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
+          cache-dependency-path: apps/api/requirements.txt
       - name: Install Noble control plane dependencies
         run: python -m pip install -r apps/api/requirements.txt
       - name: Run all offline tests (provider mocked, not GPU)
         run: python -m unittest discover -s tests -p 'test_*.py' -v
-      - name: Probe public Hugging Face live API (nonblocking, network-dependent)
+      - name: Probe public Hugging Face live API (optional, nonblocking)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_catalog_probe }}
         continue-on-error: true
         run: python scripts/probe_hf_catalog.py
+
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,24 +63,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install API dependencies for UI smoke
+          cache: pip
+          cache-dependency-path: apps/api/requirements.txt
+      - name: Install API dependencies for full UI smoke
+        if: ${{ github.event_name == 'push' || inputs.scope == 'full' }}
         run: python -m pip install -r apps/api/requirements.txt
       - name: Install and build frontend
         run: |
           set -euo pipefail
           cd apps/web
           npm install --include=optional --no-audit --no-fund
-          # npm can omit Rollup's native optional binary on a fresh Linux runner.
-          # Detect the missing runtime before Vite starts; install the matching
-          # pinned version rather than silently hiding genuine build failures.
+          # Restore Rollup Linux optional binary if npm omitted it.
           if ! node -e "require('@rollup/rollup-linux-x64-gnu')" >/dev/null 2>&1; then
             VERSION="$(node -p "require('./node_modules/rollup/package.json').version")"
             npm install --no-save --no-package-lock --no-audit --no-fund "@rollup/rollup-linux-x64-gnu@$VERSION"
           fi
           npm run build
-      - name: Install Playwright Chromium
+      - name: Install Playwright Chromium (full batch only)
+        if: ${{ github.event_name == 'push' || inputs.scope == 'full' }}
         run: cd apps/web && npx playwright install chromium --with-deps
-      - name: Browser smoke (real Noble API, desktop and mobile)
+      - name: Browser smoke (real Noble API, desktop and mobile; one suite pass)
+        if: ${{ github.event_name == 'push' || inputs.scope == 'full' }}
         run: |
           python -m uvicorn noble_api.main:app --app-dir apps/api --host 127.0.0.1 --port 8000 >/tmp/noble-api.log 2>&1 &
           API_PID=$!
@@ -58,15 +91,13 @@ jobs:
           WEB_PID=$!
           trap 'kill $API_PID $WEB_PID 2>/dev/null || true' EXIT
           curl --fail --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:8000/api/v1/health
-          cd apps/web
-          # Catch high-impact English UI/selector mismatches before the full suite.
-          npx playwright test tests/app.spec.ts tests/creator-ai.spec.ts tests/settings-separation.spec.ts --project=desktop --workers=2
-          npm run test:e2e
-      - name: Upload browser screenshots and traces
-        if: always()
+          # The complete suite includes all former preliminary smoke specs.
+          npm --prefix apps/web run test:e2e
+      - name: Upload browser screenshots and traces (full batch only)
+        if: ${{ always() && (github.event_name == 'push' || inputs.scope == 'full') }}
         uses: actions/upload-artifact@v4
         with:
           name: noble-ai-visual-qa
           path: apps/web/test-results/
+          if-no-files-found: ignore
           retention-days: 7
-
