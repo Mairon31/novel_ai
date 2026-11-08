@@ -141,7 +141,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       const updated = remove ? await api.deleteOpenRouterCredential() :
         await api.saveOpenRouterCredential(keyDraft);
       setCredential(updated); setKeyDraft('');
-      setFeedback(remove ? 'Key removed from secure storage.' : 'Key saved in the system credential store.');
+      setFeedback(t(remove ? 'settings.keyRemoved' : 'settings.keySaved'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -194,15 +194,18 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           </div>
           <div className="workspace-settings-snapshot">
             <div><Languages size={17}/><small>{t("settings.narrationLanguage")}</small>
-              <strong>{prefs?.target_language === 'es-419' ? 'Latin American Spanish' :
-                prefs?.target_language || 'Loading...'}</strong></div>
+              <strong>{({ 'es-419': t('settings.languageEs419'), en: t('settings.languageEnglish'),
+                ja: t('settings.languageJapanese'), ko: t('settings.languageKorean'),
+                'pt-BR': t('settings.languageBrazilianPortuguese'), fr: t('settings.languageFrench')
+              } as Record<string, string>)[prefs?.target_language || ''] ||
+                prefs?.target_language || t('settings.loading')}</strong></div>
             <div><Volume2 size={17}/><small>{t("settings.illustrations")}</small>
               <strong>{imageMode === 'off' ? t('common.disabled') :
                 imageMode === 'manual' ? t('settings.onDemand') : t('settings.perScene')}</strong></div>
             <div><KeyRound size={17}/><small>OpenRouter</small>
               <strong>{credential?.configured ? t('settings.keyConfigured') : t('settings.noKey')}</strong></div>
             <div><Cpu size={17}/><small>{t("settings.localVersion")}</small>
-              <strong>{about?.version || 'Loading...'}</strong></div>
+              <strong>{about?.version || t('settings.loading')}</strong></div>
           </div>
           <div className="workspace-settings-overview-grid">
             {[
@@ -252,12 +255,15 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
             <small>{t("settings.uiLanguageHint")}</small></div>
           <div className="workspace-panel workspace-field-grid">
             {option(t('settings.outputLanguage'), prefs.target_language, [
-              ['es-419', 'Latin American Spanish'], ['en', 'English'], ['ja', '日本語'],
-              ['ko', '한국어'], ['pt-BR', 'Português brasileiro'], ['fr', 'Français'],
+              ['es-419', t('settings.languageEs419')], ['en', t('settings.languageEnglish')],
+              ['ja', t('settings.languageJapanese')], ['ko', t('settings.languageKorean')],
+              ['pt-BR', t('settings.languageBrazilianPortuguese')], ['fr', t('settings.languageFrench')],
             ], v => void update('target_language', v))}
             {option(t('settings.inputLanguage'), prefs.source_language, [
-              ['auto', t('settings.detail.detectAuto')], ['es', 'Español'], ['en', 'English'],
-              ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['fr', 'French'],
+              ['auto', t('settings.detail.detectAuto')], ['es', t('settings.languageEs419')],
+              ['en', t('settings.languageEnglish')], ['ja', t('settings.languageJapanese')],
+              ['ko', t('settings.languageKorean')], ['pt', t('settings.languagePortuguese')],
+              ['fr', t('settings.languageFrench')],
             ], v => void update('source_language', v))}
             {option(t('settings.translationMode'), prefs.translation_mode, [
               ['off', t('settings.detail.standardNarration')], ['target_output', t('settings.detail.preserveMeaning')],
@@ -294,7 +300,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-panel">
             <h3>{t('settings.detail.providersFeature')}</h3>
             <div className="workspace-service-row"><strong>{t('settings.detail.narration')}</strong><span>{t('settings.detail.ollama')}</span><b>{t('settings.detail.integrated')}</b></div>
-            <div className="workspace-service-row"><strong>Images</strong><span>{t('settings.detail.imageProvider')}</span><b>{t('settings.detail.connectable')}</b></div>
+            <div className="workspace-service-row"><strong>{t('settings.shortcutImages')}</strong><span>{t('settings.detail.imageProvider')}</span><b>{t('settings.detail.connectable')}</b></div>
             <div className="workspace-service-row"><strong>{t('settings.detail.voices')}</strong><span>{t('settings.detail.piper')}</span><b>{t('settings.detail.connectable')}</b></div>
             <div className="workspace-service-row"><strong>{t('settings.detail.workers')}</strong><span>{t('settings.detail.authWorker')}</span><b>{t('settings.detail.connectable')}</b></div>
           </div>
@@ -317,7 +323,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           </div>
           <div className="workspace-reader-preview"><span className="overline">{t('settings.detail.preview')}</span>
             <h3>{t('settings.detail.previewTitle')}</h3>
-            <p>The library lights flickered. <em>“Did you really come all this way?”</em> the young woman asked with a faint smile.</p>
+            <p>{t('settings.previewNarration')}</p>
           </div>
         </>}
 
@@ -349,9 +355,12 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-panel">
             {toggle(t('settings.detail.enableShortcuts'), prefs.shortcuts_enabled, v => void update('shortcuts_enabled', v))}
             {[
-              ['Ctrl / ⌘ + 1', 'Library'], ['Ctrl / ⌘ + 2', 'Model Hub'],
-              ['Ctrl / ⌘ + 3', 'Settings'], ['Ctrl / ⌘ + Enter', 'Submit reader input'],
-              ['Alt + Enter', 'Continue story'], ['Esc', 'Close panels'],
+              ['Ctrl / ⌘ + 1', t('settings.shortcutsLibrary')],
+              ['Ctrl / ⌘ + 2', t('settings.shortcutsModelHub')],
+              ['Ctrl / ⌘ + 3', t('settings.shortcutsSettings')],
+              ['Ctrl / ⌘ + Enter', t('settings.shortcutsSubmit')],
+              ['Alt + Enter', t('settings.shortcutsContinue')],
+              ['Esc', t('settings.shortcutsClose')],
             ].map(([combo, action]) => <div className="workspace-shortcut-row" key={combo}>
               <kbd>{combo}</kbd><span>{action}</span></div>)}
           </div>

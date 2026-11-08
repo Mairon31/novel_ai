@@ -478,7 +478,7 @@ export default function App() {
         <div className="breadcrumb">Noble AI <span>/</span> <strong>{t("nav." + page)}</strong></div>
         <div className="top-actions">
           <InterfaceLanguageSelector compact/>
-          <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : t('app.offline')}</span>
+          <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? t('settings.localApi') : t('app.offline')}</span>
           <button className="icon-button" title={t("common.refresh")} aria-label={t("nav.refreshData")} onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
         </div>
       </header>
@@ -558,7 +558,7 @@ export default function App() {
                     <span className="hub-model-chips">
                       <span><Download size={13}/> {compactCount(m)}</span>
                       <span>♥ {m.likes.toLocaleString()}</span>
-                      <span>{m.gated ? 'Restricted' : 'Public'}</span>
+                      <span>{t(m.gated ? 'model.accessRestricted' : 'model.accessPublic')}</span>
                       {m.license !== 'sin verificar' && <span>{m.license}</span>}
                     </span>
                   </span>
@@ -575,7 +575,7 @@ export default function App() {
                 <div className="hub-hardware-numbers">
                   <div><span>{t('model.gpuDetected')}</span><strong>{hardware?.gpus[0]?.name || t('app.notDetected')}</strong></div>
                   <div><span>{t('model.freeVRAM')}</span><strong>
-                    {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : 'Unavailable'}
+                    {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : t('common.unavailable')}
                   </strong></div>
                   <div><span>{t('model.availableRAM')}</span><strong>
                     {hardware ? (hardware.ram_available_mb / 1024).toFixed(1)+' GiB' : '—'}
@@ -639,8 +639,7 @@ export default function App() {
                 <div className="installed-symbol"><HardDrive size={23}/></div>
                 <div className="installed-details"><strong>{model.filename}</strong>
                   <span>{model.repo_id} · {size(model.size_bytes)}</span>
-                  <small>{model.integrity_status === 'sha256_verified' ? 'SHA-256 verified against upstream' :
-                    'Local hash; the source did not publish SHA-256'}</small>
+                  <small>{t(model.integrity_status === 'sha256_verified' ? 'model.integrityVerified' : 'model.integrityLocal')}</small>
                   {modelStorage?.items.find(item => item.id === model.id)?.file_present === false &&
                     <small className="hub-file-missing">{t('model.missingFile')}</small>}
                 </div>
@@ -649,7 +648,7 @@ export default function App() {
                   <button className="secondary-button" disabled={busy || assignments.narrator === model.id ||
                       modelStorage?.items.find(item => item.id === model.id)?.file_present === false}
                     onClick={() => void assignModel(model.id)}>
-                    {assignments.narrator === model.id ? 'Assigned' : 'Choose narrator'}</button>
+                    {t(assignments.narrator === model.id ? 'model.isAssigned' : 'model.chooseNarrator')}</button>
                 </div>
               </article>)}
               {installed.length === 0 && <div className="empty-state"><Database size={31}/><strong>{t('model.noInstalled')}</strong>
@@ -672,7 +671,7 @@ export default function App() {
                   <strong>{recovery.conflicts} conflict{recovery.conflicts === 1 ? '' : 's'} detected. </strong>}
                 Recovered files require an explicit resume and verification before use.
                 {recovery.conflicts > 0 &&
-                  ' Conflicts do not overwrite files; review the reason on each download.'}
+                  ' ' + t('model.conflictsHint')}
               </span>
             </div>}
           <div className="downloads-list">{jobs.map(job => {
@@ -683,7 +682,7 @@ export default function App() {
                 <span className={'job-badge status-' + job.status}>{humanStatus(job)}</span></div>
               <div className="progress-track"><div style={{ width: pct + '%' }}/></div>
               <div className="progress-label"><span>{size(job.received_bytes)} / {size(job.expected_size)}</span>
-                <span>{job.expected_size ? pct + '%' : 'Unknown total'}</span></div>
+                <span>{job.expected_size ? pct + '%' : t('model.unknownTotal')}</span></div>
               {job.error && <p className="job-error">{job.error}</p>}
               <div className="download-controls">
                 {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> {t('downloads.pause')}</button>}
@@ -785,8 +784,7 @@ export default function App() {
               <div className="hub-fit-header">
                 <div><h3>{t('model.assessment')}</h3>
                   <p>{detail.hardware_fit?.gpu?.name || 'CPU / RAM'} ·
-                    {detail.hardware_fit?.metadata_source === 'gguf_header'
-                      ? ' KV estimated from GGUF header' : ' Approximate context reserve'}
+                    {' '}{t(detail.hardware_fit?.metadata_source === 'gguf_header' ? 'model.kvHeader' : 'model.kvReserve')}
                   </p></div>
                 <label>{t('model.context')}
                   <select aria-label={t('app.compatibilityContext')} value={modelContext}
@@ -801,17 +799,17 @@ export default function App() {
               </div>
               {detail.hardware_fit?.recommended_filename ?
                 <div className="hub-best-fit"><CheckCircle2 size={19}/>
-                  <div><strong>Suggested quantization: {detail.hardware_fit.recommended_filename}</strong>
+                  <div><strong>{t('model.suggestedQuant', { filename: detail.hardware_fit.recommended_filename })}</strong>
                     <small>{t('model.estimateDisclaimer')}</small>
                   </div></div> :
                 <div className="hub-fit-caution"><CircleAlert size={18}/>
                   {t('model.noRecommendation')}</div>}
               {selectedFit && <div className="hub-selected-fit">
                 <div className="hub-selected-fit-head">
-                  <strong>Selected variant: {selectedFit.quantization || 'GGUF'}</strong>
+                  <strong>{t('model.selectedVariant', { name: selectedFit.quantization || 'GGUF' })}</strong>
                   <span>{selectedFit.estimated_required_bytes
-                    ? 'Approximate requirement ' + size(selectedFit.estimated_required_bytes)
-                    : 'Unknown consumption'}</span>
+                    ? t('model.approxMemory', { size: size(selectedFit.estimated_required_bytes) })
+                    : t('model.unknownMemory')}</span>
                 </div>
                 <div role="meter" aria-label={t('app.memoryRequirement')}
                   aria-valuemin={0} aria-valuemax={100}
@@ -819,22 +817,22 @@ export default function App() {
                   <span style={{width: selectedMemoryPercent+'%'}}/>
                 </div>
                 <div className="hub-selected-fit-foot">
-                  <span>{selectedFit.fit === 'full_gpu' ? 'Estimated usable GPU limit' :
-                    selectedFit.fit === 'partial_offload' ? 'Combined GPU and RAM limit' :
-                    'Estimated usable RAM limit'}: {memoryBudget ? size(memoryBudget) : 'no data'}</span>
+                  <span>{t(selectedFit.fit === 'full_gpu' ? 'model.limitGpu' :
+                    selectedFit.fit === 'partial_offload' ? 'model.limitCombined' :
+                    'model.limitRam')}: {memoryBudget ? size(memoryBudget) : t('model.noDataLower')}</span>
                   <span>{selectedFit.fit === 'partial_offload' ?
-                    'Requires engine-supported offload' :
-                    selectedFit.fit === 'full_gpu' ? 'Based on observed free VRAM' :
-                    'Does not imply GPU execution'}</span>
+                    t('model.offloadSupport') :
+                    selectedFit.fit === 'full_gpu' ? t('model.vramObserved') :
+                    t('model.noGpuGuarantee')}</span>
                 </div>
               </div>}
               <div className="hub-variants-toolbar">
                 <h3>{t('model.compare')} <small>{detail.variants.length}</small></h3>
                 <div role="group" aria-label={t('app.filterCompatibility')}>
                   {[
-                    {id:'all',label:'All'},
+                    {id:'all',label:t('model.allVariants')},
                     {id:'full_gpu',label:'GPU'},
-                    {id:'partial_offload',label:'GPU + RAM'},
+                    {id:'partial_offload',label:t('model.fitPartialBadge')},
                     {id:'cpu',label:'CPU'},
                   ].map(filter => <button key={filter.id}
                     aria-pressed={variantFilter === filter.id}
@@ -857,14 +855,14 @@ export default function App() {
                   <span className="hub-variant-info">
                     <strong>{v.filename}</strong>
                     <small>{fit?.quantization || 'GGUF'} · {size(v.size_bytes)} ·
-                      {v.sha256 ? ' published SHA-256' : ' no published hash'}</small>
+                      {t(v.sha256 ? 'model.publishedSha' : 'model.noPublishedHash')}</small>
                     {fit && <small>{fit.note}</small>}
                     {fit?.disk_ok===false && <small>{t('model.noDisk')}</small>}
                   </span>
                   <span className="hub-variant-aside">
                     {fit && <ModelFitBadge fit={fit}/>}
                     {fit?.estimated_required_bytes && <small>
-                      ~{size(fit.estimated_required_bytes)} memory
+                      ~{t('model.memoryUnits', { size: size(fit.estimated_required_bytes) })}
                     </small>}
                     {detail.hardware_fit?.recommended_filename === v.filename &&
                       <small className="hub-variant-recommended">{t('model.recommended')}</small>}
@@ -875,23 +873,21 @@ export default function App() {
                 {detail.variants.filter(v => variantFilter === 'all' ||
                   detail.hardware_fit?.variants.some(item =>
                     item.filename === v.filename && item.fit === variantFilter)).length === 0 &&
-                  <p className="hub-variant-no-fit">No variants in this category.
-                    Try another filter or adjust the context.</p>}
+                  <p className="hub-variant-no-fit">{t('model.noVariants')}</p>}
               </div>
               <p className="detail-disclaimer">{detail.hardware_fit?.warning ||
-                'These are estimates, not measured benchmark results.'}</p>
+                t('model.estimateOnly')}</p>
             </section>
             <button className="primary-button full"
               disabled={busy || detail.gated || !detail.supports_install ||
                 !pickedVariant || Boolean(isInstalled)} onClick={() => void install()}>
               {busy ? <LoaderCircle className="rotating" size={17}/> :
                 isInstalled ? <CheckCircle2 size={18}/> : <Download size={18}/>}
-              {isInstalled ? 'Variant installed' : 'Download selected variant'}
+              {t(isInstalled ? 'model.variantAlreadyInstalled' : 'model.downloadSelected')}
             </button>
           </> : <div className="info-note"><Info size={18}/>
             {role === 'narrator' ?
-              'The current downloader has no supported individual GGUF file for this model.' :
-              'This catalog shows metadata. Image and voice installation uses their respective provider settings.'}
+              t('model.noCompatibleGGUF') : t('model.metadataOnly')}
           </div>}
           <section className="hub-model-card-section">
             <div className="hub-model-card-heading">
@@ -899,14 +895,14 @@ export default function App() {
                 <p>{t('model.originalAuthor')}</p></div>
               <button type="button" className="secondary-button"
                 aria-expanded={cardVisible} onClick={() => void toggleModelCard()}>
-                {cardVisible ? 'Hide model card' : 'Read full model card'}
+                {t(cardVisible ? 'model.hideCard' : 'model.readCard')}
               </button>
             </div>
             {cardVisible && (cardBusy ?
               <p role="status">{t('model.loadingReadme')}</p> : cardData?.available ?
                 <div>
                   {cardData.truncated && <p>{t('model.truncatedReadme')}</p>}
-                  <pre className="hub-model-readme">{cardData.readme || 'Empty document.'}</pre>
+                  <pre className="hub-model-readme">{cardData.readme || t('model.emptyReadme')}</pre>
                 </div> : <p>{t('model.noReadme')}</p>)}
           </section>
         </>}
@@ -919,8 +915,8 @@ export default function App() {
       <p>{t('setup.description')}</p>
       <div className="welcome-hardware"><Cpu size={19}/>
         <div><strong>{hardware?.gpus[0]?.name || t('app.cpuAvailable')}</strong>
-          <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM detected' :
-            'No NVIDIA GPU detected by the backend'}</small></div></div>
+          <small>{hardware?.gpus[0] ? t('model.vramDetected', { amount: Math.round(hardware.gpus[0].vram_total_mb / 1024) }) :
+            t('model.noNvidia')}</small></div></div>
       <label className="form-label" htmlFor="image-policy">{t('setup.imagesFuture')}</label>
       <select id="image-policy" value={imageMode} onChange={e => setImageMode(e.target.value as 'scene' | 'manual' | 'off')}>
         <option value="scene">{t('setup.sceneChange')}</option>
