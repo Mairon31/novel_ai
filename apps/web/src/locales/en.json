@@ -1603,5 +1603,6 @@
   "apiClient.restoreBackupError": "Could not restore the backup",
   "apiClient.importIllustrationError": "Could not import the illustration",
   "apiClient.noStreamError": "The provider did not return a data stream.",
-  "apiClient.invalidStoryIdentifier": "Invalid story identifier"
+  "apiClient.invalidStoryIdentifier": "Invalid story identifier",
+  "settings.networkLoopbackExplanation": "The Noble AI server remains on this computer (loopback). You can connect an external HTTPS worker, but sharing the workspace over LAN or a tunnel requires separate authentication."
 }

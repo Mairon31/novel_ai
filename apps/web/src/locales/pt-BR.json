@@ -1603,5 +1603,6 @@
   "apiClient.restoreBackupError": "Não foi possível restaurar o backup",
   "apiClient.importIllustrationError": "Não foi possível importar a ilustração",
   "apiClient.noStreamError": "O provedor não retornou um fluxo de dados.",
-  "apiClient.invalidStoryIdentifier": "Identificador de história inválido"
+  "apiClient.invalidStoryIdentifier": "Identificador de história inválido",
+  "settings.networkLoopbackExplanation": "O servidor do Noble AI permanece neste computador (loopback). Você pode conectar um worker externo via HTTPS, mas compartilhar o ambiente pela rede local ou por túnel exige autenticação adicional."
 }

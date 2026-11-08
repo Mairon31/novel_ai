@@ -1603,5 +1603,6 @@
   "apiClient.restoreBackupError": "无法恢复备份",
   "apiClient.importIllustrationError": "无法导入插图",
   "apiClient.noStreamError": "提供商未返回数据流。",
-  "apiClient.invalidStoryIdentifier": "故事标识符无效"
+  "apiClient.invalidStoryIdentifier": "故事标识符无效",
+  "settings.networkLoopbackExplanation": "Noble AI 服务器仅在本机回环地址运行。你可以通过 HTTPS 连接外部工作节点，但通过局域网或隧道共享工作区需要额外的身份认证。"
 }

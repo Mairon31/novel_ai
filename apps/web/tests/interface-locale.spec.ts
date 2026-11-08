@@ -121,3 +121,29 @@ test('Voice preview example follows the UI locale and preserves custom text', as
   await selector.selectOption('zh-CN');
   await expect(sample).toHaveValue('This is my customized sample.');
 });
+
+
+test('Network capabilities explanation follows the selected UI language', async ({ page }) => {
+  await page.goto('/#/configuracion/network');
+  await page.evaluate(() => localStorage.setItem('noble-ui-language', 'en'));
+  await page.reload();
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
+  if (await welcome.isVisible()) {
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
+    await page.goto('/#/configuracion/network');
+  }
+
+  const selector = page.locator('.topbar .noble-interface-language select');
+  await expect(selector).toHaveValue('en');
+  await expect(page.getByText(/The Noble AI server remains on this computer/)).toBeVisible();
+
+  await selector.selectOption('es-419');
+  await expect(page.getByText(/El servidor de Noble AI permanece en este equipo/)).toBeVisible();
+
+  await selector.selectOption('pt-BR');
+  await expect(page.getByText(/O servidor do Noble AI permanece neste computador/)).toBeVisible();
+
+  await selector.selectOption('zh-CN');
+  await expect(page.getByText(/Noble AI 服务器仅在本机回环地址运行/)).toBeVisible();
+});
