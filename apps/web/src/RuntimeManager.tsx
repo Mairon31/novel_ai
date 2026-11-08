@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useCallback, useEffect, useState } from 'react';
 import {
   CheckCircle2, CircleAlert, Cpu, HardDrive, LoaderCircle, Play, Power, RefreshCw,
@@ -6,6 +7,7 @@ import { api, size } from './api';
 import type { KoboldInstalled, KoboldStatus } from './types';
 
 export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<KoboldStatus | null>(null);
   const [models, setModels] = useState<KoboldInstalled[]>([]);
   const [installedId, setInstalledId] = useState('');
@@ -68,8 +70,8 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
 
   return <section className="narrative-settings kobold-manager">
     <div className="narrative-section-title"><span className="setting-icon"><Cpu size={22}/></span>
-      <div><h2>KoboldCpp administrado</h2>
-        <p>Start a registered GGUF from Noble AI and control GPU or CPU loading.</p></div></div>
+      <div><h2>{t('runtime.title')}</h2>
+        <p>{t('runtime.description')}</p></div></div>
     <div className="runtime-indicator">
       <span className={'runtime-led ' + (status?.status === 'ready' ? 'runtime-green' : '')}/>
       <strong>{label}</strong>
@@ -79,34 +81,34 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     </div>
     {!running && <>
       <div className="narrative-settings-grid">
-        <label className="settings-span"><span><HardDrive size={14}/> Registered GGUF model</span>
-          <select aria-label="GGUF to run" value={installedId}
+        <label className="settings-span"><span><HardDrive size={14}/> {t('runtime.registered')}</span>
+          <select aria-label={t('runtime.registered')} value={installedId}
             onChange={e => setInstalledId(e.target.value)}>
-            <option value="">Select model...</option>
+            <option value="">{t('runtime.select')}</option>
             {models.map(model => <option key={model.id} value={model.id}>
               {model.filename} — {size(model.size_bytes)}</option>)}
           </select>
         </label>
-        <label className="settings-span">KoboldCpp executable path
-          <input aria-label="KoboldCpp path" value={executable}
+        <label className="settings-span">{t('runtime.executable')}
+          <input aria-label={t('runtime.executable')} value={executable}
             placeholder="C:\\Tools\\koboldcpp.exe"
             onChange={e => setExecutable(e.target.value)}/>
         </label>
-        <label>Layers to run on GPU
-          <select aria-label="KoboldCpp GPU layers" value={gpuLayers}
+        <label>{t('runtime.gpuLayers')}
+          <select aria-label={t('runtime.gpuLayers')} value={gpuLayers}
             onChange={e => setGpuLayers(Number(e.target.value))}>
-            <option value={-1}>Automatic (auto-fit)</option>
-            <option value={0}>CPU only</option>
+            <option value={-1}>{t('runtime.autoFit')}</option>
+            <option value={0}>{t('narrative.cpuOnly')}</option>
             {[12, 24, 36, 48, 64, 96, 128].map(n => <option key={n} value={n}>{n} GPU layers</option>)}
           </select>
         </label>
-        <label>Context size
-          <select aria-label="KoboldCpp context" value={contextSize}
+        <label>{t('runtime.contextSize')}
+          <select aria-label={t('runtime.contextSize')} value={contextSize}
             onChange={e => setContextSize(Number(e.target.value))}>
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n} tokens</option>)}
           </select>
         </label>
-        <label>Local port (loopback)
+        <label>{t('runtime.port')}
           <input aria-label="Port KoboldCpp" type="number" min={1024} max={65535}
             value={port} onChange={e => setPort(Number(e.target.value))}/>
         </label>
@@ -118,9 +120,9 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     {message && <p className="narrative-saved" role="status"><CheckCircle2 size={15}/> {message}</p>}
     <div className="settings-buttons">
       {!running && <button className="primary-button" disabled={busy || !installedId || !executable.trim()}
-        onClick={() => void start()}><Play size={17}/> Start model</button>}
+        onClick={() => void start()}><Play size={17}/> {t('runtime.start')}</button>}
       {running && <button className="secondary-button" disabled={busy} onClick={() => void stop()}>
-        <Power size={16}/> Stop engine</button>}
+        <Power size={16}/> {t('runtime.stop')}</button>}
       {status?.status === 'ready' && <button className="primary-button" disabled={busy}
         onClick={() => void activate()}>
         {busy ? <LoaderCircle className="rotating" size={16}/> : <CheckCircle2 size={16}/>}

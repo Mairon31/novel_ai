@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { Check, Download, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
@@ -10,6 +11,7 @@ interface Props {
 
 /** Image-only checkpoint downloads. No download or GPU work on mount. */
 export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }: Props) {
+  const { t } = useTranslation();
   const [repo, setRepo] = useState('');
   const [catalog, setCatalog] = useState<CheckpointCatalog | null>(null);
   const [installed, setInstalled] = useState<CheckpointInstalled | null>(null);
@@ -82,12 +84,12 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
   const current = catalog?.repo_id;
 
   return <div className="workspace-panel noble-checkpoint-installer">
-    <h3><Download size={18}/> Checkpoints from Noble AI</h3>
+    <h3><Download size={18}/> {t('checkpoint.title')}</h3>
     <p>Find a public Hugging Face repository containing a
       <code> .safetensors</code>. Noble AI downloads it to its model directory and installs it only after verifying SHA-256 and file structure.</p>
     <div className="workspace-field-grid">
-      <label className="workspace-pref-field">Hugging Face repository
-        <input aria-label="Hugging Face repository" placeholder="author/model"
+      <label className="workspace-pref-field">{t('checkpoint.repo')}
+        <input aria-label={t('checkpoint.repo')} placeholder="author/model"
           value={repo} disabled={busy || !!changing}
           onChange={e => { setRepo(e.target.value); setCatalog(null); }}/>
       </label>
@@ -101,7 +103,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
       </button>
       <button className="secondary-button" type="button" onClick={() =>
         void refresh().catch((e: Error) => setError(e.message))}>
-        <RefreshCcw size={16}/> Refresh image downloads
+        <RefreshCcw size={16}/> {t('checkpoint.refresh')}
       </button>
     </div>
 
@@ -120,7 +122,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
             <span>{formatted(model.size_bytes)} · Published SHA-256 ·
               {model.installed ? ' Installed in Noble' : ' Not installed'}</span>
             <a href={model.model_card} rel="noopener noreferrer" target="_blank">
-              View model card and terms</a>
+              {t('checkpoint.title')}</a>
           </div>
           <button className="secondary-button" type="button"
             disabled={model.installed || !!changing || !!running || !!job && job.status === 'paused'}
@@ -132,7 +134,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
     </div>}
 
     {jobs.length > 0 && <div className="noble-voice-library" aria-label="Image model transfers">
-      <h4>Recent downloads</h4>
+      <h4>{t('checkpoint.recent')}</h4>
       {jobs.map(job => {
         const active = ['queued','downloading','verifying'].includes(job.status);
         const pct = job.expected_size ?
@@ -146,12 +148,12 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
             <progress aria-label={'Download of ' + job.filename} max={100} value={pct}/>
           </div>
           {active && <button className="secondary-button" type="button"
-            disabled={!!changing} onClick={() => void control(job, 'pause')}>Pause</button>}
+            disabled={!!changing} onClick={() => void control(job, 'pause')}>{t('checkpoint.pause')}</button>}
           {['paused', 'failed'].includes(job.status) && <>
             <button className="secondary-button" type="button" disabled={!!changing}
-              onClick={() => void control(job, 'resume')}>Resume</button>
+              onClick={() => void control(job, 'resume')}>{t('checkpoint.resume')}</button>
             <button className="secondary-button" type="button" disabled={!!changing}
-              onClick={() => void control(job, 'cancel')}>Cancel</button>
+              onClick={() => void control(job, 'cancel')}>{t('checkpoint.cancel')}</button>
           </>}
         </div>;
       })}
@@ -173,7 +175,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
           </div>
           <button className="secondary-button" type="button" disabled={!usable}
             onClick={() => { if (discovered) onSelectCheckpoint(discovered); }}>
-            {usable ? <><Check size={16}/> Select checkpoint</> : 'Waiting for ComfyUI'}
+            {usable ? <><Check size={16}/> {t('checkpoint.select')}</> : 'Waiting for ComfyUI'}
           </button>
         </div>;
       })}

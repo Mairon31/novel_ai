@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { BookOpen, CheckCircle2, Cpu, LoaderCircle, PlugZap, RefreshCw, Save } from 'lucide-react';
 import { api } from './api';
@@ -10,6 +11,7 @@ const defaultConfig: NarrativeConfig = {
 };
 
 export function NarrativeSettings() {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<NarrativeConfig>(defaultConfig);
   const [status, setStatus] = useState<ProviderModels | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,12 +101,12 @@ export function NarrativeSettings() {
   return <section className="narrative-settings" aria-labelledby="narrative-settings-heading">
     <div className="narrative-section-title">
       <span className="setting-icon"><BookOpen size={22}/></span>
-      <div><h2 id="narrative-settings-heading">Narrative engine</h2>
-        <p>Choose a local runtime, OpenRouter, or an authenticated GPU worker. Configure only parameters supported by the provider.</p></div>
+      <div><h2 id="narrative-settings-heading">{t('narrative.title')}</h2>
+        <p>{t('narrative.description')}</p></div>
     </div>
-    {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading settings...</div> : <>
+    {loading ? <div className="loading"><LoaderCircle className="rotating" size={18}/> {t('image.loading')}</div> : <>
       <div className="narrative-settings-grid">
-        <label>Provider
+        <label>{t('narrative.provider')}
           <select value={config.provider} onChange={e => {
             const provider = e.target.value as NarrativeConfig['provider'];
             setStatus(null);
@@ -117,12 +119,12 @@ export function NarrativeSettings() {
             <option value="worker" disabled={!config.worker_id}>Remote GPU worker (Network & Workers)</option>
           </select>
         </label>
-        <label>Provider address
+        <label>{t('narrative.address')}
           <input aria-label="LLM server address" value={config.base_url}
             readOnly={config.provider === "openrouter" || config.provider === "worker"}
             onChange={e => update('base_url', e.target.value)} spellCheck={false}/>
         </label>
-        <label className="settings-span">Runtime model
+        <label className="settings-span">{t('narrative.model')}
           <input list="noble-local-models" value={config.model} placeholder="Connect and choose a model"
             aria-label="Runtime narrator model" onChange={e => update('model', e.target.value)}/>
           <datalist id="noble-local-models">
@@ -130,46 +132,46 @@ export function NarrativeSettings() {
           </datalist>
           {status?.online && <small>Models found: {status.models.length}. Enter or select a model from the local catalog.</small>}
         </label>
-        <label>Temperature <span className="field-value">{config.temperature.toFixed(2)}</span>
+        <label>{t('narrative.temperature')} <span className="field-value">{config.temperature.toFixed(2)}</span>
           <input type="range" min={0} max={2} step={0.05} value={config.temperature}
             onChange={e => update('temperature', Number(e.target.value))}/>
         </label>
-        <label>Top-P <span className="field-value">{config.top_p.toFixed(2)}</span>
+        <label>{t('narrative.topP')} <span className="field-value">{config.top_p.toFixed(2)}</span>
           <input type="range" min={0.05} max={1} step={0.05} value={config.top_p}
             onChange={e => update('top_p', Number(e.target.value))}/>
         </label>
-        <label>Top-K <span className="field-value">{config.top_k}</span>
+        <label>{t('narrative.topK')} <span className="field-value">{config.top_k}</span>
           <input type="range" min={0} max={200} step={5} value={config.top_k}
             disabled={config.provider === 'koboldcpp' || config.provider === 'worker'}
             onChange={e => update('top_k', Number(e.target.value))}/>
         </label>
-        <label>Repetition penalty <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
+        <label>{t('narrative.repetition')} <span className="field-value">{config.repetition_penalty.toFixed(2)}</span>
           <input type="range" min={0.5} max={2} step={0.05} value={config.repetition_penalty}
             disabled={config.provider === 'koboldcpp'}
             onChange={e => update('repetition_penalty', Number(e.target.value))}/>
         </label>
-        <label>Reasoning
+        <label>{t('narrative.reasoning')}
           <select aria-label="Narrator reasoning" value={config.reasoning_mode}
             disabled={config.provider !== 'ollama'}
             onChange={e => update('reasoning_mode', e.target.value as NarrativeConfig['reasoning_mode'])}>
-            <option value="auto">Automatic / model defaults</option>
-            <option value="off">No solicitar razonamiento</option>
+            <option value="auto">{t('narrative.automaticReasoning')}</option>
+            <option value="off">{t('narrative.noReasoning')}</option>
           </select>
         </label>
-        <label>Maximum generated tokens
+        <label>{t('narrative.maxTokens')}
           <input type="number" min={50} max={2048} value={config.max_tokens}
             onChange={e => update('max_tokens', Number(e.target.value))}/>
         </label>
-        <label>Context window
+        <label>{t('narrative.context')}
           <select value={config.num_ctx} onChange={e => update('num_ctx', Number(e.target.value))}>
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n.toLocaleString('es-CR')} tokens</option>)}
           </select>
         </label>
-        <label>Device <span className="field-value">Ollama</span>
+        <label>{t('narrative.device')} <span className="field-value">Ollama</span>
           <select aria-label="Narrator device" disabled={config.provider !== 'ollama'} value={config.device}
             onChange={e => update('device', e.target.value as NarrativeConfig['device'])}>
-            <option value="auto">Automatic — use GPU if available</option>
-            <option value="cpu">CPU only</option>
+            <option value="auto">{t('narrative.autoGpu')}</option>
+            <option value="cpu">{t('narrative.cpuOnly')}</option>
           </select>
         </label>
       </div>
@@ -191,7 +193,7 @@ export function NarrativeSettings() {
           {working ? <LoaderCircle className="rotating" size={16}/> : <PlugZap size={16}/>}
           Save and test connection</button>
         <button className="primary-button" disabled={working}
-          onClick={() => void persist(false)}><Save size={16}/> Save parameters</button>
+          onClick={() => void persist(false)}><Save size={16}/> {t('narrative.saveParameters')}</button>
         <button className="secondary-button"
           disabled={working || !config.model || config.provider === 'openrouter'}
           onClick={() => void prepare()}>
@@ -201,29 +203,29 @@ export function NarrativeSettings() {
       </div>
       <p className="narrative-helper">“Prepare model now” runs a short inference only when you press the button; it does not add a turn to story history. The first load may take longer. This does not apply to remote OpenRouter APIs.</p>
       <p className="narrative-helper"><RefreshCw size={14}/> Models installed from Model Hub need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.</p>
-      <section className="narrative-context-inspector" aria-label="Narrative context inspector">
-        <h3>Narrative context inspector</h3>
+      <section className="narrative-context-inspector" aria-label={t('narrative.inspect')}>
+        <h3>{t('narrative.inspect')}</h3>
         <p className="narrative-helper">Inspect the exact messages prepared for the provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
         {stories.length ? <>
           <div className="narrative-settings-grid">
-            <label>Story to inspect
-              <select aria-label="Story to inspect" value={inspectStory}
+            <label>{t('narrative.storyToInspect')}
+              <select aria-label={t('narrative.storyToInspect')} value={inspectStory}
                 onChange={e => { setInspectStory(e.target.value); setInspectorData(null); }}>
                 {stories.map(story => <option value={story.id} key={story.id}>{story.title}</option>)}
               </select>
             </label>
-            <label>Input mode
-              <select aria-label="Mode to inspect" value={inspectMode}
+            <label>{t('narrative.inputMode')}
+              <select aria-label={t('narrative.inputMode')} value={inspectMode}
                 onChange={e => { setInspectMode(e.target.value as typeof inspectMode); setInspectorData(null); }}>
-                <option value="do">Action</option>
-                <option value="say">Dialogue</option>
-                <option value="story">Direction</option>
-                <option value="continue">Continue</option>
+                <option value="do">{t('narrative.action')}</option>
+                <option value="say">{t('narrative.dialogue')}</option>
+                <option value="story">{t('narrative.direction')}</option>
+                <option value="continue">{t('narrative.continue')}</option>
               </select>
             </label>
           </div>
-          <label>Sample input
-            <textarea aria-label="Input to inspect"
+          <label>{t('narrative.sampleInput')}
+            <textarea aria-label={t('narrative.sampleInput')}
               rows={2} maxLength={3000} value={inspectText}
               onChange={e => { setInspectText(e.target.value); setInspectorData(null); }}/>
           </label>
@@ -237,20 +239,20 @@ export function NarrativeSettings() {
           </div>
           {inspectorError && <p role="alert" className="narrative-error">{inspectorError}</p>}
           {inspectorData && <div role="status" className="creator-hint">
-            <strong>Estimated prompt budget</strong>
+            <strong>{t('narrative.estimatedBudget')}</strong>
             <p>{inspectorData.estimated_prompt_tokens} estimated input tokens + {inspectorData.reserved_output_tokens} reserved output tokens / {inspectorData.context_window_tokens} configured context-window tokens.</p>
             {inspectorData.estimated_overflow && <p role="alert">
-              Possible overflow: estimated input and output exceed the context window.
+              {t('narrative.overflow')}
             </p>}
             <p>Token counts are estimated from characters, not the model's tokenizer. KV cache is not measured, and the provider does not guarantee the supported context length.</p>
             <details>
-              <summary>View section breakdown</summary>
+              <summary>{t('narrative.sectionBreakdown')}</summary>
               <ul>{inspectorData.sections.map((block, i) => <li key={i}>
                 {block.name}: {block.characters} characters · ~{block.approx_tokens} tokens
               </li>)}</ul>
             </details>
             <details>
-              <summary>View all messages sent to the engine</summary>
+              <summary>{t('narrative.allMessages')}</summary>
               {inspectorData.messages.map((message, i) => <div key={i}>
                 <strong>{i + 1}. {message.role}</strong>
                 <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
@@ -259,7 +261,7 @@ export function NarrativeSettings() {
               </div>)}
             </details>
           </div>}
-        </> : <p className="narrative-helper">Create a story to inspect its narrative context.</p>}
+        </> : <p className="narrative-helper">{t('narrative.createToInspect')}</p>}
       </section>
     </>}
   </section>;

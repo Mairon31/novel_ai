@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { Check, Image, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
@@ -29,6 +30,7 @@ interface Props {
 
 /** Only image generation and its local GPU admission policy live here. */
 export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
+  const { t } = useTranslation();
   const [image, setImage] = useState<ImageSettings | null>(null);
   const [status, setStatus] = useState<ImageStatus | null>(null);
   const [samplerOptions, setSamplerOptions] = useState<ImageSamplerOptions | null>(null);
@@ -48,7 +50,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
   async function save() {
     if (!image) return;
     setBusy(true); setError(''); setMessage('');
-    try { setImage(await api.saveImageConfig(image)); setMessage('ComfyUI settings saved.'); }
+    try { setImage(await api.saveImageConfig(image)); setMessage(t('image.comfySaved')); }
     catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -68,8 +70,8 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       const options = await api.imageSamplerOptions();
       setSamplerOptions(options);
       if (!options.online) setError(options.error || 'Could not query KSampler');
-      else setMessage('ComfyUI: ' + options.sampler_name.length +
-        ' supported samplers and ' + options.scheduler.length + ' schedulers.');
+      else setMessage(t('image.samplingStatus', { samplers: options.sampler_name.length,
+        schedulers: options.scheduler.length }));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -79,7 +81,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     try {
       setResources(await api.saveResourceConfig(resources));
       setResourceStatus(await api.resourceStatus());
-      setMessage('GPU policy saved.');
+      setMessage(t('image.policySaved'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -90,8 +92,8 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
 
   return <div className="creative-settings image-settings-panel">
     <div className="setting-section-intro">
-      <h2>Images</h2>
-      <p>Illustrations, models, scenes, and visual generation resources.</p>
+      <h2>{t('image.title')}</h2>
+      <p>{t('image.description')}</p>
     </div>
     {(error || message) && <p role="status" className={error ? 'narrative-error' : 'narrative-saved'}>
       {error || <><Check size={15}/>{message}</>}</p>}
@@ -101,58 +103,58 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       setMessage('Noble AI-managed ComfyUI started at ' + url);
     }}/>
     <div className="workspace-panel">
-      <h3><Image size={18}/> Scenes with ComfyUI</h3>
+      <h3><Image size={18}/> {t('image.comfyScenes')}</h3>
       <p>You can start an existing ComfyUI installation here or connect an external one. A compatible checkpoint is required. The reader's Illustrate action replaces the current scene only after a successful render.</p>
-      <label className="workspace-pref-field">Illustration policy
+      <label className="workspace-pref-field">{t('image.policy')}
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
-          <option value="manual">On demand (available)</option>
-          <option value="scene">Scenes (automatic detection pending; manual button)</option>
-          <option value="off">Disabled</option>
+          <option value="manual">{t('image.onDemand')}</option>
+          <option value="scene">{t('image.scenesManual')}</option>
+          <option value="off">{t('common.disabled')}</option>
         </select>
       </label>
       {image ? <div className="workspace-field-grid">
-        <label className="workspace-pref-field">Local ComfyUI
+        <label className="workspace-pref-field">{t('image.localComfy')}
           <input value={image.base_url} disabled={busy}
             onChange={e => change('base_url', e.target.value)} placeholder="http://127.0.0.1:8188"/>
         </label>
-        <label className="workspace-pref-field">Checkpoint
+        <label className="workspace-pref-field">{t('image.checkpoint')}
           <input list="noble-comfy-checkpoints" value={image.checkpoint} disabled={busy}
             onChange={e => change('checkpoint', e.target.value)} placeholder="Model installed in ComfyUI"/>
           <datalist id="noble-comfy-checkpoints">
             {status?.checkpoints.map(model => <option value={model} key={model}/>)}
           </datalist>
         </label>
-        <label className="workspace-pref-field">Width
+        <label className="workspace-pref-field">{t('image.width')}
           <select value={image.width} onChange={e => change('width', Number(e.target.value))}>
             {[512, 768, 1024].map(w => <option key={w} value={w}>{w} px</option>)}
           </select>
         </label>
-        <label className="workspace-pref-field">Height
+        <label className="workspace-pref-field">{t('image.height')}
           <select value={image.height} onChange={e => change('height', Number(e.target.value))}>
             {[512, 768, 1024].map(w => <option key={w} value={w}>{w} px</option>)}
           </select>
         </label>
-        <label className="workspace-pref-field">Diffusion steps
+        <label className="workspace-pref-field">{t('image.steps')}
           <input type="number" min={1} max={70} value={image.steps}
             onChange={e => change('steps', Number(e.target.value))}/>
         </label>
-        <label className="workspace-pref-field">Guidance (CFG)
+        <label className="workspace-pref-field">{t('image.cfg')}
           <input type="number" min={1} max={20} step="0.5" value={image.cfg}
             onChange={e => change('cfg', Number(e.target.value))}/>
         </label>
-        <label className="workspace-pref-field">Illustration style
-          <select aria-label="Illustration style" value={image.style_preset}
+        <label className="workspace-pref-field">{t('image.style')}
+          <select aria-label={t('image.style')} value={image.style_preset}
             disabled={busy}
             onChange={e => change('style_preset', e.target.value as ImageSettings['style_preset'])}>
-            <option value="anime_fantasy">Fantasy anime (default)</option>
-            <option value="anime_cinematic">Cinematic anime</option>
-            <option value="anime_watercolor">Watercolor anime</option>
-            <option value="none">No additional style guidance</option>
+            <option value="anime_fantasy">{t('image.fantasy')}</option>
+            <option value="anime_cinematic">{t('image.cinematic')}</option>
+            <option value="anime_watercolor">{t('image.watercolor')}</option>
+            <option value="none">{t('image.noStyle')}</option>
           </select>
         </label>
-        <label className="workspace-pref-field">ComfyUI sampler
-          <select aria-label="ComfyUI sampler" value={image.sampler_name}
+        <label className="workspace-pref-field">{t('image.comfySampler')}
+          <select aria-label={t('image.comfySampler')} value={image.sampler_name}
             disabled={busy}
             onChange={e => change('sampler_name', e.target.value as ImageSettings['sampler_name'])}>
             {SAMPLERS.map(sampler => <option key={sampler.id} value={sampler.id}>
@@ -161,8 +163,8 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             </option>)}
           </select>
         </label>
-        <label className="workspace-pref-field">ComfyUI scheduler
-          <select aria-label="ComfyUI scheduler" value={image.scheduler}
+        <label className="workspace-pref-field">{t('image.comfyScheduler')}
+          <select aria-label={t('image.comfyScheduler')} value={image.scheduler}
             disabled={busy}
             onChange={e => change('scheduler', e.target.value as ImageSettings['scheduler'])}>
             {SCHEDULERS.map(scheduler => <option key={scheduler.id} value={scheduler.id}>
@@ -171,17 +173,17 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             </option>)}
           </select>
         </label>
-        <label className="workspace-pref-field" >Negative prompt
+        <label className="workspace-pref-field" >{t('image.negativePrompt')}
           <input maxLength={1000} value={image.negative_prompt}
             onChange={e => change('negative_prompt', e.target.value)}/>
         </label>
-      </div> : <div className="loading">Loading settings...</div>}
+      </div> : <div className="loading">{t('image.loading')}</div>}
       <div className="settings-buttons">
         <button className="secondary-button" disabled={busy} onClick={() => void discover()}>
-          <RefreshCcw size={16}/> Find checkpoints</button>
+          <RefreshCcw size={16}/> {t('image.findCheckpoints')}</button>
         <button className="secondary-button" disabled={busy}
           onClick={() => void inspectSamplerOptions()}>
-          <RefreshCcw size={16}/> Check ComfyUI sampling</button>
+          <RefreshCcw size={16}/> {t('image.checkSampling')}</button>
         <button className="primary-button" disabled={busy || !image ||
           (samplerOptions?.online === true &&
            (!samplerOptions.sampler_name.includes(image.sampler_name) ||
@@ -204,7 +206,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         setMessage('Checkpoint selected. Save image settings to apply it.');
       }}/>
     <div className="workspace-panel">
-      <h3>GPU memory and admission</h3>
+      <h3>{t('image.gpuMemory')}</h3>
       <p>Check observed free VRAM with nvidia-smi. You can warn or block ComfyUI requests below a configured reserve. This does not estimate a checkpoint's actual memory requirements or stop other processes.</p>
       {resourceStatus && <p role="status">
         {resourceStatus.selected_gpu
@@ -219,7 +221,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         Simultaneous requests for the same resource will receive a warning.
       </p>}
       {resources && <label className="workspace-pref-toggle">
-        <span>Coordinate the local narrator and ComfyUI (one GPU operation at a time)</span>
+        <span>{t('image.gpuMemoryDescription')}</span>
         <input type="checkbox" aria-label="Coordinate local GPU"
           checked={resources.serialize_local_gpu}
           onChange={e => setResources(x => x ? {
@@ -227,22 +229,22 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           } : x)}/>
       </label>}
       {resources && <div className="workspace-field-grid">
-        <label className="workspace-pref-field">Mode
-          <select aria-label="GPU reservation mode" value={resources.mode}
+        <label className="workspace-pref-field">{t('image.mode')}
+          <select aria-label={t('image.mode')} value={resources.mode}
             onChange={e => setResources(x => x ? {
               ...x, mode: e.target.value as ResourceConfig['mode'],
             } : x)}>
-            <option value="monitor">Monitor only</option>
-            <option value="guard">Block below the VRAM reserve</option>
+            <option value="monitor">{t('image.monitorOnly')}</option>
+            <option value="guard">{t('image.blockReserve')}</option>
           </select>
         </label>
-        <label className="workspace-pref-field">GPU (nvidia-smi index)
+        <label className="workspace-pref-field">{t('image.gpuIndex')}
           <input type="number" min={0} max={31} value={resources.gpu_index}
             aria-label="GPU index" onChange={e => setResources(x => x ? {
               ...x, gpu_index: Number(e.target.value),
             } : x)}/>
         </label>
-        <label className="workspace-pref-field">Minimum free reserve (MiB)
+        <label className="workspace-pref-field">{t('image.minReserve')}
           <input type="number" min={0} max={65536} step={256}
             value={resources.minimum_free_mib} aria-label="GPU reserve in MiB"
             onChange={e => setResources(x => x ? {
@@ -254,10 +256,10 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         <button className="secondary-button" disabled={busy}
           onClick={() => void api.resourceStatus().then(setResourceStatus).catch(
             (e: Error) => setError(e.message))}>
-          <RefreshCcw size={16}/> Consultar VRAM</button>
+          <RefreshCcw size={16}/> {t('image.checkVRAM')}</button>
         <button className="primary-button" disabled={busy || !resources}
           onClick={() => void saveResourcePolicy()}>
-          <Check size={16}/> Save GPU policy</button>
+          <Check size={16}/> {t('image.savePolicy')}</button>
       </div>
     </div>
   </div>;

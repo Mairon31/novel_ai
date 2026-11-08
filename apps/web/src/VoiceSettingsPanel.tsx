@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import { Check, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
 import { api } from './api';
@@ -5,6 +6,7 @@ import type { Settings, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, P
 
 /** Piper preferences, downloads and samples never initialize image generation. */
 export function VoiceSettingsPanel() {
+  const { t } = useTranslation();
   const [setup, setSetup] = useState<Settings | null>(null);
   const [voices, setVoices] = useState<SpeechVoices | null>(null);
   const [voicePreferences, setVoicePreferences] = useState<SpeechPreferences | null>(null);
@@ -148,17 +150,17 @@ export function VoiceSettingsPanel() {
 
   return <div className="creative-settings voice-settings-panel">
     <div className="setting-section-intro">
-      <h2>Voice / TTS</h2>
-      <p>Installed voices, reader preferences and on-demand audio previews.</p>
+      <h2>{t('settings.voice')}</h2>
+      <p>{t('voice.description')}</p>
     </div>
     {(error || message) && <p role="status" className={error ? 'narrative-error' : 'narrative-saved'}>
       {error || <><Check size={15}/>{message}</>}</p>}
     <div className="workspace-panel">
-      <h3><Volume2 size={18}/> Local speech with Piper</h3>
+      <h3><Volume2 size={18}/> {t('voice.localPiper')}</h3>
       <p>Install a Latin American Spanish voice from the catalog or manually add the <code>.onnx</code> and its configuration <code>.onnx.json</code>. Synthesis runs only when you press Listen.</p>
       <div className="noble-voice-library" aria-label="Piper voice catalog">
-        <h4>Latin American Spanish voices</h4>
-        <p className="noble-inspector-hint">Explicit Hugging Face downloads with pinned revisions and file verification. Install the Piper engine separately.</p>
+        <h4>{t('voice.latinVoices')}</h4>
+        <p className="noble-inspector-hint">{t('voice.installDescription')}</p>
         {voiceCatalog?.voices.map(voice => {
           const job = voiceJobs.find(item => item.voice_id === voice.id);
           const status = voice.installed ? 'installed' : job?.status;
@@ -171,7 +173,7 @@ export function VoiceSettingsPanel() {
               <span>{voice.language} · {voice.quality} · {status === 'installed' ?
                 'Installed' : status || 'Available to install'}</span>
               <a href={voice.model_card} target="_blank" rel="noopener noreferrer">
-                View voice license and files</a>
+                {t('voice.viewLicense')}</a>
             </div>
             {job && status !== 'installed' && <div className="noble-voice-progress">
               <progress aria-label={'Progress for ' + voice.name} value={percent} max={100}/>
@@ -180,21 +182,21 @@ export function VoiceSettingsPanel() {
                 {job.error ? ' · ' + job.error : ''}</small>
             </div>}
             <div className="settings-buttons">
-              {status === 'installed' ? <span>Ready to select</span> :
+              {status === 'installed' ? <span>{t('voice.readySelect')}</span> :
                 job && active ? <>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'pause')}>
-                    Pause download</button>
+                    {t('voice.pauseDownload')}</button>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
-                    Cancel download</button>
+                    {t('voice.cancelDownload')}</button>
                 </> : job && (status === 'paused' || status === 'failed') ? <>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'resume')}>
-                    Resume download</button>
+                    {t('voice.resumeDownload')}</button>
                   <button type="button" className="secondary-button"
                     disabled={!!voiceAction} onClick={() => void controlVoice(job, 'cancel')}>
-                    Cancel download</button>
+                    {t('voice.cancelDownload')}</button>
                 </> : <button type="button" className="secondary-button"
                     disabled={!!voiceAction || busy} onClick={() => void installVoice(voice.id)}>
                     {voiceAction === voice.id ? 'Starting...' : 'Install voice'}</button>}
@@ -205,14 +207,14 @@ export function VoiceSettingsPanel() {
       {voices && <p>Engine: {voices.available ? 'Piper detected' : 'Piper not found in PATH'} ·
         Installed voices: {voices.voices.length} · Folder: <code>{voices.models_dir}</code></p>}
       {voicePreferences && <div className="workspace-field-grid">
-        <label className="workspace-pref-field">Default reader voice
-          <select aria-label="Default Piper voice" disabled={busy}
+        <label className="workspace-pref-field">{t('voice.defaultVoice')}
+          <select aria-label={t('voice.defaultVoice')} disabled={busy}
             value={voicePreferences.default_voice_id}
             onChange={e => {
               setVoicePreferences({ default_voice_id: e.target.value });
               clearPreview();
             }}>
-            <option value="">First installed voice</option>
+            <option value="">{t('voice.firstInstalled')}</option>
             {voices?.voices.map(voice =>
               <option key={voice.id} value={voice.id}>{voice.name}</option>)}
           </select>
@@ -221,25 +223,25 @@ export function VoiceSettingsPanel() {
           (!!voicePreferences.default_voice_id &&
            !voices?.voices.some(v => v.id === voicePreferences.default_voice_id))}
           onClick={() => void saveDefaultVoice()} type="button">
-          <Check size={16}/> Save default voice
+          <Check size={16}/> {t('voice.saveDefault')}
         </button>
       </div>}
       <div className="noble-voice-synthesis workspace-field-grid">
-        <h4>Piper synthesis settings</h4>
-        <p>These settings affect previews and newly generated speech. They never play audio automatically.</p>
+        <h4>{t('voice.piperSettings')}</h4>
+        <p>{t('voice.piperDescription')}</p>
         {synthesisConfig && <>
-          <label className="workspace-pref-field">Speed (phoneme duration)
-            <input aria-label="Piper speed" type="number" min={0.5} max={2}
+          <label className="workspace-pref-field">{t('voice.speed')}
+            <input aria-label={t('voice.speed')} type="number" min={0.5} max={2}
               step={0.05} value={synthesisConfig.length_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('length_scale', Number(e.target.value))}/>
-            <small>1.0 is normal speed; lower values produce faster speech.</small>
+            <small>{t('voice.speedHint')}</small>
           </label>
-          <label className="workspace-pref-field">Voice variation
+          <label className="workspace-pref-field">{t('voice.variation')}
             <input aria-label="Piper voice noise" type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_scale', Number(e.target.value))}/>
           </label>
-          <label className="workspace-pref-field">Phoneme variation
+          <label className="workspace-pref-field">{t('voice.phonemeVariation')}
             <input aria-label="Piper phoneme noise" type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_w} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_w', Number(e.target.value))}/>
@@ -252,12 +254,12 @@ export function VoiceSettingsPanel() {
             !Number.isFinite(synthesisConfig.noise_w) ||
             synthesisConfig.noise_w < 0 || synthesisConfig.noise_w > 1.5}
             onClick={() => void savePiperParameters()}>
-            <Check size={16}/> Save Piper settings
+            <Check size={16}/> {t('voice.savePiper')}
           </button>
         </>}
       </div>
       <div className="noble-voice-preview">
-        <label className="workspace-pref-field">Voice preview text
+        <label className="workspace-pref-field">{t('voice.sampleText')}
           <input aria-label="Voice sample text" maxLength={400}
             value={previewText} disabled={previewBusy}
             onChange={e => { setPreviewText(e.target.value); clearPreview(); }}/>
@@ -271,18 +273,18 @@ export function VoiceSettingsPanel() {
         </button>
         {previewUrl && <audio aria-label="Play voice preview" controls
           preload="none" src={previewUrl}/>}
-        {synthesisDirty && <small role="status">Save the updated settings before testing the voice.</small>}
-        <small>Preview requires Piper and a valid ONNX/JSON voice. Audio is generated only when you press Preview and is never added to a story.</small>
+        {synthesisDirty && <small role="status">{t('voice.saveBeforePreview')}</small>}
+        <small>{t('voice.previewNote')}</small>
       </div>
       <label className="workspace-pref-toggle">
-        <span>Enable on-demand speech buttons</span>
+        <span>{t('voice.enableButtons')}</span>
         <input type="checkbox" checked={setup?.tts_enabled || false} disabled={busy || !setup}
           onChange={e => void toggleSpeech(e.target.checked)}/>
       </label>
-      <p>Automatic reading and background Piper are disabled; a voice downloads only after you request it.</p>
+      <p>{t('voice.offByDefault')}</p>
       <button className="secondary-button" disabled={busy}
         onClick={() => void refreshVoiceDownloads().catch((e: Error) => setError(e.message))}>
-        <RefreshCcw size={16}/> Refresh voices</button>
+        <RefreshCcw size={16}/> {t('voice.refreshVoices')}</button>
     </div>
   </div>;
 }
