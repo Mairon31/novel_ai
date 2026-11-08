@@ -1692,5 +1692,18 @@
   "npcAgency.boundaries": "NPC 的拒绝条件与个人底线",
   "npcAgency.goalsPlaceholder": "保护灯塔记录，赢得船长信任并维护港口安全。",
   "npcAgency.boundariesPlaceholder": "没有证据时不向陌生人透露受保护的地图，也不会接受危及船员的要求。",
-  "npcAgency.hint": "叙述者会参考这些作者设定，安排 NPC 的谈判、合作或分歧，但不保证具体反应。"
+  "npcAgency.hint": "叙述者会参考这些作者设定，安排 NPC 的谈判、合作或分歧，但不保证具体反应。",
+  "visualPrep.jobStatus": "图像生成：{{status}}",
+  "visualPrep.jobSeed": "已保存随机种子：{{seed}}",
+  "visualPrep.status_queued": "排队中",
+  "visualPrep.status_running": "渲染中",
+  "visualPrep.status_succeeded": "已完成",
+  "visualPrep.status_failed": "失败",
+  "visualPrep.status_cancelled": "已取消",
+  "visualPrep.status_interrupted": "已中断",
+  "visualPrep.retryJob": "重试图像生成",
+  "visualPrep.cancelJob": "取消本地任务",
+  "visualPrep.jobDetails": "技术详情",
+  "visualPrep.jobFailureSummary": "该图像任务未能成功完成。",
+  "visualPrep.queuing": "正在添加到图像队列……"
 }

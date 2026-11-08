@@ -1692,5 +1692,18 @@
   "npcAgency.boundaries": "NPC refusal conditions and limits",
   "npcAgency.goalsPlaceholder": "Protect the lighthouse records, earn the captain's trust, and keep the harbor safe.",
   "npcAgency.boundariesPlaceholder": "Will not reveal protected maps to strangers without proof; refuses requests that endanger the crew.",
-  "npcAgency.hint": "The narrator uses these author-defined details when NPCs negotiate, cooperate or disagree. They do not force a particular response."
+  "npcAgency.hint": "The narrator uses these author-defined details when NPCs negotiate, cooperate or disagree. They do not force a particular response.",
+  "visualPrep.jobStatus": "Image generation: {{status}}",
+  "visualPrep.jobSeed": "Saved seed: {{seed}}",
+  "visualPrep.status_queued": "Queued",
+  "visualPrep.status_running": "Rendering",
+  "visualPrep.status_succeeded": "Completed",
+  "visualPrep.status_failed": "Failed",
+  "visualPrep.status_cancelled": "Cancelled",
+  "visualPrep.status_interrupted": "Interrupted",
+  "visualPrep.retryJob": "Retry image generation",
+  "visualPrep.cancelJob": "Cancel local job",
+  "visualPrep.jobDetails": "Technical details",
+  "visualPrep.jobFailureSummary": "This image job did not finish successfully.",
+  "visualPrep.queuing": "Adding to image queue..."
 }

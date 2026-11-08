@@ -1692,5 +1692,18 @@
   "npcAgency.boundaries": "Condiciones de rechazo y límites del NPC",
   "npcAgency.goalsPlaceholder": "Proteger los registros del faro, ganarse la confianza del capitán y mantener a salvo el puerto.",
   "npcAgency.boundariesPlaceholder": "No entrega mapas protegidos a desconocidos sin pruebas ni acepta poner en peligro a su tripulación.",
-  "npcAgency.hint": "El narrador utiliza estos detalles del creador para que los NPC negocien, cooperen o discrepen. No garantizan una reacción específica."
+  "npcAgency.hint": "El narrador utiliza estos detalles del creador para que los NPC negocien, cooperen o discrepen. No garantizan una reacción específica.",
+  "visualPrep.jobStatus": "Generación de imagen: {{status}}",
+  "visualPrep.jobSeed": "Semilla guardada: {{seed}}",
+  "visualPrep.status_queued": "En cola",
+  "visualPrep.status_running": "Generando",
+  "visualPrep.status_succeeded": "Completado",
+  "visualPrep.status_failed": "Falló",
+  "visualPrep.status_cancelled": "Cancelado",
+  "visualPrep.status_interrupted": "Interrumpido",
+  "visualPrep.retryJob": "Reintentar generación",
+  "visualPrep.cancelJob": "Cancelar trabajo local",
+  "visualPrep.jobDetails": "Detalles técnicos",
+  "visualPrep.jobFailureSummary": "El trabajo de imagen no terminó correctamente.",
+  "visualPrep.queuing": "Agregando a la cola de imágenes..."
 }

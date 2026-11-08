@@ -1692,5 +1692,18 @@
   "npcAgency.boundaries": "Condições de recusa e limites do NPC",
   "npcAgency.goalsPlaceholder": "Proteger os registros do farol, conquistar a confiança do capitão e manter o porto seguro.",
   "npcAgency.boundariesPlaceholder": "Não revela mapas protegidos a desconhecidos sem provas nem aceita colocar a tripulação em perigo.",
-  "npcAgency.hint": "O narrador usa esses detalhes do criador para os NPCs negociarem, cooperarem ou discordarem. Eles não garantem uma reação específica."
+  "npcAgency.hint": "O narrador usa esses detalhes do criador para os NPCs negociarem, cooperarem ou discordarem. Eles não garantem uma reação específica.",
+  "visualPrep.jobStatus": "Geração de imagem: {{status}}",
+  "visualPrep.jobSeed": "Seed armazenada: {{seed}}",
+  "visualPrep.status_queued": "Na fila",
+  "visualPrep.status_running": "Gerando",
+  "visualPrep.status_succeeded": "Concluído",
+  "visualPrep.status_failed": "Falhou",
+  "visualPrep.status_cancelled": "Cancelado",
+  "visualPrep.status_interrupted": "Interrompido",
+  "visualPrep.retryJob": "Tentar gerar novamente",
+  "visualPrep.cancelJob": "Cancelar tarefa local",
+  "visualPrep.jobDetails": "Detalhes técnicos",
+  "visualPrep.jobFailureSummary": "Esta tarefa de imagem não foi concluída.",
+  "visualPrep.queuing": "Adicionando à fila de imagens..."
 }
