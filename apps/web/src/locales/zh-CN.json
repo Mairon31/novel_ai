@@ -1461,5 +1461,6 @@
   "model.emptyReadme": "空文档。",
   "model.vramDetected": "检测到 {{amount}} GB 显存",
   "model.noNvidia": "后端未检测到 NVIDIA GPU",
-  "model.conflictsHint": "冲突不会覆盖文件；请检查每个下载任务的原因。"
+  "model.conflictsHint": "冲突不会覆盖文件；请检查每个下载任务的原因。",
+  "reader.loraAvailableSingle": "ComfyUI 有 {{amount}} 个 LoRA 可用{{names}}"
 }

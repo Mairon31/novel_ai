@@ -1013,7 +1013,7 @@ export function VisualReader({
               </button>
               {loraStatus && <p className="noble-inspector-hint" role="status">
                 {loraStatus.online
-                  ? t('reader.lorasAvailable', { amount: loraStatus.loras.length,
+                  ? t(loraStatus.loras.length === 1 ? 'reader.loraAvailableSingle' : 'reader.lorasAvailable', { amount: loraStatus.loras.length,
                     names: loraStatus.loras.length ? ': ' + loraStatus.loras.slice(0, 6).join(', ') +
                       (loraStatus.loras.length > 6 ? '…' : '') : '.' })
                   : t('reader.lorasUnavailable', { error: loraStatus.error || t('app.offline') })}

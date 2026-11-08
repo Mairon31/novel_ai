@@ -1461,5 +1461,6 @@
   "model.emptyReadme": "Documento vacío.",
   "model.vramDetected": "{{amount}} GB de VRAM detectados",
   "model.noNvidia": "El backend no detectó ninguna GPU NVIDIA",
-  "model.conflictsHint": "Los conflictos no sobrescriben archivos; revisa el motivo de cada descarga."
+  "model.conflictsHint": "Los conflictos no sobrescriben archivos; revisa el motivo de cada descarga.",
+  "reader.loraAvailableSingle": "{{amount}} LoRA disponible en ComfyUI{{names}}"
 }
