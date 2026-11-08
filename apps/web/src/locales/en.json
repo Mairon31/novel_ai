@@ -1528,5 +1528,19 @@
   "imageUi.activeWorkload": "Active local operation: {{kind}}. Simultaneous requests for the same resource will receive a warning.",
   "storyUi.connectionIncomplete": "Connection ended without committing the turn.",
   "appUi.prototype": "P1 PROTOTYPE",
-  "appUi.localFirst": "LOCAL-FIRST"
+  "appUi.localFirst": "LOCAL-FIRST",
+  "creatorUi.playerControls": "The player controls {{name}}.",
+  "creatorUi.simulationHint": "Enter an action or phrase to preview which entries the narrator would receive and the actual character budget used (maximum 6,000 characters). The preview uses character presence saved in World State.",
+  "creatorUi.activatedEntries": "{{amount}} activated entries",
+  "creatorUi.budgetStatus": "{{used}} of {{budget}} characters · {{skipped}} excluded by budget · {{hidden}} without present witnesses",
+  "creatorUi.identityHint": "Appearance tags and seeds become fixed once saved. A LoRA is an optional reference to a local model file; it does not run inference or download models.",
+  "creatorUi.protagonistField": "Protagonist",
+  "creatorUi.createProject": "Create project",
+  "readerUi.applyCharacterLoras": "Apply LoRAs for present characters (optional)",
+  "readerUi.turnNumber": "Turn {{number}}",
+  "readerUi.laterTurns": "{{amount}} later turn(s) will remain only in the original branch.",
+  "workersUi.workerGuide": "Worker setup: run Noble AI's authenticated proxy on the GPU computer and expose only that proxy with cloudflared.",
+  "workersUi.vramStats": "VRAM {{used}} / {{total}} MB · GPU {{utilization}}%",
+  "checkpointUi.findFiles": "Find checkpoint files",
+  "narrativeUi.inspectSample": "I observe the scene."
 }

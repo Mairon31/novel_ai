@@ -532,7 +532,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           <div className="creator-editor-title">
             <div><span className="overline">{t("creator.editing")}</span>
               <h2>{active.title}</h2>
-              <small>The player controls {active.protagonist_name || 'Protagonist'}.</small></div>
+              <small>{t('creatorUi.playerControls', { name: active.protagonist_name || t('creatorUi.protagonistField') })}</small></div>
             <button className="secondary-button" onClick={onOpenLibrary}>
               <BookOpen size={15}/> {t("creator.goLibrary")}
             </button>
@@ -1068,8 +1068,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-media-form">
                 <h4>{t('creator.checkActivation')}</h4>
-                <p>Enter an action or phrase to preview which entries the narrator would receive and the actual character budget used (maximum 6,000 characters).
-                  The preview uses character presence saved in World State.</p>
+                <p>{t('creatorUi.simulationHint')}</p>
                 <label>{t('creator.simulateAction')}
                   <textarea rows={3} aria-label={t('uiField.creatorStudio.simulateLorebookActivation')}
                     maxLength={3000} value={loreQuery}
@@ -1081,10 +1080,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <BookKey size={16}/> {t('creator.previewLorebook')}
                 </button>
                 {lorePreview && <div role="status" className="creator-hint">
-                  <strong>{lorePreview.entries.length} activated entries</strong>
-                  <p>{lorePreview.used_chars} of {lorePreview.budget_chars} characters
-                    · {lorePreview.skipped_budget} excluded by budget
-                    · {lorePreview.skipped_visibility} without present witnesses</p>
+                  <strong>{t('creatorUi.activatedEntries', { amount: lorePreview.entries.length })}</strong>
+                  <p>{t('creatorUi.budgetStatus', { used: lorePreview.used_chars, budget: lorePreview.budget_chars,
+                  skipped: lorePreview.skipped_budget, hidden: lorePreview.skipped_visibility })}</p>
                   {lorePreview.entries.map(entry => <p key={entry.id}>
                     {entry.title} · priority {entry.priority}</p>)}
                   {!!lorePreview.context && <details className="creator-lorebook-preview">
@@ -1200,9 +1198,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </label>
               <div className="creator-media-form">
                 <h4>{t('creator.canonicalIdentity')}</h4>
-                <p>Appearance tags and seeds become fixed once saved.
-                  A LoRA is an optional reference to a local model file; it does not
-                  run inference or download models.</p>
+                <p>{t('creatorUi.identityHint')}</p>
                 <label>{t('creator.appearanceTags')}
                   <input aria-label={t('uiField.creatorStudio.visualTags')} maxLength={1040}
                     value={dnaTagsInput} disabled={!!editingCharacter &&
@@ -1300,13 +1296,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         <label className="form-label">{t('creator.worldPremiseField')}
           <textarea rows={4} maxLength={4000} value={newPremise}
             onChange={e => setNewPremise(e.target.value)}/></label>
-        <label className="form-label">Protagonist
+        <label className="form-label">{t('creatorUi.protagonistField')}
           <input value={newProtagonist} maxLength={60}
             onChange={e => setNewProtagonist(e.target.value)}/></label>
         {error && <p role="alert" className="narrative-error">{error}</p>}
         <button className="primary-button full" disabled={working || newTitle.trim().length<2 ||
           newPremise.trim().length<10 || !newProtagonist.trim()} onClick={() => void createStory()}>
-          <Plus size={16}/> Create project
+          <Plus size={16}/> {t('creatorUi.createProject')}
         </button>
       </section>
     </div>}

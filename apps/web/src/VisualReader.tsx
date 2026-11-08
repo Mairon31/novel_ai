@@ -1002,7 +1002,7 @@ export function VisualReader({
                 <input type="checkbox" aria-label={t('uiField.visualReader.applyCharacterLoRAs')}
                   checked={applyCharacterLoras}
                   onChange={e => setApplyCharacterLoras(e.target.checked)}/>
-                {' '}Apply LoRAs for present characters (optional)
+                {' '}{t('readerUi.applyCharacterLoras')}
               </label>
               <p className="noble-inspector-hint">
                 {t('reader.loraHint')}
@@ -1110,10 +1110,10 @@ export function VisualReader({
         </div>
         <p>{t('reader.rewindHint')}</p>
         <div className="noble-rewind-selected">
-          <strong>Turn {turns.findIndex(t => t.id === rewindTurn.id) + 1}</strong>
+          <strong>{t('readerUi.turnNumber', { number: turns.findIndex(turn => turn.id === rewindTurn.id) + 1 })}</strong>
           <p>{rewindTurn.input_text || rewindTurn.assistant_text.slice(0, 180)}</p>
-          <small>{Math.max(0, turns.length - turns.findIndex(t => t.id === rewindTurn.id) - 1)}
-            {' '}later turn(s) will remain only in the original branch.</small>
+          <small>{t('readerUi.laterTurns', { amount: Math.max(0,
+            turns.length - turns.findIndex(turn => turn.id === rewindTurn.id) - 1) })}</small>
         </div>
         <div className="noble-rewind-checkpoint" role="status">
           {rewindLoading || !rewindPreview ?

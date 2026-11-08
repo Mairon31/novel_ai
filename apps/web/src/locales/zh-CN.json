@@ -1528,5 +1528,19 @@
   "imageUi.activeWorkload": "正在进行的本地操作：{{kind}}。对同一资源的并发请求将收到警告。",
   "storyUi.connectionIncomplete": "连接结束，但回合尚未保存。",
   "appUi.prototype": "P1 原型",
-  "appUi.localFirst": "本地优先"
+  "appUi.localFirst": "本地优先",
+  "creatorUi.playerControls": "玩家操控 {{name}}。",
+  "creatorUi.simulationHint": "输入行动或短语，预览叙事者将收到的条目以及实际使用的字符预算（最多 6000 字符）。预览使用世界状态中保存的角色在场信息。",
+  "creatorUi.activatedEntries": "已激活 {{amount}} 个条目",
+  "creatorUi.budgetStatus": "{{used}} / {{budget}} 字符 · {{skipped}} 条因预算排除 · {{hidden}} 条因见证者不在场而排除",
+  "creatorUi.identityHint": "外观标签和随机种子保存后会固定。LoRA 是对本地模型文件的可选引用，不会自行执行推理或下载模型。",
+  "creatorUi.protagonistField": "主角",
+  "creatorUi.createProject": "创建项目",
+  "readerUi.applyCharacterLoras": "为在场角色应用 LoRA（可选）",
+  "readerUi.turnNumber": "回合 {{number}}",
+  "readerUi.laterTurns": "后续 {{amount}} 个回合将仅保留在原分支。",
+  "workersUi.workerGuide": "工作节点设置：在 GPU 计算机上运行 Noble AI 的认证代理，并通过 cloudflared 仅公开该代理。",
+  "workersUi.vramStats": "显存 {{used}} / {{total}} MB · GPU {{utilization}}%",
+  "checkpointUi.findFiles": "查找检查点模型文件",
+  "narrativeUi.inspectSample": "我观察这个场景。"
 }

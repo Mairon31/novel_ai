@@ -184,7 +184,8 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       </div>
       {probe.health?.gpu?.map(gpu => <div className="noble-worker-gpu" key={gpu.index}>
         <span><Cpu size={15}/> {gpu.name}</span>
-        <strong>VRAM {gpu.vram_used_mb} / {gpu.vram_total_mb} MB · GPU {gpu.utilization_percent}%</strong>
+        <strong>{t('workersUi.vramStats', { used: gpu.vram_used_mb, total: gpu.vram_total_mb,
+          utilization: gpu.utilization_percent })}</strong>
         <div className="noble-worker-vram-meter"><span style={{
           width: Math.min(100, 100 * gpu.vram_used_mb / Math.max(1, gpu.vram_total_mb)) + '%',
         }}/></div>
@@ -198,8 +199,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     <div className="workspace-note"><ShieldCheck size={17}/>
       {t('workers.securityHint')}
     </div>
-    <p className="noble-worker-guide"><Server size={15}/> Worker setup: run Noble AI's authenticated proxy on the GPU computer and expose only that proxy
-      with cloudflared. <a target="_blank" rel="noreferrer"
+    <p className="noble-worker-guide"><Server size={15}/> {t('workersUi.workerGuide')} <a target="_blank" rel="noreferrer"
         href="https://github.com/Mairon31/novel_ai/blob/master/docs/WORKERS.md">
         {t('workers.viewInstructions')} <RefreshCw size={13}/></a></p>
   </div>;

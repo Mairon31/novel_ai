@@ -1528,5 +1528,19 @@
   "imageUi.activeWorkload": "Operación local activa: {{kind}}. Las solicitudes simultáneas del mismo recurso recibirán una advertencia.",
   "storyUi.connectionIncomplete": "La conexión terminó sin guardar el turno.",
   "appUi.prototype": "PROTOTIPO P1",
-  "appUi.localFirst": "PRIMERO LOCAL"
+  "appUi.localFirst": "PRIMERO LOCAL",
+  "creatorUi.playerControls": "El jugador controla a {{name}}.",
+  "creatorUi.simulationHint": "Introduce una acción o frase para comprobar qué entradas recibirá el narrador y el límite de caracteres utilizado (máximo 6000). La vista previa utiliza la presencia de personajes guardada en Estado del mundo.",
+  "creatorUi.activatedEntries": "{{amount}} entradas activadas",
+  "creatorUi.budgetStatus": "{{used}} de {{budget}} caracteres · {{skipped}} excluidos por límite · {{hidden}} sin testigos presentes",
+  "creatorUi.identityHint": "Las etiquetas de apariencia y las semillas quedan fijadas al guardarlas. Una LoRA es una referencia opcional a un archivo local; no ejecuta inferencias ni descarga modelos.",
+  "creatorUi.protagonistField": "Protagonista",
+  "creatorUi.createProject": "Crear proyecto",
+  "readerUi.applyCharacterLoras": "Aplicar LoRA de personajes presentes (opcional)",
+  "readerUi.turnNumber": "Turno {{number}}",
+  "readerUi.laterTurns": "{{amount}} turnos posteriores permanecerán solo en la rama original.",
+  "workersUi.workerGuide": "Configuración del worker: ejecuta el proxy autenticado de Noble AI en el equipo con GPU y expón únicamente ese proxy con cloudflared.",
+  "workersUi.vramStats": "VRAM {{used}} / {{total}} MB · GPU {{utilization}}%",
+  "checkpointUi.findFiles": "Buscar archivos de checkpoints",
+  "narrativeUi.inspectSample": "Observo la escena."
 }

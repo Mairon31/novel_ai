@@ -98,7 +98,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
         disabled={busy || !!changing || !/^[\w.-]+\/[\w.-]+$/.test(repo.trim())}
         onClick={() => void inspect()}>
         {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCcw size={16}/>}
-        Find checkpoint files
+        {t('checkpointUi.findFiles')}
       </button>
       <button className="secondary-button" type="button" onClick={() =>
         void refresh().catch((e: Error) => setError(e.message))}>

@@ -23,7 +23,7 @@ export function NarrativeSettings() {
   const [stories, setStories] = useState<Story[]>([]);
   const [inspectStory, setInspectStory] = useState('');
   const [inspectMode, setInspectMode] = useState<'do'|'say'|'story'|'continue'>('do');
-  const [inspectText, setInspectText] = useState('I observe the scene.');
+  const [inspectText, setInspectText] = useState(t('narrativeUi.inspectSample'));
   const [inspecting, setInspecting] = useState(false);
   const [inspectorData, setInspectorData] = useState<ContextPreview | null>(null);
   const [inspectorError, setInspectorError] = useState('');
