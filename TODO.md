@@ -2,6 +2,8 @@
 
 > Fuente: [Auditoría integral de Gemini Argon](docs/ARGON_AUDITORIA.md), secciones 01–22 (5 de noviembre de 2026). Este archivo es la **fuente de verdad del trabajo pendiente**, no una lista de promesas. Consultar también [bitácora](docs/PROGRESO.md), [roadmap](docs/ROADMAP.md) y [criterios QA](docs/QA_Y_ACEPTACION.md).
 >
+> **CI por lotes:** no ejecutar GitHub Actions por cada commit. Registrar implementaciones completas en [`docs/CI_BATCHES_AND_SESSION_RECOVERY.md`](docs/CI_BATCHES_AND_SESSION_RECOVERY.md) y realizar una verificación integral cada **5 implementaciones** (o antes para errores P0 críticos). Señalar expresamente las pruebas que están `NOT RUN`.
+>
 > **Regla de verificación:** `[x]` solo cuando el código/documento existe y se ha observado su comportamiento con una prueba apropiada. Un módulo o API existente no equivale a que todos los criterios de la auditoría estén satisfechos. Registrar el commit, la prueba y el resultado en `docs/PROGRESO.md`. Si falta ejecución física con GPU, marcarla pendiente. Trabajar directamente en `master`; no generar una rama por cada tarea.
 
 ## i18n — trabajo restante registrado (aplazado, 2026-11-08)

@@ -1,6 +1,6 @@
 # AGENTS.md — Noble AI engineering guidance
 
-Read `docs/ENGLISH_MIGRATION.md`, `TODO.md`, `README.md`, `docs/ARGON_AUDITORIA.md`, the relevant technical docs, both ADRs, and the latest `master` history before changing behavior. Inspect existing implementations first. Do not treat old audit findings as proof that a feature is absent.
+Read `docs/ENGLISH_MIGRATION.md`, `docs/CI_BATCHES_AND_SESSION_RECOVERY.md`, `TODO.md`, `README.md`, `docs/ARGON_AUDITORIA.md`, the relevant technical docs, both ADRs, and the latest `master` history before changing behavior. Inspect existing implementations first. Do not treat old audit findings as proof that a feature is absent.
 
 ## Mission
 
@@ -26,6 +26,7 @@ Build a **local-first, app-first** interactive story and visual novel platform, 
 16. **English is the default language for the entire product and repository**: README, documentation, contribution guidance, UI labels, settings, accessibility names, errors, test descriptions, and developer comments. Existing stable API paths, database fields, persisted data, user-authored content, and external model identifiers must not be renamed merely for translation. Story output language remains user-selectable; natural Latin American Spanish remains a supported story-language option.
 17. Do not report PASS without a traceable execution. Record FAILED, SKIPPED, or NOT RUN accurately.
 18. Update `TODO.md`, roadmap, progress log, and issue links when completing milestones. Work directly on `master` unless explicitly instructed otherwise.
+19. Conserve GitHub Actions minutes: work in **batches of five completed functional implementations** rather than triggering full CI per commit. Track the open batch and last verified SHA in `docs/CI_BATCHES_AND_SESSION_RECOVERY.md`, use local/targeted checks when feasible, and never report tests as PASS when they were NOT RUN. Trigger full CI early only for critical P0 issues or when explicitly requested.
 
 ## Engineering priorities
 
@@ -45,4 +46,4 @@ Use the open-source reference work from Urakatsu and Koharu only in accordance w
 
 ## Completion report
 
-Describe what changed, what remains unfinished, modified paths, exact commit(s), evidence from executed tests (with environment and screenshots where applicable), and any known real-hardware limitations. Update `docs/PROGRESO.md` and `TODO.md` without inventing validation results.
+Describe what changed, what remains unfinished, modified paths, exact commit(s), the current implementation-batch count, evidence from executed tests (with environment and screenshots where applicable), and any known real-hardware limitations. Update `docs/PROGRESO.md` and `TODO.md` without inventing validation results.

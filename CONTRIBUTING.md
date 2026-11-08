@@ -20,7 +20,7 @@ npm --prefix apps/web run build
 npm --prefix apps/web run test:e2e
 ```
 
-Playwright requires its browser dependencies and the development services described in [the CI workflow](.github/workflows/p0-docs.yml). If you cannot run a check, report it as **NOT RUN** instead of claiming it passed.
+Playwright requires its browser dependencies and the development services described in [the CI workflow](.github/workflows/p0-docs.yml). GitHub Actions no longer runs on every commit or PR update; refer to [Batched CI and Session Recovery](docs/CI_BATCHES_AND_SESSION_RECOVERY.md). A maintainer triggers `full` after five completed implementations, or `quick` for an earlier Python/build check. If you cannot run a check, report it as **NOT RUN** instead of claiming it passed.
 
 ## Pull request checklist
 
