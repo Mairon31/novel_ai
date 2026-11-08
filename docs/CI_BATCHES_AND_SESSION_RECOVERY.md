@@ -78,33 +78,49 @@ If the session has only GitHub repository access and cannot run code, still writ
 
 | Item | Value |
 | --- | --- |
-| Last fully verified repository SHA | `e87bd89a6a8c8f81f562e7a1124607a2bdd20dfc` (N-22 code was last changed in `91e9362`) |
-| Successful full CI run | [#42461993185](https://github.com/Mairon31/novel_ai/actions/runs/42461993185) |
-| Evidence at that exact SHA | **419/419 Python**, **102/102 Playwright** desktop/mobile, Vite build PASS |
-| Most recent milestone | N-22 opt-in visual first-turn readiness gate + explicit reversible text-only choice |
+| Last fully verified repository SHA | `21a9ae40a114027dfe5e96c960f08bfddaf174e7` (5-unit B001 plus fixes, explicit full-batch trigger) |
+| Successful full CI run | [#42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245) |
+| Evidence at that exact SHA | **436/436 Python**, **110/110 Playwright** desktop/mobile, frontend build PASS |
+| Most recent milestone | B001 5/5: initial visual plans, agency contract, reviewed gallery cover, story freedom modes, NPC goals/refusals |
 | Previous documentation checkpoint | `e87bd89a6a8c8f81f562e7a1124607a2bdd20dfc` |
 | CI trigger policy commit | `1d65511eb55ef0ce003c047d32f79c8b465a476a` |
 | Policy/docs verification | **NOT RUN** by design; changes only to workflow/docs, no functional code modified |
 
-The passing baseline verifies code through `e87bd89a` under the previous per-commit workflow. It does **not** certify any future code committed after it. Always inspect the current `master` SHA and the open batch before asserting tests passed.
+The new successful full-batch baseline verifies code through `21a9ae40`. Earlier baseline: `e87bd89a`, [CI #42461993185](https://github.com/Mairon31/novel_ai/actions/runs/42461993185) (419 Python + 102 Playwright PASS). It does **not** certify any future code committed after the new baseline. Always inspect the current `master` SHA and the open batch before asserting tests passed.
 
-## Batch B001 — READY FOR FULL CI (5/5)
+## Batch B001 — CLOSED (5/5; FULL CI PASS)
 
 Count **functional implementations**, not Git commits. Enter the TODO ID, relevant commit(s), tests written, and executed result into the first unused slot. A documentation-only handoff does not count.
 
 | Unit | TODO / scope | Commit(s) | Tests written / executed | State |
 | --- | --- | --- | --- | --- |
-| 1 | N-22 — deterministic initial visual asset plan, author-facing media checklist, editable prompt and explicit ComfyUI background generation | `f614631`, `f56b4da` | `tests/test_visual_preflight.py` (API, no hidden plot, gallery selection), `apps/web/tests/visual-preparation.spec.ts` (desktop/mobile, no implicit render). **NOT RUN**: deferred to B001 full batch. | IMPLEMENTED / UNVERIFIED |
-| 2 | N-18 — deterministic narrator agency and causal consequence policy for four interaction modes and consecutive continuation pacing | `fcf7164`, `1f8516d` | `tests/test_narrative_agency.py` (prompt construction, author-guidelines preservation, mode-specific rules). **NOT RUN**: deferred to B001 batch; no semantic LLM inference benchmark. | IMPLEMENTED / UNVERIFIED |
-| 3 | N-22 — explicitly reviewed gallery-to-cover promotion (SHA-verified story-owned source, durable idempotent mapping, original preserved) | `a85d3dd`, `b77ace5`, `8d8b1cf` | `tests/test_gallery_cover_approval.py` and `apps/web/tests/gallery-cover-approval.spec.ts` created; **NOT RUN**, scheduled for B001 final CI. | IMPLEMENTED / UNVERIFIED |
-| 4 | N-18 — guided/flexible/strict story freedom modes persisted in Creator Blueprint, with legacy defaults and narrative policy integration | `5f03d3b`, `bee5cbf` | Added API/contract tests in `test_narrative_agency.py`, Playwright `creator-freedom.spec.ts`; **NOT RUN**, pending B001 full. | IMPLEMENTED / UNVERIFIED |
-| 5 | N-18 — author-defined NPC independent goals and refusal conditions stored per character, with legacy-update preservation and private narrator context | `de9a704`, `673e473` | `tests/test_npc_agency_profiles.py` and `apps/web/tests/npc-agency.spec.ts` written; **NOT RUN** until the single full B001 verification. | IMPLEMENTED / UNVERIFIED |
+| 1 | N-22 — deterministic initial visual asset plan, author-facing media checklist, editable prompt and explicit ComfyUI background generation | `f614631`, `f56b4da` | [CI #42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245): Python/browser suites completed successfully (overall 436/436 + 110/110 PASS); real GPU/model behavior not tested. | VERIFIED IN B001 |
+| 2 | N-18 — deterministic narrator agency and causal consequence policy for four interaction modes and consecutive continuation pacing | `fcf7164`, `1f8516d` | [CI #42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245): Python/browser suites completed successfully (overall 436/436 + 110/110 PASS); real GPU/model behavior not tested. | VERIFIED IN B001 |
+| 3 | N-22 — explicitly reviewed gallery-to-cover promotion (SHA-verified story-owned source, durable idempotent mapping, original preserved) | `a85d3dd`, `b77ace5`, `8d8b1cf` | [CI #42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245): Python/browser suites completed successfully (overall 436/436 + 110/110 PASS); real GPU/model behavior not tested. | VERIFIED IN B001 |
+| 4 | N-18 — guided/flexible/strict story freedom modes persisted in Creator Blueprint, with legacy defaults and narrative policy integration | `5f03d3b`, `bee5cbf` | [CI #42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245): Python/browser suites completed successfully (overall 436/436 + 110/110 PASS); real GPU/model behavior not tested. | VERIFIED IN B001 |
+| 5 | N-18 — author-defined NPC independent goals and refusal conditions stored per character, with legacy-update preservation and private narrator context | `de9a704`, `673e473` | [CI #42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245): Python/browser suites completed successfully (overall 436/436 + 110/110 PASS); real GPU/model behavior not tested. | VERIFIED IN B001 |
 
 **Batch boundary implementation commit:** `673e47363a1f3f7ee89edaa53ebd0b83334ae526`.  
-**Full batch workflow attempt 1:** [Run #42464879028](https://github.com/Mairon31/novel_ai/actions/runs/42464879028) on `b03be27d698ea632ecc90740e45dcb64416fc5dc` **FAILED**: Python 436 tests/1 failure (context inspector assumed the premise was in the first prompt paragraph); browser 108 passed/2 failed (truncated PNG in new gallery-cover E2E on desktop and mobile). This is *not* a verified B001 checkpoint. Fixes published in `59d590e` (section parsing), `e6281f1`, `4981c67` (Pillow-verified 48×48 PNG fixture). **Retry full CI pending** on the corrected SHA; do not close B001 before both jobs PASS.  
-**Outstanding failures:** none known at the last verified baseline; all 5 new units remain **NOT RUN**. A static catalog comparison found **1,694 keys per language**, all key sets and interpolations equal. Static parity does not prove UI runtime correctness.
+**Full batch workflow attempt 1:** [Run #42464879028](https://github.com/Mairon31/novel_ai/actions/runs/42464879028) on `b03be27d698ea632ecc90740e45dcb64416fc5dc` **FAILED**: Python 435/436 passed (context inspector expected the premise in the first prompt paragraph); browser 108 passed/2 failed (truncated PNG in new gallery-cover E2E on desktop and mobile). Fixes: `59d590e` (section parsing), `e6281f1` + `4981c67` (Pillow-verified PNG). Failure evidence retained; superseded by passing attempt 2.  
+**Full batch workflow attempt 2:** [Run #42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245) on `21a9ae40a114027dfe5e96c960f08bfddaf174e7`: **436/436 Python + 110/110 Playwright PASS** (desktop/mobile), Vite build PASS. B001 closed. Neither CI nor mocked inference certifies real ComfyUI GPU rendering or semantic NPC behavior.  
+**Outstanding failures:** none in the completed second CI run. Deferred GPU, scene director, queue recovery, and broader i18n work remain tracked in `TODO.md`. Locale catalogs were structurally checked: 1,694 keys each, 0 interpolation differences.
 
 Possible next priorities: N-22 persistent image generation queue and reviewed cover generation, N-18 scene-beat planning and model-based semantic evaluation, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
+
+## Batch B002 — OPEN (0/5)
+
+The five verified B001 implementations above are **not** part of this new batch. Record only independently completed new functional units below; do not trigger CI until five units or a critical P0 exception.
+
+| Unit | TODO / scope | Commit(s) | Tests written / executed | State |
+| --- | --- | --- | --- | --- |
+| 1 | — | — | NOT RUN | OPEN |
+| 2 | — | — | NOT RUN | OPEN |
+| 3 | — | — | NOT RUN | OPEN |
+| 4 | — | — | NOT RUN | OPEN |
+| 5 | — | — | NOT RUN | OPEN |
+
+**B002 full CI:** NOT RUN.  
+**B002 implementation boundary:** not chosen.
 
 ## Resume procedure after an interrupted session
 
