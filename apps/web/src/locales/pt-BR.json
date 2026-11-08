@@ -1612,5 +1612,19 @@
   "reader.directorReasonNew": "Não há fundo registrado para essas condições; é preciso solicitar a geração de uma imagem.",
   "storySse.preparing": "Preparando o contexto da história...",
   "storySse.connecting": "Conectando ao modelo narrador...",
-  "storySse.streaming": "Gerando narração..."
+  "storySse.streaming": "Gerando narração...",
+  "apiClient.badRequest": "Não foi possível aceitar a solicitação.",
+  "apiClient.authenticationRequired": "É necessário autenticar-se.",
+  "apiClient.accessDenied": "Você não tem permissão para realizar esta ação.",
+  "apiClient.notFound": "O recurso solicitado não foi encontrado.",
+  "apiClient.requestTimeout": "O tempo de espera da solicitação esgotou. Tente novamente.",
+  "apiClient.conflict": "A solicitação entra em conflito com o estado atual.",
+  "apiClient.payloadTooLarge": "O arquivo excede o tamanho permitido.",
+  "apiClient.invalidField": "Verifique o valor de {{field}}.",
+  "apiClient.tooManyRequests": "Solicitações demais. Tente novamente mais tarde.",
+  "apiClient.serverError": "O servidor não conseguiu concluir a solicitação.",
+  "apiClient.serviceUnavailable": "O serviço está temporariamente indisponível.",
+  "apiClient.networkError": "Não foi possível conectar ao servidor do Noble AI. Verifique se ele está em execução.",
+  "apiClient.storyNotFound": "A história não foi encontrada.",
+  "apiClient.generationError": "O narrador não conseguiu concluir a geração deste turno."
 }

@@ -141,7 +141,7 @@ export type GenerationEvent =
   | { event: 'status'; data: { phase: 'preparing' | 'connecting' | 'streaming'; message: string } }
   | { event: 'delta'; data: { text: string } }
   | { event: 'done'; data: { turn: StoryTurn; replayed: boolean } }
-  | { event: 'error'; data: { message: string } };
+  | { event: 'error'; data: { message: string; code?: 'story_not_found' | 'generation_failed' } };
 
 export type KoboldStatus = {
   status: 'stopped' | 'starting' | 'ready' | 'exited';

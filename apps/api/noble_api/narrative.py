@@ -835,7 +835,7 @@ class NarrativeService:
                 return
             story = self.get_story(story_id)
             if not story:
-                yield encode_event("error", {"message": "Story not found"})
+                yield encode_event("error", {"code": "story_not_found", "message": "Story not found"})
                 return
             config = self.config()
             collected: list[str] = []
@@ -873,10 +873,12 @@ class NarrativeService:
                 turn = self.append(story_id, request_id, mode, instruction, text, config["model"])
                 yield encode_event("done", {"turn": turn, "replayed": False})
             except HTTPException as exc:
-                yield encode_event("error", {"message": str(exc.detail)[:400]})
+                yield encode_event("error", {"code": "generation_failed",
+                                             "message": str(exc.detail)[:400]})
             except (httpx.HTTPError, ValueError, OSError, sqlite3.Error) as exc:
                 # Never commit an incomplete story turn.
-                yield encode_event("error", {"message": str(exc)[:400]})
+                yield encode_event("error", {"code": "generation_failed",
+                                             "message": str(exc)[:400]})
             finally:
                 if self.resources is not None:
                     self.resources.release_local_gpu(lease)

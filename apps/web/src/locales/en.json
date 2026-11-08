@@ -1612,5 +1612,19 @@
   "reader.directorReasonNew": "No background registered for these conditions; explicit image generation is required.",
   "storySse.preparing": "Preparing story context...",
   "storySse.connecting": "Connecting to narrator model...",
-  "storySse.streaming": "Generating narration..."
+  "storySse.streaming": "Generating narration...",
+  "apiClient.badRequest": "The request could not be accepted.",
+  "apiClient.authenticationRequired": "Authentication is required.",
+  "apiClient.accessDenied": "You do not have permission to perform this action.",
+  "apiClient.notFound": "The requested resource was not found.",
+  "apiClient.requestTimeout": "The request timed out. Try again.",
+  "apiClient.conflict": "The request conflicts with the current state.",
+  "apiClient.payloadTooLarge": "The uploaded content exceeds the allowed size.",
+  "apiClient.invalidField": "Check the value of {{field}}.",
+  "apiClient.tooManyRequests": "Too many requests. Try again later.",
+  "apiClient.serverError": "The server could not complete the request.",
+  "apiClient.serviceUnavailable": "The service is temporarily unavailable.",
+  "apiClient.networkError": "Could not connect to the Noble AI server. Check that it is running.",
+  "apiClient.storyNotFound": "The story could not be found.",
+  "apiClient.generationError": "The narrator could not finish generating this turn."
 }

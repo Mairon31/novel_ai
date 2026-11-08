@@ -162,5 +162,39 @@ class InterfaceLocaleTests(unittest.TestCase):
 
 
 
+    def test_api_error_boundaries_are_localized_and_keep_diagnostics_separate(self):
+        """All HTTP/media/SSE fallback errors must flow through one i18n boundary."""
+        english = json.loads((BASE / "en.json").read_text("utf-8"))
+        keys = (
+            "apiClient.badRequest", "apiClient.authenticationRequired",
+            "apiClient.accessDenied", "apiClient.notFound",
+            "apiClient.requestTimeout", "apiClient.conflict",
+            "apiClient.payloadTooLarge", "apiClient.invalidField",
+            "apiClient.tooManyRequests", "apiClient.serverError",
+            "apiClient.serviceUnavailable", "apiClient.networkError",
+            "apiClient.storyNotFound", "apiClient.generationError",
+        )
+        for language in LANGUAGES:
+            catalog = json.loads((BASE / (language + ".json")).read_text("utf-8"))
+            for key in keys:
+                with self.subTest(language=language, key=key):
+                    self.assertIn(key, catalog)
+                    self.assertTrue(catalog[key].strip())
+                    if language != "en":
+                        self.assertNotEqual(english[key], catalog[key])
+        helper = (BASE.parent / "apiErrors.ts").read_text("utf-8")
+        self.assertIn("export async function responseFailure(", helper)
+        self.assertIn("export function streamFailure(", helper)
+        self.assertIn("readonly diagnostic: unknown", helper)
+        api_source = (BASE.parent / "api.ts").read_text("utf-8")
+        studio = (BASE.parent / "StoryStudio.tsx").read_text("utf-8")
+        self.assertEqual(api_source.count("await fetchWithApiError("), 8)
+        self.assertGreaterEqual(api_source.count("throw await responseFailure("), 8)
+        self.assertNotIn("throw new Error(error.detail", api_source)
+        self.assertNotIn("throw new Error(payload.detail", api_source)
+        self.assertIn("throw streamFailure(evt.data)", studio)
+        self.assertNotIn("throw new Error(evt.data.message)", studio)
+
+
 if __name__ == "__main__":
     unittest.main()

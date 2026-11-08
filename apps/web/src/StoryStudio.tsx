@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, P
 import { api } from './api';
 import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
+import { streamFailure } from './apiErrors';
 import { StoryHub } from './StoryHub';
 import type { BranchTree, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn } from './types';
 
@@ -179,7 +180,7 @@ export function StoryStudio({
       }, controllerLocal.signal, (evt: GenerationEvent) => {
         if (evt.event === 'status') setGenerationMessageKey('storySse.' + evt.data.phase);
         if (evt.event === 'delta') setStreamText(text => text + evt.data.text);
-        if (evt.event === 'error') throw new Error(evt.data.message);
+        if (evt.event === 'error') throw streamFailure(evt.data);
         if (evt.event === 'done') {
           complete = true;
           setTurns(old => old.some(t => t.id === evt.data.turn.id) ?

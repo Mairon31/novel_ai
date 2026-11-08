@@ -1,18 +1,13 @@
 import i18n from './i18n';
+import { fetchWithApiError, responseFailure } from './apiErrors';
 import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, ComfyLaunchConfig, ComfyLaunchValidation, ComfyRuntimeStatus, ComfyRuntimeLogs, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch('/api/v1' + path, {
+  const response = await fetchWithApiError('/api/v1' + path, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
-  if (!response.ok) {
-    const failure: { detail?: string | Array<{ msg?: string }> } = await response.json().catch(() => ({}));
-    const message = Array.isArray(failure.detail)
-      ? failure.detail.map((entry) => entry.msg || i18n.t('apiClient.validationError')).join(', ')
-      : failure.detail;
-    throw new Error(message || (i18n.t('apiClient.httpError', { status: response.status })));
-  }
+  if (!response.ok) throw await responseFailure(response);
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
@@ -167,13 +162,12 @@ export const api = {
     request<PiperVoiceJob>('/tts/downloads/' + encodeURIComponent(jobId) +
       '/' + action, { method: 'POST' }),
   async previewPiperVoice(voice_id: string, text: string): Promise<Blob> {
-    const response = await fetch('/api/v1/tts/preview', {
+    const response = await fetchWithApiError('/api/v1/tts/preview', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ voice_id, text, request_source: 'preview_button' }),
     });
     if (!response.ok) {
-      const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || i18n.t('apiClient.voicePreviewError'));
+      throw await responseFailure(response, 'apiClient.voicePreviewError');
     }
     return response.blob();
   },
@@ -188,14 +182,13 @@ export const api = {
       method: 'PUT', body: JSON.stringify({ default_voice_id }),
     }),
   async requestSpeech(storyId: string, turnId: string, voice_id: string): Promise<Blob> {
-    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
+    const response = await fetchWithApiError('/api/v1/stories/' + encodeURIComponent(storyId) +
       '/turns/' + encodeURIComponent(turnId) + '/speech', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ voice_id, request_source: 'listen_button' }),
     });
     if (!response.ok) {
-      const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || i18n.t('apiClient.voiceSynthesisError'));
+      throw await responseFailure(response, 'apiClient.voiceSynthesisError');
     }
     return response.blob();
   },
@@ -230,11 +223,10 @@ export const api = {
     if (data.expression) body.append('expression', data.expression);
     if (data.pose) body.append('pose', data.pose);
     body.append('file', data.file);
-    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
+    const response = await fetchWithApiError('/api/v1/stories/' + encodeURIComponent(storyId) +
       '/creator/assets', { method: 'POST', body });
     if (!response.ok) {
-      const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || i18n.t('apiClient.saveVisualError'));
+      throw await responseFailure(response, 'apiClient.saveVisualError');
     }
     return response.json() as Promise<CreatorMediaAsset>;
   },
@@ -244,12 +236,11 @@ export const api = {
     const body = new FormData();
     body.append('caption', data.caption); body.append('pose', data.pose);
     body.append('layout', data.layout); body.append('file', data.file);
-    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) +
+    const response = await fetchWithApiError('/api/v1/stories/' + encodeURIComponent(storyId) +
       '/creator/characters/' + encodeURIComponent(characterId) + '/expression-sheet',
       { method: 'POST', body });
     if (!response.ok) {
-      const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || i18n.t('apiClient.importExpressionError'));
+      throw await responseFailure(response, 'apiClient.importExpressionError');
     }
     return response.json() as Promise<{ assets: CreatorMediaAsset[]; count: number }>;
   },
@@ -360,11 +351,10 @@ export const api = {
   }> {
     const body = new FormData();
     body.append('file', file);
-    const response = await fetch('/api/v1/stories/archive/import?as_copy=' + String(asCopy),
+    const response = await fetchWithApiError('/api/v1/stories/archive/import?as_copy=' + String(asCopy),
       { method: 'POST', body });
     if (!response.ok) {
-      const payload: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || i18n.t('apiClient.restoreBackupError'));
+      throw await responseFailure(response, 'apiClient.restoreBackupError');
     }
     return response.json();
   },
@@ -382,12 +372,11 @@ export const api = {
   async uploadSceneImage(storyId: string, file: File): Promise<Story> {
     const form = new FormData();
     form.append('file', file);
-    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) + '/scene-image', {
+    const response = await fetchWithApiError('/api/v1/stories/' + encodeURIComponent(storyId) + '/scene-image', {
       method: 'POST', body: form,
     });
     if (!response.ok) {
-      const payload: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || i18n.t('apiClient.importIllustrationError'));
+      throw await responseFailure(response, 'apiClient.importIllustrationError');
     }
     return response.json() as Promise<Story>;
   },
@@ -409,18 +398,11 @@ export const api = {
     signal: AbortSignal,
     onEvent: (data: GenerationEvent) => void,
   ): Promise<void> {
-    const response = await fetch('/api/v1/stories/' + encodeURIComponent(storyId) + '/generate', {
+    const response = await fetchWithApiError('/api/v1/stories/' + encodeURIComponent(storyId) + '/generate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body), signal,
     });
-    if (!response.ok) {
-      let error = i18n.t('apiClient.httpError', { status: response.status });
-      try {
-        const payload = await response.json() as { detail?: string };
-        error = payload.detail || error;
-      } catch { /* Response may not be JSON. */ }
-      throw new Error(error);
-    }
+    if (!response.ok) throw await responseFailure(response, 'apiClient.generationError');
     if (!response.body) throw new Error(i18n.t('apiClient.noStreamError'));
     const reader = response.body.getReader();
     const decoder = new TextDecoder();

@@ -1612,5 +1612,19 @@
   "reader.directorReasonNew": "没有符合这些条件的已登记背景；需要明确请求生成图像。",
   "storySse.preparing": "正在准备故事上下文...",
   "storySse.connecting": "正在连接叙事模型...",
-  "storySse.streaming": "正在生成叙述..."
+  "storySse.streaming": "正在生成叙述...",
+  "apiClient.badRequest": "无法接受此请求。",
+  "apiClient.authenticationRequired": "需要身份验证。",
+  "apiClient.accessDenied": "你没有权限执行此操作。",
+  "apiClient.notFound": "未找到请求的资源。",
+  "apiClient.requestTimeout": "请求超时，请重试。",
+  "apiClient.conflict": "请求与当前状态冲突。",
+  "apiClient.payloadTooLarge": "上传内容超出允许的大小。",
+  "apiClient.invalidField": "请检查 {{field}} 的值。",
+  "apiClient.tooManyRequests": "请求过于频繁，请稍后再试。",
+  "apiClient.serverError": "服务器无法完成请求。",
+  "apiClient.serviceUnavailable": "服务暂时不可用。",
+  "apiClient.networkError": "无法连接到 Noble AI 服务器，请确认服务器正在运行。",
+  "apiClient.storyNotFound": "找不到该故事。",
+  "apiClient.generationError": "叙事模型无法完成本轮生成。"
 }
