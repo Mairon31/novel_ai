@@ -27,9 +27,9 @@ class StoryCreationPreflightTests(unittest.TestCase):
         base = {"title": "A proper title", "premise": "A world with rules and consequences.",
                 "protagonist_name": "Alex"}
         bad = [
-            {"title": "      "}, {"premise": " " * 30}, {"protagonist_name": "\\n"},
-            {"title": "Good\\nBad"}, {"protagonist_name": "Alex\\tDeveloper"},
-            {"premise": "A valid tale\\x00with null bytes."},
+            {"title": "      "}, {"premise": " " * 30}, {"protagonist_name": "\n"},
+            {"title": "Good\nBad"}, {"protagonist_name": "Alex\tDeveloper"},
+            {"premise": "A valid tale\x00with null bytes."},
         ]
         for change in bad:
             with self.subTest(change=change):
@@ -43,14 +43,14 @@ class StoryCreationPreflightTests(unittest.TestCase):
     def test_normalize_fields_and_keep_multiline_world_text(self):
         response = self.client.post("/api/v1/stories", json={
             "title": "  Forgotten islands  ",
-            "premise": "  A city floats above the sea.\\nPeople remember old promises.  ",
+            "premise": "  A city floats above the sea.\nPeople remember old promises.  ",
             "protagonist_name": "  Luna  ",
         })
         self.assertEqual(response.status_code, 201, response.text)
         story = response.json()
         self.assertEqual(story["title"], "Forgotten islands")
         self.assertEqual(story["protagonist_name"], "Luna")
-        self.assertEqual(story["premise"], "A city floats above the sea.\\nPeople remember old promises.")
+        self.assertEqual(story["premise"], "A city floats above the sea.\nPeople remember old promises.")
         self.assertEqual(len(self.client.get("/api/v1/stories").json()["stories"]), 1)
 
 if __name__ == "__main__":
