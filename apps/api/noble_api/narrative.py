@@ -132,6 +132,7 @@ class NarrativeService:
     def __init__(self, store: Store, transport: httpx.AsyncBaseTransport | None = None,
                  secrets: Secrets | None = None, preferences=None, workers=None):
         self.store = store
+        self.visual_preflight = None
         self.secrets = secrets or Secrets()
         self.workers = workers
         self.visual = None  # injected after VisualState initializes its SQLite tables
@@ -974,6 +975,11 @@ def mount_narrative_routes(app, narrative: NarrativeService):
         if body.mode != "continue" and not body.input_text.strip():
             raise HTTPException(422, "Enter an action, dialogue, or instruction")
         sid, rid = str(story_id), str(body.request_id)
+        if narrative.visual_preflight is not None:
+            try:
+                narrative.visual_preflight.require_ready(sid)
+            except ValueError as exc:
+                raise HTTPException(409, str(exc)) from exc
         stopped = narrative.register_generation(sid, rid)
 
         async def events():

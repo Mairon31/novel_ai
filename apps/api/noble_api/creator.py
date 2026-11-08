@@ -15,6 +15,7 @@ import uuid
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+from typing import Literal
 
 from .narrative import NarrativeService
 
@@ -30,6 +31,8 @@ class CreatorBlueprint(BaseModel):
     genre: str = Field(default="", max_length=80)
     tags: list[str] = Field(default_factory=list, max_length=12)
     language: str = "es-419"
+    # Legacy projects continue in text mode unless the author opts in.
+    visual_start: Literal["text", "cover_background", "cover_background_cast"] = "text"
 
 
 class VisualDNA(BaseModel):
@@ -221,6 +224,8 @@ class CreatorService:
             raise ValueError("Opening not found")
         if self.narrative.turns(story_id,limit=1):
             raise ValueError("The story has already started; its opening cannot be replaced")
+        if self.narrative.visual_preflight is not None:
+            self.narrative.visual_preflight.require_ready(story_id)
         name=self.narrative.get_story(story_id).get("protagonist_name","Protagonist")
         content=scenarios[index].replace("{{user}}",name)
         return self.narrative.append(story_id,str(uuid.uuid4()),"story","",

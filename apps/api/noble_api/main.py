@@ -40,6 +40,7 @@ from .story_generator import mount_story_generator_routes
 from .lorebook import LorebookService, mount_lorebook_routes
 from .world_state import WorldStateService, mount_world_state_routes
 from .creator_media import CreatorMediaService, mount_creator_media_routes
+from .visual_preflight import VisualPreflight, mount_visual_preflight_routes
 from .story_export import mount_story_export_routes
 from .story_archive import mount_story_archive_routes
 from .branch_map import mount_branch_routes
@@ -119,6 +120,8 @@ def create_app(
     director = VisualDirector(visual, planner, world)
     creator_media = CreatorMediaService(narrative)
     narrative.creator_media = creator_media
+    visual_preflight = VisualPreflight(narrative, creator_media)
+    narrative.visual_preflight = visual_preflight
     episodes = EpisodicMemory(narrative)
     narrative.episodes = episodes
     images = SceneImageService(narrative, transport=image_transport, resources=resources)
@@ -168,6 +171,7 @@ def create_app(
     service.state.lorebook = lorebook
     service.state.world = world
     service.state.creator_media = creator_media
+    service.state.visual_preflight = visual_preflight
     service.state.episodes = episodes
 
     @service.exception_handler(CatalogError)
@@ -308,6 +312,7 @@ def create_app(
     mount_lorebook_routes(service, lorebook)
     mount_world_state_routes(service, world)
     mount_creator_media_routes(service, creator_media)
+    mount_visual_preflight_routes(service, visual_preflight)
     mount_sprite_draft_routes(service, sprite_drafts)
     mount_image_routes(service, images)
     mount_resource_routes(service, resources)
