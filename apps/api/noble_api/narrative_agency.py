@@ -38,6 +38,28 @@ MODE = {
         "established world rules and competing NPC actions; never silently "
         "replace the player's intended action with a different choice."
     ),
+    "think": (
+        "The player's text represents the protagonist's private thoughts, "
+        "suspicions, or intentions. These are NOT audible dialogue, a public "
+        "action, or automatically true facts. Other characters do not learn "
+        "these thoughts unless an established event reveals them. Describe "
+        "what the protagonist can reasonably notice or consider, but never "
+        "assign additional beliefs or decisions to the player."
+    ),
+    "observe": (
+        "The player's text directs the protagonist's attention toward an "
+        "object, person, clue, or environment. Report only perceptible "
+        "information consistent with location, lighting and available "
+        "knowledge; do not have the protagonist act on the observation, "
+        "or grant knowledge of hidden NPC motives without evidence."
+    ),
+    "interact": (
+        "The player's text attempts direct interaction with an NPC or an "
+        "object. Treat it as an attempt rather than guaranteed cooperation, "
+        "access or success. Respect NPC goals, refusal conditions, distance, "
+        "ownership and any established physical constraints, while leaving "
+        "further player choices to the player."
+    ),
     "story": (
         "The player's text suggests narrative direction. Weave it into "
         "the scene where consistent with confirmed canon, and preserve "

@@ -975,7 +975,8 @@ def mount_narrative_routes(app, narrative: NarrativeService):
     async def stream_story(story_id: uuid.UUID, body: TurnRequest, request: Request):
         if not narrative.get_story(str(story_id)):
             raise HTTPException(404, "Story not found")
-        if body.mode not in {"say", "do", "story", "continue"}:
+        if body.mode not in {"say", "do", "think", "observe", "interact",
+                             "story", "continue"}:
             raise HTTPException(422, "Invalid interaction mode")
         if body.mode != "continue" and not body.input_text.strip():
             raise HTTPException(422, "Enter an action, dialogue, or instruction")

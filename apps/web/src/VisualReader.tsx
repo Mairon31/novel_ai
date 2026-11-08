@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowRight, BookOpen, Camera, Check, ChevronRight, Cpu, Eye, Feather,
+  Hand, Brain, MessageCircle, Move, PenLine, ScanEye,
   Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2, Volume2, Square,
   Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download, EyeOff, History,
 } from 'lucide-react';
@@ -534,8 +535,24 @@ export function VisualReader({
     });
     setInspectorOpen(false);
   }
-  const inputLabel = t(mode === 'say' ? 'reader.inputSay' :
-    mode === 'story' ? 'reader.inputStory' : 'reader.inputDo');
+  const inputLabel = t({
+    say: 'reader.inputSay', do: 'reader.inputDo',
+    think: 'readerModes.inputThink', observe: 'readerModes.inputObserve',
+    interact: 'readerModes.inputInteract', story: 'reader.inputStory',
+    continue: 'reader.inputDo',
+  }[mode] || 'reader.inputDo');
+  const modeInfo: Array<{
+    id: Exclude<StoryTurn['mode'], 'continue'>;
+    title: string; hint: string; icon: typeof MessageCircle;
+  }> = [
+    { id: 'say', title: t('reader.speak'), hint: t('readerModes.sayHint'), icon: MessageCircle },
+    { id: 'do', title: t('reader.act'), hint: t('readerModes.doHint'), icon: Move },
+    { id: 'think', title: t('readerModes.think'), hint: t('readerModes.thinkHint'), icon: Brain },
+    { id: 'observe', title: t('readerModes.observe'), hint: t('readerModes.observeHint'), icon: ScanEye },
+    { id: 'interact', title: t('readerModes.interact'), hint: t('readerModes.interactHint'), icon: Hand },
+    { id: 'story', title: t('reader.narrate'), hint: t('readerModes.storyHint'), icon: PenLine },
+  ];
+  const selectedMode = modeInfo.find(item => item.id === mode) || modeInfo[1];
 
   if (!active) return <div className="story-start-screen noble-reader-empty">
     <div className="story-start-icon"><BookOpen size={34}/></div>
@@ -629,8 +646,12 @@ export function VisualReader({
           id={'noble-turn-' + turn.id} key={turn.id}>
           <small>{t('reader.sceneNumber', { number: String(i + 1).padStart(2, '0') })}</small>
           <div className="noble-reader-user">
-            <span>{t(turn.mode === 'say' ? 'reader.youSay' : turn.mode === 'do' ? 'reader.youDo' :
-              turn.mode === 'continue' ? 'reader.continueUpper' : 'reader.directionUpper')}</span>
+            <span>{t({
+              say: 'reader.youSay', do: 'reader.youDo',
+              think: 'readerModes.youThink', observe: 'readerModes.youObserve',
+              interact: 'readerModes.youInteract',
+              continue: 'reader.continueUpper', story: 'reader.directionUpper',
+            }[turn.mode])}</span>
             <p>{turn.input_text || t('reader.storyContinues')}</p>
           </div>
           <p className="noble-narration"><NarrativeText text={turn.assistant_text}/></p>
@@ -657,11 +678,20 @@ export function VisualReader({
           {error || readerError} <button onClick={onSettings}>{t('reader.reviewSettings')} <ArrowRight size={13}/></button></div>}
         <div className="noble-reader-mode">
           <span>{t('reader.composeHint', { name: active.protagonist_name })}</span>
-          <select value={mode} disabled={generating} aria-label={t('uiField.visualReader.narrationMode')}
-            onChange={e => setMode(e.target.value as StoryTurn['mode'])}>
-            <option value="do">{t('reader.act')}</option><option value="say">{t('reader.speak')}</option>
-            <option value="story">{t('reader.narrate')}</option>
-          </select>
+          <div className="noble-reader-mode-tabs" role="group"
+            aria-label={t('uiField.visualReader.narrationMode')}>
+            {modeInfo.map(item => {
+              const Icon = item.icon;
+              return <button key={item.id} type="button"
+                aria-pressed={mode === item.id}
+                title={item.hint} disabled={generating}
+                className={mode === item.id ? 'selected' : ''}
+                onClick={() => setMode(item.id)}>
+                <Icon size={15}/><span>{item.title}</span>
+              </button>;
+            })}
+          </div>
+          <small className="noble-reader-mode-hint" role="status">{selectedMode.hint}</small>
         </div>
         <textarea aria-label={t('uiField.visualReader.yourInputInTheStory')} value={draft}
           onChange={e => setDraft(e.target.value)} disabled={generating}
@@ -1086,9 +1116,12 @@ export function VisualReader({
         </label>
         <div className="noble-backlog-entries">
           {backlogItems.map(turn => <article key={turn.id} className="noble-backlog-entry">
-            <div><strong>{t(turn.mode === 'say' ? 'readerUi.backlogDialogue' :
-              turn.mode === 'do' ? 'readerUi.backlogAction' :
-              turn.mode === 'story' ? 'readerUi.backlogDirection' : 'readerUi.backlogContinuation')}
+            <div><strong>{t({
+                say: 'readerUi.backlogDialogue', do: 'readerUi.backlogAction',
+                think: 'readerModes.youThink', observe: 'readerModes.youObserve',
+                interact: 'readerModes.youInteract', story: 'readerUi.backlogDirection',
+                continue: 'readerUi.backlogContinuation',
+              }[turn.mode])}
               {' · '}{active.protagonist_name}</strong>
               <button className="secondary-button" onClick={() => {
                 setBacklogOpen(false); focusTurn(turn);

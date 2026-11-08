@@ -116,7 +116,7 @@ export type BranchTree = {
 };
 export type StoryTurn = {
   id: string; story_id: string; request_id: string;
-  mode: 'say' | 'do' | 'story' | 'continue';
+  mode: 'say' | 'do' | 'think' | 'observe' | 'interact' | 'story' | 'continue';
   input_text: string; assistant_text: string;
   model: string; created_at: number;
 };
