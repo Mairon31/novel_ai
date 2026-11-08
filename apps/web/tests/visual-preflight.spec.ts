@@ -53,7 +53,8 @@ test('illustrated story cannot start silently and explicit text-only choice surv
   await page.reload();
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
   await expect(page.getByRole('region', { name: 'Prepare visuals before starting' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Start opening' }).click();
+  await expect(page.getByRole('region', { name: 'Details of ' + title })).toBeVisible();
+  await page.getByRole('button', { name: 'Start with this opening' }).click();
   await expect(page.locator('.noble-reader-layout')).toBeVisible();
   expect((await (await page.request.get(prefix + '/turns')).json()).turns).toHaveLength(1);
 });
