@@ -377,6 +377,7 @@ export type CreatorBlueprint = {
   story_id: string; synopsis: string; player_plot: string; ai_plot: string;
   guidelines: string; reminder: string; opening_scenarios: string[];
   genre: string; tags: string[]; language: string;
+  freedom_mode: 'guided' | 'flexible' | 'strict';
   visual_start: 'text' | 'cover_background' | 'cover_background_cast';
   updated_at: number | null;
 };

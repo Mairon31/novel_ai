@@ -630,6 +630,8 @@ class NarrativeService:
         world_rules = "\nConfirmed persistent story canon: " + canon if canon else ""
         recent_turns = self.turns(story["id"], limit=16)
         creator_context = self.creator.context(story) if self.creator is not None else ""
+        freedom_mode = (self.creator.get(story["id"])["freedom_mode"]
+                        if self.creator is not None else "flexible")
         # Only the current user intention and a bounded recent history activate
         # lore: author secrets do not trigger themselves by being in AI context.
         activation = "\n".join([
@@ -641,7 +643,7 @@ class NarrativeService:
                             if self.lorebook is not None else "")
         world_context = (self.world.context(story["id"]) if self.world is not None else "")
         messages = [{"role": "system", "content": PROMPT + "\n\n" +
-                     agency_directives(mode, recent_turns) + "\n" +
+                     agency_directives(mode, recent_turns, freedom_mode) + "\n" +
                      output_preferences +
                      "\nPremise: " + story["premise"] + "\nProtagonist: " +
                      story.get("protagonist_name", "Protagonist") + world_rules +

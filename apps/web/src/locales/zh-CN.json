@@ -1682,5 +1682,10 @@
   "visualPrep.defaultCoverCaption": "经过审核的图库封面插图",
   "visualPrep.approveAsCover": "批准并用作封面",
   "visualPrep.coverApproved": "审核后的插图已保存并设为故事封面。",
-  "visualPrep.coverReselected": "已重新选择之前批准的封面。"
+  "visualPrep.coverReselected": "已重新选择之前批准的封面。",
+  "storyFreedom.modeLabel": "叙事自由度",
+  "storyFreedom.guided": "引导 — 保持故事主线",
+  "storyFreedom.flexible": "灵活 — 允许合理的支线发展",
+  "storyFreedom.strict": "严格 — 严守已确立的规则",
+  "storyFreedom.hint": "此设置约束叙述者，而不是玩家的选择。所有模式下 NPC 都保留自己的目标。"
 }

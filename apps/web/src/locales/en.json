@@ -1682,5 +1682,10 @@
   "visualPrep.defaultCoverCaption": "Reviewed gallery illustration for the story cover",
   "visualPrep.approveAsCover": "Approve and use as cover",
   "visualPrep.coverApproved": "The reviewed illustration was saved and selected as the story cover.",
-  "visualPrep.coverReselected": "The previously approved cover has been selected again."
+  "visualPrep.coverReselected": "The previously approved cover has been selected again.",
+  "storyFreedom.modeLabel": "Narrative freedom",
+  "storyFreedom.guided": "Guided — preserve the story arc",
+  "storyFreedom.flexible": "Flexible — plausible detours allowed",
+  "storyFreedom.strict": "Strict — established rules are firm",
+  "storyFreedom.hint": "Controls the narrator's boundaries, not the player's choices. NPCs retain independent goals in every mode."
 }

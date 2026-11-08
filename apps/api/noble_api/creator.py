@@ -31,6 +31,9 @@ class CreatorBlueprint(BaseModel):
     genre: str = Field(default="", max_length=80)
     tags: list[str] = Field(default_factory=list, max_length=12)
     language: str = "es-419"
+    # Story-level boundaries for how far the narrator may diverge from
+    # established plot; never grants control of player decisions.
+    freedom_mode: Literal["guided", "flexible", "strict"] = "flexible"
     # Legacy projects continue in text mode unless the author opts in.
     visual_start: Literal["text", "cover_background", "cover_background_cast"] = "text"
 
@@ -118,7 +121,10 @@ class CreatorService:
             row = db.execute("SELECT config_json,updated_at FROM creator_blueprints WHERE story_id=?",
                              (story_id,)).fetchone()
         if row:
-            return {"story_id":story_id,**json.loads(row["config_json"]),
+            # Older stories lack newly introduced optional blueprint fields.
+            # Restore schema defaults without rewriting their stored content.
+            return {"story_id":story_id,**CreatorBlueprint().model_dump(),
+                    **json.loads(row["config_json"]),
                     "updated_at":row["updated_at"]}
         return {"story_id":story_id,**CreatorBlueprint().model_dump(),"updated_at":None}
 

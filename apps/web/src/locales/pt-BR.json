@@ -1682,5 +1682,10 @@
   "visualPrep.defaultCoverCaption": "Ilustração revisada da galeria para a capa",
   "visualPrep.approveAsCover": "Aprovar e usar como capa",
   "visualPrep.coverApproved": "A ilustração revisada foi salva e selecionada como capa.",
-  "visualPrep.coverReselected": "A capa aprovada anteriormente foi selecionada novamente."
+  "visualPrep.coverReselected": "A capa aprovada anteriormente foi selecionada novamente.",
+  "storyFreedom.modeLabel": "Liberdade narrativa",
+  "storyFreedom.guided": "Guiado — preservar o arco da história",
+  "storyFreedom.flexible": "Flexível — permitir desvios plausíveis",
+  "storyFreedom.strict": "Estrito — respeitar as regras estabelecidas",
+  "storyFreedom.hint": "Define os limites do narrador, não as escolhas do jogador. Os NPCs mantêm objetivos próprios em todos os modos."
 }

@@ -53,7 +53,29 @@ MODE = {
 }
 
 
-def agency_directives(mode: str, recent_turns: list[dict]) -> str:
+FREEDOM_MODES = {
+    "guided": (
+        "Story freedom: GUIDED. Keep the narrative close to the creator's "
+        "established dramatic arc and intended conflicts. Offer consequential "
+        "choices inside that arc, and let NPCs resist or redirect plans when "
+        "their established goals demand it. Do not force a single player action."
+    ),
+    "flexible": (
+        "Story freedom: FLEXIBLE. Accept plausible player-led detours and "
+        "creative problem solving without erasing established canon, witness "
+        "knowledge, location or inventory. NPCs remain independently motivated."
+    ),
+    "strict": (
+        "Story freedom: STRICT. Treat confirmed canon, physics, established "
+        "NPC motives and limited resources as firm boundaries. Decline "
+        "impossible outcomes within the story, explain concrete obstacles "
+        "through in-world consequences, and preserve meaningful choices."
+    ),
+}
+
+
+def agency_directives(mode: str, recent_turns: list[dict],
+                      freedom_mode: str = "flexible") -> str:
     """Return bounded, consistent agency guidance for all supported modes.
 
     The guidance is always English internal API context; the user's selected
@@ -61,7 +83,10 @@ def agency_directives(mode: str, recent_turns: list[dict]) -> str:
     """
     if mode not in MODE:
         raise ValueError("Unsupported narrative mode")
-    directives = [COMMON, "Current interaction: " + MODE[mode]]
+    if freedom_mode not in FREEDOM_MODES:
+        raise ValueError("Unsupported story freedom mode")
+    directives = [COMMON, FREEDOM_MODES[freedom_mode],
+                  "Current interaction: " + MODE[mode]]
     if len(recent_turns) >= 2 and all(
         item.get("mode") == "continue" for item in recent_turns[-2:]):
         directives.append(

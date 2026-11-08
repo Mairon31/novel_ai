@@ -20,7 +20,8 @@ type Section = 'story' | 'cast' | 'lorebook' | 'world' | 'openings' | 'media';
 
 const blankBlueprint: CreatorBlueprintDraft = {
   synopsis: '', player_plot: '', ai_plot: '', guidelines: '', reminder: '',
-  opening_scenarios: [], genre: '', tags: [], language: 'es-419', visual_start: 'text',
+  opening_scenarios: [], genre: '', tags: [], language: 'es-419',
+  freedom_mode: 'flexible', visual_start: 'text',
 };
 const blankCharacter: CreatorCharacterDraft = {
   name: '', description: '', personality: '', dialogue_examples: '',
@@ -142,9 +143,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       .then(([data, cast, media, lorebook, visuals, draftResult]) => {
         if (!live) return;
         const { synopsis, player_plot, ai_plot, guidelines, reminder,
-          opening_scenarios, genre, tags, language, visual_start } = data;
+          opening_scenarios, genre, tags, language, freedom_mode, visual_start } = data;
         setBlueprint({ synopsis, player_plot, ai_plot, guidelines, reminder,
-          opening_scenarios, genre, tags, language, visual_start });
+          opening_scenarios, genre, tags, language, freedom_mode, visual_start });
         setTagsInput(tags.join(', '));
         setCharacters(cast.characters);
         setVisualCharacters(visuals.characters);
@@ -188,7 +189,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         ai_plot: saved.ai_plot, guidelines: saved.guidelines,
         reminder: saved.reminder, opening_scenarios: saved.opening_scenarios,
         genre: saved.genre, tags: saved.tags, language: saved.language,
-        visual_start: saved.visual_start,
+        freedom_mode: saved.freedom_mode, visual_start: saved.visual_start,
       });
       setTagsInput(saved.tags.join(', '));
       setNotice(t('feedback.creatorSaved'));
@@ -1135,6 +1136,17 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </select>
                 </label>
               </div>
+              <label>{t('storyFreedom.modeLabel')}
+                <select aria-label={t('storyFreedom.modeLabel')}
+                  value={blueprint.freedom_mode}
+                  onChange={event => update('freedom_mode',
+                    event.target.value as CreatorBlueprintDraft['freedom_mode'])}>
+                  <option value="guided">{t('storyFreedom.guided')}</option>
+                  <option value="flexible">{t('storyFreedom.flexible')}</option>
+                  <option value="strict">{t('storyFreedom.strict')}</option>
+                </select>
+                <small>{t('storyFreedom.hint')}</small>
+              </label>
               <label>{t('visualStart.creatorModeLabel')}
                 <select aria-label={t('visualStart.creatorModeLabel')} value={blueprint.visual_start}
                   onChange={event => update('visual_start',
