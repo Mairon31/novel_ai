@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
 import { InterfaceLanguageSelector } from './InterfaceLanguageSelector';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2, Compass,
@@ -22,10 +23,10 @@ import type {
   ModelRole, ModelCardResponse, ModelFitVariant, ModelStorage, Page, Settings,
 } from './types';
 
-const roles: Array<{ id: ModelRole; title: string; subtitle: string }> = [
-  { id: 'narrator', title: 'Narration', subtitle: 'GGUF language models' },
-  { id: 'image', title: 'Images', subtitle: 'Diffusion and art' },
-  { id: 'tts', title: 'Voices', subtitle: 'Speech synthesis' },
+const roles: Array<{ id: ModelRole; titleKey: string; subtitleKey: string }> = [
+  { id: 'narrator', titleKey: 'model.roleNarrator', subtitleKey: 'model.roleNarratorDescription' },
+  { id: 'image', titleKey: 'model.roleImage', subtitleKey: 'model.roleImageDescription' },
+  { id: 'tts', titleKey: 'model.roleTts', subtitleKey: 'model.roleTtsDescription' },
 ];
 const menu: Array<{ id: Page; label: string; icon: typeof BookOpen }> = [
   { id: 'inicio', label: 'Library', icon: BookOpen },
@@ -38,15 +39,12 @@ const menu: Array<{ id: Page; label: string; icon: typeof BookOpen }> = [
 ];
 const terminal = ['completed', 'failed', 'cancelled', 'paused'];
 function humanStatus(job: DownloadJob) {
-  return ({
-    queued: 'Queued', downloading: 'Downloading', paused: 'Paused',
-    verifying: 'Verifying', completed: 'Completed',
-    failed: 'Failed', cancelled: 'Canceled',
-  } as Record<string, string>)[job.status] || job.status;
+  return i18n.t('jobs.' + job.status, { defaultValue: job.status });
 }
 function ErrorNote({ message, close }: { message: string; close: () => void }) {
+  const { t } = useTranslation();
   return <div className="error-banner" role="alert"><CircleAlert size={17}/><span>{message}</span>
-    <button aria-label="Dismiss notice" onClick={close}><X size={16}/></button></div>;
+    <button aria-label={t('app.dismissNotice')} onClick={close}><X size={16}/></button></div>;
 }
 function Loading() {
   const { t } = useTranslation();
@@ -56,17 +54,18 @@ function Loading() {
 // FitCell adapted from Urakatsu (MIT), web/src/components/ModelsPage.tsx.
 // Copyright (c) 2026 Urakatsu contributors. See docs/THIRD_PARTY_NOTICES.md.
 function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
+  const { t } = useTranslation();
   const labels: Record<string, string> = {
-    full_gpu: 'Full GPU', partial_offload: 'GPU + RAM',
-    cpu: 'CPU only', too_large: 'Insufficient memory',
-    unsupported: 'Unsupported', unknown: 'No data',
+    full_gpu: t('model.fullGpu'), partial_offload: t('model.fitPartialBadge'),
+    cpu: t('model.fitCpuBadge'), too_large: t('model.insufficient'),
+    unsupported: t('model.fitUnsupported'), unknown: t('model.fitUnknown'),
   };
   const share = fit.fit === 'partial_offload' && fit.gpu_share > 0
     ? ' · ~' + Math.round(fit.gpu_share * 100) + '% GPU' : '';
   const breakdown = [
-    fit.estimated_required_bytes ? 'Estimated memory: ' + size(fit.estimated_required_bytes) : '',
-    fit.estimated_kv_bytes ? 'Context cache: ' + size(fit.estimated_kv_bytes) : '',
-    fit.note, fit.disk_ok === false ? 'Insufficient disk space.' : '',
+    fit.estimated_required_bytes ? t('model.estimatedMemory', { size: size(fit.estimated_required_bytes) }) : '',
+    fit.estimated_kv_bytes ? t('model.contextCache', { size: size(fit.estimated_kv_bytes) }) : '',
+    fit.note, fit.disk_ok === false ? t('model.insufficientDisk') : '',
   ].filter(Boolean).join(' · ');
   return <span className={'hub-fit-state state-' + fit.fit}
     role="status" tabIndex={0} title={breakdown}
@@ -382,7 +381,7 @@ export default function App() {
         repo_id: detail.repo_id, revision: detail.revision, filename: pickedVariant,
       });
       await refreshDownloads();
-      setNotice('Download ' + humanStatus(job).toLowerCase() + ': ' + job.filename);
+      setNotice(t('app.downloadStatus', { status: humanStatus(job).toLowerCase(), filename: job.filename }));
       changePage('descargas');
       setNotice('Download registered: ' + job.filename);
       setDetail(null);
@@ -482,22 +481,22 @@ export default function App() {
         <div className="breadcrumb">Noble AI <span>/</span> <strong>{t("nav." + page)}</strong></div>
         <div className="top-actions">
           <InterfaceLanguageSelector compact/>
-          <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : 'Offline'}</span>
+          <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : t('app.offline')}</span>
           <button className="icon-button" title={t("common.refresh")} aria-label={t("nav.refreshData")} onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
         </div>
       </header>
       <main className="content" data-ready={ready ? "yes" : "no"}>
         {releaseNotice && <div className="notice-banner noble-update-notice">
           <RefreshCw size={17}/>
-          <span>A release is available on your channel: {releaseNotice.name}. Automatic updates are not yet supported for source builds.</span>
-          <a href={releaseNotice.url} target="_blank" rel="noreferrer">View on GitHub</a>
-          <button aria-label="Close release notice" onClick={() => {
+          <span>{t('app.releaseNotice', { name: releaseNotice.name })}</span>
+          <a href={releaseNotice.url} target="_blank" rel="noreferrer">{t('app.viewGitHub')}</a>
+          <button aria-label={t('app.closeReleaseNotice')} onClick={() => {
             setReleaseNotice(null);
             localStorage.setItem('noble-seen-release', releaseNotice.label);
           }}><X size={16}/></button>
         </div>}
         {error && <ErrorNote message={error} close={() => setError('')}/>}
-        {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label="Dismiss notice"><X size={16}/></button></div>}
+        {notice && <div className="notice-banner"><CheckCircle2 size={18}/>{notice}<button onClick={() => setNotice('')} aria-label={t('app.dismissNotice')}><X size={16}/></button></div>}
         {!ready && <Loading/>}
 
         {page === 'crear' && <CreatorStudio initialStoryId={editingStoryId}
@@ -521,22 +520,22 @@ export default function App() {
             <div className="search-row">
               <div className="search-box"><Search size={21}/>
                 <input aria-label={t('model.searchModels')} value={query} onChange={e => setQuery(e.target.value)}
-                  placeholder="Search models, families, or authors..."/></div>
+                  placeholder={t('app.searchPlaceholder')}/></div>
               <div className="search-role-wrap"><SlidersHorizontal size={17}/>
                 <select aria-label={t('a11y.modelCategory')} value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
-                  {roles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
+                  {roles.map(r => <option key={r.id} value={r.id}>{t(r.titleKey)}</option>)}
                 </select><ChevronDown size={15}/></div>
             </div>
-            <div className="category-tabs" role="group" aria-label="Model types">
+            <div className="category-tabs" role="group" aria-label={t('app.modelTypes')}>
               {roles.map(item => <button key={item.id} onClick={() => { setRole(item.id); closeModelDetail(); }}
                 className={role === item.id ? 'selected' : ''}>
                 {item.id === 'narrator' ? <BookOpen size={18}/> : item.id === 'image' ? <Image size={18}/> : <Headphones size={18}/>}
-                {item.title}</button>)}
+                {t(item.titleKey)}</button>)}
             </div>
-            <div className="section-caption"><div><h2>{selectedRole.subtitle}</h2>
+            <div className="section-caption"><div><h2>{t(selectedRole.subtitleKey)}</h2>
               <p>{t('model.catalog')}</p></div>
               <div className="noble-model-sort"><label htmlFor="hub-sort">{t('model.sortBy')}</label>
-                <select id="hub-sort" aria-label="Sort models" value={modelSort}
+                <select id="hub-sort" aria-label={t('app.sortModels')} value={modelSort}
                   onChange={e => setModelSort(e.target.value)}>
                   <option value="downloads">{t('nav.descargas')}</option>
                   <option value="likes">{t('model.mostLiked')}</option>
@@ -548,7 +547,7 @@ export default function App() {
             {role !== 'narrator' && <div className="info-note"><Info size={18}/>
               {t('model.exploreOnly')}</div>}
             <div className="hub-discovery-layout">
-              <div className="model-grid" aria-label="Model results">
+              <div className="model-grid" aria-label={t('app.modelResults')}>
                 {searchResults.map(m => <button key={m.repo_id} className={'model-card ' + (detail?.repo_id === m.repo_id ? 'hub-model-selected' : '')}
                   aria-pressed={detail?.repo_id === m.repo_id}
                   onClick={() => void viewModel(m)}>
@@ -577,7 +576,7 @@ export default function App() {
                   <div><strong>{t('model.hardware')}</strong>
                     <small>{t('model.quantEstimate')}</small></div></div>
                 <div className="hub-hardware-numbers">
-                  <div><span>{t('model.gpuDetected')}</span><strong>{hardware?.gpus[0]?.name || 'Not detected'}</strong></div>
+                  <div><span>{t('model.gpuDetected')}</span><strong>{hardware?.gpus[0]?.name || t('app.notDetected')}</strong></div>
                   <div><span>{t('model.freeVRAM')}</span><strong>
                     {hardware?.gpus[0] ? (hardware.gpus[0].vram_free_mb / 1024).toFixed(1)+' GiB' : 'Unavailable'}
                   </strong></div>
@@ -615,7 +614,7 @@ export default function App() {
                 <div><span>{t('model.availableSpace')}</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
                   <small>Capacity: {size(modelStorage.disk.total_bytes)}</small></div>
               </div>
-              <div className="hub-storage-meter" role="meter" aria-label="Space occupied by Noble AI files"
+              <div className="hub-storage-meter" role="meter" aria-label={t('app.diskSpaceOccupied')}
                 aria-valuemin={0} aria-valuemax={100}
                 aria-valuenow={modelStorage.disk.total_bytes > 0 ?
                   Math.round((modelStorage.installed.bytes + modelStorage.partial.bytes) /
@@ -703,12 +702,11 @@ export default function App() {
           </div>
         </section>}
 
-        {page === 'descubrir' && <section className="noble-discover-page" aria-label="Story catalog">
+        {page === 'descubrir' && <section className="noble-discover-page" aria-label={t('app.storyCatalog')}>
           <div className="page-heading">
-            <div className="eyebrow"><Compass size={14}/> DISCOVER</div>
+            <div className="eyebrow"><Compass size={14}/> {t('app.discover')}</div>
             <h1>{t('discover.title')}<span className="title-dot">.</span></h1>
-            <p>Explore bundled stories and add them to your library as independent projects.
-              Community-created stories will be added in a later release.</p>
+            <p>{t('discover.description')}</p>
           </div>
           <StoryHub onInstall={story => navigateRoute({
             page: 'inicio', storyId: story.id, reading: false,
@@ -733,16 +731,16 @@ export default function App() {
         />}
 
         {page === 'diagnostico' && <section className="hub">
-          <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> SYSTEM</div><h1>{t('system.title')}<span className="title-dot">.</span></h1>
+          <div className="page-heading"><div className="eyebrow"><Cpu size={14}/> {t('app.system')}</div><h1>{t('system.title')}<span className="title-dot">.</span></h1>
             <p>{t('system.description')}</p></div>
           <div className="stat-grid">
-            <div className="stat"><span>{t('system.backend')}</span><strong>{health?.status === 'ok' ? 'Connected' : 'Offline'}</strong><small>API Noble {health?.version || '—'}</small></div>
-            <div className="stat"><span>{t('system.ram')}</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? Math.round(hardware.ram_available_mb / 1024) + ' GB available' : ''}</small></div>
-            <div className="stat"><span>{t('system.vram')}</span><strong>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB' : 'Not detected'}</strong><small>{hardware?.gpus[0]?.name || 'CPU available'}</small></div>
+            <div className="stat"><span>{t('system.backend')}</span><strong>{health?.status === 'ok' ? t('app.connected') : t('app.offline')}</strong><small>API Noble {health?.version || '—'}</small></div>
+            <div className="stat"><span>{t('system.ram')}</span><strong>{hardware ? Math.round(hardware.ram_total_mb / 1024) + ' GB' : '—'}</strong><small>{hardware ? t('app.availableGB', { count: Math.round(hardware.ram_available_mb / 1024) }) : ''}</small></div>
+            <div className="stat"><span>{t('system.vram')}</span><strong>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB' : t('app.notDetected')}</strong><small>{hardware?.gpus[0]?.name || t('app.cpuAvailable')}</small></div>
             <div className="stat"><span>{t('system.disk')}</span><strong>{hardware ? hardware.storage_free_gb + ' GB' : '—'}</strong><small>{t('system.modelDir')}</small></div>
           </div>
           <div className="settings-panel"><section><div className="setting-icon"><Cloud size={22}/></div><div className="setting-main">
-            <strong>Providers</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? 'Ready' : 'Integration pending'}</p>)}
+            <strong>{t('settings.providers')}</strong>{providers.map(p => <p key={p.id}>{p.id} · {p.kind} — {p.status === 'ready' ? t('common.ready') : t('app.integrationPending')}</p>)}
           </div></section></div>
         </section>}
       </main>
@@ -751,7 +749,7 @@ export default function App() {
     {(detail || detailLoading) && <div className="modal-scrim model-detail-scrim"
       role="presentation" onClick={closeModelDetail}>
       <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label={t('a11y.modelDetails')} onClick={e => e.stopPropagation()}>
-        <div className="detail-top"><span>{t('model.details')}</span><button className="icon-button" onClick={closeModelDetail} aria-label="Close details"><X size={19}/></button></div>
+        <div className="detail-top"><span>{t('model.details')}</span><button className="icon-button" onClick={closeModelDetail} aria-label={t('app.closeDetails')}><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
           <div className="noble-model-detail-heading">
             <div className="detail-avatar"><BookOpen size={32}/></div>
@@ -794,7 +792,7 @@ export default function App() {
                       ? ' KV estimated from GGUF header' : ' Approximate context reserve'}
                   </p></div>
                 <label>{t('model.context')}
-                  <select aria-label="Compatibility context" value={modelContext}
+                  <select aria-label={t('app.compatibilityContext')} value={modelContext}
                     disabled={fitBusy} onChange={e => void selectContext(Number(e.target.value))}>
                     <option value={2048}>2K tokens</option>
                     <option value={4096}>4K tokens</option>
@@ -818,7 +816,7 @@ export default function App() {
                     ? 'Approximate requirement ' + size(selectedFit.estimated_required_bytes)
                     : 'Unknown consumption'}</span>
                 </div>
-                <div role="meter" aria-label="Memory requirement versus usable memory"
+                <div role="meter" aria-label={t('app.memoryRequirement')}
                   aria-valuemin={0} aria-valuemax={100}
                   aria-valuenow={selectedMemoryPercent} className="hub-memory-meter">
                   <span style={{width: selectedMemoryPercent+'%'}}/>
@@ -835,7 +833,7 @@ export default function App() {
               </div>}
               <div className="hub-variants-toolbar">
                 <h3>{t('model.compare')} <small>{detail.variants.length}</small></h3>
-                <div role="group" aria-label="Filter quantization compatibility">
+                <div role="group" aria-label={t('app.filterCompatibility')}>
                   {[
                     {id:'all',label:'All'},
                     {id:'full_gpu',label:'GPU'},
@@ -923,7 +921,7 @@ export default function App() {
       <h2>{t('setup.title')}</h2>
       <p>{t('setup.description')}</p>
       <div className="welcome-hardware"><Cpu size={19}/>
-        <div><strong>{hardware?.gpus[0]?.name || 'CPU available'}</strong>
+        <div><strong>{hardware?.gpus[0]?.name || t('app.cpuAvailable')}</strong>
           <small>{hardware?.gpus[0] ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM detected' :
             'No NVIDIA GPU detected by the backend'}</small></div></div>
       <label className="form-label" htmlFor="image-policy">{t('setup.imagesFuture')}</label>

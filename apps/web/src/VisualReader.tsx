@@ -685,11 +685,11 @@ export function VisualReader({
             <MessageSquareText size={15}/> {t('reader.dialogueSaved')}
           </div>
           <button className="secondary-button" disabled={generating}
-            onClick={() => onSubmit(true)}><Sparkles size={15}/> Continue</button>
+            onClick={() => onSubmit(true)}><Sparkles size={15}/> {t('reader.continue')}</button>
           <button className="primary-button" disabled={generating || !draft.trim()}
             onClick={() => onSubmit(false)}>
             {generating ? <LoaderCircle className="rotating" size={15}/> : <Send size={15}/>}
-            {generating ? 'Generating...' : 'Send'}</button>
+            {generating ? t('reader.generating') : t('reader.send')}</button>
         </div>
       </footer>
     </article>
@@ -702,12 +702,12 @@ export function VisualReader({
       <nav className="noble-inspector-tabs" aria-label="Visual novel panel">
         {tabs.map(item => <button key={item.id}
           className={tab === item.id ? 'selected' : ''} onClick={() => setTab(item.id)}>
-          {item.label}</button>)}
+          {t(item.id === 'reader' ? 'reader.uiUx' : 'reader.' + item.id, { defaultValue: item.label })}</button>)}
       </nav>
       <div className="noble-inspector-body">
         {tab === 'summary' && <>
-          <h4>Summary</h4><p>{active.premise}</p>
-          <h4>Protagonist</h4>
+          <h4>{t('reader.summary')}</h4><p>{active.premise}</p>
+          <h4>{t('library.protagonist')}</h4>
           <div className="noble-protagonist-card">
             <div className="noble-protagonist-avatar">{active.protagonist_name.slice(0, 1).toUpperCase()}</div>
             <div><strong>{active.protagonist_name}</strong><small>{t('reader.playerCharacter')}</small></div>
@@ -781,7 +781,7 @@ export function VisualReader({
         </>}
         {tab === 'history' && <>
           <h4>{t('reader.memorySearch')}</h4>
-          <p className="noble-inspector-hint">Search older player actions beyond the recent-turn window. The results exclude private author secrets and AI-generated prose, and are limited to this branch.</p>
+          <p className="noble-inspector-hint">{t('reader.historySearchHint')}</p>
           <label className="noble-inspector-field">{t('reader.memorySearch')}
             <input aria-label="Search story memories" value={memoryQuery}
               maxLength={500} placeholder="medallion, library, promise..."
@@ -795,8 +795,8 @@ export function VisualReader({
           {memoryError && <p role="alert" className="narrative-error">{memoryError}</p>}
           {memoryResults && <div role="status" className="creator-hint">
             <strong>{t("reader.memoriesFound", { count: memoryResults.episodes.length })}</strong>
-            <p>{memoryResults.fts5 ? 'SQLite FTS5 index' : 'Local lexical search'}
-              · Player input only</p>
+            <p>{t(memoryResults.fts5 ? 'reader.indexFTS' : 'reader.indexLexical')}
+              · {t('reader.playerOnly')}</p>
             {memoryResults.episodes.map(entry => <div className="noble-inspector-turn" key={entry.turn_id}>
               <p>{entry.input_text}</p>
               {turns.some(turn => turn.id === entry.turn_id) &&
@@ -896,7 +896,7 @@ export function VisualReader({
             </button>
           </>}
           <h4>{t('reader.visualDirector')}</h4>
-          <p className="noble-inspector-hint">Deterministically choose whether to reuse an imported background or suggest new artwork. Context includes location, time, weather, framing, and lighting; emotions do not change the background key. Previewing never runs a model.</p>
+          <p className="noble-inspector-hint">{t('reader.directorHint')}</p>
           <label className="noble-inspector-field">{t('reader.visualChange')}
             <select aria-label="Visual director intent" value={directorIntent}
               onChange={event => {
@@ -911,7 +911,7 @@ export function VisualReader({
           </label>
           <button className="secondary-button" disabled={directorBusy}
             onClick={() => void inspectVisualDirector()}>
-            <Palette size={16}/> {directorBusy ? 'Evaluating...' : 'Evaluate visual director'}
+            <Palette size={16}/> {t(directorBusy ? 'reader.evaluating' : 'reader.evaluateDirector')}
           </button>
           {directorError && <p className="narrative-error" role="alert">{directorError}</p>}
           {directorPreview && <div className="noble-director-result" role="status">
@@ -939,9 +939,9 @@ export function VisualReader({
                 onClick={() => void registerDirectorBackground(visual.selected_asset_id!)}>
                 <Check size={16}/> {t('reader.registerBackground')}
               </button>}
-            <p className="noble-inspector-hint">The director recommends actions. Expressions and event illustrations require separate sprites or explicit generation. No image has been generated automatically. A caption-matched Creator Studio asset may take visual priority.</p>
+            <p className="noble-inspector-hint">{t('reader.directorNote')}</p>
           </div>}
-          <h4>Versioned gallery ({visual?.assets.length || 0})</h4>
+          <h4>{t('reader.versionedGallery', { count: visual?.assets.length || 0 })}</h4>
           {active.scene_image_url ? <img className="noble-gallery-image"
             src={active.scene_image_url} alt={'Illustration of ' + active.title}/> :
             <p>{t('reader.emptyGallery')}</p>}
@@ -1037,11 +1037,11 @@ export function VisualReader({
               {illustrating ? 'ComfyUI is generating...' : 'Illustrate scene with ComfyUI'}</button>
           </>}
           {illustrationNotice && <p role="status" className="narrative-saved">{illustrationNotice}</p>}
-          <p className="noble-inspector-hint">Illustrations are generated only when requested. Connect ComfyUI and configure a checkpoint under Settings → Images. Stories remain playable without images.</p>
+          <p className="noble-inspector-hint">{t('reader.imageHint')}</p>
         </>}
         {tab === 'reader' && <>
           <h4>{t('reader.layout')}</h4>
-          <p>Three views share the same saved turns. VN highlights artwork, Book prioritizes prose, and Chat separates player actions from narration. The selected view persists across restarts.</p>
+          <p>{t('reader.layoutHint')}</p>
           {prefs && <div className="noble-reader-layout-options">
             <button className={prefs.reader_layout === 'immersive' ? 'selected' : ''}
               aria-pressed={prefs.reader_layout === 'immersive'}
@@ -1050,13 +1050,13 @@ export function VisualReader({
             <button className={prefs.reader_layout === 'classic' ? 'selected' : ''}
               aria-pressed={prefs.reader_layout === 'classic'}
               disabled={updating} onClick={() => void changeReaderLayout('classic')}>
-              <BookOpen size={17}/> Book</button>
+              <BookOpen size={17}/> {t('reader.book')}</button>
             <button className={prefs.reader_layout === 'chat' ? 'selected' : ''}
               aria-pressed={prefs.reader_layout === 'chat'}
               disabled={updating} onClick={() => void changeReaderLayout('chat')}>
-              <MessageSquareText size={17}/> Chat</button>
+              <MessageSquareText size={17}/> {t('reader.chat')}</button>
           </div>}
-          <p className="noble-inspector-hint">When focus is outside an input: Alt+1 VN, Alt+2 Book, Alt+3 Chat, Alt+B backlog, Alt+H hide interface. Esc closes the backlog or restores the interface when shortcuts are enabled.</p>
+          <p className="noble-inspector-hint">{t('reader.shortcutsHint')}</p>
           <button className="secondary-button" onClick={() => setBacklogOpen(true)}>
             <History size={16}/> {t('reader.backlog')}
           </button>
@@ -1102,8 +1102,7 @@ export function VisualReader({
             <p className="noble-backlog-narrator"><NarrativeText text={turn.assistant_text}/></p>
           </article>)}
           {!backlogItems.length && <p className="noble-backlog-empty">
-            {turns.length ? 'No matches in the loaded scenes.' :
-              'No scenes saved on this branch yet.'}
+            {turns.length ? t('reader.noMatches') : t('reader.noSavedScenes')}
           </p>}
         </div>
       </section>
@@ -1117,7 +1116,7 @@ export function VisualReader({
           <button className="icon-button" aria-label="Cancel rewind"
             onClick={() => setRewindTurn(null)}><X size={19}/></button>
         </div>
-        <p>A <strong>{t('reader.separateBranch')}</strong> will be created from the selected turn. The original story and all later turns remain intact.</p>
+        <p>{t('reader.rewindHint')}</p>
         <div className="noble-rewind-selected">
           <strong>Turn {turns.findIndex(t => t.id === rewindTurn.id) + 1}</strong>
           <p>{rewindTurn.input_text || rewindTurn.assistant_text.slice(0, 180)}</p>

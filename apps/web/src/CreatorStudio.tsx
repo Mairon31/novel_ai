@@ -677,7 +677,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-media-form">
                 <h4>{t('creator.importSheet')}</h4>
-                <p>A grid of five transparent cells in this order: neutral, joy, anger, sadness, surprise. The reader reuses each PNG without generating images when advancing.</p>
+                <p>{t('creator.sheetGridHint')}</p>
                 <div className="creator-double">
                   <label>{t('creator.sheetCharacter')}
                     <select aria-label="Expression-sheet character"
@@ -720,7 +720,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-media-form">
                 <h4>{t('creator.generateExpressions')}</h4>
-                <p>ComfyUI generates five separate portraits, one per request. Noble AI removes the background and rejects low-quality cutouts. Images remain drafts until you approve all five previews.</p>
+                <p>{t('creator.spriteGenerationHint')}</p>
                 <div className="creator-double">
                   <label>{t('creator.characterForAI')}
                     <select aria-label="NPC for expression generation" value={draftCharacter}
@@ -955,7 +955,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             section === 'lorebook' ? <div className="creator-fields">
               <div className="creator-section-intro">
                 <h3>{t('creator.lorebookKnowledge')}</h3>
-                <p>Store secrets, locations, and rules that activate when trigger words appear in player actions or recent scenes. This text is private to the narrator; each branch keeps its own copy.</p>
+                <p>{t('creator.lorebookHint')}</p>
               </div>
               <div className="creator-character-list">
                 {lorebookEntries.map(entry => <div className="creator-opening" key={entry.id}>
@@ -1046,7 +1046,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       }))}/>
                     {person.name}
                   </label>)}
-                  <small>Included in narration only when an eligible witness is present in confirmed world state. Mentioning a character does not change their presence.</small>
+                  <small>{t('creator.witnessHint')}</small>
                 </fieldset>}
                 <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.enabled}
                   onChange={e => setLorebookDraft(v => ({...v, enabled: e.target.checked}))}/>
@@ -1254,7 +1254,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             </div> : <div className="creator-fields">
               <div className="creator-section-intro">
                 <h3>{t('creator.differentOpenings')}</h3>
-                <p>{t('creator.openingHint')} <code>{'{{user}}'}</code> to refer to the protagonist.</p>
+                <p>{t('creator.openingHint')} <code>{'{{user}}'}</code> {t('creator.protagonistTokenHint')}</p>
               </div>
               {blueprint.opening_scenarios.map((opening,index) =>
                 <div className="creator-opening" key={index}>
