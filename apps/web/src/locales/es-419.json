@@ -1717,5 +1717,20 @@
   "arcBeats.resolved": "Resuelto",
   "arcBeats.add": "Agregar hito",
   "arcBeats.remove": "Eliminar",
-  "arcBeats.hint": "Hasta ocho hitos. Solo los planificados o activos orientan al narrador. Marca los resueltos manualmente después de revisar la historia."
+  "arcBeats.hint": "Hasta ocho hitos. Solo los planificados o activos orientan al narrador. Marca los resueltos manualmente después de revisar la historia.",
+  "readerModes.think": "Pensar",
+  "readerModes.observe": "Observar",
+  "readerModes.interact": "Interactuar",
+  "readerModes.inputThink": "¿Qué piensa o sospecha tu protagonista en privado?",
+  "readerModes.inputObserve": "¿Qué quieres examinar u observar?",
+  "readerModes.inputInteract": "¿Con quién o con qué intentas interactuar?",
+  "readerModes.sayHint": "Habla en voz alta. Los NPC pueden escucharte y reaccionar.",
+  "readerModes.doHint": "Intenta una acción. El resultado depende de las reglas del mundo.",
+  "readerModes.thinkHint": "Expresa un pensamiento privado. Los NPC no pueden escucharlo ni conocerlo automáticamente.",
+  "readerModes.observeHint": "Busca detalles perceptibles sin actuar automáticamente sobre lo encontrado.",
+  "readerModes.interactHint": "Acércate a alguien o algo. La cooperación y el éxito no están garantizados.",
+  "readerModes.storyHint": "Propón una dirección narrativa sin reescribir el canon establecido.",
+  "readerModes.youThink": "Tus pensamientos",
+  "readerModes.youObserve": "Observas",
+  "readerModes.youInteract": "Interactúas"
 }

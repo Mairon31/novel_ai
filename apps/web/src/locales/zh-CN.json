@@ -1717,5 +1717,20 @@
   "arcBeats.resolved": "已解决",
   "arcBeats.add": "添加里程碑",
   "arcBeats.remove": "删除",
-  "arcBeats.hint": "最多八项。只有已计划或进行中的里程碑用于指导叙述者。请在审核剧情后手动标记完成。"
+  "arcBeats.hint": "最多八项。只有已计划或进行中的里程碑用于指导叙述者。请在审核剧情后手动标记完成。",
+  "readerModes.think": "思考",
+  "readerModes.observe": "观察",
+  "readerModes.interact": "互动",
+  "readerModes.inputThink": "主角私下在想什么或怀疑什么？",
+  "readerModes.inputObserve": "你想检查或关注什么？",
+  "readerModes.inputInteract": "你尝试与谁或什么互动？",
+  "readerModes.sayHint": "大声说话。NPC 可以听到并根据所知作出反应。",
+  "readerModes.doHint": "尝试行动。结果取决于已确立的世界规则。",
+  "readerModes.thinkHint": "表达私人想法。NPC 不能自动听到或得知这些想法。",
+  "readerModes.observeHint": "寻找能够察觉的细节，不自动采取后续行动。",
+  "readerModes.interactHint": "尝试与人或物互动，合作与成功并无保证。",
+  "readerModes.storyHint": "提出叙事方向，但不改写已经确立的设定。",
+  "readerModes.youThink": "你的想法",
+  "readerModes.youObserve": "你观察",
+  "readerModes.youInteract": "你互动"
 }

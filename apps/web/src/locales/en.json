@@ -1717,5 +1717,20 @@
   "arcBeats.resolved": "Resolved",
   "arcBeats.add": "Add milestone",
   "arcBeats.remove": "Remove",
-  "arcBeats.hint": "At most eight milestones. Only planned or active milestones inform the narrator. Mark resolved manually after reviewing the story."
+  "arcBeats.hint": "At most eight milestones. Only planned or active milestones inform the narrator. Mark resolved manually after reviewing the story.",
+  "readerModes.think": "Think",
+  "readerModes.observe": "Observe",
+  "readerModes.interact": "Interact",
+  "readerModes.inputThink": "What does your protagonist privately think or suspect?",
+  "readerModes.inputObserve": "What should your protagonist examine or pay attention to?",
+  "readerModes.inputInteract": "Who or what do you attempt to interact with?",
+  "readerModes.sayHint": "Speak aloud. NPCs can hear you and react according to their knowledge.",
+  "readerModes.doHint": "Attempt an action. Success depends on the established world.",
+  "readerModes.thinkHint": "Express a private thought. NPCs cannot hear it or know it automatically.",
+  "readerModes.observeHint": "Look for perceptible details; do not automatically act on what you find.",
+  "readerModes.interactHint": "Approach a person or object. Cooperation and success are not guaranteed.",
+  "readerModes.storyHint": "Suggest a narrative direction without rewriting established canon.",
+  "readerModes.youThink": "Your thoughts",
+  "readerModes.youObserve": "You observe",
+  "readerModes.youInteract": "You interact"
 }

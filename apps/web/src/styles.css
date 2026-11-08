@@ -1504,3 +1504,11 @@
 .creator-arc-beat input,.creator-arc-beat select,.creator-arc-beat textarea {min-width:0;max-width:100%}
 .creator-arc-beats > .secondary-button {justify-self:start}
 @media(max-width:540px){.creator-arc-beats > .secondary-button {justify-self:stretch}}
+
+/* N-19: compact, accessible reader interaction modes above the composer. */
+.noble-reader-mode-tabs{display:flex;flex-wrap:wrap;gap:7px;width:100%;margin-top:9px}
+.noble-reader-mode-tabs button{display:inline-flex;align-items:center;gap:6px;justify-content:center;min-height:38px;padding:8px 11px;border-radius:9px;border:1px solid #444863;background:#252a40;color:#c8cfe8;font-size:12px;font-weight:600}
+.noble-reader-mode-tabs button.selected,.noble-reader-mode-tabs button[aria-pressed="true"]{background:#4a386f;border-color:#a38af8;color:#fff}
+.noble-reader-mode-tabs button:focus-visible{outline:2px solid #b6a4ff;outline-offset:2px}
+.noble-reader-mode-hint{display:block;color:#adb6d0;font-size:11px;line-height:1.45;margin-top:7px}
+@media(max-width:520px){.noble-reader-mode-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.noble-reader-mode-tabs button{min-width:0;padding:8px 5px;font-size:11px}}
