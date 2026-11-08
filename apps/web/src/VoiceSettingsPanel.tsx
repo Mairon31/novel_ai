@@ -15,7 +15,7 @@ export function VoiceSettingsPanel() {
   const [voiceCatalog, setVoiceCatalog] = useState<PiperVoiceCatalog | null>(null);
   const [voiceJobs, setVoiceJobs] = useState<PiperVoiceJob[]>([]);
   const [voiceAction, setVoiceAction] = useState<string | null>(null);
-  const [previewText, setPreviewText] = useState('Hello. This is a Noble AI voice test.');
+  const [previewText, setPreviewText] = useState(t('voiceUi.sampleDefault'));
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
@@ -176,7 +176,7 @@ export function VoiceSettingsPanel() {
                 {t('voice.viewLicense')}</a>
             </div>
             {job && status !== 'installed' && <div className="noble-voice-progress">
-              <progress aria-label={'Progress for ' + voice.name} value={percent} max={100}/>
+              <progress aria-label={t('voiceUi.progress', { name: voice.name })} value={percent} max={100}/>
               <small>{percent}% · {(job.received_bytes / 1024 / 1024).toFixed(1)} /
                 {(job.total_bytes / 1024 / 1024).toFixed(1)} MiB
                 {job.error ? ' · ' + job.error : ''}</small>
@@ -199,13 +199,12 @@ export function VoiceSettingsPanel() {
                     {t('voice.cancelDownload')}</button>
                 </> : <button type="button" className="secondary-button"
                     disabled={!!voiceAction || busy} onClick={() => void installVoice(voice.id)}>
-                    {voiceAction === voice.id ? 'Starting...' : 'Install voice'}</button>}
+                    {t(voiceAction === voice.id ? 'voiceUi.starting' : 'voiceUi.install')}</button>}
             </div>
           </div>;
         })}
       </div>
-      {voices && <p>Engine: {voices.available ? 'Piper detected' : 'Piper not found in PATH'} ·
-        Installed voices: {voices.voices.length} · Folder: <code>{voices.models_dir}</code></p>}
+      {voices && <p>{t('voiceUi.engineStatus', { status: t(voices.available ? 'voiceUi.piperReady' : 'voiceUi.piperMissing'), amount: voices.voices.length })} <code>{voices.models_dir}</code></p>}
       {voicePreferences && <div className="workspace-field-grid">
         <label className="workspace-pref-field">{t('voice.defaultVoice')}
           <select aria-label={t('a11y.defaultPiperVoice')} disabled={busy}
@@ -269,7 +268,7 @@ export function VoiceSettingsPanel() {
             previewText.trim().length < 10}
           onClick={() => void previewPiper()}>
           {previewBusy ? <LoaderCircle size={16} className="rotating"/> : <Volume2 size={16}/>}
-          {previewBusy ? 'Generating preview...' : 'Preview selected voice'}
+          {t(previewBusy ? 'voiceUi.previewBusy' : 'voiceUi.previewAction')}
         </button>
         {previewUrl && <audio aria-label={t('uiField.voiceSettingsPanel.playVoicePreview')} controls
           preload="none" src={previewUrl}/>}

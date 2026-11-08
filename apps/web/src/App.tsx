@@ -468,7 +468,7 @@ export default function App() {
               ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM'
               : t('nav.diagnosticsAvailable')}</small></div>
         </div>
-        <p className="sidebar-footer">P1 PROTOTYPE <span>·</span> LOCAL-FIRST</p>
+        <p className="sidebar-footer">{t('appUi.prototype')} <span>·</span> {t('appUi.localFirst')}</p>
       </div>
     </aside>
     {navOpen && <button aria-label={t("nav.closeMenu")} className="mobile-overlay" onClick={() => setNavOpen(false)}/>}

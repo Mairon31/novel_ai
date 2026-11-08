@@ -107,9 +107,9 @@ export function WorldStateEditor({ storyId, characters }: Props) {
 
   if (loading) return <div className="loading">{t('world.loading')}</div>;
   if (!draft || !document) return <div role="alert" className="narrative-error">
-    {error || 'Could not load world state.'}
+    {error || t('worldUi.loadFailed')}
     <button className="secondary-button" onClick={() => void reload()}>
-      <RotateCcw size={15}/> Retry</button>
+      <RotateCcw size={15}/> {t('worldUi.retry')}</button>
   </div>;
 
   const canSave = draft.facts.every(fact =>
@@ -156,7 +156,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <p>{t('world.witnessHint')}</p>
       <div className="world-npc-grid">
         {characters.map(character => <label className="world-check" key={character.id}>
-          <input type="checkbox" aria-label={'Present ' + character.name}
+          <input type="checkbox" aria-label={t('worldUi.presentCharacter', { name: character.name })}
             checked={draft.present_character_ids.includes(character.id)}
             onChange={event => patch({ present_character_ids: uniqueList(
               draft.present_character_ids, character.id, event.target.checked) })}/>
@@ -168,8 +168,8 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       {!!characters.length && <div className="world-relations">
         <h4>{t('world.relationships')}</h4>
         {characters.map(character => <label key={character.id}>
-          Relationship of {character.name} with the protagonist
-          <input aria-label={'Relationship with ' + character.name} maxLength={160}
+          {t('worldUi.relationship', { name: character.name })}
+          <input aria-label={t('worldUi.relationshipLabel', { name: character.name })} maxLength={160}
             value={draft.relationships[character.id] || ''}
             onChange={event => {
               const relationships = { ...draft.relationships };
@@ -188,12 +188,12 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       {Object.entries(draft.flags).map(([name, value]) =>
         <div className="world-flag-row" key={name}>
           <label className="world-check">
-            <input type="checkbox" aria-label={'Flag ' + name}
+            <input type="checkbox" aria-label={t('worldUi.flagLabel', { name })}
               checked={value} onChange={event =>
                 patch({ flags: {...draft.flags, [name]: event.target.checked } })}/>
             <span>{name}</span>
           </label>
-          <button className="secondary-button" aria-label={'Delete flag ' + name}
+          <button className="secondary-button" aria-label={t('worldUi.deleteFlag', { name })}
             onClick={() => {
               const flags = { ...draft.flags };
               delete flags[name];
@@ -220,19 +220,19 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       {draft.facts.map((fact, index) =>
         <div key={fact.id} className="world-fact">
           <div className="world-fact-title">
-            <strong>Fact {index + 1}</strong>
-            <button className="secondary-button" aria-label={'Delete fact ' + (index + 1)}
+            <strong>{t('worldUi.factTitle', { number: index + 1 })}</strong>
+            <button className="secondary-button" aria-label={t('worldUi.deleteFact', { number: index + 1 })}
               onClick={() => patch({ facts: draft.facts.filter(item => item.id !== fact.id) })}>
               <Trash2 size={15}/>
             </button>
           </div>
           <label>{t('world.confirmedContent')}
-            <textarea aria-label={'Fact text ' + (index + 1)} maxLength={360} rows={3}
+            <textarea aria-label={t('worldUi.factText', { number: index + 1 })} maxLength={360} rows={3}
               value={fact.text} onChange={event =>
                 editFact(index, { text: event.target.value })}/>
           </label>
           <label className="world-check">
-            <input type="checkbox" aria-label={'Public fact ' + (index + 1)}
+            <input type="checkbox" aria-label={t('worldUi.publicFactLabel', { number: index + 1 })}
               checked={fact.public}
               onChange={event => editFact(index, { public: event.target.checked })}/>
             <span>{t('world.publicFact')}</span>
@@ -240,7 +240,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           {!fact.public && <div className="world-witnesses">
             <strong>{t('world.factWitnesses')}</strong>
             {characters.map(character => <label className="world-check" key={character.id}>
-              <input type="checkbox" aria-label={'Witness ' + character.name + ' for fact ' + (index + 1)}
+              <input type="checkbox" aria-label={t('worldUi.factWitnessLabel', { name: character.name, number: index + 1 })}
                 checked={fact.witness_character_ids.includes(character.id)}
                 onChange={event => editFact(index, {
                   witness_character_ids: uniqueList(
@@ -260,7 +260,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
     <div className="creator-actions">
       <button className="primary-button" disabled={busy || !canSave}
         onClick={() => void save()}><Save size={16}/>
-        {busy ? 'Saving...' : 'Save world state'}</button>
+        {t(busy ? 'worldUi.saving' : 'worldUi.saveWorld')}</button>
       <button className="secondary-button" disabled={busy}
         onClick={() => void reload()}><RotateCcw size={16}/> {t('world.reload')}</button>
     </div>
@@ -275,19 +275,19 @@ export function WorldStateEditor({ storyId, characters }: Props) {
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>
           <option value="">{t('world.selectTurn')}</option>
           {turns.map((turn, index) =>
-            <option key={turn.id} value={turn.id}>Turn {index + 1}: {turn.input_text.slice(0, 65)}</option>)}
+            <option key={turn.id} value={turn.id}>{t('worldUi.turnOption', { number: index + 1, input: turn.input_text.slice(0, 65) })}</option>)}
         </select>
         <button className="secondary-button" disabled={busy || !turnId}
           onClick={() => void inspectSnapshot()}><BookOpen size={16}/> {t('world.viewSnapshot')}</button>
       </div>
       {snapshot && <div className="world-snapshot" role="status">
         <strong>{t('world.snapshotState')}</strong>
-        <span>Location: {snapshot.state.location || 'Not defined'}</span>
-        <span>Time: {snapshot.state.time_of_day || 'Not defined'}</span>
-        <span>Weather: {snapshot.state.weather || 'Not defined'}</span>
-        <span>Items: {snapshot.state.inventory.join(', ') || 'None'}</span>
-        <span>Recorded facts: {snapshot.state.facts.length}</span>
-        <span>Canon at that turn: {snapshot.canon || 'No confirmed canon'}</span>
+        <span>{t('worldUi.snapshotLocation', { value: snapshot.state.location || t('worldUi.notDefined') })}</span>
+        <span>{t('worldUi.snapshotTime', { value: snapshot.state.time_of_day || t('worldUi.notDefined') })}</span>
+        <span>{t('worldUi.snapshotWeather', { value: snapshot.state.weather || t('worldUi.notDefined') })}</span>
+        <span>{t('worldUi.snapshotItems', { value: snapshot.state.inventory.join(', ') || t('worldUi.none') })}</span>
+        <span>{t('worldUi.recordedFacts', { amount: snapshot.state.facts.length })}</span>
+        <span>{t('worldUi.snapshotCanon', { value: snapshot.canon || t('worldUi.noCanon') })}</span>
       </div>}
     </details>
   </div>;

@@ -23,14 +23,14 @@ interface Props {
   onChooseBranch: (storyId: string) => void;
 }
 
-function date(value: number, locale: string) {
-  if (!value || !Number.isFinite(value)) return 'Date unavailable';
+function date(value: number, locale: string, unavailable: string) {
+  if (!value || !Number.isFinite(value)) return unavailable;
   return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
     .format(new Date(value * 1000));
 }
 
-function preview(text: string, protagonist: string) {
-  return text.replace(/\{\{user\}\}/g, protagonist || 'Protagonist');
+function preview(text: string, protagonist: string, fallback: string) {
+  return text.replace(/\{\{user\}\}/g, protagonist || fallback);
 }
 
 /** Player-facing editorial page. Never display AI-only plot, reminders or dialogue prompts. */
@@ -46,7 +46,7 @@ export function StoryDetail({
   const heroArt = story.cover_image_url || story.scene_image_url ||
     media.find(item => item.kind === 'background')?.url || null;
 
-  return <section className="noble-story-detail" aria-label={'Details of ' + story.title}>
+  return <section className="noble-story-detail" aria-label={t('detailUi.detailsOf', { title: story.title })}>
     <div className="noble-story-detail-cover"
       style={heroArt ? { backgroundImage: 'url("' + heroArt + '")' } : undefined}>
       <div className="noble-story-cover-shade"/>
@@ -57,7 +57,7 @@ export function StoryDetail({
       <div className="noble-story-detail-heading">
         <span className="noble-story-detail-overline">
           {story.origin_story_id ? <GitBranch size={15}/> : <Feather size={15}/>}
-          {story.origin_story_id ? 'ALTERNATE BRANCH' : 'YOUR STORY'}
+          {t(story.origin_story_id ? 'detailUi.alternateUpper' : 'detailUi.yourStoryUpper')}
         </span>
         <h1>{story.title}</h1>
         {metadata?.genre && <span className="noble-story-genre">{metadata.genre}</span>}
@@ -86,16 +86,16 @@ export function StoryDetail({
     {error && <p className="narrative-error" role="alert">{error}</p>}
     <div className="noble-story-detail-body">
       <div className="noble-story-detail-overview">
-        <div><UserRound size={18}/><span>Protagonist</span><strong>{story.protagonist_name || 'Not assigned'}</strong></div>
+        <div><UserRound size={18}/><span>{t('detailUi.protagonist')}</span><strong>{story.protagonist_name || t('detailUi.notAssigned')}</strong></div>
         <div><BookOpen size={18}/><span>{t("reader.storyTurns")}</span><strong>{turns.length}</strong></div>
-        <div><CalendarDays size={18}/><span>{t('detail.created')}</span><strong>{date(story.created_at, i18n.language)}</strong></div>
-        <div><Clock3 size={18}/><span>{t('detail.updated')}</span><strong>{date(story.updated_at, i18n.language)}</strong></div>
+        <div><CalendarDays size={18}/><span>{t('detail.created')}</span><strong>{date(story.created_at, i18n.language, t('detailUi.dateUnavailable'))}</strong></div>
+        <div><Clock3 size={18}/><span>{t('detail.updated')}</span><strong>{date(story.updated_at, i18n.language, t('detailUi.dateUnavailable'))}</strong></div>
       </div>
       <article className="noble-story-detail-resume">
-        <span className="overline">{last ? 'YOUR ADVENTURE' : 'THE WORLD'}</span>
-        <h2>{last ? 'Where your story left off' : 'Before you begin'}</h2>
+        <span className="overline">{t(last ? 'detailUi.yourAdventureUpper' : 'detailUi.worldUpper')}</span>
+        <h2>{t(last ? 'detailUi.lastScene' : 'detailUi.beforeStart')}</h2>
         <p>{last ? last.assistant_text.slice(0, 700) :
-          preview(publicPlot || story.premise, story.protagonist_name)}</p>
+          preview(publicPlot || story.premise, story.protagonist_name, t('detailUi.protagonist'))}</p>
         {last && <button className="noble-story-detail-resume-link" onClick={onContinue}>
           {t('detail.resume')} <ArrowRight size={16}/>
         </button>}
@@ -113,13 +113,13 @@ export function StoryDetail({
           type="button" disabled={branch.is_selected || openingBusy}
           className={'noble-route-node ' + (branch.is_selected ? 'is-selected' : '')}
           style={{ marginLeft: Math.min(branch.depth, 6) * 24 }}
-          aria-label={'Open branch ' + branch.title}
+          aria-label={t('detailUi.openBranch', { title: branch.title })}
           onClick={() => onChooseBranch(branch.id)}>
           <GitBranch size={18}/>
           <span><strong>{branch.title}</strong><small>
-            {branch.depth === 0 ? 'Main story' : 'Alternate branch'}
-            {' · '}{branch.turn_count} saved scenes
-            {branch.is_selected ? ' · Current route' : ''}
+            {t(branch.depth === 0 ? 'detailUi.mainStory' : 'detailUi.alternateBranch')}
+            {' · '}{t('detailUi.savedScenes', { amount: branch.turn_count })}
+            {branch.is_selected ? ' · ' + t('detailUi.currentRoute') : ''}
           </small></span>
           {!branch.is_selected && <ArrowRight size={16}/>}
         </button>)}
@@ -143,7 +143,7 @@ export function StoryDetail({
             </div>
             <div className="noble-detail-cast-copy">
               <h3>{character.name}</h3>
-              <p>{preview(character.description, story.protagonist_name)}</p>
+              <p>{preview(character.description, story.protagonist_name, t('detailUi.protagonist'))}</p>
             </div>
           </article>;
         })}
@@ -159,10 +159,10 @@ export function StoryDetail({
       <div className="noble-detail-openings-grid">
         {openings.map((opening, index) => <article className="noble-detail-opening" key={index}>
           <div className="noble-detail-opening-label">
-            <span>SCENE {String(index + 1).padStart(2, '0')}</span>
+            <span>{t('reader.sceneNumber', { number: String(index + 1).padStart(2, '0') })}</span>
             <BookOpen size={18} aria-hidden="true"/>
           </div>
-          <p>{preview(opening, story.protagonist_name)}</p>
+          <p>{preview(opening, story.protagonist_name, t('detailUi.protagonist'))}</p>
           <button className="secondary-button" disabled={openingBusy}
             onClick={() => onStartOpening(index)}>
             <Play size={16}/> {openingBusy ? t('detail.savingOpening') : t('detail.startOpening')}

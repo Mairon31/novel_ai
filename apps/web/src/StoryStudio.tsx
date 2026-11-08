@@ -43,7 +43,7 @@ export function StoryStudio({
   const [draft, setDraft] = useState('');
   const [streamText, setStreamText] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [generationMessage, setGenerationMessage] = useState('Preparing narrator...');
+  const [generationMessage, setGenerationMessage] = useState(t('feedback.storyPreparingNarrator'));
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
@@ -189,7 +189,7 @@ export function StoryStudio({
             { ...s, updated_at: Date.now() / 1000 } : s));
         }
       });
-      if (!complete) throw new Error('Connection ended without committing the turn.');
+      if (!complete) throw new Error(t('storyUi.connectionIncomplete'));
     } catch (exc) {
       if (!controllerLocal.signal.aborted) setError((exc as Error).message);
     } finally {

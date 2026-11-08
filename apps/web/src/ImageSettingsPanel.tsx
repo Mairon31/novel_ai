@@ -190,15 +190,15 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             !samplerOptions.scheduler.includes(image.scheduler)))}
           onClick={() => void save()}>
           {busy ? <LoaderCircle size={16} className="rotating"/> : <Check size={16}/>}
-          Save image settings</button>
+          {t('imageUi.saveSettings')}</button>
       </div>
       {samplerOptions?.online && image && <p role="status">
-        Compatibilidad KSampler: {samplerOptions.sampler_name.includes(image.sampler_name) &&
+        {t('imageUi.samplerStatus', { status: t(samplerOptions.sampler_name.includes(image.sampler_name) &&
           samplerOptions.scheduler.includes(image.scheduler)
-          ? 'compatible selection' : 'this selection is unavailable in the current ComfyUI instance'}.
+          ? 'imageUi.samplerCompatible' : 'imageUi.samplerUnavailable') })}
       </p>}
       <p className="noble-inspector-hint">{t('image.samplerHint')}</p>
-      {status?.online && <p>Detected checkpoint(s): {status.checkpoints.length}. The model will load when you select Illustrate.</p>}
+      {status?.online && <p>{t('imageUi.detectedCheckpoints', { amount: status.checkpoints.length })}</p>}
     </div>
     <ImageCheckpointManager availableInComfy={status?.online ? status.checkpoints : []}
       onSelectCheckpoint={name => {
@@ -211,14 +211,12 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       {resourceStatus && <p role="status">
         {resourceStatus.selected_gpu
           ? resourceStatus.selected_gpu.name + ' · ' +
-            resourceStatus.selected_gpu.free_mib + ' MiB free / ' +
-            resourceStatus.selected_gpu.total_mib + ' MiB total'
-          : 'GPU telemetry unavailable (CPU or another provider).'}
+            t('imageUi.vramFree', { free: resourceStatus.selected_gpu.free_mib, total: resourceStatus.selected_gpu.total_mib })
+          : t('imageUi.gpuUnavailable')}
         {' · '}{resourceStatus.message}
       </p>}
       {resourceStatus?.workload.active && <p role="status">
-        Active local operation: {resourceStatus.workload.active.kind}.
-        Simultaneous requests for the same resource will receive a warning.
+        {t('imageUi.activeWorkload', { kind: resourceStatus.workload.active.kind })}
       </p>}
       {resources && <label className="workspace-pref-toggle">
         <span>{t('image.gpuMemoryDescription')}</span>

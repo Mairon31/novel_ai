@@ -64,9 +64,9 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
   }
 
   const running = status && ['starting', 'ready'].includes(status.status);
-  const label = status?.status === 'ready' ? 'Model ready' :
-    status?.status === 'starting' ? 'Loading model...' :
-    status?.status === 'exited' ? 'Process exited' : 'Detenido';
+  const label = t(status?.status === 'ready' ? 'runtimeUi.modelReady' :
+    status?.status === 'starting' ? 'runtimeUi.modelLoading' :
+    status?.status === 'exited' ? 'runtimeUi.processExited' : 'runtimeUi.stopped');
 
   return <section className="narrative-settings kobold-manager">
     <div className="narrative-section-title"><span className="setting-icon"><Cpu size={22}/></span>
@@ -75,7 +75,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     <div className="runtime-indicator">
       <span className={'runtime-led ' + (status?.status === 'ready' ? 'runtime-green' : '')}/>
       <strong>{label}</strong>
-      {status?.owns_process && <small>Process {status.pid} · Port {status.port} · {status.model_filename}</small>}
+      {status?.owns_process && <small>{t('runtimeUi.processInfo', { pid: status.pid, port: status.port, filename: status.model_filename })}</small>}
       <button className="icon-button" title={t('uiField.runtimeManager.refreshStatus')} aria-label={t('uiField.runtimeManager.refreshKoboldCpp')}
         onClick={() => void refresh()}><RefreshCw size={17}/></button>
     </div>
@@ -99,7 +99,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
             onChange={e => setGpuLayers(Number(e.target.value))}>
             <option value={-1}>{t('runtime.autoFit')}</option>
             <option value={0}>{t('narrative.cpuOnly')}</option>
-            {[12, 24, 36, 48, 64, 96, 128].map(n => <option key={n} value={n}>{n} GPU layers</option>)}
+            {[12, 24, 36, 48, 64, 96, 128].map(n => <option key={n} value={n}>{t('runtimeUi.gpuLayers', { amount: n })}</option>)}
           </select>
         </label>
         <label>{t('runtime.contextSize')}
@@ -113,8 +113,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
             value={port} onChange={e => setPort(Number(e.target.value))}/>
         </label>
       </div>
-      <p className="narrative-helper">You need to download the official KoboldCpp executable.
-        Noble AI launches only a registered GGUF and binds to 127.0.0.1. Memory settings are configurable, but 12/16 GB compatibility still requires physical measurement.</p>
+      <p className="narrative-helper">{t('runtimeUi.launchHint')}</p>
     </>}
     {error && <p className="narrative-error" role="alert"><CircleAlert size={15}/> {error}</p>}
     {message && <p className="narrative-saved" role="status"><CheckCircle2 size={15}/> {message}</p>}
