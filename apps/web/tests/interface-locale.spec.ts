@@ -70,3 +70,32 @@ test('Model Hub and Downloads follow the selected interface locale', async ({ pa
   await expect(page.locator('.page-heading h1')).toContainText('Model Hub');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
+
+test('Narrator example follows the UI locale without overwriting author input', async ({ page }) => {
+  const created = await page.request.post('/api/v1/stories', { data: {
+    title: 'Locale sample ' + test.info().project.name + ' ' + Date.now(),
+    premise: 'A local test story with enough detail to open the narrator inspector.',
+    protagonist_name: 'Alex',
+  } });
+  expect(created.status()).toBe(201);
+  await page.goto('/#/configuracion/narration');
+  await page.evaluate(() => localStorage.setItem('noble-ui-language', 'en'));
+  await page.reload();
+  await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
+  const welcome = page.getByRole('dialog', { name: /Welcome and initial setup/ });
+  if (await welcome.isVisible()) {
+    await welcome.getByRole('button', { name: /Continue to Model Hub/ }).click();
+    await page.goto('/#/configuracion/narration');
+  }
+
+  const sample = page.locator('.narrative-context-inspector textarea');
+  const language = page.locator('.topbar .noble-interface-language select');
+  await expect(sample).toHaveValue('I observe the scene.');
+  await language.selectOption('es-419');
+  await expect(sample).toHaveValue('Observo la escena.');
+  await sample.fill('Custom text should not be overwritten.');
+  await language.selectOption('pt-BR');
+  await expect(sample).toHaveValue('Custom text should not be overwritten.');
+  await language.selectOption('zh-CN');
+  await expect(sample).toHaveValue('Custom text should not be overwritten.');
+});
