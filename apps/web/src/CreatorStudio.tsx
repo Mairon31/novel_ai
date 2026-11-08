@@ -254,7 +254,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     try {
       const seed = draftSeed.trim() ? Number(draftSeed) : undefined;
       if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
-        throw new Error('The seed must be a nonnegative safe integer.');
+        throw new Error(t('creator.invalidSpriteSeed'));
       const created = await api.startSpriteDraft(active.id, draftCharacter, {
         caption: draftCaption.trim(), pose: draftPose.trim(),
         style: draftStyle.trim(), seed,
@@ -275,11 +275,11 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   }
 
   const spriteExpressions: Array<{ id: SpriteExpression; label: string }> = [
-    { id: 'neutral', label: 'Neutral' },
-    { id: 'joy', label: 'Joy' },
-    { id: 'anger', label: 'Anger' },
-    { id: 'sadness', label: 'Sadness' },
-    { id: 'surprise', label: 'Surprise' },
+    { id: 'neutral', label: t('creator.expressionNeutral') },
+    { id: 'joy', label: t('creator.expressionJoy') },
+    { id: 'anger', label: t('creator.expressionAnger') },
+    { id: 'sadness', label: t('creator.expressionSadness') },
+    { id: 'surprise', label: t('creator.expressionSurprise') },
   ];
 
   async function generateSprites(draft: SpriteDraft, expression?: SpriteExpression) {
@@ -377,7 +377,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   }
 
   async function removeLorebook(entry: LorebookEntry) {
-    if (!active || working || !window.confirm('Delete this Lorebook entry?')) return;
+    if (!active || working || !window.confirm(t('creator.loreDeleteConfirm'))) return;
     setWorking(true); setError(''); setNotice('');
     try {
       await api.deleteLorebookEntry(active.id, entry.id);
@@ -563,12 +563,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-cover-preview" aria-label={t('uiField.creatorStudio.currentEditorialCover')}>
                 <div className="creator-cover-preview-art">
                   {active.cover_image_url ?
-                    <img src={active.cover_image_url} alt={'Cover of ' + active.title}/> :
+                    <img src={active.cover_image_url} alt={t('creator.coverAlt', { title: active.title })}/> :
                     <BookOpen size={42} aria-hidden="true"/>}
                 </div>
                 <div className="creator-cover-preview-copy">
                   <span className="overline">{t('creator.storyCover')}</span>
-                  <strong>{active.cover_image_url ? 'Custom cover' : 'No custom cover'}</strong>
+                  <strong>{t(active.cover_image_url ? 'creator.coverCustom' : 'creator.coverNone')}</strong>
                   <p>{t('creator.coverHint')}</p>
                   {active.cover_asset_id && <button className="secondary-button" disabled={working}
                     onClick={() => void chooseCover(null)}>{t('creator.removeCover')}</button>}
@@ -577,16 +577,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-media-grid">
                 {assets.map(asset => <article className="creator-media-card" key={asset.id}>
                   <div className={'creator-media-thumbnail ' + asset.kind}>
-                    <img src={asset.url} loading="lazy" alt={'Image: ' + asset.label}/>
+                    <img src={asset.url} loading="lazy" alt={t('creator.imageAlt', { label: asset.label })}/>
                   </div>
                   <div className="creator-media-copy">
-                    <small>{asset.kind === 'cover' ? 'COVER' :
-                      asset.kind === 'background' ? 'BACKGROUND' : 'FOREGROUND'}
-                      {asset.id === active.cover_asset_id ? ' · CURRENT' : ''}
-                      {asset.source === 'ai_reviewed' ? ' · AI REVIEWED' : ''}</small>
+                    <small>{t(asset.kind === 'cover' ? 'creator.coverTag' :
+                      asset.kind === 'background' ? 'creator.backgroundTag' : 'creator.foregroundTag')}
+                      {asset.id === active.cover_asset_id ? ' · ' + t('creator.currentTag') : ''}
+                      {asset.source === 'ai_reviewed' ? ' · ' + t('creator.aiReviewedTag') : ''}</small>
                     <strong>{asset.label}</strong><p>{asset.caption}</p>
                     {asset.kind === 'foreground' && <small>
-                      Expression: {asset.expression} · Pose: {asset.pose}
+                      {t('creator.expressionPose', { expression: asset.expression, pose: asset.pose })}
                     </small>}
                     <div>
                       {asset.kind === 'cover' && asset.id !== active.cover_asset_id &&
@@ -594,7 +594,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                           onClick={() => void chooseCover(asset.id)}>{t('creator.useCover')}</button>}
                       <button className="secondary-button" disabled={working}
                         onClick={() => editAsset(asset)}>{t('creator.editDescription')}</button>
-                      <button aria-label={'Delete image ' + asset.label}
+                      <button aria-label={t('creator.deleteImageLabel', { label: asset.label })}
                         className="creator-media-delete" disabled={working}
                         onClick={() => void deleteMediaAsset(asset)}><Trash2 size={15}/></button>
                     </div>
@@ -606,7 +606,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>}
               </div>
               <div className="creator-media-form">
-                <h4>{editingAsset ? 'Edit asset' : 'Add visual asset'}</h4>
+                <h4>{t(editingAsset ? 'creator.editAsset' : 'creator.addAsset')}</h4>
                 {!editingAsset && <div className="creator-double">
                   <label>{t('creator.assetType')}
                     <select aria-label={t('uiField.creatorStudio.visualAssetType')} value={mediaKind}
@@ -784,23 +784,23 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       value={draftReferenceMode}
                       onChange={event => setDraftReferenceMode(
                         event.target.value as 'img2img' | 'ipadapter')}>
-                      <option value="img2img">img2img · preserve composition</option>
-                      <option value="ipadapter">IPAdapter · guide identity</option>
+                      <option value="img2img">{t('creator.referenceImg2Img')}</option>
+                      <option value="ipadapter">{t('creator.referenceIPAdapter')}</option>
                     </select>
                   </label>
                 </div>
                 {draftReferenceMode === 'ipadapter' && <>
                   <div className="creator-double">
-                    <label>Preset IPAdapter Plus
+                    <label>{t('creator.ipAdapterPreset')}
                       <select aria-label={t('uiField.creatorStudio.spriteIPAdapterPreset')}
                         value={draftAdapterPreset}
                         onChange={event => setDraftAdapterPreset(event.target.value)}>
-                        <option value="PLUS FACE (portraits)">PLUS FACE · portraits</option>
-                        <option value="PLUS (high strength)">PLUS · high influence</option>
-                        <option value="STANDARD (medium strength)">STANDARD · medium</option>
+                        <option value="PLUS FACE (portraits)">{t('creator.ipFace')}</option>
+                        <option value="PLUS (high strength)">{t('creator.ipPlus')}</option>
+                        <option value="STANDARD (medium strength)">{t('creator.ipStandard')}</option>
                       </select>
                     </label>
-                    <label>IPAdapter strength: {draftAdapterWeight.toFixed(2)}
+                    <label>{t('creator.ipAdapterStrength', { value: draftAdapterWeight.toFixed(2) })}
                       <input aria-label={t('uiField.creatorStudio.spriteIPAdapterStrength')}
                         type="number" min={0.1} max={1.5} step={0.05}
                         value={draftAdapterWeight}
@@ -809,17 +809,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </div>
                   <button className="secondary-button" disabled={checkingAdapter || working}
                     onClick={() => void checkIdentityAdapter()}>
-                    {checkingAdapter ? 'Checking ComfyUI...' : 'Check installed IPAdapter'}
+                    {t(checkingAdapter ? 'creator.checkingComfy' : 'creator.checkIPAdapter')}
                   </button>
                   {adapterStatus && <p className="creator-hint" role="status">
                     {adapterStatus.available
-                      ? 'IPAdapter available · ' + adapterStatus.model_count + ' models and ' +
-                        adapterStatus.clip_vision_count + ' CLIP Vision · ' +
-                        adapterStatus.presets.join(', ')
-                      : 'IPAdapter is not ready: ' + (adapterStatus.error || 'missing models or nodes')}
+                      ? t('creator.adapterReady', { models: adapterStatus.model_count,
+                        nodes: adapterStatus.clip_vision_count, presets: adapterStatus.presets.join(', ') })
+                      : t('creator.adapterUnavailable', { reason: adapterStatus.error || t('creator.adapterMissing') })}
                   </p>}
                   <p className="creator-hint">
-                    Requires IPAdapter Plus with installed UnifiedLoader and IPAdapter nodes, compatible IPAdapter and CLIP Vision models, and a selected Gallery reference or an approved sprite from the same NPC. No models are downloaded.
+                    {t('creator.adapterDependencies')}
                   </p>
                 </>}
                 <div className="creator-double">
@@ -829,16 +828,15 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       onChange={event => setDraftCutoutMode(
                         event.target.value as NeuralCutoutMode)}>
                       <option value="chroma_green">{t('creator.greenScreen')}</option>
-                      <option value="neural_rmbg2">RMBG 2.0 · neural mask</option>
-                      <option value="neural_birefnet_portrait">BiRefNet Portrait · portraits</option>
-                      <option value="neural_birefnet_matting">BiRefNet Matting · transparency</option>
+                      <option value="neural_rmbg2">{t('creator.rmbgMask')}</option>
+                      <option value="neural_birefnet_portrait">{t('creator.birefPortraitOption')}</option>
+                      <option value="neural_birefnet_matting">{t('creator.birefMattingOption')}</option>
                     </select>
                   </label>
                   <div className="creator-fields">
                     <button className="secondary-button" disabled={working || checkingMatting}
                       onClick={() => void checkMatting()}>
-                      {checkingMatting ? 'Checking model weights...' :
-                        'Check cutout models'}
+                      {t(checkingMatting ? 'creator.checkingWeights' : 'creator.checkCutout')}
                     </button>
                   </div>
                 </div>
@@ -846,19 +844,19 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     aria-label={t('uiField.creatorStudio.cutoutModelStatus')}>
                   {mattingStatus.modes.filter(item => item.mode !== 'chroma_green')
                     .map(item => <p key={item.mode}>
-                      {item.model}: {item.ready ? 'Ready' : item.reason || 'Unavailable'}
+                      {item.model}: {item.ready ? t('creator.statusReady') : item.reason || t('creator.statusUnavailable')}
                     </p>)}
                 </div>}
                 <p className="creator-hint">
-                  Neural cutout uses ComfyUI-RMBG and a separate PNG mask to reconstruct transparency. Required nodes and model weights must be installed. Missing dependencies stop generation without changing existing sprites or downloading models. Review the mask before approval.
+                  {t('creator.neuralCutoutHint')}
                 </p>
                 <label>
                   <input type="checkbox" aria-label={t('uiField.creatorStudio.useNPCLoRAForAISprites')}
                     checked={draftUseLora} onChange={event => setDraftUseLora(event.target.checked)}/>
-                  {' '}Apply this NPC's configured LoRA (if installed)
+                  {' '}{t('creator.applyConfiguredLora')}
                 </label>
                 <p className="creator-hint">
-                  All five expressions share the checkpoint, seed, and style. img2img preserves composition while IPAdapter guides a new image from an identity reference; neither guarantees a consistent face. Up to three drafts per story are retained for 48 hours. The five renders run sequentially.
+                  {t('creator.draftReliability')}
                 </p>
                 <button className="secondary-button" disabled={working || !draftCharacter ||
                     draftCaption.trim().length < 3 ||
@@ -875,14 +873,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <LoaderCircle className="rotating" size={15}/> {draftProgress}
                 </p>}
                 {spriteDrafts.map(draft => <section key={draft.id}
-                    className="creator-sprite-draft" aria-label={'Sprite draft ' + draft.character_name}>
-                  <h4>{draft.character_name} · {draft.ready_count}/5 expressions</h4>
-                  <p className="creator-hint">{draft.checkpoint} · Seed {draft.seed} ·
-                    {' '}{draft.use_lora ? 'LoRA enabled' : 'No LoRA'} · {draft.pose}
+                    className="creator-sprite-draft" aria-label={t('creator.spriteDraftLabel', { name: draft.character_name })}>
+                  <h4>{t('creator.spriteReadyCount', { name: draft.character_name, amount: draft.ready_count })}</h4>
+                  <p className="creator-hint">{draft.checkpoint} · {t('creator.draftSeedLabel', { number: draft.seed })} ·
+                    {' '}{t(draft.use_lora ? 'creator.loraEnabled' : 'creator.noLora')} · {draft.pose}
                     {' · Cutout: ' + (draft.cutout_mode === 'neural_rmbg2' ? 'RMBG 2.0'
-                      : draft.cutout_mode === 'neural_birefnet_portrait' ? 'BiRefNet portraits'
-                      : draft.cutout_mode === 'neural_birefnet_matting' ? 'BiRefNet matting'
-                      : 'Green screen')}
+                      : draft.cutout_mode === 'neural_birefnet_portrait' ? t('creator.neuralPortraits')
+                      : draft.cutout_mode === 'neural_birefnet_matting' ? t('creator.neuralMatting')
+                      : t('creator.greenScreen'))}
                     {draft.reference_mode === 'ipadapter'
                       ? ' · IPAdapter ' + draft.ipadapter_preset +
                         ' (' + draft.ipadapter_weight + ')' : ''}</p>
@@ -893,23 +891,23 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         <div className="creator-media-thumbnail foreground">
                           {slot.preview_url ? <img
                             src={slot.preview_url + '?v=' + draft.updated_at}
-                            alt={'Preview ' + entry.label + ' of ' + draft.character_name}
+                            alt={t('creator.previewAlt', { expression: entry.label, character: draft.character_name })}
                             loading="lazy"/> : <ImageIcon size={28}/>}
                         </div>
                         <div className="creator-media-copy">
                           <strong>{entry.label}</strong>
-                          <small>{slot.ready ? 'Needs review' : 'Not generated'}</small>
+                          <small>{t(slot.ready ? 'creator.needsReview' : 'creator.notGenerated')}</small>
                           {slot.quality && <small>
-                            Background: {slot.quality.method === 'border_chroma_key'
-                              ? 'green-screen cutout' : slot.quality.method.startsWith('neural_')
-                              ? 'mask ' + slot.quality.method
-                              : 'original transparency'} ·
-                            Coverage {Math.round(slot.quality.coverage * 100)}%
+                            {t('creator.draftBgMethod', { method: slot.quality.method === 'border_chroma_key'
+                              ? t('creator.cutoutMethodChroma') : slot.quality.method.startsWith('neural_')
+                              ? t('creator.methodMask', { method: slot.quality.method })
+                              : t('creator.cutoutMethodTransparent'),
+                              percentage: Math.round(slot.quality.coverage * 100) })}
                           </small>}
                           <button className="secondary-button" disabled={working}
-                            aria-label={'Generate expression ' + entry.label}
+                            aria-label={t('creator.generateExpression', { expression: entry.label })}
                             onClick={() => void generateSprites(draft, entry.id)}>
-                            {slot.ready ? 'Regenerate' : 'Generate'}
+                            {t(slot.ready ? 'creator.regenerateButton' : 'creator.generateButton')}
                           </button>
                         </div>
                       </article>;
@@ -919,16 +917,15 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       role="status" aria-label={t('uiField.creatorStudio.silhouetteWarnings')}>
                     <strong>{t('creator.framingDifferences')}</strong>
                     <p>{draft.alignment_warnings.join('; ')}</p>
-                    <p>This comparison only measures the position and scale of the
-                      silhouette; it does not verify facial identity. Regenerate visibly different variants or confirm that you have reviewed them.</p>
+                    <p>{t('creator.silhouetteHint')}</p>
                     <label>
                       <input type="checkbox"
-                        aria-label={'I accepted draft differences for ' + draft.character_name}
+                        aria-label={t('creator.acceptDraftDifferences', { character: draft.character_name })}
                         checked={!!alignmentConfirmed[draft.id]}
                         onChange={event => setAlignmentConfirmed(prev => ({
                           ...prev, [draft.id]: event.target.checked,
                         }))}/>
-                      {' '}I personally reviewed and accept the differences
+                      {' '}{t('creator.reviewedDifferences')}
                     </label>
                   </div>}
                   <div className="creator-actions">
@@ -940,7 +937,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         draft.ready_count !== 5 ||
                         (!!draft.alignment_review_needed && !alignmentConfirmed[draft.id])}
                       onClick={() => void approveSprites(draft)}>
-                      <Check size={16}/> Approve five expressions
+                      <Check size={16}/> {t('creator.approveExpressions')}
                     </button>
                     <button className="secondary-button" disabled={working}
                       onClick={() => void discardSprites(draft)}>
@@ -957,17 +954,17 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-character-list">
                 {lorebookEntries.map(entry => <div className="creator-opening" key={entry.id}>
-                  <div><strong>{entry.title} · priority {entry.priority}</strong>
+                  <div><strong>{entry.title} · {t('creator.priorityLabel', { value: entry.priority })}</strong>
                     <button className="creator-media-delete" disabled={working}
-                      aria-label={'Delete Lorebook ' + entry.title}
+                      aria-label={t('creator.loreDeleteLabel', { title: entry.title })}
                       onClick={() => void removeLorebook(entry)}><Trash2 size={15}/></button>
                   </div>
-                  <p>{entry.always_active ? 'Always active' :
-                    'Keys: ' + entry.keys.join(', ')}
-                    {entry.enabled ? '' : ' · Disabled'}
+                  <p>{entry.always_active ? t('creator.alwaysActiveStatus') :
+                    t('creator.keysLabel', { keys: entry.keys.join(', ') })}
+                    {entry.enabled ? '' : ' · ' + t('creator.loreDisabled')}
                     {entry.visibility === 'witnesses'
-                      ? ' · Present witness characters only'
-                      : ' · General knowledge'}</p>
+                      ? ' · ' + t('creator.loreWitnesses')
+                      : ' · ' + t('creator.loreGeneral')}</p>
                   <p>{entry.content.slice(0, 170)}{entry.content.length > 170 ? '…' : ''}</p>
                   <button className="secondary-button" disabled={working}
                     onClick={() => editLorebook(entry)}>{t('creator.editEntry')}</button>
@@ -976,8 +973,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   {t('creator.noLoreEntries')}</p>}
               </div>
               <div className="creator-media-form">
-                <h4>{editingLorebook ? 'Edit Lorebook entry' : 'New Lorebook entry'}</h4>
-                <label>Title
+                <h4>{t(editingLorebook ? 'creator.loreEditTitle' : 'creator.loreNewTitle')}</h4>
+                <label>{t('creator.titleField')}
                   <input aria-label={t('uiField.creatorStudio.lorebookTitle')} value={lorebookDraft.title}
                     maxLength={100} onChange={e => setLorebookDraft(v => ({
                       ...v, title: e.target.value,
@@ -1035,7 +1032,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <legend>{t('creator.witnessCharacters')}</legend>
                   {!characters.length && <p>{t('creator.createCharactersFirst')}</p>}
                   {characters.map(person => <label key={person.id} className="creator-lore-toggle">
-                    <input type="checkbox" aria-label={'Witness ' + person.name}
+                    <input type="checkbox" aria-label={t('creator.witnessLabel', { name: person.name })}
                       checked={lorebookDraft.witness_character_ids.includes(person.id)}
                       onChange={e => setLorebookDraft(v => ({
                         ...v, witness_character_ids: e.target.checked
@@ -1063,7 +1060,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     (lorebookDraft.visibility === 'witnesses' &&
                       !lorebookDraft.witness_character_ids.length)}
                     onClick={() => void saveLorebook()}><Save size={16}/>
-                    {editingLorebook ? 'Update Lorebook' : 'Create Lorebook entry'}
+                    {t(editingLorebook ? 'creator.loreUpdate' : 'creator.loreCreate')}
                   </button>
                   {editingLorebook && <button className="secondary-button"
                     onClick={resetLorebookEditor}>{t('creator.cancelEditing')}</button>}
@@ -1111,10 +1108,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <label >{t('creator.language')}
                   <select aria-label={t('uiField.creatorStudio.storyLanguage')} value={blueprint.language}
                     onChange={e => update('language', e.target.value)}>
-                    <option value="es-419">Latin American Spanish</option>
-                    <option value="en">English</option><option value="ja">日本語</option>
-                    <option value="ko">한국어</option><option value="pt-BR">Português (Brasil)</option>
-                    <option value="fr">Français</option>
+                    <option value="es-419">{t('settings.languageEs419')}</option>
+                    <option value="en">{t('settings.languageEnglish')}</option><option value="ja">{t('settings.languageJapanese')}</option>
+                    <option value="ko">{t('settings.languageKorean')}</option><option value="pt-BR">{t('settings.languageBrazilianPortuguese')}</option>
+                    <option value="fr">{t('settings.languageFrench')}</option>
                   </select>
                 </label>
               </div>
@@ -1256,12 +1253,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               {blueprint.opening_scenarios.map((opening,index) =>
                 <div className="creator-opening" key={index}>
-                  <div><strong>Opening {index+1}</strong>
-                    <button disabled={working} aria-label={'Remove opening '+(index+1)}
+                  <div><strong>{t('creator.openingNumber', { number: index + 1 })}</strong>
+                    <button disabled={working} aria-label={t('creator.removeOpening', { number: index + 1 })}
                       onClick={() => update('opening_scenarios',
                         blueprint.opening_scenarios.filter((_,i)=>i!==index))}><X size={15}/></button>
                   </div>
-                  <textarea aria-label={'Opening text '+(index+1)} rows={5}
+                  <textarea aria-label={t('creator.openingText', { number: index + 1 })} rows={5}
                     maxLength={3000} value={opening}
                     onChange={e => update('opening_scenarios',
                       blueprint.opening_scenarios.map((v,i)=>i===index?e.target.value:v))}/>
@@ -1285,8 +1282,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <button className="primary-button" disabled={working}
                   onClick={() => void saveBlueprint()}><Save size={16}/> {t('creator.saveOpenings')}</button>
               </div>
-              <p className="creator-hint">Save the openings before selecting a starting scene.
-                A story with saved turns is never overwritten automatically.</p>
+              <p className="creator-hint">{t('creator.openingSaveHint')}</p>
             </div>}
         </>}
       </div>
@@ -1297,12 +1293,11 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           <button aria-label={t('uiField.creatorStudio.closeProject')} className="icon-button"
             onClick={() => setCreateNew(false)}><X size={18}/></button></div>
         <h2>{t('creator.nextWorld')}</h2>
-        <p>Create the project first. Dedicated tools are available afterward for
-          plot, characters, and openings.</p>
-        <label className="form-label">Title
+        <p>{t('creator.createProjectHint')}</p>
+        <label className="form-label">{t('creator.titleField')}
           <input value={newTitle} maxLength={100}
             onChange={e => setNewTitle(e.target.value)}/></label>
-        <label className="form-label">World premise
+        <label className="form-label">{t('creator.worldPremiseField')}
           <textarea rows={4} maxLength={4000} value={newPremise}
             onChange={e => setNewPremise(e.target.value)}/></label>
         <label className="form-label">Protagonist
