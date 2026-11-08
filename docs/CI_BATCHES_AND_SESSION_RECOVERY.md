@@ -113,7 +113,7 @@ The five verified B001 implementations above are **not** part of this new batch.
 
 | Unit | TODO / scope | Commit(s) | Tests written / executed | State |
 | --- | --- | --- | --- | --- |
-| 1 | N-22 — SQLite-backed opt-in ComfyUI image jobs, idempotent request UUID, persistent seed, restart recovery, cancel/retry, and Creator Studio job polling | `a4fd0d1`, `a565571`, `53f9e69`, `c38bd5d`, `f4339f2`, `a61f952`, `1cbcf9d` | New `tests/test_image_jobs.py` and `apps/web/tests/image-job-recovery.spec.ts`, updated `visual-preparation.spec.ts`; all **NOT RUN** until B002. Four-language catalog parity checked structurally (1,707 keys each). | IMPLEMENTED / UNVERIFIED |
+| 1 | N-22 — SQLite-backed opt-in ComfyUI image jobs, idempotent request UUID, persistent seed, restart recovery, cancel/retry, and Creator Studio job polling | `a4fd0d1`, `a565571`, `53f9e69`, `c38bd5d`, `f4339f2`, `a61f952`, `1cbcf9d`, `3153cc9`, `df31191` | New `tests/test_image_jobs.py` and `apps/web/tests/image-job-recovery.spec.ts`, updated `visual-preparation.spec.ts`; all **NOT RUN** until B002. Four-language catalog parity checked structurally (1,719 keys each after unit 2); active queue capped at 8 jobs, with admission test. | IMPLEMENTED / UNVERIFIED |
 | 2 | N-18 — editorial arc milestones (planned/active/resolved) in Creator Blueprint, private narrator prompt and creator UI; clone and legacy editing compatibility | `2018265`, `e365955`, `cb0cec1` | Added `tests/test_creator_arc_beats.py` + `apps/web/tests/creator-arc-beats.spec.ts`; **NOT RUN** until B002 full CI. | IMPLEMENTED / UNVERIFIED |
 | 3 | — | — | NOT RUN | OPEN |
 | 4 | — | — | NOT RUN | OPEN |
