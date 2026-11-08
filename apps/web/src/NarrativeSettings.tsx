@@ -234,7 +234,7 @@ export function NarrativeSettings() {
               disabled={inspecting || (inspectMode !== 'continue' && !inspectText.trim())}
               onClick={() => void inspectContext()}>
               {inspecting ? <LoaderCircle size={16} className="rotating"/> : <BookOpen size={16}/>}
-              Inspect context
+              {t('narrativeUi.inspectContext')}
             </button>
           </div>
           {inspectorError && <p role="alert" className="narrative-error">{inspectorError}</p>}

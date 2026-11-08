@@ -14,7 +14,7 @@ const technical = new Set([
   'DPM++ 2M', 'DPM++ SDE', 'DPM++ 2M SDE', 'UniPC',
   'Euler ancestral', 'SGM Uniform', 'RMBG 2.0',
   'door_open', 'author/model', 'character.safetensors',
-  'API Noble',
+  'API Noble', 'GB VRAM', 'GiB', 'MiB', 'tokens', '· IPAdapter',
 ]);
 const userFacingAttributes = new Set(['aria-label', 'placeholder', 'title', 'alt']);
 const feedbackSetters = /^(?:set(?:Notice|Message|Feedback|Saved|GenerationMessage|DraftProgress|IllustrationNotice|ReaderError)|window\.(?:confirm|alert)|confirm|alert)$/;
@@ -30,6 +30,8 @@ function isInterfaceCopy(value) {
   if (technical.has(text)) return false;
   if (/^(https?:\/\/|[A-Za-z]:\\|\.{0,2}\/)/.test(text)) return false;
   if (/^\d+[KM]\s+tokens$/i.test(text)) return false;
+  if (/^\{\{[A-Za-z0-9_]+\}\}$/.test(text)) return false;
+  if (/^--[a-z0-9-]+/.test(text)) return false;
   if (/^[A-Z]{2,}(?:\s*[/+·]\s*[A-Z]{2,})*$/.test(text)) return false;
   if (/^[a-z_]+\.[a-zA-Z0-9_.-]+$/.test(text)) return false;
   if (/^[\d.,%+\-/: ]+$/.test(text)) return false;

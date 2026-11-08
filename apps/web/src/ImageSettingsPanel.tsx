@@ -159,7 +159,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             onChange={e => change('sampler_name', e.target.value as ImageSettings['sampler_name'])}>
             {SAMPLERS.map(sampler => <option key={sampler.id} value={sampler.id}>
               {sampler.label}{samplerOptions?.online &&
-                !samplerOptions.sampler_name.includes(sampler.id) ? ' · unavailable' : ''}
+                !samplerOptions.sampler_name.includes(sampler.id) ? ' · ' + t('common.unavailable') : ''}
             </option>)}
           </select>
         </label>
@@ -169,7 +169,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             onChange={e => change('scheduler', e.target.value as ImageSettings['scheduler'])}>
             {SCHEDULERS.map(scheduler => <option key={scheduler.id} value={scheduler.id}>
               {scheduler.label}{samplerOptions?.online &&
-                !samplerOptions.scheduler.includes(scheduler.id) ? ' · unavailable' : ''}
+                !samplerOptions.scheduler.includes(scheduler.id) ? ' · ' + t('common.unavailable') : ''}
             </option>)}
           </select>
         </label>

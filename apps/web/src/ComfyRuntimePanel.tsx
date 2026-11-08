@@ -171,7 +171,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     </p>}
     {logs && <div className="noble-comfy-log">
       <h4>{t('comfy.latestLogs')}</h4>
-      <pre>{logs.text || 'No logs yet.'}</pre>
+      <pre>{logs.text || t('comfyUi.noLogs')}</pre>
       {logs.truncated && <small>{t('comfy.logsLimited')}</small>}
     </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}

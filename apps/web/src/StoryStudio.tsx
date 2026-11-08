@@ -293,7 +293,7 @@ export function StoryStudio({
         aria-label={t("library.switchBranch")} value={active.id} disabled={generating}
         onChange={event => void switchBranch(event.target.value, true)}>
         {branchTree.branches.map(branch => <option key={branch.id} value={branch.id}>
-          {'· '.repeat(branch.depth)}{branch.title} ({branch.turn_count} turns)
+          {'· '.repeat(branch.depth)}{branch.title} ({t('storyUi.branchTurns', { amount: branch.turn_count })})
         </option>)}
       </select>}
       <button className="noble-reader-settings-link" onClick={onOpenSettings}>{t("common.settings")}</button>

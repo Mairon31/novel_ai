@@ -882,7 +882,7 @@ export function VisualReader({
                 {visual?.characters.filter(person =>
                   scenePlan.visible_character_ids.includes(person.id)).map(person =>
                   <option key={person.id} value={person.id}>
-                    {person.name}{person.reference_asset_id ? ' · image assigned' : ' · text only'}
+                    {person.name}{' · ' + t(person.reference_asset_id ? 'readerUi.imageAssigned' : 'readerUi.textOnly')}
                   </option>)}
               </select>
             </label>
@@ -950,7 +950,7 @@ export function VisualReader({
               <small>{asset.origin === 'comfyui' ? 'ComfyUI' : t('reader.imported')}
                 {asset.seed != null ? ' · ' + t('reader.seedLabel', { seed: asset.seed }) : ''}</small>
               {!!asset.render_details?.loras?.length && <small>
-                LoRAs: {asset.render_details.loras.map(lora =>
+                {t('readerUi.lorasLabel')} {asset.render_details.loras.map(lora =>
                   lora.lora_name + ' (' + lora.strength + ')').join(', ')}
               </small>}
               <button disabled={visualBusy || asset.selected}
@@ -979,13 +979,13 @@ export function VisualReader({
             </label>
             {referenceAssetId && <>
               <label className="noble-inspector-field">
-                Reference transformation · {Math.round(denoise * 100)}%
+                {t('readerUi.referenceTransform', { percentage: Math.round(denoise * 100) })}
                 <input aria-label={t('uiField.visualReader.transformationStrength')} type="range"
                   min={0.2} max={0.95} step={0.05} value={denoise}
                   onChange={e => setDenoise(Number(e.target.value))}/>
               </label>
               <p className="noble-inspector-hint">
-                ComfyUI uses this image as an img2img starting point. Lower denoise usually preserves more composition but does not guarantee facial identity.
+                {t('readerUi.referenceTransformHint')}
               </p>
             </>}
             <label className="noble-inspector-field">{t('reader.imageSeed')}
@@ -1073,7 +1073,7 @@ export function VisualReader({
         <header className="noble-backlog-heading">
           <div><span className="overline"><History size={15}/> {t('reader.readingHistory')}</span>
             <h2>{t('reader.storyBacklog')}</h2>
-            <p>{turns.length} scenes loaded from this route. Turns from other branches are not mixed in.</p></div>
+            <p>{t('readerUi.loadedScenes', { amount: turns.length })}</p></div>
           <button className="icon-button" aria-label={t('uiField.visualReader.closeBacklog')}
             onClick={() => setBacklogOpen(false)}><X size={19}/></button>
         </header>
@@ -1084,8 +1084,9 @@ export function VisualReader({
         </label>
         <div className="noble-backlog-entries">
           {backlogItems.map(turn => <article key={turn.id} className="noble-backlog-entry">
-            <div><strong>{turn.mode === 'say' ? 'Dialogue' :
-              turn.mode === 'do' ? 'Action' : turn.mode === 'story' ? 'Direction' : 'Continuation'}
+            <div><strong>{t(turn.mode === 'say' ? 'readerUi.backlogDialogue' :
+              turn.mode === 'do' ? 'readerUi.backlogAction' :
+              turn.mode === 'story' ? 'readerUi.backlogDirection' : 'readerUi.backlogContinuation')}
               {' · '}{active.protagonist_name}</strong>
               <button className="secondary-button" onClick={() => {
                 setBacklogOpen(false); focusTurn(turn);

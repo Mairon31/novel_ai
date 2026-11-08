@@ -88,7 +88,7 @@ export function StoryHub({ onInstall }: Props) {
           <Users size={15}/> {chosen.character_names.join(' · ')}
         </p>
         <p className="noble-story-hub-credits">
-          {t("hub.createdBy", { name: chosen.author })} · {chosen.license} · Version {chosen.version}
+          {t("hub.createdBy", { name: chosen.author })} · {chosen.license} · {t('hubUi.version', { version: chosen.version })}
         </p>
         <p className="noble-story-hub-credits">
           {t("hub.imagesLater")}

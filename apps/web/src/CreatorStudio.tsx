@@ -500,7 +500,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             onStoryChange?.(story.id);
           }}>
           <BookOpen size={18}/><span><strong>{story.title}</strong>
-          <small>{story.protagonist_name || 'Protagonist'}</small></span><ChevronRight size={15}/>
+          <small>{story.protagonist_name || t('creatorUi.protagonistField')}</small></span><ChevronRight size={15}/>
         </button>)}
         {!stories.length && !loading && <p className="creator-placeholder">
           {t("creator.noStories")}</p>}
@@ -759,7 +759,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       }}>
                       <option value="">{t('creator.noReference')}</option>
                       {galleryAssets.map(asset => <option value={asset.id} key={asset.id}>
-                        {asset.origin === 'comfyui' ? 'ComfyUI' : 'Imported'} · {asset.id.slice(0, 8)}
+                        {asset.origin === 'comfyui' ? 'ComfyUI' : t('reader.imported')} · {asset.id.slice(0, 8)}
                       </option>)}
                     </select>
                   </label>
@@ -877,10 +877,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <h4>{t('creator.spriteReadyCount', { name: draft.character_name, amount: draft.ready_count })}</h4>
                   <p className="creator-hint">{draft.checkpoint} · {t('creator.draftSeedLabel', { number: draft.seed })} ·
                     {' '}{t(draft.use_lora ? 'creator.loraEnabled' : 'creator.noLora')} · {draft.pose}
-                    {' · Cutout: ' + (draft.cutout_mode === 'neural_rmbg2' ? 'RMBG 2.0'
+                    {' · ' + t('creator.cutoutLabel', { method: draft.cutout_mode === 'neural_rmbg2' ? 'RMBG 2.0'
                       : draft.cutout_mode === 'neural_birefnet_portrait' ? t('creator.neuralPortraits')
                       : draft.cutout_mode === 'neural_birefnet_matting' ? t('creator.neuralMatting')
-                      : t('creator.greenScreen'))}
+                      : t('creator.greenScreen') })}
                     {draft.reference_mode === 'ipadapter'
                       ? ' · IPAdapter ' + draft.ipadapter_preset +
                         ' (' + draft.ipadapter_weight + ')' : ''}</p>
@@ -1084,7 +1084,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <p>{t('creatorUi.budgetStatus', { used: lorePreview.used_chars, budget: lorePreview.budget_chars,
                   skipped: lorePreview.skipped_budget, hidden: lorePreview.skipped_visibility })}</p>
                   {lorePreview.entries.map(entry => <p key={entry.id}>
-                    {entry.title} · priority {entry.priority}</p>)}
+                    {entry.title} · {t('creator.priorityLabel', { value: entry.priority })}</p>)}
                   {!!lorePreview.context && <details className="creator-lorebook-preview">
                     <summary>{t('creator.exactContext')}</summary>
                     <pre>{lorePreview.context}</pre>

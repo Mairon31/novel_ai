@@ -41,6 +41,9 @@ const terminal = ['completed', 'failed', 'cancelled', 'paused'];
 function humanStatus(job: DownloadJob) {
   return i18n.t('jobs.' + job.status, { defaultValue: job.status });
 }
+function localizedFitNote(fit: ModelFitVariant): string {
+  return i18n.t('modelFitUi.' + fit.fit, { defaultValue: fit.note });
+}
 function ErrorNote({ message, close }: { message: string; close: () => void }) {
   const { t } = useTranslation();
   return <div className="error-banner" role="alert"><CircleAlert size={17}/><span>{message}</span>
@@ -65,7 +68,7 @@ function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
   const breakdown = [
     fit.estimated_required_bytes ? t('model.estimatedMemory', { size: size(fit.estimated_required_bytes) }) : '',
     fit.estimated_kv_bytes ? t('model.contextCache', { size: size(fit.estimated_kv_bytes) }) : '',
-    fit.note, fit.disk_ok === false ? t('model.insufficientDisk') : '',
+    localizedFitNote(fit), fit.disk_ok === false ? t('model.insufficientDisk') : '',
   ].filter(Boolean).join(' · ');
   return <span className={'hub-fit-state state-' + fit.fit}
     role="status" tabIndex={0} title={breakdown}
@@ -663,10 +666,12 @@ export default function App() {
               {recovery.conflicts ? <CircleAlert size={18}/> : <ShieldCheck size={18}/>}
               <span>
                 {recovery.recovered > 0 &&
-                  <strong>{recovery.recovered} download{recovery.recovered === 1 ? '' : 's'} recovered after restart. </strong>}
+                  <strong>{t(recovery.recovered === 1 ? 'downloadsUi.recoveredOne' : 'downloadsUi.recoveredMany',
+                    { amount: recovery.recovered })}{' '}</strong>}
                 {recovery.conflicts > 0 &&
-                  <strong>{recovery.conflicts} conflict{recovery.conflicts === 1 ? '' : 's'} detected. </strong>}
-                Recovered files require an explicit resume and verification before use.
+                  <strong>{t(recovery.conflicts === 1 ? 'downloadsUi.conflictOne' : 'downloadsUi.conflictMany',
+                    { amount: recovery.conflicts })}{' '}</strong>}
+                {t('downloadsUi.recoveryHint')}
                 {recovery.conflicts > 0 &&
                   ' ' + t('model.conflictsHint')}
               </span>
@@ -747,7 +752,7 @@ export default function App() {
           <div className="noble-model-detail-heading">
             <div className="detail-avatar"><BookOpen size={32}/></div>
             <div>
-              <span className="overline">{detail.pipeline_tag || 'HUGGING FACE MODEL'}</span>
+              <span className="overline">{detail.pipeline_tag || t('appUi.huggingFaceModel')}</span>
               <h2>{detail.repo_id.split('/')[1]}</h2>
               <p className="detail-author">{detail.author || detail.repo_id.split('/')[0]}</p>
             </div>
@@ -757,7 +762,7 @@ export default function App() {
             <div><span>{t('nav.descargas')}</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
             <div><span>{t('model.mostLiked')}</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
             <div><span>{t('model.license')}</span><strong>{detail.license}</strong></div>
-            <div><span>{t('model.access')}</span><strong>{detail.gated ? 'Restricted' : 'Public'}</strong></div>
+            <div><span>{t('model.access')}</span><strong>{t(detail.gated ? 'model.accessRestricted' : 'model.accessPublic')}</strong></div>
           </div>
           <div className="hub-detail-metadata">
             <div><span>{t('model.revision')}</span><code>{detail.revision.slice(0,12)}</code></div>
@@ -853,7 +858,7 @@ export default function App() {
                     <strong>{v.filename}</strong>
                     <small>{fit?.quantization || 'GGUF'} · {size(v.size_bytes)} ·
                       {t(v.sha256 ? 'model.publishedSha' : 'model.noPublishedHash')}</small>
-                    {fit && <small>{fit.note}</small>}
+                    {fit && <small>{localizedFitNote(fit)}</small>}
                     {fit?.disk_ok===false && <small>{t('model.noDisk')}</small>}
                   </span>
                   <span className="hub-variant-aside">
@@ -872,7 +877,7 @@ export default function App() {
                     item.filename === v.filename && item.fit === variantFilter)).length === 0 &&
                   <p className="hub-variant-no-fit">{t('model.noVariants')}</p>}
               </div>
-              <p className="detail-disclaimer">{detail.hardware_fit?.warning ||
+              <p className="detail-disclaimer">{detail.hardware_fit?.warning ? t('modelFitUi.warning') :
                 t('model.estimateOnly')}</p>
             </section>
             <button className="primary-button full"
@@ -923,7 +928,7 @@ export default function App() {
       <div className="setup-callout"><ShieldCheck size={18}/> {t('setup.ttsDisabled')}</div>
       <button className="primary-button full" disabled={busy} onClick={() => void finishSetup()}>
         {busy ? <LoaderCircle className="rotating" size={18}/> : <ArrowRight size={18}/>}
-        Continue to Model Hub</button>
+        {t('setup.continueHub')}</button>
       <small className="welcome-note">{t('setup.incremental')}</small>
     </section></div>}
   </div>;
