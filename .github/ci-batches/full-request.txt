@@ -1,13 +1,9 @@
 Noble AI full CI batch request
-batch_id=B001
+batch_id=B002
 completed_implementations=5
-latest_functional_sha=673e47363a1f3f7ee89edaa53ebd0b83334ae526
-policy_ledger_sha=4f00436e41f66cbb9fabb95dc146671edfd51864
+latest_functional_sha=91e4cb1de8b0fecddee1f0ff887966c4b9abc929
+policy_ledger_sha=0a8fb97759256d5da4e8c4b3911e05875bbf6877
 scope=full
+attempt=1
 requested_date=2026-11-08
-reason=Retry full B001 after consolidating both observed test failures.
-
-attempt=2
-retry_of_run=42464879028
-fixes_commits=59d590e91dedf5ea7bf9b7826d01eb6024320a90,4981c672362be14f5a17352be03a68331f936527
-reason=Validate consolidated context-inspector compatibility and full Pillow-verified gallery fixture.
+reason=Run one grouped CI after five completed B002 features, without per-commit Actions.
