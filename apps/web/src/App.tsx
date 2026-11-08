@@ -559,8 +559,8 @@ export default function App() {
                     <strong title={m.repo_id}>{m.repo_id.split('/').slice(-1)[0]}</strong>
                     <small>{m.repo_id.split('/')[0]} · {m.description}</small>
                     <span className="hub-model-chips">
-                      <span><Download size={13}/> {compactCount(m)}</span>
-                      <span>♥ {m.likes.toLocaleString()}</span>
+                      <span><Download size={13}/> {compactCount(m, i18n.language)}</span>
+                      <span>♥ {m.likes.toLocaleString(i18n.language)}</span>
                       <span>{t(m.gated ? 'model.accessRestricted' : 'model.accessPublic')}</span>
                       {m.license !== 'sin verificar' && <span>{m.license}</span>}
                     </span>
@@ -759,8 +759,8 @@ export default function App() {
           </div>
           {detail.summary && <p className="hub-detail-description">{detail.summary}</p>}
           <div className="hub-detail-stats">
-            <div><span>{t('nav.descargas')}</span><strong>{(detail.downloads || 0).toLocaleString()}</strong></div>
-            <div><span>{t('model.mostLiked')}</span><strong>{(detail.likes || 0).toLocaleString()}</strong></div>
+            <div><span>{t('nav.descargas')}</span><strong>{(detail.downloads || 0).toLocaleString(i18n.language)}</strong></div>
+            <div><span>{t('model.mostLiked')}</span><strong>{(detail.likes || 0).toLocaleString(i18n.language)}</strong></div>
             <div><span>{t('model.license')}</span><strong>{detail.license}</strong></div>
             <div><span>{t('model.access')}</span><strong>{t(detail.gated ? 'model.accessRestricted' : 'model.accessPublic')}</strong></div>
           </div>

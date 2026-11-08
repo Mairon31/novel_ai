@@ -98,5 +98,18 @@ class InterfaceLocaleTests(unittest.TestCase):
                     self.assertNotEqual(catalog[key], english[key])
 
 
+    def test_number_formats_do_not_default_to_browser_or_fixed_costa_rica_locale(self):
+        """UI numerals must use the selected UI locale, not the browser locale."""
+        ui_sources = sorted(BASE.parent.glob("*.tsx"))
+        unscoped = []
+        for source in ui_sources:
+            for line, value in enumerate(source.read_text("utf-8").splitlines(), 1):
+                if ".toLocaleString()" in value:
+                    unscoped.append(f"{source.name}:{line}")
+        self.assertEqual(unscoped, [], "Unscoped localized numbers: " + ", ".join(unscoped))
+        api_helpers = (BASE.parent / "api.ts").read_text("utf-8")
+        self.assertNotIn("Intl.NumberFormat('es-CR'", api_helpers)
+
+
 if __name__ == "__main__":
     unittest.main()

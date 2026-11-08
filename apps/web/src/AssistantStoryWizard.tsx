@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [idea, setIdea] = useState('');
   const [protagonist, setProtagonist] = useState('Alex');
   const [genre, setGenre] = useState('');
@@ -336,9 +336,9 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           </button>
         </div>}
         {generationBudget && <small aria-label={t('uiField.assistantStoryWizard.estimatedGenerationBudget')}>
-          {t('wizard.generationBudget', { characters: generationBudget.context_characters.toLocaleString(),
-            input: generationBudget.input_tokens_estimate.toLocaleString(),
-            output: generationBudget.max_output_tokens.toLocaleString() })}
+          {t('wizard.generationBudget', { characters: generationBudget.context_characters.toLocaleString(i18n.language),
+            input: generationBudget.input_tokens_estimate.toLocaleString(i18n.language),
+            output: generationBudget.max_output_tokens.toLocaleString(i18n.language) })}
         </small>}
       </div>
       <p className="creator-ai-private-note">{t('wizard.privateDataHint')}</p>
