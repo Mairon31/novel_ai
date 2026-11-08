@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const image = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAALUlEQVR4nGN0S2lioCVgoqnpoxaMWjBqwagFoxaMWjBqARUBAMPtAWyW7XNMAAAAAElFTkSuQmCC', 'base64');
+  'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAATElEQVR4nO3OMQHAIADAMMDKpGAD/zr27+nJjkRB5rPP+JN1O/AlVISKUBEqQESpCRagIlRfOSg0uxxugAAAABJRU5ErkJggg==', 'base64');
 
 test('author explicitly approves saved scene gallery illustration as editorial cover', async ({ page }) => {
   const created = await page.request.post('/api/v1/stories', { data: {
@@ -16,7 +16,7 @@ test('author explicitly approves saved scene gallery illustration as editorial c
   const uploaded = await page.request.post('/api/v1/stories/' + sid + '/scene-image', {
     multipart: { file: { name: 'scene.png', mimeType: 'image/png', buffer: image } },
   });
-  expect(uploaded.status()).toBe(200);
+  expect(uploaded.status(), await uploaded.text()).toBe(200);
 
   await page.goto('/#/creator/' + sid);
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
