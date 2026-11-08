@@ -21,7 +21,7 @@ from urllib.parse import urlsplit
 import httpx
 from fastapi import HTTPException, Request
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .store import Store
 from .secrets import Secrets
@@ -96,6 +96,26 @@ class CreateStory(BaseModel):
     title: str = Field(min_length=2, max_length=100)
     premise: str = Field(min_length=10, max_length=4000)
     protagonist_name: str = Field(default="Protagonist", min_length=1, max_length=60)
+
+    @field_validator("title", "premise", "protagonist_name")
+    @classmethod
+    def validate_visible_text(cls, value: str, info) -> str:
+        """Do not create empty/invalid worlds after whitespace is stripped.
+
+        A plain field min_length check accepts "          " and the old
+        insert() then stored an empty title or premise.
+        """
+        cleaned = value.strip()
+        bounds = {"title": (2, 100), "premise": (10, 4000),
+                  "protagonist_name": (1, 60)}
+        low, high = bounds[info.field_name]
+        if not low <= len(cleaned) <= high:
+            raise ValueError(f"{info.field_name} must contain {low}–{high} visible characters")
+        allowed_controls = {"\\n", "\\t"} if info.field_name == "premise" else set()
+        if any(ord(char) < 32 and char not in allowed_controls or ord(char) == 127
+               for char in cleaned):
+            raise ValueError(f"{info.field_name} contains an unsupported control character")
+        return cleaned
 
 
 class TurnRequest(BaseModel):
@@ -236,6 +256,9 @@ class NarrativeService:
                     "error": str(exc)[:240]}
 
     def create_story(self, title: str, premise: str, protagonist_name: str = "Protagonist") -> dict:
+        # Also validate non-HTTP callers, including future import/assistant paths.
+        fields = CreateStory(title=title, premise=premise, protagonist_name=protagonist_name)
+        title, premise, protagonist_name = fields.title, fields.premise, fields.protagonist_name
         story_id, now = str(uuid.uuid4()), time.time()
         with self.store._conn() as db:
             db.execute("INSERT INTO stories (id,title,premise,created_at,updated_at,protagonist_name) VALUES (?,?,?,?,?,?)",
