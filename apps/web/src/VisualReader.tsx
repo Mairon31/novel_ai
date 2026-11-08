@@ -142,6 +142,8 @@ export function VisualReader({
     setBacklogOpen(false);
     setBacklogQuery('');
     setHudHidden(false);
+    setInspectorOpen(false);
+    setTab('summary');
   }, [active?.id]);
   useEffect(() => {
     setPlayerPlot('');
