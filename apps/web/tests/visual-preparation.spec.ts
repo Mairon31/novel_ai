@@ -26,7 +26,7 @@ test('Creator Studio previews missing visuals without automatically triggering C
   await expect(panel).toBeVisible();
   await expect(panel.getByText('Cover', { exact: true })).toBeVisible();
   await expect(panel.getByText('Opening background', { exact: true })).toBeVisible();
-  await expect(panel.getByLabel('Editable opening-background prompt')).toContainText('blue fog');
+  await expect(panel.getByLabel('Editable opening-background prompt')).toHaveValue(/blue fog/);
   await panel.getByRole('button', { name: 'Refresh checklist' }).click();
   await expect(panel.getByText('Opening background', { exact: true })).toBeVisible();
   expect(generatedCalls).toBe(0);

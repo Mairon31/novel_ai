@@ -133,9 +133,9 @@ class VisualPreflight:
         # Never include author-only hidden plot or AI system instructions here.
         visible_context = (author.get("player_plot") or author.get("synopsis") or
                            story["premise"])
-        context = re.sub(r"\\s+", " ", str(visible_context)).strip()[:800]
-        genre = re.sub(r"\\s+", " ", str(author.get("genre") or "")).strip()[:80]
-        title = re.sub(r"\\s+", " ", story["title"]).strip()[:100]
+        context = re.sub(r"\s+", " ", str(visible_context)).strip()[:800]
+        genre = re.sub(r"\s+", " ", str(author.get("genre") or "")).strip()[:80]
+        title = re.sub(r"\s+", " ", story["title"]).strip()[:100]
         world = (f"{genre} world. " if genre else "") + context
         cast_by_id = {person["id"]: json.loads(person["config_json"])
                       for person in cast}
@@ -155,7 +155,7 @@ class VisualPreflight:
                 action = "generate_scene"
             else:
                 person = cast_by_id.get(item.get("character_id"), {})
-                appearance = re.sub(r"\\s+", " ", str(person.get("description") or "")
+                appearance = re.sub(r"\s+", " ", str(person.get("description") or "")
                                     ).strip()[:400]
                 prompt = (f"Full-body visual novel character sprite for "
                           f"{item.get('name') or 'character'}. Neutral expression, "

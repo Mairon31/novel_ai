@@ -165,6 +165,21 @@ class VisualStartTests(unittest.TestCase):
         self.assertEqual(ready["steps"], [])
         self.assertTrue(ready["ready"])
 
+    def test_plan_accepts_persisted_gallery_image_without_uploading_background(self):
+        self.change_mode("cover_background")
+        cover = self.add("cover")
+        self.client.put(self.prefix + "/creator/cover", json={"asset_id": cover})
+        before = self.client.get(self.prefix + "/visual-preflight/plan").json()
+        self.assertEqual([item["kind"] for item in before["steps"]], ["background"])
+        gallery = self.app.state.visual.publish(
+            self.story, sample_webp(), origin="manual",
+            prompt="A painted lighthouse with blue fog")
+        self.assertIsNotNone(gallery["selected_asset_id"])
+        after = self.client.get(self.prefix + "/visual-preflight/plan").json()
+        self.assertTrue(after["ready"])
+        self.assertEqual(after["steps"], [])
+        self.assertFalse(after["provider_called"])
+
     def test_invalid_mode_and_nonexistent_story(self):
         self.assertEqual(self.change_mode("unknown").status_code, 422)
         missing = str(uuid.uuid4())
