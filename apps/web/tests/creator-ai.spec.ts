@@ -175,11 +175,11 @@ test('Creator AI draft survives reload, preserves manual edits, and can be disca
   await expect(page.getByText('Recovered the draft saved in this browser.')).toBeVisible();
   await expect(page.getByLabel('Editable generated title')).toHaveValue('Edited after generation');
   await expect(page.getByLabel('Editable generated tags')).toHaveValue('light, sea, a new tag');
-  await expect(page.getByLabel('Story idea')).toContainText('lighthouse and a secret');
+  await expect(page.getByLabel('Story idea')).toHaveValue(/lighthouse and a secret/);
   await page.getByRole('button', { name: 'Discard local draft' }).click();
   await expect(page.getByLabel('Editable generated title')).toHaveCount(0);
   await expect(page.getByLabel('Story idea')).toHaveValue('');
-  await expect(page.evaluate(() => localStorage.getItem('noble-ai-creator-draft-v1'))).resolves.toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('noble-ai-creator-draft-v1'))).toBeNull();
   await page.reload();
   await page.getByRole('button', { name: 'Create with AI' }).click();
   await expect(page.getByLabel('Editable generated title')).toHaveCount(0);
