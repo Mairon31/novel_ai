@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const image = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAATElEQVR4nO3OMQHAIADAMMDKpGAD/zr27+nJjkRB5rPP+JN1O/AlVISKUBEqQESpCRagIlRfOSg0uxxugAAAABJRU5ErkJggg==', 'base64');
+  'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAATElEQVR4nO3OMQHAIADAMMDKpGAD/zr27+nJjkRB5rPP+JN1O/AlVISKUBEqQkWoCBWhIlSEilARKkJFqAgVoSJUhIpQESpCRagIlRfOSgEi0uxxugAAAABJRU5ErkJggg==', 'base64');
 
 test('author explicitly approves saved scene gallery illustration as editorial cover', async ({ page }) => {
   const created = await page.request.post('/api/v1/stories', { data: {
