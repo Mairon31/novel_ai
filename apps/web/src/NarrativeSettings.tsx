@@ -241,7 +241,7 @@ export function NarrativeSettings() {
           {inspectorData && <div role="status" className="creator-hint">
             <strong>{t('narrative.estimatedBudget')}</strong>
             <p>{t('narrative.estimatedTokens', { input: inspectorData.estimated_prompt_tokens,
-              output: inspectorData.reserved_output_tokens, context: inspectorData.context_window_tokens })}</p>
+              output: inspectorData.reserved_output_tokens, windowTokens: inspectorData.context_window_tokens })}</p>
             {inspectorData.estimated_overflow && <p role="alert">
               {t('narrative.overflow')}
             </p>}

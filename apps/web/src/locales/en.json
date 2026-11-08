@@ -908,7 +908,7 @@
   "narrative.prepareHint": "“Prepare model now” runs a short inference only when you press the button; it does not add a turn to story history. The first load may take longer. This does not apply to remote OpenRouter APIs.",
   "narrative.runtimeHint": "Models installed from Model Hub need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.",
   "narrative.inspectorHint": "Inspect the exact messages prepared for the provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.",
-  "narrative.estimatedTokens": "{{input}} estimated input tokens + {{output}} reserved output tokens / {{context}} configured context-window tokens.",
+  "narrative.estimatedTokens": "{{input}} estimated input tokens + {{output}} reserved output tokens / {{windowTokens}} configured context-window tokens.",
   "narrative.tokensHint": "Token counts are estimated from characters, not the model's tokenizer. KV cache is not measured, and the provider does not guarantee the supported context length.",
   "narrative.sectionStats": "{{characters}} characters · ~{{tokens}} tokens",
   "narrative.ollamaLabel": "Ollama (local API)",

@@ -908,7 +908,7 @@
   "narrative.prepareHint": "“立即准备模型”仅在点击时执行一次短推理，不会添加故事回合。首次加载可能较慢，且不适用于远程 OpenRouter API。",
   "narrative.runtimeHint": "从模型中心安装的模型需要本地运行环境。Ollama 可在生成时加载模型，KoboldCpp 可由 Noble AI 启动。OpenRouter 和工作节点使用远程运行环境。",
   "narrative.inspectorHint": "生成前检查准备发送给提供商的完整消息。其中包含创作工作室私密上下文，只应用于自己的故事。此操作不会运行模型或保存回合。",
-  "narrative.estimatedTokens": "估算输入 {{input}} 个 Token + 预留输出 {{output}} 个 Token / 配置上下文 {{context}} 个 Token。",
+  "narrative.estimatedTokens": "估算输入 {{input}} 个 Token + 预留输出 {{output}} 个 Token / 配置上下文 {{windowTokens}} 个 Token。",
   "narrative.tokensHint": "Token 数量根据字符估算，而非模型分词器。未测量 KV 缓存，提供商也不保证上下文长度。",
   "narrative.sectionStats": "{{characters}} 个字符 · 约 {{tokens}} 个 Token",
   "narrative.ollamaLabel": "Ollama（本地 API）",
