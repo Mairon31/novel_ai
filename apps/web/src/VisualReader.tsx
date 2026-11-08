@@ -386,7 +386,7 @@ export function VisualReader({
       setScenePlan(saved);
       setPreviewPrompt('');
       setDirectorPreview(null);
-      setIllustrationNotice('Scene plan saved. It will be used for future illustrations.');
+      setIllustrationNotice(t('feedback.readerSceneSaved'));
     } catch (e) { setReaderError((e as Error).message); }
     finally { setVisualBusy(false); }
   }
@@ -427,7 +427,7 @@ export function VisualReader({
       onUpdateStory({
         ...story, scene_image_url: '/api/v1/stories/' + story.id + '/scene-image?v=' + Date.now(),
       });
-      setIllustrationNotice('Background reused from Gallery. ComfyUI was not called.');
+      setIllustrationNotice(t('feedback.readerBackgroundReused'));
     } catch (exc) {
       if (directorRequest.current === sequence) setDirectorError((exc as Error).message);
     } finally { if (directorRequest.current === sequence) setDirectorBusy(false); }
@@ -469,15 +469,14 @@ export function VisualReader({
     try {
       const seed = imageSeed.trim() ? Number(imageSeed) : undefined;
       if (seed !== undefined && (!Number.isSafeInteger(seed) || seed < 0))
-        throw new Error('Seed must be a nonnegative integer.');
+        throw new Error(t('feedback.readerSeedError'));
       const result = await api.illustrate(requestedStoryId, imagePrompt.trim(), seed,
         referenceAssetId || undefined, referenceAssetId ? denoise : undefined,
         allowLowVram, applyCharacterLoras);
       const loraInfo = result.applied_loras?.length
-        ? ' LoRAs aplicados: ' + result.applied_loras.map(lora => lora.lora_name).join(', ') + '.'
+        ? t('feedback.readerLorasApplied', { names: result.applied_loras.map(lora => lora.lora_name).join(', ') })
         : '';
-      setIllustrationNotice((result.cached ? 'Illustration restored from cache.' :
-        'New illustration saved as an independent version.') + loraInfo);
+      setIllustrationNotice(t(result.cached ? 'feedback.readerRestored' : 'feedback.readerImageSaved') + loraInfo);
       // Force refreshing a previous scene despite using a stable asset path.
       const story = result.story;
       onUpdateStory({ ...story, scene_image_url: story.scene_image_url ?
@@ -590,7 +589,7 @@ export function VisualReader({
           <p>{t('reader.addIllustrationHint')}</p>
         </div>}
         {turns.length > 0 && <div className="noble-vn-subtitle" role="note"
-          aria-label="Latest scene narration">
+          aria-label={t('uiField.visualReader.latestSceneNarration')}>
           <strong>{t('reader.narrator')}</strong>
           <p>{turns[turns.length - 1].assistant_text.slice(-320)}</p>
         </div>}
@@ -615,16 +614,16 @@ export function VisualReader({
         <span className="noble-reader-chapter">{t('reader.chapterOne')} <span>·</span> {active.title}</span>
         <div className="noble-reader-toolbar-actions">
           <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.html'}
-            download="noble-story.html" title="Export illustrated story as HTML"
-            aria-label="Export story as HTML"><Download size={17}/></a>
+            download="noble-story.html" title={t('uiField.visualReader.exportIllustratedStoryAsHTML')}
+            aria-label={t('uiField.visualReader.exportStoryAsHTML')}><Download size={17}/></a>
           <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.epub'}
-            download="noble-story.epub" title="Export story as EPUB"
-            aria-label="Export story as EPUB"><BookOpen size={17}/></a>
-          <button title="View backlog (Alt+B)" aria-label="Open backlog"
+            download="noble-story.epub" title={t('uiField.visualReader.exportStoryAsEPUB')}
+            aria-label={t('uiField.visualReader.exportStoryAsEPUB')}><BookOpen size={17}/></a>
+          <button title={t('uiField.visualReader.viewBacklogAltB')} aria-label={t('uiField.visualReader.openBacklog')}
             onClick={() => setBacklogOpen(true)}><History size={17}/></button>
-          <button title="Show story details" aria-label={t("reader.openDetails")}
+          <button title={t('uiField.visualReader.showStoryDetails')} aria-label={t("reader.openDetails")}
             onClick={() => setInspectorOpen(open => !open)}><Eye size={17}/></button>
-          <button title="Configure narrator" aria-label="Configure narrator" onClick={onSettings}>
+          <button title={t('uiField.visualReader.configureNarrator')} aria-label={t('uiField.visualReader.configureNarrator')} onClick={onSettings}>
             <Settings2 size={18}/></button>
         </div>
       </header>
@@ -663,13 +662,13 @@ export function VisualReader({
           {error || readerError} <button onClick={onSettings}>{t('reader.reviewSettings')} <ArrowRight size={13}/></button></div>}
         <div className="noble-reader-mode">
           <span>Speak as {active.protagonist_name} or choose what happens next</span>
-          <select value={mode} disabled={generating} aria-label="Narration mode"
+          <select value={mode} disabled={generating} aria-label={t('uiField.visualReader.narrationMode')}
             onChange={e => setMode(e.target.value as StoryTurn['mode'])}>
             <option value="do">{t('reader.act')}</option><option value="say">{t('reader.speak')}</option>
             <option value="story">{t('reader.narrate')}</option>
           </select>
         </div>
-        <textarea aria-label="Your input in the story" value={draft}
+        <textarea aria-label={t('uiField.visualReader.yourInputInTheStory')} value={draft}
           onChange={e => setDraft(e.target.value)} disabled={generating}
           rows={3} maxLength={3000} placeholder={inputLabel}
           onKeyDown={e => {
@@ -699,7 +698,7 @@ export function VisualReader({
         <h3>{active.title}</h3></div>
         <button aria-label={t("reader.closeDetails")} onClick={() => setInspectorOpen(false)}>
           <X size={18}/></button></header>
-      <nav className="noble-inspector-tabs" aria-label="Visual novel panel">
+      <nav className="noble-inspector-tabs" aria-label={t('uiField.visualReader.visualNovelPanel')}>
         {tabs.map(item => <button key={item.id}
           className={tab === item.id ? 'selected' : ''} onClick={() => setTab(item.id)}>
           {t(item.id === 'reader' ? 'reader.uiUx' : 'reader.' + item.id, { defaultValue: item.label })}</button>)}
@@ -719,9 +718,9 @@ export function VisualReader({
           <h4>{t('reader.canonTitle')}</h4>
           <p>{t('reader.canonHint')}</p>
           <label className="noble-inspector-field">{t('reader.confirmedRules')}
-            <textarea aria-label="Story canon" rows={6} maxLength={5000}
+            <textarea aria-label={t('uiField.visualReader.storyCanon')} rows={6} maxLength={5000}
               value={canon} onChange={e => setCanon(e.target.value)}
-              placeholder="Example: Aira knows the castle's secret. Nobody else knows yet."/></label>
+              placeholder={t('uiField.visualReader.exampleAiraKnowsTheCastlesSecretNobodyElseKnowsYet')}/></label>
           <button className="secondary-button" disabled={updating || canon === (active.canon || '')}
             onClick={() => void saveCanon()}><Check size={15}/> {t("reader.saveCanon")}</button>
           <h4>{t('reader.status')}</h4>
@@ -730,21 +729,21 @@ export function VisualReader({
           <p>{t('reader.visualProfilesHint')}</p>
           {visual?.characters.map(person =>
             <button className="noble-character-entry" key={person.id}
-              onClick={() => editVisualCharacter(person)} title="Edit visual profile">
+              onClick={() => editVisualCharacter(person)} title={t('uiField.visualReader.editVisualProfile')}>
               <span>{person.name}</span><small>Revision {person.revision} · Edit</small>
             </button>)}
           <label className="noble-inspector-field">{t('reader.characterName')}
-            <input value={character.name} maxLength={80} aria-label="Visual name"
+            <input value={character.name} maxLength={80} aria-label={t('uiField.visualReader.visualName')}
               onChange={e => setCharacter(x => ({ ...x, name: e.target.value }))}/></label>
           <label className="noble-inspector-field">{t('reader.appearance')}
             <textarea value={character.appearance} maxLength={1500} rows={4}
-              aria-label="Visual appearance" placeholder="Hair, eyes, apparent age, silhouette, species..."
+              aria-label={t('uiField.visualReader.visualAppearance')} placeholder={t('uiField.visualReader.hairEyesApparentAgeSilhouetteSpecies')}
               onChange={e => setCharacter(x => ({ ...x, appearance: e.target.value }))}/></label>
           <label className="noble-inspector-field">{t('reader.outfit')}
-            <input value={character.outfit} maxLength={650} aria-label="Visual outfit"
+            <input value={character.outfit} maxLength={650} aria-label={t('uiField.visualReader.visualOutfit')}
               onChange={e => setCharacter(x => ({ ...x, outfit: e.target.value }))}/></label>
           <label className="noble-inspector-field">{t('reader.distinctive')}
-            <input value={character.distinguishing_features} maxLength={650} aria-label="Visual traits"
+            <input value={character.distinguishing_features} maxLength={650} aria-label={t('uiField.visualReader.visualTraits')}
               onChange={e => setCharacter(x => ({ ...x, distinguishing_features: e.target.value }))}/></label>
           <button className="secondary-button"
             disabled={visualBusy || character.appearance.trim().length < 12 || !character.name.trim()}
@@ -755,7 +754,7 @@ export function VisualReader({
             <strong>{t('reader.identityImage')}</strong>
             <p>{t('reader.referenceHint')}</p>
             <label className="noble-inspector-field">{t('reader.savedReference')}
-              <select aria-label="Character reference" value={characterReferenceId}
+              <select aria-label={t('uiField.visualReader.characterReference')} value={characterReferenceId}
                 onChange={e => setCharacterReferenceId(e.target.value)}>
                 <option value="">{t('reader.noImageAssigned')}</option>
                 {visual?.assets.map(asset => <option key={asset.id} value={asset.id}>
@@ -783,8 +782,8 @@ export function VisualReader({
           <h4>{t('reader.memorySearch')}</h4>
           <p className="noble-inspector-hint">{t('reader.historySearchHint')}</p>
           <label className="noble-inspector-field">{t('reader.memorySearch')}
-            <input aria-label="Search story memories" value={memoryQuery}
-              maxLength={500} placeholder="medallion, library, promise..."
+            <input aria-label={t('uiField.visualReader.searchStoryMemories')} value={memoryQuery}
+              maxLength={500} placeholder={t('uiField.visualReader.medallionLibraryPromise')}
               onChange={e => { setMemoryQuery(e.target.value); setMemoryResults(null); }}/>
           </label>
           <button className="secondary-button" disabled={memoryBusy || memoryQuery.trim().length < 2}
@@ -814,7 +813,7 @@ export function VisualReader({
                 <strong>{turn.input_text || 'Automatic continuation'}</strong><ChevronRight size={15}/>
               </button>
               <button className="noble-inspector-branch" disabled={generating || updating}
-                title="Safely rewind without changing the original story"
+                title={t('uiField.visualReader.safelyRewindWithoutChangingTheOriginalStory')}
                 onClick={() => setRewindTurn(turn)}><RotateCcw size={14}/> {t('reader.rewind')}</button>
             </div>) : <p>{t('reader.noScenes')}</p>}
         </>}
@@ -827,7 +826,7 @@ export function VisualReader({
             {' '}Registered scenes: {visual.scenes.length}.
           </p>}
           <label className="noble-inspector-field">{t('reader.currentLocation')}
-            <input aria-label="Current location" value={sceneLocation} maxLength={120}
+            <input aria-label={t('uiField.visualReader.currentLocation')} value={sceneLocation} maxLength={120}
               onChange={e => setSceneLocation(e.target.value)}/></label>
           <button className="secondary-button" disabled={visualBusy || sceneLocation.trim().length < 2}
             onClick={() => void saveSceneLocation()}><Check size={15}/> {t('reader.confirmScene')}</button>
@@ -835,7 +834,7 @@ export function VisualReader({
           <p className="noble-inspector-hint">{t('reader.illustrationPlanHint')}</p>
           {scenePlan && <>
             <label className="noble-inspector-field">{t('reader.shotType')}
-              <select aria-label="Scene shot" value={scenePlan.shot}
+              <select aria-label={t('uiField.visualReader.sceneShot')} value={scenePlan.shot}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, shot: e.target.value as ScenePlan['shot'],
                 } : plan)}>
@@ -845,7 +844,7 @@ export function VisualReader({
               </select>
             </label>
             <label className="noble-inspector-field">{t('reader.lighting')}
-              <select aria-label="Scene lighting" value={scenePlan.lighting}
+              <select aria-label={t('uiField.visualReader.sceneLighting')} value={scenePlan.lighting}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, lighting: e.target.value as ScenePlan['lighting'],
                 } : plan)}>
@@ -857,12 +856,12 @@ export function VisualReader({
               </select>
             </label>
             <label className="noble-inspector-field">{t('reader.mood')}
-              <input aria-label="Visual mood" maxLength={160} value={scenePlan.mood}
+              <input aria-label={t('uiField.visualReader.visualMood')} maxLength={160} value={scenePlan.mood}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, mood: e.target.value,
                 } : plan)}/></label>
             <label className="noble-inspector-field">{t('reader.composition')}
-              <textarea aria-label="Scene direction" rows={3} maxLength={900}
+              <textarea aria-label={t('uiField.visualReader.sceneDirection')} rows={3} maxLength={900}
                 value={scenePlan.direction}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, direction: e.target.value,
@@ -878,7 +877,7 @@ export function VisualReader({
               {person.name}
             </label>)}
             <label className="noble-inspector-field">{t('reader.referenceCharacter')}
-              <select aria-label="Visual focus" value={scenePlan.reference_character_id || ''}
+              <select aria-label={t('uiField.visualReader.visualFocus')} value={scenePlan.reference_character_id || ''}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, reference_character_id: e.target.value || null,
                 } : plan)}>
@@ -898,7 +897,7 @@ export function VisualReader({
           <h4>{t('reader.visualDirector')}</h4>
           <p className="noble-inspector-hint">{t('reader.directorHint')}</p>
           <label className="noble-inspector-field">{t('reader.visualChange')}
-            <select aria-label="Visual director intent" value={directorIntent}
+            <select aria-label={t('uiField.visualReader.visualDirectorIntent')} value={directorIntent}
               onChange={event => {
                 setDirectorIntent(event.target.value as VisualDirectorIntent);
                 setDirectorPreview(null);
@@ -967,9 +966,9 @@ export function VisualReader({
             <label className="noble-inspector-field">{t('reader.describeScene')}
               <textarea rows={4} minLength={8} maxLength={2400}
                 value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
-                placeholder="Characters, location, lighting, expression, and visual style..."/></label>
+                placeholder={t('uiField.visualReader.charactersLocationLightingExpressionAndVisualStyle')}/></label>
             <label className="noble-inspector-field">{t('reader.referenceImage')}
-              <select aria-label="Visual reference" value={referenceAssetId}
+              <select aria-label={t('uiField.visualReader.visualReference')} value={referenceAssetId}
                 onChange={e => setReferenceAssetId(e.target.value)}>
                 <option value="">{t('reader.noReference')}</option>
                 {visual?.assets.map(asset =>
@@ -983,7 +982,7 @@ export function VisualReader({
             {referenceAssetId && <>
               <label className="noble-inspector-field">
                 Reference transformation · {Math.round(denoise * 100)}%
-                <input aria-label="Transformation strength" type="range"
+                <input aria-label={t('uiField.visualReader.transformationStrength')} type="range"
                   min={0.2} max={0.95} step={0.05} value={denoise}
                   onChange={e => setDenoise(Number(e.target.value))}/>
               </label>
@@ -992,9 +991,9 @@ export function VisualReader({
               </p>
             </>}
             <label className="noble-inspector-field">{t('reader.imageSeed')}
-              <input aria-label="Image seed" type="number" min={0} step={1}
+              <input aria-label={t('uiField.visualReader.imageSeed')} type="number" min={0} step={1}
                 value={imageSeed} onChange={e => setImageSeed(e.target.value)}
-                placeholder="Random if left blank"/></label>
+                placeholder={t('uiField.visualReader.randomIfLeftBlank')}/></label>
             <button className="secondary-button" disabled={visualBusy || imagePrompt.trim().length < 8}
               onClick={() => void previewIllustrationPrompt()}>{t('reader.completePrompt')}</button>
             {previewPrompt && <div className="noble-prompt-preview">
@@ -1002,7 +1001,7 @@ export function VisualReader({
             </div>}
             <div className="noble-inspector-field">
               <label>
-                <input type="checkbox" aria-label="Apply character LoRAs"
+                <input type="checkbox" aria-label={t('uiField.visualReader.applyCharacterLoRAs')}
                   checked={applyCharacterLoras}
                   onChange={e => setApplyCharacterLoras(e.target.checked)}/>
                 {' '}Apply LoRAs for present characters (optional)
@@ -1074,21 +1073,21 @@ export function VisualReader({
       </div>
     </aside>
     {inspectorOpen && <button className="noble-inspector-backdrop"
-      aria-label="Close details panel" onClick={() => setInspectorOpen(false)}/>}
+      aria-label={t('uiField.visualReader.closeDetailsPanel')} onClick={() => setInspectorOpen(false)}/>}
     {backlogOpen && <div className="noble-backlog-scrim">
       <section className="noble-backlog-dialog" role="dialog" aria-modal="true"
-        aria-label="Story backlog">
+        aria-label={t('uiField.visualReader.storyBacklog')}>
         <header className="noble-backlog-heading">
           <div><span className="overline"><History size={15}/> {t('reader.readingHistory')}</span>
             <h2>{t('reader.storyBacklog')}</h2>
             <p>{turns.length} scenes loaded from this route. Turns from other branches are not mixed in.</p></div>
-          <button className="icon-button" aria-label="Close backlog"
+          <button className="icon-button" aria-label={t('uiField.visualReader.closeBacklog')}
             onClick={() => setBacklogOpen(false)}><X size={19}/></button>
         </header>
         <label className="noble-backlog-search">{t('reader.searchLoaded')}
-          <input type="search" aria-label="Search backlog" maxLength={150}
+          <input type="search" aria-label={t('uiField.visualReader.searchBacklog')} maxLength={150}
             value={backlogQuery} onChange={event => setBacklogQuery(event.target.value)}
-            placeholder="Player action, dialogue, or narration..."/>
+            placeholder={t('uiField.visualReader.playerActionDialogueOrNarration')}/>
         </label>
         <div className="noble-backlog-entries">
           {backlogItems.map(turn => <article key={turn.id} className="noble-backlog-entry">
@@ -1109,11 +1108,11 @@ export function VisualReader({
     </div>}
     {rewindTurn && <div className="noble-rewind-scrim" role="presentation">
       <section className="noble-rewind-dialog" role="dialog"
-        aria-modal="true" aria-label="Confirm rewind">
+        aria-modal="true" aria-label={t('uiField.visualReader.confirmRewind')}>
         <div className="noble-rewind-header">
           <div><span className="overline"><RotateCcw size={15}/> {t('reader.timeline')}</span>
             <h2>{t('reader.returnPoint')}</h2></div>
-          <button className="icon-button" aria-label="Cancel rewind"
+          <button className="icon-button" aria-label={t('uiField.visualReader.cancelRewind')}
             onClick={() => setRewindTurn(null)}><X size={19}/></button>
         </div>
         <p>{t('reader.rewindHint')}</p>
@@ -1154,7 +1153,7 @@ export function VisualReader({
       </section>
     </div>}
     <input ref={fileRef} type="file" hidden accept="image/png,image/jpeg,image/webp"
-      aria-label="Upload scene illustration" onChange={e => {
+      aria-label={t('uiField.visualReader.uploadSceneIllustration')} onChange={e => {
         const file = e.target.files?.[0];
         void upload(file);
         e.target.value = '';

@@ -120,7 +120,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         </label>
         <label className="workspace-pref-field">{t('image.checkpoint')}
           <input list="noble-comfy-checkpoints" value={image.checkpoint} disabled={busy}
-            onChange={e => change('checkpoint', e.target.value)} placeholder="Model installed in ComfyUI"/>
+            onChange={e => change('checkpoint', e.target.value)} placeholder={t('uiField.imageSettingsPanel.modelInstalledInComfyUI')}/>
           <datalist id="noble-comfy-checkpoints">
             {status?.checkpoints.map(model => <option value={model} key={model}/>)}
           </datalist>
@@ -222,7 +222,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       </p>}
       {resources && <label className="workspace-pref-toggle">
         <span>{t('image.gpuMemoryDescription')}</span>
-        <input type="checkbox" aria-label="Coordinate local GPU"
+        <input type="checkbox" aria-label={t('uiField.imageSettingsPanel.coordinateLocalGPU')}
           checked={resources.serialize_local_gpu}
           onChange={e => setResources(x => x ? {
             ...x, serialize_local_gpu: e.target.checked,
@@ -240,13 +240,13 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
         </label>
         <label className="workspace-pref-field">{t('image.gpuIndex')}
           <input type="number" min={0} max={31} value={resources.gpu_index}
-            aria-label="GPU index" onChange={e => setResources(x => x ? {
+            aria-label={t('uiField.imageSettingsPanel.gPUIndex')} onChange={e => setResources(x => x ? {
               ...x, gpu_index: Number(e.target.value),
             } : x)}/>
         </label>
         <label className="workspace-pref-field">{t('image.minReserve')}
           <input type="number" min={0} max={65536} step={256}
-            value={resources.minimum_free_mib} aria-label="GPU reserve in MiB"
+            value={resources.minimum_free_mib} aria-label={t('uiField.imageSettingsPanel.gPUReserveInMiB')}
             onChange={e => setResources(x => x ? {
               ...x, minimum_free_mib: Number(e.target.value),
             } : x)}/>

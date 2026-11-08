@@ -130,7 +130,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <div className="creator-double">
         <label>{t('world.location')}
           <input aria-label={t('a11y.worldLocation')} maxLength={200} value={draft.location}
-            placeholder="Star Harbor..."
+            placeholder={t('uiField.worldStateEditor.starHarbor')}
             onChange={event => patch({ location: event.target.value })}/>
         </label>
         <label>{t('world.time')}
@@ -147,7 +147,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <label>{t('world.inventory')}
         <textarea aria-label={t('a11y.worldInventory')} rows={4} value={inventoryInput}
           onChange={event => { setInventoryInput(event.target.value); setNotice(''); }}
-          placeholder="Silver key\nOld map"/>
+          placeholder={t('uiField.worldStateEditor.silverKeynOldMap')}/>
       </label>
     </section>
 
@@ -177,7 +177,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
               if (value) relationships[character.id] = value;
               else delete relationships[character.id];
               patch({ relationships });
-            }} placeholder="Ally, distrust, rivalry..."/>
+            }} placeholder={t('uiField.worldStateEditor.allyDistrustRivalry')}/>
         </label>)}
       </div>}
     </section>
@@ -201,7 +201,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
             }}><Trash2 size={14}/></button>
         </div>)}
       <div className="world-add-row">
-        <input aria-label="New flag name" maxLength={70}
+        <input aria-label={t('uiField.worldStateEditor.newFlagName')} maxLength={70}
           value={flagName} onChange={event => setFlagName(event.target.value)}
           placeholder="door_open"/>
         <button className="secondary-button"
@@ -271,7 +271,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <summary><History size={16}/> {t('world.turnSnapshots')}</summary>
       <p>{t('world.snapshotHint')}</p>
       <div className="world-add-row">
-        <select aria-label="Historical world turn" value={turnId}
+        <select aria-label={t('uiField.worldStateEditor.historicalWorldTurn')} value={turnId}
           onChange={event => { setTurnId(event.target.value); setSnapshot(null); }}>
           <option value="">{t('world.selectTurn')}</option>
           {turns.map((turn, index) =>

@@ -225,7 +225,7 @@ export default function App() {
         setImageMode(s.image_mode);
         setShowSetup(!s.setup_complete);
       })
-      .catch((exc: Error) => { if (live) setError('Could not connect to Noble API: ' + exc.message); })
+      .catch((exc: Error) => { if (live) setError(t('feedback.apiConnection', { error: exc.message })); })
       .finally(() => { if (live) setReady(true); });
     return () => { live = false; };
   }, []);
@@ -381,9 +381,8 @@ export default function App() {
         repo_id: detail.repo_id, revision: detail.revision, filename: pickedVariant,
       });
       await refreshDownloads();
-      setNotice(t('app.downloadStatus', { status: humanStatus(job).toLowerCase(), filename: job.filename }));
       changePage('descargas');
-      setNotice('Download registered: ' + job.filename);
+      setNotice(t('feedback.downloadRegistered', { filename: job.filename }));
       setDetail(null);
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
@@ -417,9 +416,7 @@ export default function App() {
       // Completing initial setup must not silently discard a bookmarked
       // story/reader/creator URL. The default unlinked start is Model Hub.
       if (route.page === 'modelos') changePage('modelos');
-      setNotice(route.page === 'modelos'
-        ? 'Initial settings saved. You can now find a narrative model.'
-        : 'Initial settings saved. Your requested page is still open.');
+      setNotice(t(route.page === 'modelos' ? 'feedback.setupSavedModels' : 'feedback.setupSavedRoute'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -429,7 +426,7 @@ export default function App() {
     try {
       const result = await api.patchSettings({ image_mode: mode });
       setSettings(result); setImageMode(result.image_mode);
-      setNotice('Image preference saved. It will apply when ComfyUI is configured.');
+      setNotice(t('feedback.imagePreferenceSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }

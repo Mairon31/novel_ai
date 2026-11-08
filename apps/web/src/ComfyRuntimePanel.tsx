@@ -102,24 +102,24 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     <p>{t('comfy.runtimeHint')}</p>
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">{t('comfy.directory')}
-        <input aria-label="Local ComfyUI directory" value={config.install_dir}
-          placeholder="Absolute path to ComfyUI/main.py"
+        <input aria-label={t('uiField.comfyRuntimePanel.localComfyUIDirectory')} value={config.install_dir}
+          placeholder={t('uiField.comfyRuntimePanel.absolutePathToComfyUImainpy')}
           disabled={busy || !!running}
           onChange={e => change('install_dir', e.target.value)}/>
       </label>
       <label className="workspace-pref-field">{t('comfy.python')}
-        <input aria-label="ComfyUI Python" value={config.python_executable}
-          placeholder="Leave empty to detect .venv or Python"
+        <input aria-label={t('uiField.comfyRuntimePanel.comfyUIPython')} value={config.python_executable}
+          placeholder={t('uiField.comfyRuntimePanel.leaveEmptyToDetectVenvOrPython')}
           disabled={busy || !!running}
           onChange={e => change('python_executable', e.target.value)}/>
       </label>
       <label className="workspace-pref-field">{t('comfy.port')}
-        <input type="number" aria-label="ComfyUI port"
+        <input type="number" aria-label={t('uiField.comfyRuntimePanel.comfyUIPort')}
           min={1024} max={65535} value={config.port} disabled={busy || !!running}
           onChange={e => change('port', Number(e.target.value))}/>
       </label>
       <label className="workspace-pref-field">{t('comfy.memory')}
-        <select aria-label="ComfyUI VRAM profile" value={config.memory_mode}
+        <select aria-label={t('uiField.comfyRuntimePanel.comfyUIVRAMProfile')} value={config.memory_mode}
           disabled={busy || !!running}
           onChange={e => change('memory_mode', e.target.value as ComfyLaunchConfig['memory_mode'])}>
           {MODES.map(mode => <option key={mode.id} value={mode.id}>{t(mode.labelKey)}</option>)}

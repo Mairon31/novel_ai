@@ -170,7 +170,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setActive(saved); setSection('story'); setCreateNew(false);
       onStoryChange?.(saved.id);
       setNewTitle(''); setNewPremise(''); setNewProtagonist('');
-      setNotice('Story created. You can prepare its content before playing.');
+      setNotice(t('feedback.creatorStoryCreated'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -188,7 +188,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         genre: saved.genre, tags: saved.tags, language: saved.language,
       });
       setTagsInput(saved.tags.join(', '));
-      setNotice('Creator content saved. The narrator will use the private instructions.');
+      setNotice(t('feedback.creatorSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -215,7 +215,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       }, editingCharacter || undefined);
       setCharacters((await api.creatorCharacters(active.id)).characters);
       setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
-      setNotice('Character narrative profile saved.');
+      setNotice(t('feedback.creatorCharacterSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -229,7 +229,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       });
       setAssets((await api.creatorAssets(active.id)).assets);
       setSheetFile(null);
-      setNotice('Imported ' + result.count + ' character expressions.');
+      setNotice(t('feedback.creatorExpressionsImported', { count: result.count }));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -268,7 +268,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       });
       if (storyGuard.current === active.id) {
         setSpriteDrafts(prev => [created, ...prev]);
-        setNotice('Draft created. Generate and review expressions before approval.');
+        setNotice(t('feedback.creatorDraftCreated'));
       }
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -292,8 +292,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         .filter(entry => expression === entry.id || (!expression && !current.slots[entry.id].ready));
       for (const [index, entry] of chosen.entries()) {
         if (storyGuard.current !== storyId) break;
-        setDraftProgress('Generating ' + entry.label + ' (' +
-          (index + 1) + '/' + chosen.length + ') via ComfyUI...');
+        setDraftProgress(t('feedback.creatorGeneratingSprite', {
+          label: entry.label, current: index + 1, total: chosen.length,
+        }));
         current = await api.generateSpriteExpression(storyId, draft.id, entry.id);
         if (storyGuard.current === storyId) {
           setAlignmentConfirmed(prev => ({ ...prev, [draft.id]: false }));
@@ -301,7 +302,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
         }
       }
       if (storyGuard.current === storyId) {
-        setNotice('Draft updated. Review edges, expression, and consistency before approval.');
+        setNotice(t('feedback.creatorDraftUpdated'));
       }
     } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setDraftProgress(''); setWorking(false); }
@@ -318,21 +319,21 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       if (storyGuard.current === storyId) {
         setAssets((await api.creatorAssets(storyId)).assets);
         setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
-        setNotice('Approved ' + result.count + ' expressions. They are now available in the reader.');
+        setNotice(t('feedback.creatorSpritesApproved', { count: result.count }));
       }
     } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setWorking(false); }
   }
 
   async function discardSprites(draft: SpriteDraft) {
-    if (!active || working || !window.confirm('Discard this draft and its previews?')) return;
+    if (!active || working || !window.confirm(t('feedback.creatorDiscardConfirm'))) return;
     const storyId = active.id;
     setWorking(true); setError(''); setNotice('');
     try {
       await api.discardSpriteDraft(storyId, draft.id);
       if (storyGuard.current === storyId) {
         setSpriteDrafts(prev => prev.filter(item => item.id !== draft.id));
-        setNotice('Draft discarded. Published sprites are unchanged.');
+        setNotice(t('feedback.creatorDraftDiscarded'));
       }
     } catch (exc) { if (storyGuard.current === storyId) setError((exc as Error).message); }
     finally { setWorking(false); }
@@ -370,7 +371,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setLorebookEntries((await api.lorebookEntries(active.id)).entries);
       resetLorebookEditor();
       setLorePreview(null);
-      setNotice('Lorebook entry saved. It will activate when its keywords match.');
+      setNotice(t('feedback.creatorLoreSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -383,7 +384,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       setLorebookEntries((await api.lorebookEntries(active.id)).entries);
       if (editingLorebook === entry.id) resetLorebookEditor();
       setLorePreview(null);
-      setNotice('Lorebook entry deleted.');
+      setNotice(t('feedback.creatorLoreDeleted'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -406,8 +407,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setWorking(true); setError(''); setNotice('');
     try {
       rememberStory(await api.setStoryCover(active.id, assetId));
-      setNotice(assetId ? 'Editorial cover selected for the library.' :
-        'Editorial cover removed. The story remains intact.');
+      setNotice(t(assetId ? 'feedback.creatorCoverSelected' : 'feedback.creatorCoverRemoved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -433,7 +433,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           mediaCaption.trim(), mediaKind === 'foreground' ? mediaExpression : undefined,
           mediaKind === 'foreground' ? mediaPose.trim() : undefined);
       } else {
-        if (!mediaFile) throw new Error('Select an image file.');
+        if (!mediaFile) throw new Error(t('feedback.creatorSelectImage'));
         const imported = await api.uploadCreatorAsset(active.id, {
           kind: mediaKind, label: mediaLabel.trim(), caption: mediaCaption.trim(),
           character_id: mediaKind === 'foreground' ? (mediaCharacter || undefined) : undefined,
@@ -445,14 +445,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       }
       setAssets((await api.creatorAssets(active.id)).assets);
       resetMediaEditor();
-      setNotice(mediaKind === 'cover' && !editingAsset ?
-        'Editorial cover saved and selected for the library.' :
-        'Visual asset saved for selection during reading.');
+      setNotice(t(mediaKind === 'cover' && !editingAsset ? 'feedback.creatorCoverSaved' : 'feedback.creatorAssetSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
   async function deleteMediaAsset(asset: CreatorMediaAsset) {
-    if (!active || !window.confirm('Delete this visual asset from the story?')) return;
+    if (!active || !window.confirm(t('feedback.creatorDeleteAssetConfirm'))) return;
     setWorking(true); setError('');
     try {
       await api.deleteCreatorAsset(active.id, asset.id);
@@ -461,7 +459,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       }
       setAssets((await api.creatorAssets(active.id)).assets);
       if (editingAsset === asset.id) resetMediaEditor();
-      setNotice('Visual asset deleted.');
+      setNotice(t('feedback.creatorAssetDeleted'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
@@ -471,12 +469,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setWorking(true); setError(''); setNotice('');
     try {
       await api.startCreatorOpening(active.id, index);
-      setNotice('Opening saved as the first turn. Open the story from Library to continue.');
+      setNotice(t('feedback.creatorOpeningSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setWorking(false); }
   }
 
-  return <section className="creator-studio" aria-label="Story creation studio">
+  return <section className="creator-studio" aria-label={t('uiField.creatorStudio.storyCreationStudio')}>
     <div className="creator-heading">
       <button className="creator-return" onClick={onOpenLibrary}>
         <ArrowLeft size={16}/> {t("nav.inicio")}
@@ -487,7 +485,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     </div>
 
     <div className="creator-layout">
-      <aside className="creator-projects" aria-label="Stories to create">
+      <aside className="creator-projects" aria-label={t('uiField.creatorStudio.storiesToCreate')}>
         <div className="creator-projects-head">
           <div><span className="overline">{t("creator.yourWorlds")}</span><strong>{t("creator.projects")}</strong></div>
           <button title={t("creator.newProject")} aria-label={t("creator.createProject")} onClick={() => setCreateNew(true)}>
@@ -539,7 +537,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <BookOpen size={15}/> {t("creator.goLibrary")}
             </button>
           </div>
-          <nav className="creator-editor-tabs" aria-label="Creator tools">
+          <nav className="creator-editor-tabs" aria-label={t('uiField.creatorStudio.creatorTools')}>
             <button className={section === 'story' ? 'selected' : ''}
               onClick={() => setSection('story')}><FileText size={17}/> {t("creator.plot")}</button>
             <button className={section === 'cast' ? 'selected' : ''}
@@ -562,7 +560,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <h3>{t('creator.covers')}</h3>
                 <p>{t('creator.coversHint')}</p>
               </div>
-              <div className="creator-cover-preview" aria-label="Current editorial cover">
+              <div className="creator-cover-preview" aria-label={t('uiField.creatorStudio.currentEditorialCover')}>
                 <div className="creator-cover-preview-art">
                   {active.cover_image_url ?
                     <img src={active.cover_image_url} alt={'Cover of ' + active.title}/> :
@@ -611,7 +609,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <h4>{editingAsset ? 'Edit asset' : 'Add visual asset'}</h4>
                 {!editingAsset && <div className="creator-double">
                   <label>{t('creator.assetType')}
-                    <select aria-label="Visual asset type" value={mediaKind}
+                    <select aria-label={t('uiField.creatorStudio.visualAssetType')} value={mediaKind}
                       onChange={e => setMediaKind(e.target.value as CreatorMediaAsset['kind'])}>
                       <option value="cover">{t('creator.coverAsset')}</option>
                       <option value="background">{t('creator.backgroundAsset')}</option>
@@ -619,7 +617,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>
                   {mediaKind === 'foreground' && <label>{t('creator.linkedCharacter')}
-                    <select aria-label="Image character" value={mediaCharacter}
+                    <select aria-label={t('uiField.creatorStudio.imageCharacter')} value={mediaCharacter}
                       onChange={e => setMediaCharacter(e.target.value)}>
                       <option value="">{t('creator.none')}</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
@@ -628,7 +626,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>}
                 {mediaKind === 'foreground' && <div className="creator-double">
                   <label>{t('creator.spriteExpression')}
-                    <select aria-label="Sprite expression" value={mediaExpression}
+                    <select aria-label={t('uiField.creatorStudio.spriteExpression')} value={mediaExpression}
                       onChange={e => setMediaExpression(e.target.value as SpriteExpression)}>
                       <option value="neutral">{t('creator.neutral')}</option>
                       <option value="joy">{t('creator.joy')}</option>
@@ -638,23 +636,23 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>
                   <label>{t('creator.pose')}
-                    <input aria-label="Sprite pose" maxLength={32} value={mediaPose}
+                    <input aria-label={t('uiField.creatorStudio.spritePose')} maxLength={32} value={mediaPose}
                       onChange={e => setMediaPose(e.target.value)}
-                      placeholder="standing, sitting, waving..."/>
+                      placeholder={t('uiField.creatorStudio.standingSittingWaving')}/>
                   </label>
                 </div>}
                 <label>{t('creator.name')}
-                  <input aria-label="Image name" maxLength={100} value={mediaLabel}
-                    placeholder="Throne room, Aira smiling..."
+                  <input aria-label={t('uiField.creatorStudio.imageName')} maxLength={100} value={mediaLabel}
+                    placeholder={t('uiField.creatorStudio.throneRoomAiraSmiling')}
                     onChange={e => setMediaLabel(e.target.value)}/></label>
                 <label>{t('creator.sceneCaption')}
-                  <textarea aria-label="Image description" maxLength={220} rows={3}
+                  <textarea aria-label={t('uiField.creatorStudio.imageDescription')} maxLength={220} rows={3}
                     value={mediaCaption} onChange={e => setMediaCaption(e.target.value)}
-                    placeholder="Dark forest at night, Aira smiling in the tavern..."/>
+                    placeholder={t('uiField.creatorStudio.darkForestAtNightAiraSmilingInTheTavern')}/>
                   <small>{t('creator.sceneCaptionHint')}</small>
                 </label>
                 {!editingAsset && <label>{t('creator.fileRequirements')}
-                  <input type="file" aria-label="Visual asset file"
+                  <input type="file" aria-label={t('uiField.creatorStudio.visualAssetFile')}
                     accept="image/png,image/jpeg,image/webp"
                     onChange={e => setMediaFile(e.target.files?.[0] || null)}/>
                   {mediaKind === 'foreground' && <small>
@@ -680,14 +678,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <p>{t('creator.sheetGridHint')}</p>
                 <div className="creator-double">
                   <label>{t('creator.sheetCharacter')}
-                    <select aria-label="Expression-sheet character"
+                    <select aria-label={t('uiField.creatorStudio.expressionsheetCharacter')}
                       value={sheetCharacter} onChange={e => setSheetCharacter(e.target.value)}>
                       <option value="">{t('creator.selectCharacter')}</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
                     </select>
                   </label>
                   <label>{t('creator.cellLayout')}
-                    <select aria-label="Sheet layout" value={sheetLayout}
+                    <select aria-label={t('uiField.creatorStudio.sheetLayout')} value={sheetLayout}
                       onChange={e => setSheetLayout(e.target.value as 'horizontal' | 'vertical')}>
                       <option value="horizontal">{t('creator.oneRow')}</option>
                       <option value="vertical">{t('creator.oneColumn')}</option>
@@ -696,18 +694,18 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>
                 <div className="creator-double">
                   <label>{t('creator.sceneContext')}
-                    <input aria-label="Sheet context" maxLength={220}
+                    <input aria-label={t('uiField.creatorStudio.sheetContext')} maxLength={220}
                       value={sheetCaption} onChange={e => setSheetCaption(e.target.value)}
-                      placeholder="Aira castillo cristal"/>
+                      placeholder={t('uiField.creatorStudio.airaCastilloCristal')}/>
                   </label>
                   <label>{t('creator.sharedPose')}
-                    <input aria-label="Sheet pose" maxLength={32}
+                    <input aria-label={t('uiField.creatorStudio.sheetPose')} maxLength={32}
                       value={sheetPose} onChange={e => setSheetPose(e.target.value)}
                       placeholder="standing"/>
                   </label>
                 </div>
                 <label>{t('creator.sheetFile')}
-                  <input type="file" aria-label="Expression-sheet file"
+                  <input type="file" aria-label={t('uiField.creatorStudio.expressionsheetFile')}
                     accept="image/png,image/webp"
                     onChange={e => setSheetFile(e.target.files?.[0] || null)}/>
                 </label>
@@ -723,7 +721,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <p>{t('creator.spriteGenerationHint')}</p>
                 <div className="creator-double">
                   <label>{t('creator.characterForAI')}
-                    <select aria-label="NPC for expression generation" value={draftCharacter}
+                    <select aria-label={t('uiField.creatorStudio.nPCForExpressionGeneration')} value={draftCharacter}
                       onChange={event => {
                         setDraftCharacter(event.target.value);
                         setDraftSpriteReference('');
@@ -733,28 +731,28 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>
                   <label>{t('creator.generatedPose')}
-                    <input aria-label="NPC generation pose" maxLength={32}
+                    <input aria-label={t('uiField.creatorStudio.nPCGenerationPose')} maxLength={32}
                       value={draftPose} onChange={event => setDraftPose(event.target.value)}/>
                   </label>
                 </div>
                 <label>{t('creator.spriteCaption')}
-                  <input aria-label="AI sprite context" maxLength={220}
+                  <input aria-label={t('uiField.creatorStudio.aISpriteContext')} maxLength={220}
                     value={draftCaption} onChange={event => setDraftCaption(event.target.value)}
-                    placeholder="Aira in the ancient library"/>
+                    placeholder={t('uiField.creatorStudio.airaInTheAncientLibrary')}/>
                 </label>
                 <label>{t('creator.artStyle')}
-                  <input aria-label="AI sprite style" maxLength={220}
+                  <input aria-label={t('uiField.creatorStudio.aISpriteStyle')} maxLength={220}
                     value={draftStyle} onChange={event => setDraftStyle(event.target.value)}/>
                 </label>
                 <div className="creator-double">
                   <label>{t('creator.optionalSeed')}
-                    <input type="number" aria-label="AI sprite seed"
+                    <input type="number" aria-label={t('uiField.creatorStudio.aISpriteSeed')}
                       min={0} step={1} value={draftSeed}
                       onChange={event => setDraftSeed(event.target.value)}
-                      placeholder="Visual DNA seed"/>
+                      placeholder={t('uiField.creatorStudio.visualDNASeed')}/>
                   </label>
                   <label>{t('creator.galleryReference')}
-                    <select aria-label="AI sprite reference"
+                    <select aria-label={t('uiField.creatorStudio.aISpriteReference')}
                       value={draftReference} onChange={event => {
                         setDraftReference(event.target.value);
                         if (event.target.value) setDraftSpriteReference('');
@@ -768,7 +766,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>
                 <div className="creator-double">
                   <label>{t('creator.approvedReference')}
-                    <select aria-label="AI reference sprite" value={draftSpriteReference}
+                    <select aria-label={t('uiField.creatorStudio.aIReferenceSprite')} value={draftSpriteReference}
                       onChange={event => {
                         setDraftSpriteReference(event.target.value);
                         if (event.target.value) setDraftReference('');
@@ -782,7 +780,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </select>
                   </label>
                   <label>{t('creator.referenceMode')}
-                    <select aria-label="AI reference mode"
+                    <select aria-label={t('uiField.creatorStudio.aIReferenceMode')}
                       value={draftReferenceMode}
                       onChange={event => setDraftReferenceMode(
                         event.target.value as 'img2img' | 'ipadapter')}>
@@ -794,7 +792,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 {draftReferenceMode === 'ipadapter' && <>
                   <div className="creator-double">
                     <label>Preset IPAdapter Plus
-                      <select aria-label="Sprite IPAdapter preset"
+                      <select aria-label={t('uiField.creatorStudio.spriteIPAdapterPreset')}
                         value={draftAdapterPreset}
                         onChange={event => setDraftAdapterPreset(event.target.value)}>
                         <option value="PLUS FACE (portraits)">PLUS FACE · portraits</option>
@@ -803,7 +801,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       </select>
                     </label>
                     <label>IPAdapter strength: {draftAdapterWeight.toFixed(2)}
-                      <input aria-label="Sprite IPAdapter strength"
+                      <input aria-label={t('uiField.creatorStudio.spriteIPAdapterStrength')}
                         type="number" min={0.1} max={1.5} step={0.05}
                         value={draftAdapterWeight}
                         onChange={event => setDraftAdapterWeight(Number(event.target.value))}/>
@@ -826,7 +824,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </>}
                 <div className="creator-double">
                   <label>{t('creator.backgroundRemoval')}
-                    <select aria-label="AI sprite background removal"
+                    <select aria-label={t('uiField.creatorStudio.aISpriteBackgroundRemoval')}
                       value={draftCutoutMode}
                       onChange={event => setDraftCutoutMode(
                         event.target.value as NeuralCutoutMode)}>
@@ -845,7 +843,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </div>
                 </div>
                 {mattingStatus && <div className="creator-hint" role="status"
-                    aria-label="Cutout model status">
+                    aria-label={t('uiField.creatorStudio.cutoutModelStatus')}>
                   {mattingStatus.modes.filter(item => item.mode !== 'chroma_green')
                     .map(item => <p key={item.mode}>
                       {item.model}: {item.ready ? 'Ready' : item.reason || 'Unavailable'}
@@ -855,7 +853,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   Neural cutout uses ComfyUI-RMBG and a separate PNG mask to reconstruct transparency. Required nodes and model weights must be installed. Missing dependencies stop generation without changing existing sprites or downloading models. Review the mask before approval.
                 </p>
                 <label>
-                  <input type="checkbox" aria-label="Use NPC LoRA for AI sprites"
+                  <input type="checkbox" aria-label={t('uiField.creatorStudio.useNPCLoRAForAISprites')}
                     checked={draftUseLora} onChange={event => setDraftUseLora(event.target.checked)}/>
                   {' '}Apply this NPC's configured LoRA (if installed)
                 </label>
@@ -918,7 +916,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     })}
                   </div>
                   {!!draft.alignment_warnings?.length && <div className="creator-hint"
-                      role="status" aria-label="Silhouette warnings">
+                      role="status" aria-label={t('uiField.creatorStudio.silhouetteWarnings')}>
                     <strong>{t('creator.framingDifferences')}</strong>
                     <p>{draft.alignment_warnings.join('; ')}</p>
                     <p>This comparison only measures the position and scale of the
@@ -980,39 +978,39 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-media-form">
                 <h4>{editingLorebook ? 'Edit Lorebook entry' : 'New Lorebook entry'}</h4>
                 <label>Title
-                  <input aria-label="Lorebook title" value={lorebookDraft.title}
+                  <input aria-label={t('uiField.creatorStudio.lorebookTitle')} value={lorebookDraft.title}
                     maxLength={100} onChange={e => setLorebookDraft(v => ({
                       ...v, title: e.target.value,
-                    }))} placeholder="Crystal forest, secret pact..."/>
+                    }))} placeholder={t('uiField.creatorStudio.crystalForestSecretPact')}/>
                 </label>
                 <label>{t('creator.factsRemember')}
-                  <textarea aria-label="Lorebook content" rows={5} maxLength={3500}
+                  <textarea aria-label={t('uiField.creatorStudio.lorebookContent')} rows={5} maxLength={3500}
                     value={lorebookDraft.content} onChange={e => setLorebookDraft(v => ({
                       ...v, content: e.target.value,
-                    }))} placeholder="Describe world rules, secrets, or canonical facts."/>
+                    }))} placeholder={t('uiField.creatorStudio.describeWorldRulesSecretsOrCanonicalFacts')}/>
                 </label>
                 <div className="creator-double">
                   <label>{t('creator.primaryKeys')}
-                    <input aria-label="Lorebook keys" value={loreKeysInput}
+                    <input aria-label={t('uiField.creatorStudio.lorebookKeys')} value={loreKeysInput}
                       onChange={e => setLoreKeysInput(e.target.value)}
-                      placeholder="forest, ruins, map"/>
+                      placeholder={t('uiField.creatorStudio.forestRuinsMap')}/>
                   </label>
                   <label>{t('creator.secondaryKeys')}
-                    <input aria-label="Secondary Lorebook keys" value={loreSecondaryInput}
+                    <input aria-label={t('uiField.creatorStudio.secondaryLorebookKeys')} value={loreSecondaryInput}
                       onChange={e => setLoreSecondaryInput(e.target.value)}
-                      placeholder="night, guard"/>
+                      placeholder={t('uiField.creatorStudio.nightGuard')}/>
                   </label>
                 </div>
                 <div className="creator-double">
                   <label>{t('creator.priority')}
-                    <input aria-label="Lorebook priority" type="number" min={0} max={100}
+                    <input aria-label={t('uiField.creatorStudio.lorebookPriority')} type="number" min={0} max={100}
                       value={lorebookDraft.priority}
                       onChange={e => setLorebookDraft(v => ({ ...v,
                         priority: Number(e.target.value),
                       }))}/>
                   </label>
                   <label>{t('creator.secondaryActivation')}
-                    <select aria-label="Lorebook secondary condition"
+                    <select aria-label={t('uiField.creatorStudio.lorebookSecondaryCondition')}
                       value={lorebookDraft.secondary_mode}
                       onChange={e => setLorebookDraft(v => ({
                         ...v, secondary_mode: e.target.value as 'any'|'all',
@@ -1023,7 +1021,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </label>
                 </div>
                 <label>{t('creator.knowledgeVisibility')}
-                  <select aria-label="Lorebook visibility"
+                  <select aria-label={t('uiField.creatorStudio.lorebookVisibility')}
                     value={lorebookDraft.visibility}
                     onChange={e => setLorebookDraft(v => ({
                       ...v, visibility: e.target.value as 'world' | 'witnesses',
@@ -1076,10 +1074,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <p>Enter an action or phrase to preview which entries the narrator would receive and the actual character budget used (maximum 6,000 characters).
                   The preview uses character presence saved in World State.</p>
                 <label>{t('creator.simulateAction')}
-                  <textarea rows={3} aria-label="Simulate Lorebook activation"
+                  <textarea rows={3} aria-label={t('uiField.creatorStudio.simulateLorebookActivation')}
                     maxLength={3000} value={loreQuery}
                     onChange={e => { setLoreQuery(e.target.value); setLorePreview(null); }}
-                    placeholder="I enter the forest ruins..."/>
+                    placeholder={t('uiField.creatorStudio.iEnterTheForestRuins')}/>
                 </label>
                 <button className="secondary-button" disabled={working}
                   onClick={() => void previewLorebookActivation()}>
@@ -1106,12 +1104,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </div>
               <div className="creator-double">
                 <label>{t('creator.genre')}
-                  <input aria-label="Story genre" value={blueprint.genre}
-                    maxLength={80} placeholder="Fantasy, romance, mystery..."
+                  <input aria-label={t('uiField.creatorStudio.storyGenre')} value={blueprint.genre}
+                    maxLength={80} placeholder={t('uiField.creatorStudio.fantasyRomanceMystery')}
                     onChange={e => update('genre', e.target.value)}/>
                 </label>
                 <label >{t('creator.language')}
-                  <select aria-label="Story language" value={blueprint.language}
+                  <select aria-label={t('uiField.creatorStudio.storyLanguage')} value={blueprint.language}
                     onChange={e => update('language', e.target.value)}>
                     <option value="es-419">Latin American Spanish</option>
                     <option value="en">English</option><option value="ja">日本語</option>
@@ -1121,37 +1119,37 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </label>
               </div>
               <label>{t('creator.synopsis')}
-                <textarea rows={3} aria-label="Reader synopsis" maxLength={250}
+                <textarea rows={3} aria-label={t('uiField.creatorStudio.readerSynopsis')} maxLength={250}
                   value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}
-                  placeholder="What players see when they discover the story."/>
+                  placeholder={t('uiField.creatorStudio.whatPlayersSeeWhenTheyDiscoverTheStory')}/>
               </label>
               <label>{t('creator.visiblePlot')}
-                <textarea rows={5} maxLength={4000} aria-label="Visible plot"
+                <textarea rows={5} maxLength={4000} aria-label={t('uiField.creatorStudio.visiblePlot')}
                   value={blueprint.player_plot}
                   onChange={e => update('player_plot', e.target.value)}
-                  placeholder="Starting point, situation, and expectations without spoilers."/>
+                  placeholder={t('uiField.creatorStudio.startingPointSituationAndExpectationsWithoutSpoilers')}/>
               </label>
               <label>{t('creator.privateContext')}
-                <textarea rows={8} maxLength={12000} aria-label="Private AI context"
+                <textarea rows={8} maxLength={12000} aria-label={t('uiField.creatorStudio.privateAIContext')}
                   value={blueprint.ai_plot}
                   onChange={e => update('ai_plot', e.target.value)}
-                  placeholder="World rules, relationships, secrets, and events the narrator should know."/>
+                  placeholder={t('uiField.creatorStudio.worldRulesRelationshipsSecretsAndEventsTheNarratorShouldKnow')}/>
                 <small>{t('creator.privateHint')}</small>
               </label>
               <label>{t('creator.guidelines')}
-                <textarea rows={5} maxLength={4000} aria-label="Narration guidelines"
+                <textarea rows={5} maxLength={4000} aria-label={t('uiField.creatorStudio.narrationGuidelines')}
                   value={blueprint.guidelines}
                   onChange={e => update('guidelines', e.target.value)}
-                  placeholder="Style, pace, NPC agency, and continuity details..."/>
+                  placeholder={t('uiField.creatorStudio.stylePaceNPCAgencyAndContinuityDetails')}/>
               </label>
               <label>{t('creator.reminder')}
-                <textarea rows={3} maxLength={1200} aria-label="Persistent reminder"
+                <textarea rows={3} maxLength={1200} aria-label={t('uiField.creatorStudio.persistentReminder')}
                   value={blueprint.reminder} onChange={e => update('reminder', e.target.value)}
-                  placeholder="A short instruction that matters on every turn."/>
+                  placeholder={t('uiField.creatorStudio.aShortInstructionThatMattersOnEveryTurn')}/>
               </label>
               <label>{t('creator.tags')}
-                <input maxLength={500} aria-label="Story tags" value={tagsInput}
-                  onChange={e => setTagsInput(e.target.value)} placeholder="isekai, adventure, magic"/>
+                <input maxLength={500} aria-label={t('uiField.creatorStudio.storyTags')} value={tagsInput}
+                  onChange={e => setTagsInput(e.target.value)} placeholder={t('uiField.creatorStudio.isekaiAdventureMagic')}/>
               </label>
               <button className="primary-button" disabled={working} onClick={() => void saveBlueprint()}>
                 <Save size={16}/>{working ? t('common.loading') : t('creator.savePlot')}
@@ -1169,11 +1167,11 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <ChevronRight size={16}/></button>)}
               </div>
               <label>{t('creator.name')}
-                <input aria-label="NPC name" maxLength={80}
+                <input aria-label={t('uiField.creatorStudio.nPCName')} maxLength={80}
                   value={character.name} onChange={e => setCharacter(v => ({...v,name:e.target.value}))}/>
               </label>
               <label>{t('creator.visualLink')}
-                <select aria-label="NPC visual profile"
+                <select aria-label={t('uiField.creatorStudio.nPCVisualProfile')}
                   value={character.visual_character_id || ''}
                   onChange={e => setCharacter(v => ({
                     ...v, visual_character_id: e.target.value || null,
@@ -1186,22 +1184,22 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 <small>{t('creator.linkHint')}</small>
               </label>
               <label>{t('creator.background')}
-                <textarea rows={5} maxLength={3000} aria-label="NPC description"
+                <textarea rows={5} maxLength={3000} aria-label={t('uiField.creatorStudio.nPCDescription')}
                   value={character.description} onChange={e => setCharacter(v => ({
                     ...v,description:e.target.value,
                   }))}/>
               </label>
               <label>{t('creator.personality')}
-                <textarea rows={4} maxLength={1500} aria-label="NPC personality"
+                <textarea rows={4} maxLength={1500} aria-label={t('uiField.creatorStudio.nPCPersonality')}
                   value={character.personality} onChange={e => setCharacter(v => ({
                     ...v,personality:e.target.value,
                   }))}/>
               </label>
               <label>{t('creator.dialogueExamples')}
-                <textarea rows={4} maxLength={3000} aria-label="Dialogue examples"
+                <textarea rows={4} maxLength={3000} aria-label={t('uiField.creatorStudio.dialogueExamples')}
                   value={character.dialogue_examples} onChange={e => setCharacter(v => ({
                     ...v,dialogue_examples:e.target.value,
-                  }))} placeholder="Speech patterns, typical expressions, and responses."/>
+                  }))} placeholder={t('uiField.creatorStudio.speechPatternsTypicalExpressionsAndResponses')}/>
               </label>
               <div className="creator-media-form">
                 <h4>{t('creator.canonicalIdentity')}</h4>
@@ -1209,17 +1207,17 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   A LoRA is an optional reference to a local model file; it does not
                   run inference or download models.</p>
                 <label>{t('creator.appearanceTags')}
-                  <input aria-label="Visual tags" maxLength={1040}
+                  <input aria-label={t('uiField.creatorStudio.visualTags')} maxLength={1040}
                     value={dnaTagsInput} disabled={!!editingCharacter &&
                       characters.some(npc => npc.id === editingCharacter &&
                         npc.visual_dna.tags.length > 0)}
                     onChange={e => setDnaTagsInput(e.target.value)}
-                    placeholder="black hair, green eyes, blue coat"/>
+                    placeholder={t('uiField.creatorStudio.blackHairGreenEyesBlueCoat')}/>
                 </label>
                 <div className="creator-double">
                   <label>{t('creator.visualSeed')}
                     <input type="number" min={0} max={4294967295} step={1}
-                      aria-label="Visual seed" value={character.visual_dna.seed ?? ''}
+                      aria-label={t('uiField.creatorStudio.visualSeed')} value={character.visual_dna.seed ?? ''}
                       disabled={!!editingCharacter && characters.some(npc =>
                         npc.id === editingCharacter && npc.visual_dna.seed !== null)}
                       onChange={e => setCharacter(prev => ({...prev, visual_dna: {
@@ -1227,7 +1225,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       }}))}/>
                   </label>
                   <label>{t('creator.lora')}
-                    <input aria-label="LoRA visual" maxLength={160}
+                    <input aria-label={t('uiField.creatorStudio.loRAVisual')} maxLength={160}
                       value={character.visual_dna.lora_name || ''}
                       onChange={e => setCharacter(prev => ({...prev, visual_dna: {
                         ...prev.visual_dna, lora_name: e.target.value || null,
@@ -1236,7 +1234,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </div>
                 <label>{t('creator.loraStrength')}
                   <input type="number" min={0} max={2} step={0.05}
-                    aria-label="LoRA strength" value={character.visual_dna.lora_strength}
+                    aria-label={t('uiField.creatorStudio.loRAStrength')} value={character.visual_dna.lora_strength}
                     onChange={e => setCharacter(prev => ({...prev, visual_dna: {
                       ...prev.visual_dna, lora_strength: Number(e.target.value),
                     }}))}/>
@@ -1273,9 +1271,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </button>
                 </div>)}
               <label>{t('creator.anotherOpening')}
-                <textarea rows={5} aria-label="New opening" maxLength={3000}
+                <textarea rows={5} aria-label={t('uiField.creatorStudio.newOpening')} maxLength={3000}
                   value={openingDraft} onChange={e=>setOpeningDraft(e.target.value)}
-                  placeholder="Describe the opening scene as the player should read it."/>
+                  placeholder={t('uiField.creatorStudio.describeTheOpeningSceneAsThePlayerShouldReadIt')}/>
               </label>
               <div className="creator-actions">
                 <button className="secondary-button" disabled={working ||
@@ -1294,9 +1292,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
       </div>
     </div>
     {createNew && <div className="welcome-scrim">
-      <section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Create story project">
+      <section className="welcome-panel" role="dialog" aria-modal="true" aria-label={t('uiField.creatorStudio.createStoryProject')}>
         <div className="story-create-heading"><span className="overline">{t('creator.newStory')}</span>
-          <button aria-label="Close project" className="icon-button"
+          <button aria-label={t('uiField.creatorStudio.closeProject')} className="icon-button"
             onClick={() => setCreateNew(false)}><X size={18}/></button></div>
         <h2>{t('creator.nextWorld')}</h2>
         <p>Create the project first. Dedicated tools are available afterward for

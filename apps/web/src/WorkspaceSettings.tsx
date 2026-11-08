@@ -280,7 +280,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
                 {credential?.configured ? t('settings.detail.configured') : t('settings.noKey')}</span></div>
             <p>{t('settings.detail.keyStorage')}</p>
             <label className="workspace-pref-field">{t('settings.detail.apiKey')}
-              <input type="password" value={keyDraft} autoComplete="off" placeholder="Enter your OpenRouter key"
+              <input type="password" value={keyDraft} autoComplete="off" placeholder={t('uiField.workspaceSettings.enterYourOpenRouterKey')}
                 onChange={e => setKeyDraft(e.target.value)}/></label>
             <div className="settings-buttons">
               <button className="primary-button" disabled={busy || keyDraft.trim().length < 12}

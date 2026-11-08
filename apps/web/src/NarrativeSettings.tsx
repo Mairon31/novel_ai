@@ -120,13 +120,13 @@ export function NarrativeSettings() {
           </select>
         </label>
         <label>{t('narrative.address')}
-          <input aria-label="LLM server address" value={config.base_url}
+          <input aria-label={t('uiField.narrativeSettings.lLMServerAddress')} value={config.base_url}
             readOnly={config.provider === "openrouter" || config.provider === "worker"}
             onChange={e => update('base_url', e.target.value)} spellCheck={false}/>
         </label>
         <label className="settings-span">{t('narrative.model')}
-          <input list="noble-local-models" value={config.model} placeholder="Connect and choose a model"
-            aria-label="Runtime narrator model" onChange={e => update('model', e.target.value)}/>
+          <input list="noble-local-models" value={config.model} placeholder={t('uiField.narrativeSettings.connectAndChooseAModel')}
+            aria-label={t('uiField.narrativeSettings.runtimeNarratorModel')} onChange={e => update('model', e.target.value)}/>
           <datalist id="noble-local-models">
             {status?.models.map(item => <option key={item} value={item}/>)}
           </datalist>
@@ -151,7 +151,7 @@ export function NarrativeSettings() {
             onChange={e => update('repetition_penalty', Number(e.target.value))}/>
         </label>
         <label>{t('narrative.reasoning')}
-          <select aria-label="Narrator reasoning" value={config.reasoning_mode}
+          <select aria-label={t('uiField.narrativeSettings.narratorReasoning')} value={config.reasoning_mode}
             disabled={config.provider !== 'ollama'}
             onChange={e => update('reasoning_mode', e.target.value as NarrativeConfig['reasoning_mode'])}>
             <option value="auto">{t('narrative.automaticReasoning')}</option>
@@ -168,7 +168,7 @@ export function NarrativeSettings() {
           </select>
         </label>
         <label>{t('narrative.device')} <span className="field-value">Ollama</span>
-          <select aria-label="Narrator device" disabled={config.provider !== 'ollama'} value={config.device}
+          <select aria-label={t('uiField.narrativeSettings.narratorDevice')} disabled={config.provider !== 'ollama'} value={config.device}
             onChange={e => update('device', e.target.value as NarrativeConfig['device'])}>
             <option value="auto">{t('narrative.autoGpu')}</option>
             <option value="cpu">{t('narrative.cpuOnly')}</option>

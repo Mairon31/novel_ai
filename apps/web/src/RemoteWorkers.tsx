@@ -109,7 +109,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
 
     <div className="noble-worker-form">
       <label className="workspace-pref-field">{t('workers.name')}
-        <input aria-label={t('a11y.workerName')} placeholder="My Colab GPU" value={name}
+        <input aria-label={t('a11y.workerName')} placeholder={t('uiField.remoteWorkers.myColabGPU')} value={name}
           onChange={e => setName(e.target.value)} maxLength={80}/></label>
       <label className="workspace-pref-field">{t('workers.url')}
         <input aria-label={t('a11y.workerUrl')} placeholder="https://my-gpu.trycloudflare.com"

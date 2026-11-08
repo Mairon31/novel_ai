@@ -102,7 +102,7 @@ export function StoryDetail({
       </article>
     </div>
     {branches.length > 1 && <section className="noble-detail-section"
-      aria-label="Narrative branch tree">
+      aria-label={t('uiField.storyDetail.narrativeBranchTree')}>
       <div className="noble-detail-section-heading">
         <span className="overline"><GitBranch size={16}/> {t('detail.connectedStories')}</span>
         <h2>{t('detail.branchTree')} <small>{branches.length}</small></h2>
@@ -126,7 +126,7 @@ export function StoryDetail({
       </div>
     </section>}
     {characters.length > 0 && <section className="noble-detail-section"
-      aria-label="Story characters">
+      aria-label={t('uiField.storyDetail.storyCharacters')}>
       <div className="noble-detail-section-heading">
         <span className="overline"><Users size={15}/> {t('detail.cast')}</span>
         <h2>{t('detail.characters')} <small>{characters.length}</small></h2>
@@ -150,7 +150,7 @@ export function StoryDetail({
       </div>
     </section>}
     {openings.length > 0 && <section className="noble-detail-section"
-      id="noble-story-openings" aria-label="Opening scenes">
+      id="noble-story-openings" aria-label={t('uiField.storyDetail.openingScenes')}>
       <div className="noble-detail-section-heading">
         <span className="overline"><Feather size={15}/> {t('detail.firstDecision')}</span>
         <h2>{t('detail.chooseBeginning')}</h2>
@@ -172,7 +172,7 @@ export function StoryDetail({
       </div>
     </section>}
     {media.some(asset => asset.kind !== 'cover') && <section className="noble-detail-section"
-      aria-label="Story art gallery">
+      aria-label={t('uiField.storyDetail.storyArtGallery')}>
       <div className="noble-detail-section-heading">
         <span className="overline"><ImageIcon size={15}/> {t('detail.gallery')}</span>
         <h2>{t('detail.scenes')}</h2>

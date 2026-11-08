@@ -158,7 +158,7 @@ export function VoiceSettingsPanel() {
     <div className="workspace-panel">
       <h3><Volume2 size={18}/> {t('voice.localPiper')}</h3>
       <p>{t('voice.installHint')}</p>
-      <div className="noble-voice-library" aria-label="Piper voice catalog">
+      <div className="noble-voice-library" aria-label={t('uiField.voiceSettingsPanel.piperVoiceCatalog')}>
         <h4>{t('voice.latinVoices')}</h4>
         <p className="noble-inspector-hint">{t('voice.installDescription')}</p>
         {voiceCatalog?.voices.map(voice => {
@@ -237,12 +237,12 @@ export function VoiceSettingsPanel() {
             <small>{t('voice.speedHint')}</small>
           </label>
           <label className="workspace-pref-field">{t('voice.variation')}
-            <input aria-label="Piper voice noise" type="number" min={0} max={1.5}
+            <input aria-label={t('uiField.voiceSettingsPanel.piperVoiceNoise')} type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_scale', Number(e.target.value))}/>
           </label>
           <label className="workspace-pref-field">{t('voice.phonemeVariation')}
-            <input aria-label="Piper phoneme noise" type="number" min={0} max={1.5}
+            <input aria-label={t('uiField.voiceSettingsPanel.piperPhonemeNoise')} type="number" min={0} max={1.5}
               step={0.05} value={synthesisConfig.noise_w} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('noise_w', Number(e.target.value))}/>
           </label>
@@ -260,7 +260,7 @@ export function VoiceSettingsPanel() {
       </div>
       <div className="noble-voice-preview">
         <label className="workspace-pref-field">{t('voice.sampleText')}
-          <input aria-label="Voice sample text" maxLength={400}
+          <input aria-label={t('uiField.voiceSettingsPanel.voiceSampleText')} maxLength={400}
             value={previewText} disabled={previewBusy}
             onChange={e => { setPreviewText(e.target.value); clearPreview(); }}/>
         </label>
@@ -271,7 +271,7 @@ export function VoiceSettingsPanel() {
           {previewBusy ? <LoaderCircle size={16} className="rotating"/> : <Volume2 size={16}/>}
           {previewBusy ? 'Generating preview...' : 'Preview selected voice'}
         </button>
-        {previewUrl && <audio aria-label="Play voice preview" controls
+        {previewUrl && <audio aria-label={t('uiField.voiceSettingsPanel.playVoicePreview')} controls
           preload="none" src={previewUrl}/>}
         {synthesisDirty && <small role="status">{t('voice.saveBeforePreview')}</small>}
         <small>{t('voice.previewNote')}</small>

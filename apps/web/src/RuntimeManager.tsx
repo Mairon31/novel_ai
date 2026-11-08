@@ -76,7 +76,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
       <span className={'runtime-led ' + (status?.status === 'ready' ? 'runtime-green' : '')}/>
       <strong>{label}</strong>
       {status?.owns_process && <small>Process {status.pid} · Port {status.port} · {status.model_filename}</small>}
-      <button className="icon-button" title="Refresh status" aria-label="Refresh KoboldCpp"
+      <button className="icon-button" title={t('uiField.runtimeManager.refreshStatus')} aria-label={t('uiField.runtimeManager.refreshKoboldCpp')}
         onClick={() => void refresh()}><RefreshCw size={17}/></button>
     </div>
     {!running && <>
@@ -109,7 +109,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
           </select>
         </label>
         <label>{t('runtime.port')}
-          <input aria-label="Port KoboldCpp" type="number" min={1024} max={65535}
+          <input aria-label={t('uiField.runtimeManager.portKoboldCpp')} type="number" min={1024} max={65535}
             value={port} onChange={e => setPort(Number(e.target.value))}/>
         </label>
       </div>

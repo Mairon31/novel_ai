@@ -136,7 +136,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     }
   }
 
-  return <section className="creator-ai-wizard" aria-label="AI Story Assistant">
+  return <section className="creator-ai-wizard" aria-label={t('uiField.assistantStoryWizard.aIStoryAssistant')}>
     <div className="creator-ai-header">
       <div>
         <span className="overline"><Sparkles size={15}/> {t('wizard.label')}</span>
@@ -148,22 +148,22 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     </div>
     <div className="creator-ai-fields">
       <label>{t('wizard.idea')}
-        <textarea aria-label="Story idea" rows={5} maxLength={2500}
+        <textarea aria-label={t('uiField.assistantStoryWizard.storyIdea')} rows={5} maxLength={2500}
           placeholder={t('wizard.ideaPlaceholder')}
           value={idea} onChange={e => { setIdea(e.target.value); reset(); }}/>
       </label>
       <div className="creator-ai-row">
         <label>{t('wizard.protagonist')}
-          <input aria-label="AI story protagonist" maxLength={60}
+          <input aria-label={t('uiField.assistantStoryWizard.aIStoryProtagonist')} maxLength={60}
             value={protagonist} onChange={e => { setProtagonist(e.target.value); reset(); }}/>
         </label>
         <label>{t('wizard.genre')}
-          <input aria-label="AI story genre" maxLength={80}
+          <input aria-label={t('uiField.assistantStoryWizard.aIStoryGenre')} maxLength={80}
             value={genre} placeholder={t('wizard.genrePlaceholder')}
             onChange={e => { setGenre(e.target.value); reset(); }}/>
         </label>
         <label>{t('wizard.tone')}
-          <input aria-label="AI story tone" maxLength={120}
+          <input aria-label={t('uiField.assistantStoryWizard.aIStoryTone')} maxLength={120}
             value={tone} placeholder={t('wizard.tonePlaceholder')}
             onChange={e => { setTone(e.target.value); reset(); }}/>
         </label>
@@ -181,34 +181,34 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     </div>
 
     {error && <p role="alert" className="narrative-error">{error}</p>}
-    {draft && <div className="creator-ai-preview" aria-label="Generated world review">
+    {draft && <div className="creator-ai-preview" aria-label={t('uiField.assistantStoryWizard.generatedWorldReview')}>
       <div className="creator-ai-preview-head">
         <span className="overline"><Check size={14}/> {t('wizard.completed')}</span>
         <h3>{t('wizard.review')}</h3>
         <small>Model: {model} · not saved yet</small>
       </div>
       <label>{t('wizard.draftTitle')}
-        <input aria-label="Editable generated title" maxLength={100} value={draft.title}
+        <input aria-label={t('uiField.assistantStoryWizard.editableGeneratedTitle')} maxLength={100} value={draft.title}
           onChange={e => updateDraft({ ...draft, title: e.target.value })}/>
       </label>
       <label>{t('wizard.publicSynopsis')}
-        <textarea aria-label="Editable generated synopsis" rows={3} maxLength={250}
+        <textarea aria-label={t('uiField.assistantStoryWizard.editableGeneratedSynopsis')} rows={3} maxLength={250}
           value={draft.synopsis} onChange={e =>
             updateDraft({ ...draft, synopsis: e.target.value })}/>
       </label>
       <div className="creator-ai-row">
         <label>{t('wizard.worldProtagonist')}
-          <input aria-label="Draft protagonist" maxLength={60}
+          <input aria-label={t('uiField.assistantStoryWizard.draftProtagonist')} maxLength={60}
             value={draft.protagonist_name} onChange={e =>
               updateDraft({ ...draft, protagonist_name: e.target.value })}/>
         </label>
         <label>{t('wizard.worldGenre')}
-          <input aria-label="Editable generated genre" maxLength={80}
+          <input aria-label={t('uiField.assistantStoryWizard.editableGeneratedGenre')} maxLength={80}
             value={draft.genre} onChange={e =>
               updateDraft({ ...draft, genre: e.target.value })}/>
         </label>
         <label>{t('wizard.tags')}
-          <input aria-label="Editable generated tags"
+          <input aria-label={t('uiField.assistantStoryWizard.editableGeneratedTags')}
             value={tagsText} onChange={e => {
               const value = e.target.value;
               setTagsText(value);
@@ -219,22 +219,22 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       </div>
       <div className="creator-ai-reading">
         <label><BookOpen size={16}/> {t('wizard.visibleWorld')}
-          <textarea aria-label="Editable public plot" rows={5}
+          <textarea aria-label={t('uiField.assistantStoryWizard.editablePublicPlot')} rows={5}
             maxLength={4000} value={draft.player_plot}
             onChange={e => updateDraft({ ...draft, player_plot: e.target.value })}/>
         </label>
         <label>{t('wizard.privatePlot')}
-          <textarea aria-label="Editable generated private plot" rows={6}
+          <textarea aria-label={t('uiField.assistantStoryWizard.editableGeneratedPrivatePlot')} rows={6}
             maxLength={12000} value={draft.ai_plot}
             onChange={e => updateDraft({ ...draft, ai_plot: e.target.value })}/>
         </label>
         <label>{t('wizard.guidelines')}
-          <textarea aria-label="Editable generated guidelines" rows={3}
+          <textarea aria-label={t('uiField.assistantStoryWizard.editableGeneratedGuidelines')} rows={3}
             maxLength={4000} value={draft.guidelines}
             onChange={e => updateDraft({ ...draft, guidelines: e.target.value })}/>
         </label>
         <label>{t('wizard.reminder')}
-          <textarea aria-label="Editable generated reminder" rows={2}
+          <textarea aria-label={t('uiField.assistantStoryWizard.editableGeneratedReminder')} rows={2}
             maxLength={1200} value={draft.reminder}
             onChange={e => updateDraft({ ...draft, reminder: e.target.value })}/>
         </label>
@@ -307,7 +307,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         <h4><Sparkles size={16}/> {t('wizard.regenerate')}</h4>
         <p>{t('wizard.regenerateHint')}</p>
         <label>{t('wizard.section')}
-          <select aria-label="Section to regenerate" value={regenerationSection}
+          <select aria-label={t('uiField.assistantStoryWizard.sectionToRegenerate')} value={regenerationSection}
             disabled={!!busy} onChange={e => setRegenerationSection(
               e.target.value as 'plot' | 'openings' | 'characters' | 'lore')}>
             <option value="plot">{t('wizard.plotGuidelines')}</option>
@@ -317,10 +317,10 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           </select>
         </label>
         <label>{t('wizard.refinement')}
-          <textarea aria-label="Regeneration instructions" rows={2} maxLength={1000}
+          <textarea aria-label={t('uiField.assistantStoryWizard.regenerationInstructions')} rows={2} maxLength={1000}
             value={regenerationInstruction}
             onChange={e => setRegenerationInstruction(e.target.value)}
-            placeholder="For example: scenes with more tension and meaningful choices."/>
+            placeholder={t('uiField.assistantStoryWizard.forExampleScenesWithMoreTensionAndMeaningfulChoices')}/>
         </label>
         <button type="button" className="secondary-button" disabled={!!busy}
           onClick={() => void regenerate()}>
@@ -336,7 +336,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
             {t('wizard.restore')}
           </button>
         </div>}
-        {generationBudget && <small aria-label="Estimated generation budget">
+        {generationBudget && <small aria-label={t('uiField.assistantStoryWizard.estimatedGenerationBudget')}>
           Context: {generationBudget.context_characters.toLocaleString()} characters, approximately {generationBudget.input_tokens_estimate.toLocaleString()} input tokens, and up to {generationBudget.max_output_tokens.toLocaleString()} output tokens. These are estimates, not provider-measured usage.
         </small>}
       </div>
