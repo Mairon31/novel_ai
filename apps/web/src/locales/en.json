@@ -1593,5 +1593,15 @@
   "modelFitUi.cpu": "Likely RAM/CPU execution; performance may be limited.",
   "modelFitUi.too_large": "Available memory appears insufficient for this estimate.",
   "modelFitUi.unsupported": "This variant is not supported by the current downloader.",
-  "modelFitUi.warning": "Estimate, not a benchmark: context, backend, KV cache, batch size, and other processes affect actual VRAM use."
+  "modelFitUi.warning": "Estimate, not a benchmark: context, backend, KV cache, batch size, and other processes affect actual VRAM use.",
+  "apiClient.validationError": "Validation error",
+  "apiClient.httpError": "HTTP error {{status}}",
+  "apiClient.voicePreviewError": "Could not generate the voice preview",
+  "apiClient.voiceSynthesisError": "Voice synthesis failed",
+  "apiClient.saveVisualError": "Could not save the visual asset",
+  "apiClient.importExpressionError": "Could not import the expression sheet",
+  "apiClient.restoreBackupError": "Could not restore the backup",
+  "apiClient.importIllustrationError": "Could not import the illustration",
+  "apiClient.noStreamError": "The provider did not return a data stream.",
+  "apiClient.invalidStoryIdentifier": "Invalid story identifier"
 }

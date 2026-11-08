@@ -1,3 +1,4 @@
+import i18n from './i18n';
 import type { CatalogEntry, DownloadJob, Hardware, Health, InstalledModel, ModelDetail, ModelRole, SearchResponse, ModelCardResponse, Settings, NarrativeConfig, ProviderModels, Story, StoryTurn, GenerationEvent, KoboldStatus, KoboldInstalled, KoboldLaunch, WorkspacePreferences, About, Updates, RuntimeDiagnostics, NetworkCapabilities, ProviderCredentialStatus, RemoteWorker, WorkerProbe, WorkerBenchmark, ImageSettings, ImageStatus, ImageSamplerOptions, CheckpointCatalog, CheckpointDownload, CheckpointInstalled, ComfyLaunchConfig, ComfyLaunchValidation, ComfyRuntimeStatus, ComfyRuntimeLogs, LoraStatus, IllustrationResult, SpeechVoices, SpeechPreferences, PiperSynthesisConfig, PiperVoiceCatalog, PiperVoiceJob, NarratorPrepareResult, VisualState, VisualCharacterDraft, VisualCharacter, ResourceConfig, ResourceStatus, ScenePlan, ScenePlanInput, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft, NewSpriteDraft, IdentityAdapterStatus, MattingStatus, ScenePresentation, ModelStorage, StoryHubPack, GeneratedStoryDraft, LorebookEntry, LorebookEntryDraft, LorebookPreview, LorebookTurnSnapshot, WorldStateData, WorldStateDocument, WorldTurnSnapshot, EpisodicSearch, ContextPreview, BranchTree, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -8,9 +9,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     const failure: { detail?: string | Array<{ msg?: string }> } = await response.json().catch(() => ({}));
     const message = Array.isArray(failure.detail)
-      ? failure.detail.map((entry) => entry.msg || 'Validation error').join(', ')
+      ? failure.detail.map((entry) => entry.msg || i18n.t('apiClient.validationError')).join(', ')
       : failure.detail;
-    throw new Error(message || ('Error HTTP ' + response.status));
+    throw new Error(message || (i18n.t('apiClient.httpError', { status: response.status })));
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -172,7 +173,7 @@ export const api = {
     });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'Could not generate the voice preview');
+      throw new Error(error.detail || i18n.t('apiClient.voicePreviewError'));
     }
     return response.blob();
   },
@@ -194,7 +195,7 @@ export const api = {
     });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'Voice synthesis failed');
+      throw new Error(error.detail || i18n.t('apiClient.voiceSynthesisError'));
     }
     return response.blob();
   },
@@ -233,7 +234,7 @@ export const api = {
       '/creator/assets', { method: 'POST', body });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'Could not save the visual asset');
+      throw new Error(error.detail || i18n.t('apiClient.saveVisualError'));
     }
     return response.json() as Promise<CreatorMediaAsset>;
   },
@@ -248,7 +249,7 @@ export const api = {
       { method: 'POST', body });
     if (!response.ok) {
       const error: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(error.detail || 'Could not import the expression sheet');
+      throw new Error(error.detail || i18n.t('apiClient.importExpressionError'));
     }
     return response.json() as Promise<{ assets: CreatorMediaAsset[]; count: number }>;
   },
@@ -363,7 +364,7 @@ export const api = {
       { method: 'POST', body });
     if (!response.ok) {
       const payload: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || 'Could not restore the backup');
+      throw new Error(payload.detail || i18n.t('apiClient.restoreBackupError'));
     }
     return response.json();
   },
@@ -386,7 +387,7 @@ export const api = {
     });
     if (!response.ok) {
       const payload: { detail?: string } = await response.json().catch(() => ({}));
-      throw new Error(payload.detail || 'Could not import the illustration');
+      throw new Error(payload.detail || i18n.t('apiClient.importIllustrationError'));
     }
     return response.json() as Promise<Story>;
   },
@@ -413,14 +414,14 @@ export const api = {
       body: JSON.stringify(body), signal,
     });
     if (!response.ok) {
-      let error = 'Error HTTP ' + response.status;
+      let error = i18n.t('apiClient.httpError', { status: response.status });
       try {
         const payload = await response.json() as { detail?: string };
         error = payload.detail || error;
       } catch { /* Response may not be JSON. */ }
       throw new Error(error);
     }
-    if (!response.body) throw new Error('The provider did not return a data stream.');
+    if (!response.body) throw new Error(i18n.t('apiClient.noStreamError'));
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';

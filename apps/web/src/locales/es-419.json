@@ -1593,5 +1593,15 @@
   "modelFitUi.cpu": "Probablemente se ejecute con RAM/CPU; el rendimiento podría ser limitado.",
   "modelFitUi.too_large": "La memoria disponible parece insuficiente para esta estimación.",
   "modelFitUi.unsupported": "El descargador actual no admite esta variante.",
-  "modelFitUi.warning": "Es una estimación, no una prueba de rendimiento: el contexto, motor, caché KV, tamaño de lote y otros procesos afectan el uso real de VRAM."
+  "modelFitUi.warning": "Es una estimación, no una prueba de rendimiento: el contexto, motor, caché KV, tamaño de lote y otros procesos afectan el uso real de VRAM.",
+  "apiClient.validationError": "Error de validación",
+  "apiClient.httpError": "Error HTTP {{status}}",
+  "apiClient.voicePreviewError": "No se pudo generar la vista previa de voz",
+  "apiClient.voiceSynthesisError": "Falló la síntesis de voz",
+  "apiClient.saveVisualError": "No se pudo guardar el recurso visual",
+  "apiClient.importExpressionError": "No se pudo importar la hoja de expresiones",
+  "apiClient.restoreBackupError": "No se pudo restaurar el respaldo",
+  "apiClient.importIllustrationError": "No se pudo importar la ilustración",
+  "apiClient.noStreamError": "El proveedor no devolvió un flujo de datos.",
+  "apiClient.invalidStoryIdentifier": "Identificador de historia inválido"
 }

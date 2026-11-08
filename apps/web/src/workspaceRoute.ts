@@ -1,3 +1,4 @@
+import i18n from './i18n';
 import type { Page } from './types';
 
 export type WorkspaceRoute = {
@@ -57,7 +58,7 @@ export function hashForWorkspaceRoute(route: WorkspaceRoute): string {
   if (route.storyId) {
     const ident = route.storyId.toLowerCase();
     if (!new RegExp('^' + UUID + '$').test(ident))
-      throw new Error('Invalid story identifier');
+      throw new Error(i18n.t('apiClient.invalidStoryIdentifier'));
     if (route.page === 'inicio')
       return '#/historia/' + ident + (route.reading ? '/leer' : '');
     if (route.page === 'crear') return '#/creator/' + ident;

@@ -111,5 +111,34 @@ class InterfaceLocaleTests(unittest.TestCase):
         self.assertNotIn("Intl.NumberFormat('es-CR'", api_helpers)
 
 
+    def test_non_react_client_diagnostics_use_translations(self):
+        """Client-side fallback errors must follow UI locale; backend error details stay English."""
+        english = json.loads((BASE / "en.json").read_text("utf-8"))
+        keys = (
+            "apiClient.validationError", "apiClient.httpError",
+            "apiClient.voicePreviewError", "apiClient.voiceSynthesisError",
+            "apiClient.saveVisualError", "apiClient.importExpressionError",
+            "apiClient.restoreBackupError", "apiClient.importIllustrationError",
+            "apiClient.noStreamError", "apiClient.invalidStoryIdentifier",
+        )
+        for language in LANGUAGES:
+            catalog = json.loads((BASE / (language + ".json")).read_text("utf-8"))
+            for key in keys:
+                with self.subTest(language=language, key=key):
+                    self.assertIn(key, catalog)
+                    self.assertTrue(catalog[key].strip())
+        api_source = (BASE.parent / "api.ts").read_text("utf-8")
+        route_source = (BASE.parent / "workspaceRoute.ts").read_text("utf-8")
+        self.assertIn("import i18n from './i18n';", api_source)
+        self.assertIn("import i18n from './i18n';", route_source)
+        self.assertNotIn("throw new Error('The provider did not return a data stream.')",
+                         api_source)
+        self.assertNotIn("throw new Error('Invalid story identifier')", route_source)
+        self.assertNotIn("'Error HTTP ' + response.status", api_source)
+        self.assertGreaterEqual(api_source.count("i18n.t('apiClient."), 10)
+        self.assertEqual(route_source.count("i18n.t('apiClient."), 1)
+
+
+
 if __name__ == "__main__":
     unittest.main()

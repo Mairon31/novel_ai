@@ -1593,5 +1593,15 @@
   "modelFitUi.cpu": "可能使用内存和 CPU 运行；性能可能受限。",
   "modelFitUi.too_large": "可用内存似乎不足以满足此估算需求。",
   "modelFitUi.unsupported": "当前下载器不支持该变体。",
-  "modelFitUi.warning": "此为估算而非基准测试：上下文、后端、KV 缓存、批次大小和其他进程都会影响实际显存使用。"
+  "modelFitUi.warning": "此为估算而非基准测试：上下文、后端、KV 缓存、批次大小和其他进程都会影响实际显存使用。",
+  "apiClient.validationError": "验证错误",
+  "apiClient.httpError": "HTTP 错误 {{status}}",
+  "apiClient.voicePreviewError": "无法生成语音预览",
+  "apiClient.voiceSynthesisError": "语音合成失败",
+  "apiClient.saveVisualError": "无法保存视觉资源",
+  "apiClient.importExpressionError": "无法导入表情图表",
+  "apiClient.restoreBackupError": "无法恢复备份",
+  "apiClient.importIllustrationError": "无法导入插图",
+  "apiClient.noStreamError": "提供商未返回数据流。",
+  "apiClient.invalidStoryIdentifier": "故事标识符无效"
 }
