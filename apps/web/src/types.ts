@@ -402,7 +402,8 @@ export type VisualDNA = {
 };
 export type CreatorCharacter = {
   id: string; story_id: string; name: string; description: string;
-  personality: string; dialogue_examples: string; visual_character_id: string | null;
+  personality: string; goals: string; boundaries: string;
+  dialogue_examples: string; visual_character_id: string | null;
   voice_id: string; visual_dna: VisualDNA; updated_at: number;
 };
 export type CreatorCharacterDraft = Omit<CreatorCharacter, 'id'|'story_id'|'updated_at'>;

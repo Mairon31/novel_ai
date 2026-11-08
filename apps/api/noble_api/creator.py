@@ -73,6 +73,10 @@ class CreatorCharacter(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     description: str = Field(min_length=20, max_length=3000)
     personality: str = Field(default="", max_length=1500)
+    # Author-defined NPC goals and the circumstances in which they refuse.
+    # Structured as separate bounded text to avoid vague generic personalities.
+    goals: str = Field(default="", max_length=1000)
+    boundaries: str = Field(default="", max_length=1000)
     dialogue_examples: str = Field(default="", max_length=3000)
     visual_character_id: uuid.UUID | None = None
     voice_id: str = Field(default="", max_length=180)
@@ -183,6 +187,11 @@ class CreatorService:
                 # Older clients can update narrative text without clearing an existing DNA.
                 if "visual_dna" not in body.model_fields_set:
                     body = body.model_copy(update={"visual_dna": old.visual_dna})
+                # Older API clients may send only name/description: do not
+                # silently clear the new narrative motives on those updates.
+                for field in ("goals", "boundaries"):
+                    if field not in body.model_fields_set:
+                        body = body.model_copy(update={field: getattr(old, field)})
                 if (old.visual_dna.tags and
                         body.visual_dna.tags != old.visual_dna.tags):
                     raise ValueError("Visual identity tags are already locked")
@@ -213,10 +222,17 @@ class CreatorService:
         if npc:
             lines=[]
             for character in npc[:30]:
-                lines.append("Character: "+character["name"]+"\nDescription: "+
-                             replace(character["description"])+"\nPersonality: "+
-                             replace(character["personality"])+"\nDialogue examples: "+
-                             replace(character["dialogue_examples"]))
+                profile = ("Character: " + character["name"] +
+                           "\nDescription: " + replace(character["description"]) +
+                           "\nPersonality: " + replace(character["personality"]))
+                if character["goals"].strip():
+                    profile += ("\nIndependent goals and incentives: " +
+                                replace(character["goals"]))
+                if character["boundaries"].strip():
+                    profile += ("\nRefusal conditions and personal limits: " +
+                                replace(character["boundaries"]))
+                profile += "\nDialogue examples: " + replace(character["dialogue_examples"])
+                lines.append(profile)
             chunks.append("Narrator-controlled NPCs:\n"+"\n\n".join(lines))
         if data["reminder"].strip():
             chunks.append("Persistent creator reminder:\n"+

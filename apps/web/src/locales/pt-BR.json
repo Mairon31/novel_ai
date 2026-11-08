@@ -1687,5 +1687,10 @@
   "storyFreedom.guided": "Guiado — preservar o arco da história",
   "storyFreedom.flexible": "Flexível — permitir desvios plausíveis",
   "storyFreedom.strict": "Estrito — respeitar as regras estabelecidas",
-  "storyFreedom.hint": "Define os limites do narrador, não as escolhas do jogador. Os NPCs mantêm objetivos próprios em todos os modos."
+  "storyFreedom.hint": "Define os limites do narrador, não as escolhas do jogador. Os NPCs mantêm objetivos próprios em todos os modos.",
+  "npcAgency.goals": "Objetivos e motivações do NPC",
+  "npcAgency.boundaries": "Condições de recusa e limites do NPC",
+  "npcAgency.goalsPlaceholder": "Proteger os registros do farol, conquistar a confiança do capitão e manter o porto seguro.",
+  "npcAgency.boundariesPlaceholder": "Não revela mapas protegidos a desconhecidos sem provas nem aceita colocar a tripulação em perigo.",
+  "npcAgency.hint": "O narrador usa esses detalhes do criador para os NPCs negociarem, cooperarem ou discordarem. Eles não garantem uma reação específica."
 }

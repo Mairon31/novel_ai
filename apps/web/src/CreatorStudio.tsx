@@ -24,7 +24,8 @@ const blankBlueprint: CreatorBlueprintDraft = {
   freedom_mode: 'flexible', visual_start: 'text',
 };
 const blankCharacter: CreatorCharacterDraft = {
-  name: '', description: '', personality: '', dialogue_examples: '',
+  name: '', description: '', personality: '', goals: '', boundaries: '',
+  dialogue_examples: '',
   visual_character_id: null, voice_id: '',
   visual_dna: { tags: [], seed: null, lora_name: null, lora_strength: 0.8 },
 };
@@ -202,7 +203,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     setDnaTagsInput(value.visual_dna.tags.join(', '));
     setCharacter({
       name: value.name, description: value.description,
-      personality: value.personality, dialogue_examples: value.dialogue_examples,
+      personality: value.personality, goals: value.goals,
+      boundaries: value.boundaries, dialogue_examples: value.dialogue_examples,
       visual_character_id: value.visual_character_id, voice_id: value.voice_id,
       visual_dna: value.visual_dna,
     });
@@ -1233,6 +1235,19 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   value={character.personality} onChange={e => setCharacter(v => ({
                     ...v,personality:e.target.value,
                   }))}/>
+              </label>
+              <label>{t('npcAgency.goals')}
+                <textarea rows={3} maxLength={1000} aria-label={t('npcAgency.goals')}
+                  value={character.goals} onChange={e => setCharacter(v => ({
+                    ...v, goals: e.target.value,
+                  }))} placeholder={t('npcAgency.goalsPlaceholder')}/>
+              </label>
+              <label>{t('npcAgency.boundaries')}
+                <textarea rows={3} maxLength={1000} aria-label={t('npcAgency.boundaries')}
+                  value={character.boundaries} onChange={e => setCharacter(v => ({
+                    ...v, boundaries: e.target.value,
+                  }))} placeholder={t('npcAgency.boundariesPlaceholder')}/>
+                <small>{t('npcAgency.hint')}</small>
               </label>
               <label>{t('creator.dialogueExamples')}
                 <textarea rows={4} maxLength={3000} aria-label={t('uiField.creatorStudio.dialogueExamples')}

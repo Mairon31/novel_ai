@@ -1687,5 +1687,10 @@
   "storyFreedom.guided": "引导 — 保持故事主线",
   "storyFreedom.flexible": "灵活 — 允许合理的支线发展",
   "storyFreedom.strict": "严格 — 严守已确立的规则",
-  "storyFreedom.hint": "此设置约束叙述者，而不是玩家的选择。所有模式下 NPC 都保留自己的目标。"
+  "storyFreedom.hint": "此设置约束叙述者，而不是玩家的选择。所有模式下 NPC 都保留自己的目标。",
+  "npcAgency.goals": "NPC 的目标与动机",
+  "npcAgency.boundaries": "NPC 的拒绝条件与个人底线",
+  "npcAgency.goalsPlaceholder": "保护灯塔记录，赢得船长信任并维护港口安全。",
+  "npcAgency.boundariesPlaceholder": "没有证据时不向陌生人透露受保护的地图，也不会接受危及船员的要求。",
+  "npcAgency.hint": "叙述者会参考这些作者设定，安排 NPC 的谈判、合作或分歧，但不保证具体反应。"
 }

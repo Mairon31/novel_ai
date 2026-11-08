@@ -1687,5 +1687,10 @@
   "storyFreedom.guided": "Guided — preserve the story arc",
   "storyFreedom.flexible": "Flexible — plausible detours allowed",
   "storyFreedom.strict": "Strict — established rules are firm",
-  "storyFreedom.hint": "Controls the narrator's boundaries, not the player's choices. NPCs retain independent goals in every mode."
+  "storyFreedom.hint": "Controls the narrator's boundaries, not the player's choices. NPCs retain independent goals in every mode.",
+  "npcAgency.goals": "NPC goals and incentives",
+  "npcAgency.boundaries": "NPC refusal conditions and limits",
+  "npcAgency.goalsPlaceholder": "Protect the lighthouse records, earn the captain's trust, and keep the harbor safe.",
+  "npcAgency.boundariesPlaceholder": "Will not reveal protected maps to strangers without proof; refuses requests that endanger the crew.",
+  "npcAgency.hint": "The narrator uses these author-defined details when NPCs negotiate, cooperate or disagree. They do not force a particular response."
 }
