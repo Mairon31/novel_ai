@@ -983,3 +983,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - Added Creator Studio review controls with gallery selection, image preview, editable cover metadata and explicit approval. No model is triggered merely by opening the review. UI works with the preparation panel already delivered in B001 unit 1.
 - Added offline API tests for replay, data persistence after restart, foreign-story and missing gallery sources, SHA corruption and preflight readiness, and an author-facing desktop/mobile Playwright scenario. **NOT RUN** by B001 policy. Remaining: verify these tests in the batch, add richer gallery-cover provenance/multiple-version review and GPU-backed generation if needed.
 - Commits: `a85d3dd`, `b77ace5`, `8d8b1cf`.
+
+## 2026-11-08 — B001 4/5: per-story narrative freedom (NOT RUN)
+
+- `CreatorBlueprint.freedom_mode` validates `guided/flexible/strict` (default flexible); older serialized blueprints now merge new schema defaults on read, so existing worlds do not break when optional fields are introduced. `NarrativeService.messages` injects mode-specific boundaries in English without rewriting user story texts or removing creator guidelines.
+- Creator Studio exposes the per-story freedom selector with new strings in en/es-419/pt-BR/zh-CN. Tests added to `tests/test_narrative_agency.py` and `apps/web/tests/creator-freedom.spec.ts` for persistence, invalid values, old JSON, and prompt differences. **NOT RUN**: queued for full B001 after unit 5.
+- Commits `5f03d3b`, `bee5cbf`; no CI launched.

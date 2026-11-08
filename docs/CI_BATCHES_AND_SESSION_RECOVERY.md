@@ -75,7 +75,7 @@ If the session has only GitHub repository access and cannot run code, still writ
 
 The passing baseline verifies code through `e87bd89a` under the previous per-commit workflow. It does **not** certify any future code committed after it. Always inspect the current `master` SHA and the open batch before asserting tests passed.
 
-## Batch B001 — OPEN (3/5)
+## Batch B001 — OPEN (4/5)
 
 Count **functional implementations**, not Git commits. Enter the TODO ID, relevant commit(s), tests written, and executed result into the first unused slot. A documentation-only handoff does not count.
 
@@ -84,7 +84,7 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 | 1 | N-22 — deterministic initial visual asset plan, author-facing media checklist, editable prompt and explicit ComfyUI background generation | `f614631`, `f56b4da` | `tests/test_visual_preflight.py` (API, no hidden plot, gallery selection), `apps/web/tests/visual-preparation.spec.ts` (desktop/mobile, no implicit render). **NOT RUN**: deferred to B001 full batch. | IMPLEMENTED / UNVERIFIED |
 | 2 | N-18 — deterministic narrator agency and causal consequence policy for four interaction modes and consecutive continuation pacing | `fcf7164`, `1f8516d` | `tests/test_narrative_agency.py` (prompt construction, author-guidelines preservation, mode-specific rules). **NOT RUN**: deferred to B001 batch; no semantic LLM inference benchmark. | IMPLEMENTED / UNVERIFIED |
 | 3 | N-22 — explicitly reviewed gallery-to-cover promotion (SHA-verified story-owned source, durable idempotent mapping, original preserved) | `a85d3dd`, `b77ace5`, `8d8b1cf` | `tests/test_gallery_cover_approval.py` and `apps/web/tests/gallery-cover-approval.spec.ts` created; **NOT RUN**, scheduled for B001 final CI. | IMPLEMENTED / UNVERIFIED |
-| 4 | — | — | NOT RUN | OPEN |
+| 4 | N-18 — guided/flexible/strict story freedom modes persisted in Creator Blueprint, with legacy defaults and narrative policy integration | `5f03d3b`, `bee5cbf` | Added API/contract tests in `test_narrative_agency.py`, Playwright `creator-freedom.spec.ts`; **NOT RUN**, pending B001 full. | IMPLEMENTED / UNVERIFIED |
 | 5 | — | — | NOT RUN | OPEN |
 
 **Batch boundary commit:** not yet chosen.  
