@@ -666,9 +666,15 @@ class NarrativeService:
         for t in recent_turns:
             messages.append({"role": "user", "content": t["mode"] + ": " + t["input_text"]})
             messages.append({"role": "assistant", "content": t["assistant_text"]})
-        line = {"say": "The protagonist says", "do": "The protagonist does",
-                "story": "The player directs the story", "continue": "Continue the scene"
-                }[mode]
+        line = {
+            "say": "The protagonist says",
+            "do": "The protagonist does",
+            "think": "The protagonist privately thinks",
+            "observe": "The protagonist observes",
+            "interact": "The protagonist attempts to interact",
+            "story": "The player directs the story",
+            "continue": "Continue the scene",
+        }[mode]
         messages.append({"role": "user", "content": line + ": " + (instruction or "Proceed from here")})
         return messages
 

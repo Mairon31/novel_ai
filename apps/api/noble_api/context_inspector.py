@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class ContextPreviewInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     input_text: str = Field(default="", max_length=3000)
-    mode: Literal["say", "do", "story", "continue"] = "do"
+    mode: Literal["say", "do", "think", "observe", "interact", "story", "continue"] = "do"
 
 
 def _label_system(part: str, index: int) -> str:
@@ -44,7 +44,7 @@ def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
     story = narrative.get_story(story_id)
     if story is None:
         raise ValueError("Story not found")
-    if mode not in {"say", "do", "story", "continue"}:
+    if mode not in {"say", "do", "think", "observe", "interact", "story", "continue"}:
         raise ValueError("Invalid interaction mode")
     if mode != "continue" and not text.strip():
         raise ValueError("Enter a message to inspect the context")

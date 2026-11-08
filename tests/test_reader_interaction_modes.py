@@ -92,7 +92,12 @@ class ReaderModesTests(unittest.TestCase):
                 self.assertIn("event: done", response.text)
                 sent = self.provider.requests[-1]["messages"]
                 self.assertIn("Current interaction:", sent[0]["content"])
-                self.assertIn(mode + ": " + input_text, sent[-1]["content"])
+                expected = {
+                    "think": "The protagonist privately thinks",
+                    "observe": "The protagonist observes",
+                    "interact": "The protagonist attempts to interact",
+                }[mode]
+                self.assertIn(expected + ": " + input_text, sent[-1]["content"])
         history = self.client.get(f"/api/v1/stories/{self.story}/turns")
         self.assertEqual(history.status_code, 200)
         self.assertEqual([row["mode"] for row in history.json()["turns"]],
