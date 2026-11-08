@@ -101,7 +101,7 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 | 5 | N-18 — author-defined NPC independent goals and refusal conditions stored per character, with legacy-update preservation and private narrator context | `de9a704`, `673e473` | `tests/test_npc_agency_profiles.py` and `apps/web/tests/npc-agency.spec.ts` written; **NOT RUN** until the single full B001 verification. | IMPLEMENTED / UNVERIFIED |
 
 **Batch boundary implementation commit:** `673e47363a1f3f7ee89edaa53ebd0b83334ae526`.  
-**Full batch workflow:** PENDING explicit request using `.github/ci-batches/full-request.txt` after recording this checklist.  
+**Full batch workflow:** [Run #42464879028](https://github.com/Mairon31/novel_ai/actions/runs/42464879028), triggered by `b03be27d698ea632ecc90740e45dcb64416fc5dc` using `.github/ci-batches/full-request.txt`. **IN PROGRESS** at this checkpoint. Do not mark PASS until the jobs finish.  
 **Outstanding failures:** none known at the last verified baseline; all 5 new units remain **NOT RUN**. A static catalog comparison found **1,694 keys per language**, all key sets and interpolations equal. Static parity does not prove UI runtime correctness.
 
 Possible next priorities: N-22 persistent image generation queue and reviewed cover generation, N-18 scene-beat planning and model-based semantic evaluation, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
