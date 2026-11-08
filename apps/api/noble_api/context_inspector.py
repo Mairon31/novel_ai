@@ -58,21 +58,25 @@ def preview_context(narrative, story_id: str, text: str, mode: str) -> dict:
     first = messages[0]["content"]
     for i, part in enumerate(first.split("\n\n")):
         prefix = "\n\n" if i else ""
-        if i == 0:
-            # Separate the fixed narrator prefix, public premise and optional
-            # canonical facts without changing a single byte of the prompt.
-            fragments = re.split(
-                r"(?=\nPremise: |\nConfirmed persistent story canon: )",
-                part)
-            for index, fragment in enumerate(fragments):
-                if not fragment:
-                    continue
-                name = ("Premise and protagonist" if fragment.startswith("\nPremise:")
-                        else "Fixed canon" if fragment.startswith("\nConfirmed persistent story canon:")
-                        else "System and preferences")
-                add(name, prefix + fragment if index == 0 else fragment)
-        else:
-            add(_label_system(part, i), prefix + part)
+        # Story freedom and agency policies can introduce further system
+        # paragraphs before the premise. Find structural anchors in *each*
+        # paragraph, not just the first. Preserve every byte and message.
+        fragments = re.split(
+            r"(?=\nPremise: |\nConfirmed persistent story canon: )", part)
+        for index, fragment in enumerate(fragments):
+            if not fragment:
+                continue
+            if fragment.startswith("\nPremise:"):
+                name = "Premise and protagonist"
+            elif fragment.startswith("\nConfirmed persistent story canon:"):
+                name = "Fixed canon"
+            elif part.startswith("Narrative agency and causal contract"):
+                name = "Narrator agency and preferences"
+            elif i == 0:
+                name = "System and preferences"
+            else:
+                name = _label_system(part, i)
+            add(name, prefix + fragment if index == 0 else fragment)
     for idx, message in enumerate(messages[1:], 1):
         content = message["content"]
         if idx == len(messages) - 1:

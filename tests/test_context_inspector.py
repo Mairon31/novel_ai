@@ -65,6 +65,8 @@ class ContextInspectorTests(unittest.TestCase):
                             for section in result["sections"]))
         self.assertTrue(any(section["name"] == "Premise and protagonist"
                             for section in result["sections"]))
+        self.assertTrue(any(section["name"] == "Narrator agency and preferences"
+                            for section in result["sections"]))
         after = self.client.get(f"/api/v1/stories/{self.story}/turns").json()["turns"]
         self.assertEqual(before, after)
 
