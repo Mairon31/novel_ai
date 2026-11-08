@@ -359,6 +359,15 @@ export function StoryStudio({
       <button className="noble-reader-settings-link" onClick={onOpenSettings}>{t("common.settings")}</button>
     </div> : active ? <>
       {visualStartBlocked && startGate}
+      {!visualStartBlocked && currentPreflight?.text_only &&
+       !currentPreflight.has_started && currentPreflight.mode !== 'text' &&
+        <div className="noble-visual-choice-note" role="status">
+          <span>{t('visualStart.textOnlyActive')}</span>
+          <button type="button" className="secondary-button"
+            disabled={visualChoiceBusy} onClick={() => void chooseVisualMode(false)}>
+            {t('visualStart.requireVisuals')}
+          </button>
+        </div>}
       <StoryDetail story={active} turns={turns} metadata={storyMetadata}
       characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
       error={error}

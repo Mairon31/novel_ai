@@ -45,6 +45,10 @@ test('illustrated story cannot start silently and explicit text-only choice surv
   const state = await (await page.request.get(prefix + '/visual-preflight')).json();
   expect(state.text_only).toBe(true);
   expect(state.ready).toBe(true);
+  await page.getByRole('button', { name: 'Require artwork again' }).click();
+  await expect(page.getByRole('region', { name: 'Prepare visuals before starting' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue with text only' }).click();
+  await expect(page.getByRole('region', { name: 'Prepare visuals before starting' })).toHaveCount(0);
 
   await page.reload();
   await expect(page.locator('main.content')).toHaveAttribute('data-ready', 'yes');
