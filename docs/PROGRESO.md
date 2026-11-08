@@ -947,3 +947,5 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - Añadida prueba Playwright en escritorio y móvil para editar → recargar → recuperar → descartar. Validación completa de GitHub Actions debe verificarse antes de convertir la subtarea en [x].
 
 - **N-23, validación de creación por API y llamadas internas:** normalización y rechazo de campos vacíos tras recortar espacios, caracteres de control y límites reales. Nueva suite `tests/test_story_creation_preflight.py`; la validación integral del formulario por etapas y medios sigue abierta.
+
+- **Validación final del código `d34b0cbd`:** [GitHub Actions #42459879487](https://github.com/Mairon31/novel_ai/actions/runs/42459879487) **PASS**: 414 pruebas Python y 100 pruebas Playwright (escritorio y móvil), compilación de frontend correcta. El TODO marca solo los tramos de recuperación local N-07 y preflight N-23, no sus objetivos globales. i18n sigue como backlog I18N-01 a I18N-07.
