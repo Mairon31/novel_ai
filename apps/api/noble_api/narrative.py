@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from .store import Store
 from .secrets import Secrets
+from .narrative_agency import agency_directives
 
 LOG = logging.getLogger(__name__)
 
@@ -639,7 +640,9 @@ class NarrativeService:
         lorebook_context = (self.lorebook.activate(story["id"], activation)["context"]
                             if self.lorebook is not None else "")
         world_context = (self.world.context(story["id"]) if self.world is not None else "")
-        messages = [{"role": "system", "content": PROMPT + "\n" + output_preferences +
+        messages = [{"role": "system", "content": PROMPT + "\n\n" +
+                     agency_directives(mode, recent_turns) + "\n" +
+                     output_preferences +
                      "\nPremise: " + story["premise"] + "\nProtagonist: " +
                      story.get("protagonist_name", "Protagonist") + world_rules +
                      ("\n\n" + creator_context if creator_context else "") +
