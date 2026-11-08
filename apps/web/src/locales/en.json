@@ -1705,5 +1705,17 @@
   "visualPrep.cancelJob": "Cancel local job",
   "visualPrep.jobDetails": "Technical details",
   "visualPrep.jobFailureSummary": "This image job did not finish successfully.",
-  "visualPrep.queuing": "Adding to image queue..."
+  "visualPrep.queuing": "Adding to image queue...",
+  "arcBeats.title": "Narrative arc milestones",
+  "arcBeats.description": "Plan the next important developments. These are author-controlled, not automatic player actions.",
+  "arcBeats.item": "Milestone {{index}}",
+  "arcBeats.goal": "Arc goal",
+  "arcBeats.development": "Intended development",
+  "arcBeats.status": "Milestone status",
+  "arcBeats.planned": "Planned",
+  "arcBeats.active": "Active",
+  "arcBeats.resolved": "Resolved",
+  "arcBeats.add": "Add milestone",
+  "arcBeats.remove": "Remove",
+  "arcBeats.hint": "At most eight milestones. Only planned or active milestones inform the narrator. Mark resolved manually after reviewing the story."
 }

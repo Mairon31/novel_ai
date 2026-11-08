@@ -1705,5 +1705,17 @@
   "visualPrep.cancelJob": "取消本地任务",
   "visualPrep.jobDetails": "技术详情",
   "visualPrep.jobFailureSummary": "该图像任务未能成功完成。",
-  "visualPrep.queuing": "正在添加到图像队列……"
+  "visualPrep.queuing": "正在添加到图像队列……",
+  "arcBeats.title": "叙事主线里程碑",
+  "arcBeats.description": "规划重要的故事发展。由创作者管理，不强迫玩家做决定。",
+  "arcBeats.item": "里程碑 {{index}}",
+  "arcBeats.goal": "主线目标",
+  "arcBeats.development": "预期发展",
+  "arcBeats.status": "里程碑状态",
+  "arcBeats.planned": "已计划",
+  "arcBeats.active": "进行中",
+  "arcBeats.resolved": "已解决",
+  "arcBeats.add": "添加里程碑",
+  "arcBeats.remove": "删除",
+  "arcBeats.hint": "最多八项。只有已计划或进行中的里程碑用于指导叙述者。请在审核剧情后手动标记完成。"
 }

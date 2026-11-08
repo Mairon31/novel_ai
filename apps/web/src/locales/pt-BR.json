@@ -1705,5 +1705,17 @@
   "visualPrep.cancelJob": "Cancelar tarefa local",
   "visualPrep.jobDetails": "Detalhes técnicos",
   "visualPrep.jobFailureSummary": "Esta tarefa de imagem não foi concluída.",
-  "visualPrep.queuing": "Adicionando à fila de imagens..."
+  "visualPrep.queuing": "Adicionando à fila de imagens...",
+  "arcBeats.title": "Marcos do arco narrativo",
+  "arcBeats.description": "Planeje acontecimentos importantes. O criador os controla, sem impor decisões ao jogador.",
+  "arcBeats.item": "Marco {{index}}",
+  "arcBeats.goal": "Objetivo do arco",
+  "arcBeats.development": "Desenvolvimento planejado",
+  "arcBeats.status": "Estado do marco",
+  "arcBeats.planned": "Planejado",
+  "arcBeats.active": "Ativo",
+  "arcBeats.resolved": "Resolvido",
+  "arcBeats.add": "Adicionar marco",
+  "arcBeats.remove": "Remover",
+  "arcBeats.hint": "Até oito marcos. Apenas os planejados ou ativos orientam o narrador. Marque os resolvidos manualmente após revisar a história."
 }

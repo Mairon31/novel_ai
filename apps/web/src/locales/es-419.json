@@ -1705,5 +1705,17 @@
   "visualPrep.cancelJob": "Cancelar trabajo local",
   "visualPrep.jobDetails": "Detalles técnicos",
   "visualPrep.jobFailureSummary": "El trabajo de imagen no terminó correctamente.",
-  "visualPrep.queuing": "Agregando a la cola de imágenes..."
+  "visualPrep.queuing": "Agregando a la cola de imágenes...",
+  "arcBeats.title": "Hitos del arco argumental",
+  "arcBeats.description": "Planifica acontecimientos importantes. El creador los controla, sin imponer decisiones al jugador.",
+  "arcBeats.item": "Hito {{index}}",
+  "arcBeats.goal": "Objetivo del arco",
+  "arcBeats.development": "Desarrollo previsto",
+  "arcBeats.status": "Estado del hito",
+  "arcBeats.planned": "Planificado",
+  "arcBeats.active": "Activo",
+  "arcBeats.resolved": "Resuelto",
+  "arcBeats.add": "Agregar hito",
+  "arcBeats.remove": "Eliminar",
+  "arcBeats.hint": "Hasta ocho hitos. Solo los planificados o activos orientan al narrador. Marca los resueltos manualmente después de revisar la historia."
 }

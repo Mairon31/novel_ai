@@ -1493,3 +1493,14 @@
 .noble-image-job details {flex-basis:100%;white-space:pre-wrap;overflow-wrap:anywhere}
 .noble-image-job pre {max-height:145px;overflow:auto;white-space:pre-wrap}
 @media(max-width:540px){.noble-image-job-queue .primary-button {justify-self:stretch}}
+
+/* Milestones are explicit author planning controls, separate from story prose. */
+.creator-arc-beats {display:grid;gap:12px;padding:16px;border:1px solid #49536b;border-radius:12px}
+.creator-arc-beats header h3 {margin:0 0 4px}
+.creator-arc-beats header p {margin:0;color:#b7c4d3}
+.creator-arc-beat {display:grid;gap:11px;padding:12px;border:1px solid #3e4761;border-radius:10px}
+.creator-arc-beat-head {display:flex;align-items:center;justify-content:space-between;gap:12px}
+.creator-arc-beat label {display:grid;gap:6px}
+.creator-arc-beat input,.creator-arc-beat select,.creator-arc-beat textarea {min-width:0;max-width:100%}
+.creator-arc-beats > .secondary-button {justify-self:start}
+@media(max-width:540px){.creator-arc-beats > .secondary-button {justify-self:stretch}}
