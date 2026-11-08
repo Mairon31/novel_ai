@@ -89,7 +89,7 @@ test('Creator Studio stages five AI expressions for author review before approva
     await expect(section.getByText('Aira · 5/5 expressions')).toBeVisible();
     await expect(section.locator('img')).toHaveCount(5);
     expect(generated).toBe(5);
-    await expect(section.getByText(/Variaciones importantes de encuadre/)).toBeVisible();
+    await expect(section.getByText(/Significant framing differences detected/)).toBeVisible();
     await expect(section.getByRole('button', {
       name: 'Approve five expressions',
     })).toBeDisabled();

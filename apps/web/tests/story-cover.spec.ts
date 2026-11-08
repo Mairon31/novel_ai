@@ -29,7 +29,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await page.getByRole('button', { name: /Images \(0\)/ }).click();
   const section = page.locator('.creator-media-library');
   await expect(section.getByText('No custom cover')).toBeVisible();
-  await page.getByLabel('Tipo de recurso visual').selectOption('cover');
+  await page.getByLabel('Visual asset type').selectOption('cover');
   await page.getByLabel('Image name').fill('La luna sobre la torre');
   await page.getByLabel('Image description').fill('Cubierta con una luna violeta y una torre');
   await page.getByLabel('Visual asset file').setInputFiles({
@@ -37,7 +37,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   });
   await page.getByRole('button', { name: 'Import image' }).click();
   await expect(section.getByText('Custom cover')).toBeVisible();
-  await expect(section.getByRole('img', { name: 'Portada de ' + title })).toBeVisible();
+  await expect(section.getByRole('img', { name: 'Cover of ' + title })).toBeVisible();
 
   const story = await page.request.get('/api/v1/stories/' + storyId);
   expect(story.ok()).toBeTruthy();
@@ -58,7 +58,7 @@ test('creator uploads a fixed book cover, bookshelf displays it and removing it 
   await page.screenshot({ path: 'test-results/' + test.info().project.name +
     '-fixed-editorial-cover.png', fullPage: true });
 
-  await page.getByRole('button', { name: 'Editar en Creator Studio' }).click();
+  await page.getByRole('button', { name: 'Edit in Creator Studio' }).click();
   await page.getByRole('button', { name: /Images \(1\)/ }).click();
   await page.getByRole('button', { name: 'Remove cover' }).click();
   await expect(page.getByText('No custom cover')).toBeVisible();

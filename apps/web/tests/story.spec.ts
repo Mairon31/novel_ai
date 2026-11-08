@@ -54,7 +54,7 @@ test('create a story and render SSE turn with the real UI (mocked LLM response)'
   const inspector = page.locator('.noble-reader-inspector.is-open');
   await expect(inspector).toBeVisible();
   await expect(inspector).toHaveCSS('position', 'fixed');
-  await page.getByRole('button', { name: 'Close details' }).click();
+  await page.getByRole('button', { name: 'Close details', exact: true }).click();
   await expect(page.locator('.noble-reader-inspector.is-open')).toHaveCount(0);
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-story-reader.png',

@@ -29,7 +29,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
   await page.getByLabel('Visual appearance').fill('Cabello plateado largo, ojos verdes intensos.');
   await page.getByLabel('Visual outfit').fill('Túnica azul oscura');
   await page.getByLabel('Visual traits').fill('Cicatriz bajo el ojo derecho');
-  await page.getByRole('button', { name: 'Add character visual' }).click();
+  await page.getByRole('button', { name: 'Add visual character' }).click();
   await expect(page.getByRole('button', { name: /Aira.*Revision 1/ })).toBeVisible();
 
   await page.getByRole('button', { name: 'Gallery', exact: true }).click();
@@ -86,7 +86,7 @@ test('persistent visual characters, gallery versions and prompt preview (real AP
     });
   });
   await page.getByRole('button', { name: 'View installed LoRAs' }).click();
-  await expect(page.getByText(/1 LoRAs disponibles en ComfyUI/)).toBeVisible();
+  await expect(page.getByText(/1 LoRA available in ComfyUI/)).toBeVisible();
   await page.getByRole('checkbox', { name: 'Apply character LoRAs' }).check();
   let observedReference = false;
   await page.route('**/api/v1/stories/*/illustrate', async route => {

@@ -147,12 +147,12 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             onChange={e => change('style_preset', e.target.value as ImageSettings['style_preset'])}>
             <option value="anime_fantasy">Fantasy anime (default)</option>
             <option value="anime_cinematic">Cinematic anime</option>
-            <option value="anime_watercolor">Anime acuarela</option>
+            <option value="anime_watercolor">Watercolor anime</option>
             <option value="none">No additional style guidance</option>
           </select>
         </label>
-        <label className="workspace-pref-field">Muestreador ComfyUI
-          <select aria-label="Muestreador ComfyUI" value={image.sampler_name}
+        <label className="workspace-pref-field">ComfyUI sampler
+          <select aria-label="ComfyUI sampler" value={image.sampler_name}
             disabled={busy}
             onChange={e => change('sampler_name', e.target.value as ImageSettings['sampler_name'])}>
             {SAMPLERS.map(sampler => <option key={sampler.id} value={sampler.id}>
@@ -161,8 +161,8 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             </option>)}
           </select>
         </label>
-        <label className="workspace-pref-field">Planificador ComfyUI
-          <select aria-label="Planificador ComfyUI" value={image.scheduler}
+        <label className="workspace-pref-field">ComfyUI scheduler
+          <select aria-label="ComfyUI scheduler" value={image.scheduler}
             disabled={busy}
             onChange={e => change('scheduler', e.target.value as ImageSettings['scheduler'])}>
             {SCHEDULERS.map(scheduler => <option key={scheduler.id} value={scheduler.id}>
@@ -171,7 +171,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
             </option>)}
           </select>
         </label>
-        <label className="workspace-pref-field" >Prompt negativo
+        <label className="workspace-pref-field" >Negative prompt
           <input maxLength={1000} value={image.negative_prompt}
             onChange={e => change('negative_prompt', e.target.value)}/>
         </label>

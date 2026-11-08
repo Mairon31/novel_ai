@@ -1015,7 +1015,9 @@ export function VisualReader({
               </button>
               {loraStatus && <p className="noble-inspector-hint" role="status">
                 {loraStatus.online
-                  ? loraStatus.loras.length + ' LoRAs available in ComfyUI' +
+                  ? loraStatus.loras.length + ' ' +
+                    (loraStatus.loras.length === 1 ? 'LoRA' : 'LoRAs') +
+                    ' available in ComfyUI' +
                     (loraStatus.loras.length
                       ? ': ' + loraStatus.loras.slice(0, 6).join(', ') +
                         (loraStatus.loras.length > 6 ? '…' : '')

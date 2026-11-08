@@ -50,7 +50,7 @@ test('Creator Studio persists canonical DNA and imports five sprite variants',
       name: 'expressions.png', mimeType: 'image/png', buffer: spriteSheet,
     });
     await page.getByRole('button', { name: 'Import five expressions' }).click();
-    await expect(page.getByText(/Se importaron 5 expresiones/)).toBeVisible();
+    await expect(page.getByText(/Imported 5 character expressions/)).toBeVisible();
     await expect(page.locator('.creator-media-card')).toHaveCount(5);
     await page.screenshot({
       path: 'test-results/' + test.info().project.name + '-expression-sheet.png',

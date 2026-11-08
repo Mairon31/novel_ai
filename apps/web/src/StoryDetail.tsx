@@ -85,7 +85,7 @@ export function StoryDetail({
     <div className="noble-story-detail-body">
       <div className="noble-story-detail-overview">
         <div><UserRound size={18}/><span>Protagonist</span><strong>{story.protagonist_name || 'Not assigned'}</strong></div>
-        <div><BookOpen size={18}/><span>Intervenciones</span><strong>{turns.length}</strong></div>
+        <div><BookOpen size={18}/><span>Story turns</span><strong>{turns.length}</strong></div>
         <div><CalendarDays size={18}/><span>Created</span><strong>{date(story.created_at)}</strong></div>
         <div><Clock3 size={18}/><span>Updated</span><strong>{date(story.updated_at)}</strong></div>
       </div>

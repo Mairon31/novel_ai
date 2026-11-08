@@ -547,7 +547,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             <button className={section === 'world' ? 'selected' : ''}
               onClick={() => setSection('world')}><Globe2 size={17}/> World state</button>
             <button className={section === 'openings' ? 'selected' : ''}
-              onClick={() => setSection('openings')}><Feather size={17}/> Aperturas</button>
+              onClick={() => setSection('openings')}><Feather size={17}/> Openings</button>
             <button className={section === 'media' ? 'selected' : ''}
               onClick={() => setSection('media')}><ImageIcon size={17}/> Images ({assets.length})</button>
           </nav>

@@ -26,7 +26,7 @@ test('history inspector searches local story memory without model or GPU', async
   await inspector.getByRole('textbox', { name: 'Search story memories' })
     .fill('medallón de cristal');
   await inspector.getByRole('button', { name: 'Search entire story' }).click();
-  await expect(inspector.getByText('0 recuerdos encontrados')).toBeVisible();
+  await expect(inspector.getByText('0 memories found')).toBeVisible();
   await expect(inspector.getByText('Player input only')).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-memory-search.png',

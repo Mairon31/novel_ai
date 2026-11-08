@@ -52,7 +52,7 @@ test('VN, book and chat keep the same scene and persist preference after reload'
     await expect(reader).toHaveAttribute('data-reader-mode', 'chat');
     await expect(reader.locator('.noble-scene-panel')).toBeHidden();
     await expect(reader.locator('.noble-reading-turn')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Close details' }).click();
+    await page.getByRole('button', { name: 'Close details', exact: true }).click();
     await page.reload();
     await expect(reader).toHaveAttribute('data-reader-mode', 'chat');
     await expect(reader.locator('.noble-reading-turn')).toHaveCount(1);

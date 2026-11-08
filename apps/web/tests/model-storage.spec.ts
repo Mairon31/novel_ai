@@ -50,7 +50,7 @@ test('installed Model Hub reports real disk usage, partials and absent files', a
     .toHaveAttribute('aria-valuenow','3');
 
   await storage.getByText('View counted files (3)').click();
-  await expect(storage.getByText('Missing.gguf · No encontrado')).toBeVisible();
+  await expect(storage.getByText('Missing.gguf · Missing')).toBeVisible();
   await expect(page.getByText('File not found: check installation.')).toBeVisible();
   const missing = page.locator('.installed-row').filter({hasText:'Missing.gguf'});
   await expect(missing.getByRole('button', {name:'Choose narrator'})).toBeDisabled();

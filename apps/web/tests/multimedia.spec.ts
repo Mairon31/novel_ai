@@ -54,7 +54,7 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   }
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Images', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Images', exact: true })).toBeVisible();
   await expect(page.getByLabel('Enable on-demand speech buttons')).toHaveCount(0);
@@ -63,10 +63,10 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByRole('button', { name: 'Check ComfyUI sampling' }).click();
   expect(samplingChecks).toBe(1);
   await expect(page.getByText('KSampler compatibility: compatible selection.')).toBeVisible();
-  await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_sde');
+  await page.getByLabel('ComfyUI sampler').selectOption('dpmpp_sde');
   await expect(page.getByRole('button', { name: 'Save image settings' })).toBeDisabled();
-  await page.getByLabel('Muestreador ComfyUI').selectOption('dpmpp_2m');
-  await page.getByLabel('Planificador ComfyUI').selectOption('karras');
+  await page.getByLabel('ComfyUI sampler').selectOption('dpmpp_2m');
+  await page.getByLabel('ComfyUI scheduler').selectOption('karras');
   await page.getByLabel('Illustration style').selectOption('anime_cinematic');
   await page.getByRole('button', { name: 'Save image settings' }).click();
   // Wait for the actual PUT response and saved UI state before reading SQLite.
@@ -81,8 +81,8 @@ test('configure on-demand image/voice and illustrate a story explicitly', async 
   await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Voice / TTS' })).toBeVisible();
   await page.getByRole('button', { name: 'Images', exact: true }).click();
-  await expect(page.getByLabel('Muestreador ComfyUI')).toHaveValue('dpmpp_2m');
-  await expect(page.getByLabel('Planificador ComfyUI')).toHaveValue('karras');
+  await expect(page.getByLabel('ComfyUI sampler')).toHaveValue('dpmpp_2m');
+  await expect(page.getByLabel('ComfyUI scheduler')).toHaveValue('karras');
   await expect(page.getByLabel('Illustration style')).toHaveValue('anime_cinematic');
   await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveCount(0);

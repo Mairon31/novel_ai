@@ -259,8 +259,7 @@ export function NarrativeSettings() {
               </div>)}
             </details>
           </div>}
-        </> : <p className="narrative-helper">Create a story to inspect
-          su contexto narrativo.</p>}
+        </> : <p className="narrative-helper">Create a story to inspect its narrative context.</p>}
       </section>
     </>}
   </section>;

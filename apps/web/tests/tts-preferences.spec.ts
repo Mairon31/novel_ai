@@ -50,7 +50,7 @@ test('Piper preferred voice is saved in settings and restored without auto-speec
     if (test.info().project.name === 'mobile') {
       await page.getByRole('button', { name: 'Open menu' }).click();
     }
-    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('button', { name: 'Voice / TTS', exact: true }).click();
     await expect(page.getByLabel('Default Piper voice')).toBeVisible();
   };

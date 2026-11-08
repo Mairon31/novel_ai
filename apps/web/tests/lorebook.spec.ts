@@ -25,7 +25,7 @@ test('Creator Studio Lorebook creates trigger, previews it and persists locally'
   await page.getByLabel('Lorebook title').fill('Mapa de las ruinas');
   await page.getByLabel('Lorebook content').fill(
     'Las ruinas esconden una puerta que solo Luna puede abrir con el mapa antiguo.');
-  await page.getByLabel('Lorebook keys').fill('ruinas, mapa');
+  await page.getByLabel('Lorebook keys', { exact: true }).fill('ruinas, mapa');
   await page.getByLabel('Lorebook priority').fill('95');
   await page.getByRole('button', { name: 'Create Lorebook entry' }).click();
   await expect(page.getByText(/Lorebook entry saved/)).toBeVisible();
@@ -85,7 +85,7 @@ test('Private Lorebook is restricted to present NPC witnesses on desktop and mob
   await page.getByLabel('Lorebook title').fill('El secreto del sello');
   await page.getByLabel('Lorebook content').fill(
     'La última llave del sello permanece bajo una estatua en el palacio.');
-  await page.getByLabel('Lorebook keys').fill('sello');
+  await page.getByLabel('Lorebook keys', { exact: true }).fill('sello');
   await page.getByLabel('Lorebook visibility').selectOption('witnesses');
   await page.getByRole('checkbox', { name: 'Witness Aira' }).check();
   await page.getByRole('button', { name: 'Create Lorebook entry' }).click();

@@ -15,7 +15,7 @@ test('author can inspect full prepared prompt without running an LLM', async ({ 
     await setup.getByRole('button', { name: /Continue to Model Hub/ }).click();
   if (test.info().project.name === 'mobile')
     await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Narration', exact: true }).click();
   const inspector = page.getByRole('region', { name: 'Narrative context inspector' });
   await expect(inspector).toBeVisible();
@@ -24,10 +24,10 @@ test('author can inspect full prepared prompt without running an LLM', async ({ 
     'Abro un libro escondido en el palacio.');
   await inspector.getByRole('button', { name: 'Inspect context' }).click();
   await expect(inspector.getByText('Estimated prompt budget')).toBeVisible();
-  await expect(inspector.getByText(/tokens aproximados de entrada/)).toBeVisible();
+  await expect(inspector.getByText(/estimated input tokens/)).toBeVisible();
   await inspector.getByText('View all messages sent to the engine').click();
   await expect(inspector.locator('pre').filter({
-    hasText: 'El protagonista hace: Abro un libro escondido en el palacio.',
+    hasText: 'The protagonist does: Abro un libro escondido en el palacio.',
   })).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-context-inspector.png',

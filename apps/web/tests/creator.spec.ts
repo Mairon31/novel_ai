@@ -10,7 +10,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   if(test.info().project.name==='mobile')
     await page.getByRole('button',{name:'Open menu'}).click();
   await page.getByRole('button',{name:'Creator Studio'}).click();
-  await expect(page.getByRole('heading',{name:/Construye historias/})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Build stories with purpose/})).toBeVisible();
 
   await page.getByRole('button',{name:'Create project',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Create story project'});
@@ -41,7 +41,7 @@ test('Creator Studio keeps author-only story data separate from reader', async (
   await expect(page.getByText(/Character narrative profile saved/)).toBeVisible();
   await expect(page.getByRole('button',{name:/Characters \(1\)/})).toBeVisible();
 
-  await page.getByRole('button',{name:'Aperturas'}).click();
+  await page.getByRole('button',{name:'Openings'}).click();
   await page.getByLabel('New opening').fill(
     '{{user}} despierta en una biblioteca y escucha los pasos del bibliotecario.');
   await page.getByRole('button',{name:'Add opening'}).click();
