@@ -43,7 +43,8 @@ export function StoryStudio({
   const [draft, setDraft] = useState('');
   const [streamText, setStreamText] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [generationMessage, setGenerationMessage] = useState(t('feedback.storyPreparingNarrator'));
+  // Store the phase key so in-flight status responds to UI locale changes.
+  const [generationMessageKey, setGenerationMessageKey] = useState('feedback.storyPreparingNarrator');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
@@ -168,7 +169,7 @@ export function StoryStudio({
     const requestId = crypto.randomUUID();
     controller.current = controllerLocal;
     inFlight.current = { storyId: active.id, requestId };
-    setGenerating(true); setGenerationMessage(t('feedback.storyPreparingNarrator')); setStreamText(''); setNotice(''); setError('');
+    setGenerating(true); setGenerationMessageKey('feedback.storyPreparingNarrator'); setStreamText(''); setNotice(''); setError('');
     let complete = false;
     try {
       await api.streamTurn(active.id, {
@@ -176,8 +177,7 @@ export function StoryStudio({
         input_text: continueOnly ? '' : draft.trim(),
         request_id: requestId,
       }, controllerLocal.signal, (evt: GenerationEvent) => {
-        if (evt.event === 'status') setGenerationMessage(
-          t('storySse.' + evt.data.phase, { defaultValue: evt.data.message }));
+        if (evt.event === 'status') setGenerationMessageKey('storySse.' + evt.data.phase);
         if (evt.event === 'delta') setStreamText(text => text + evt.data.text);
         if (evt.event === 'error') throw new Error(evt.data.message);
         if (evt.event === 'done') {
@@ -372,7 +372,7 @@ export function StoryStudio({
     </div>}
     {active && reading && <VisualReader active={active} turns={turns}
       mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
-      streamText={streamText} generating={generating} generationMessage={generationMessage}
+      streamText={streamText} generating={generating} generationMessage={t(generationMessageKey)}
       onCancel={cancelGeneration} onFork={createBranch} notice={notice} error={error}
       onSubmit={continueOnly => void submit(continueOnly)}
       onCreate={() => { setCreateStep('story'); setCreating(true); }}
