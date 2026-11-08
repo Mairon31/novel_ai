@@ -1020,3 +1020,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - Commits `2018265`, `e365955`, `cb0cec1`; B002 **2/5**. Does not constitute a full autonomous director of scenes or real-model compliance evaluation.
 
 - Follow-up hardening `3153cc9` caps queued/running image jobs at **8** for the local API; `df31191` adds an offline admission/recovery test (NOT RUN). Both changes remain part of B002 unit 1 and do not count as independent features. Four locale JSON catalogs parse successfully at **1,719 keys each**, with zero missing/extra keys or interpolation differences; no GitHub Actions runs triggered by these changes.
+
+## 2026-11-08 — B002 3/5: six semantic interaction modes in the reader (NOT RUN)
+
+- Implemented `think`, `observe` and `interact` as real FastAPI narrative modes, not visual-only buttons; `narrative_agency.py` provides mode-specific boundaries to prevent NPC telepathy, unintended protagonist actions, and guaranteed cooperation. Existing `say`, `do`, `story` and `continue` retain their previous contracts.
+- `VisualReader.tsx` now exposes a six-button accessible, responsive mode toolbar above the textarea, with localized hint/placeholder and correct labels in the story backlog. Added 15 strings for en/es-419/pt-BR/zh-CN. New test files `tests/test_reader_interaction_modes.py` and `apps/web/tests/reader-interaction-modes.spec.ts` cover SSE serialization, persisted modes, empty-input rejections and UI controls. **NOT RUN** under B002 policy; real model semantic compliance is not yet tested.
+- Commits `efa2870`, `47c6c24`, `90a0f0a`, `88d1926`. CI **not triggered**.
