@@ -117,6 +117,14 @@ class ImageGenerationJobs:
                     raise HTTPException(409, "Request ID already used for different image parameters")
                 job_id = existing["id"]
             else:
+                # Bounded local queue: a tab or script must not accumulate
+                # unlimited parked asyncio tasks and GPU work.
+                active_count = db.execute(
+                    "SELECT COUNT(*) FROM image_generation_jobs "
+                    "WHERE status IN ('queued','running')"
+                ).fetchone()[0]
+                if active_count >= 8:
+                    raise HTTPException(429, "Image generation queue is full (8 jobs)")
                 payload["seed"] = (payload["seed"] if payload["seed"] is not None
                                    else secrets.randbelow(2 ** 53))
                 db.execute(
