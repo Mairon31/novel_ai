@@ -544,9 +544,9 @@ export function VisualReader({
 
   if (!active) return <div className="story-start-screen noble-reader-empty">
     <div className="story-start-icon"><BookOpen size={34}/></div>
-    <h2>A new story awaits.</h2>
-    <p>Choose a world, define your protagonist and begin. Scenes and dialogue are saved to your local library.</p>
-    <button className="primary-button" onClick={onCreate}><Sparkles size={17}/> Create my first story</button>
+    <h2>{t('reader.emptyTitle')}</h2>
+    <p>{t('reader.emptyHint')}</p>
+    <button className="primary-button" onClick={onCreate}><Sparkles size={17}/> {t('reader.firstStory')}</button>
   </div>;
 
   const displayedBackground = backgroundSource;
@@ -586,33 +586,33 @@ export function VisualReader({
               ' · expression ' + sprite.expression + ' · pose ' + sprite.pose}/>)}
         </div>}
         {!displayedBackground && <div className="noble-scene-empty">
-          <Image size={34}/><strong>Your scene, your world</strong>
-          <p>Add an illustration to accompany your story.</p>
+          <Image size={34}/><strong>{t('reader.sceneWorld')}</strong>
+          <p>{t('reader.addIllustrationHint')}</p>
         </div>}
         {turns.length > 0 && <div className="noble-vn-subtitle" role="note"
           aria-label="Latest scene narration">
-          <strong>Narrator</strong>
+          <strong>{t('reader.narrator')}</strong>
           <p>{turns[turns.length - 1].assistant_text.slice(-320)}</p>
         </div>}
         <div className="noble-scene-bottom">
-          <span className="overline">NOBLE VISUAL NOVEL</span>
+          <span className="overline">{t('reader.visualNovel')}</span>
           <h3>{active.title}</h3>
           {currentSceneMedia?.selection === 'caption_match' &&
-            <small className="noble-visual-caption">Creator assets matched to the scene</small>}
+            <small className="noble-visual-caption">{t('reader.creatorAssets')}</small>}
           <p><UserRound size={14}/>{active.protagonist_name}</p>
           <button className="noble-scene-upload" disabled={updating}
             onClick={() => fileRef.current?.click()}><Camera size={15}/>
             {active.scene_image_url ? 'Change scene' : 'Add illustration'}</button>
           {imageMode !== 'off' && <button className="noble-scene-upload"
             onClick={() => { setTab('gallery'); setInspectorOpen(true); }}>
-            <Image size={15}/> Illustrate with AI</button>}
+            <Image size={15}/> {t('reader.illustrateAI')}</button>}
         </div>
       </div>
     </aside>
 
     <article className="noble-reader-main">
       <header className="noble-reader-toolbar">
-        <span className="noble-reader-chapter">CHAPTER 01 <span>·</span> {active.title}</span>
+        <span className="noble-reader-chapter">{t('reader.chapterOne')} <span>·</span> {active.title}</span>
         <div className="noble-reader-toolbar-actions">
           <a href={'/api/v1/stories/' + encodeURIComponent(active.id) + '/export.html'}
             download="noble-story.html" title="Export illustrated story as HTML"
@@ -630,7 +630,7 @@ export function VisualReader({
       </header>
       <div className="noble-reader-prose" aria-live="polite">
         <div className="noble-reader-intro"><Sparkles size={17}/>
-          <div><span>THE STORY BEGINS</span><p>{playerPlot || active.premise}</p></div></div>
+          <div><span>{t('reader.storyBegins')}</span><p>{playerPlot || active.premise}</p></div></div>
         {turns.map((turn, i) => <section className="noble-reading-turn"
           id={'noble-turn-' + turn.id} key={turn.id}>
           <small>SCENE {String(i + 1).padStart(2, '0')}</small>
@@ -649,10 +649,10 @@ export function VisualReader({
         </section>)}
         {generating && <div className="noble-reader-stream">
           <span><LoaderCircle className="rotating" size={15}/> {generationMessage} · {elapsed}s</span>
-          <button className="noble-cancel-stream" onClick={onCancel}><Square size={13}/> Stop generation</button>
+          <button className="noble-cancel-stream" onClick={onCancel}><Square size={13}/> {t('reader.stopGeneration')}</button>
           <p><NarrativeText text={streamText || 'Connecting to the engine...'}/></p></div>}
         {!generating && turns.length === 0 && <div className="noble-reader-empty-turn">
-          <Feather size={26}/><strong>The first page is blank.</strong>
+          <Feather size={26}/><strong>{t('reader.firstPageBlank')}</strong>
           <p>Speak as {active.protagonist_name}, describe your action, or select Continue.</p>
         </div>}
         <div ref={tail}/>
@@ -660,13 +660,13 @@ export function VisualReader({
       <footer className="noble-reader-compose">
         {notice && <p className="story-notice"><Check size={15}/>{notice}</p>}
         {(error || readerError) && <div role="alert" className="story-error">
-          {error || readerError} <button onClick={onSettings}>Review settings <ArrowRight size={13}/></button></div>}
+          {error || readerError} <button onClick={onSettings}>{t('reader.reviewSettings')} <ArrowRight size={13}/></button></div>}
         <div className="noble-reader-mode">
           <span>Speak as {active.protagonist_name} or choose what happens next</span>
           <select value={mode} disabled={generating} aria-label="Narration mode"
             onChange={e => setMode(e.target.value as StoryTurn['mode'])}>
-            <option value="do">Act</option><option value="say">Speak</option>
-            <option value="story">Narrate</option>
+            <option value="do">{t('reader.act')}</option><option value="say">{t('reader.speak')}</option>
+            <option value="story">{t('reader.narrate')}</option>
           </select>
         </div>
         <textarea aria-label="Your input in the story" value={draft}
@@ -682,7 +682,7 @@ export function VisualReader({
           }}/>
         <div className="noble-reader-actions">
           <div className="noble-reader-action-hint">
-            <MessageSquareText size={15}/> Dialogue is saved to your story
+            <MessageSquareText size={15}/> {t('reader.dialogueSaved')}
           </div>
           <button className="secondary-button" disabled={generating}
             onClick={() => onSubmit(true)}><Sparkles size={15}/> Continue</button>
@@ -695,7 +695,7 @@ export function VisualReader({
     </article>
 
     <aside className={'noble-reader-inspector ' + (inspectorOpen ? 'is-open' : '')}>
-      <header className="noble-inspector-header"><div><span className="overline">MY STORY</span>
+      <header className="noble-inspector-header"><div><span className="overline">{t('reader.myStory')}</span>
         <h3>{active.title}</h3></div>
         <button aria-label={t("reader.closeDetails")} onClick={() => setInspectorOpen(false)}>
           <X size={18}/></button></header>
@@ -710,40 +710,40 @@ export function VisualReader({
           <h4>Protagonist</h4>
           <div className="noble-protagonist-card">
             <div className="noble-protagonist-avatar">{active.protagonist_name.slice(0, 1).toUpperCase()}</div>
-            <div><strong>{active.protagonist_name}</strong><small>Player character</small></div>
+            <div><strong>{active.protagonist_name}</strong><small>{t('reader.playerCharacter')}</small></div>
           </div>
-          <label className="noble-inspector-field">Character name
+          <label className="noble-inspector-field">{t('reader.characterName')}
             <input value={name} maxLength={60} onChange={e => setName(e.target.value)}/></label>
           <button className="secondary-button" disabled={updating || !name.trim() || name.trim() === active.protagonist_name}
-            onClick={() => void saveName()}><Check size={15}/> Save name</button>
-          <h4>Canon and persistent memory</h4>
-          <p>Characters, relationships, places, and facts the narrator should remember in future chapters.</p>
-          <label className="noble-inspector-field">Confirmed rules and events
+            onClick={() => void saveName()}><Check size={15}/> {t('reader.saveName')}</button>
+          <h4>{t('reader.canonTitle')}</h4>
+          <p>{t('reader.canonHint')}</p>
+          <label className="noble-inspector-field">{t('reader.confirmedRules')}
             <textarea aria-label="Story canon" rows={6} maxLength={5000}
               value={canon} onChange={e => setCanon(e.target.value)}
               placeholder="Example: Aira knows the castle's secret. Nobody else knows yet."/></label>
           <button className="secondary-button" disabled={updating || canon === (active.canon || '')}
             onClick={() => void saveCanon()}><Check size={15}/> {t("reader.saveCanon")}</button>
-          <h4>Status</h4>
+          <h4>{t('reader.status')}</h4>
           <p>{turns.length} saved scenes · latest model: {turns.at(-1)?.model || 'Not started'}</p>
-          <h4>Visual identity profiles</h4>
-          <p>Set consistent appearance and outfit details for ComfyUI prompts.</p>
+          <h4>{t('reader.visualProfiles')}</h4>
+          <p>{t('reader.visualProfilesHint')}</p>
           {visual?.characters.map(person =>
             <button className="noble-character-entry" key={person.id}
               onClick={() => editVisualCharacter(person)} title="Edit visual profile">
               <span>{person.name}</span><small>Revision {person.revision} · Edit</small>
             </button>)}
-          <label className="noble-inspector-field">Character name
+          <label className="noble-inspector-field">{t('reader.characterName')}
             <input value={character.name} maxLength={80} aria-label="Visual name"
               onChange={e => setCharacter(x => ({ ...x, name: e.target.value }))}/></label>
-          <label className="noble-inspector-field">Consistent appearance
+          <label className="noble-inspector-field">{t('reader.appearance')}
             <textarea value={character.appearance} maxLength={1500} rows={4}
               aria-label="Visual appearance" placeholder="Hair, eyes, apparent age, silhouette, species..."
               onChange={e => setCharacter(x => ({ ...x, appearance: e.target.value }))}/></label>
-          <label className="noble-inspector-field">Outfit
+          <label className="noble-inspector-field">{t('reader.outfit')}
             <input value={character.outfit} maxLength={650} aria-label="Visual outfit"
               onChange={e => setCharacter(x => ({ ...x, outfit: e.target.value }))}/></label>
-          <label className="noble-inspector-field">Distinctive features
+          <label className="noble-inspector-field">{t('reader.distinctive')}
             <input value={character.distinguishing_features} maxLength={650} aria-label="Visual traits"
               onChange={e => setCharacter(x => ({ ...x, distinguishing_features: e.target.value }))}/></label>
           <button className="secondary-button"
@@ -752,12 +752,12 @@ export function VisualReader({
             <Check size={15}/>{editingCharacterId ? 'Save visual profile' : 'Add visual character'}
           </button>
           {editingCharacterId && <div className="noble-prompt-preview">
-            <strong>Identity image for this character</strong>
-            <p>Attach an imported or generated image. A scene plan can use it as an img2img reference when the character appears.</p>
-            <label className="noble-inspector-field">Saved reference
+            <strong>{t('reader.identityImage')}</strong>
+            <p>{t('reader.referenceHint')}</p>
+            <label className="noble-inspector-field">{t('reader.savedReference')}
               <select aria-label="Character reference" value={characterReferenceId}
                 onChange={e => setCharacterReferenceId(e.target.value)}>
-                <option value="">No image assigned</option>
+                <option value="">{t('reader.noImageAssigned')}</option>
                 {visual?.assets.map(asset => <option key={asset.id} value={asset.id}>
                   {asset.origin === 'comfyui' ? 'Generated' : 'Imported'} · {asset.id.slice(0, 8)}
                 </option>)}
@@ -768,21 +768,21 @@ export function VisualReader({
                 src={visual.assets.find(asset => asset.id === characterReferenceId)?.url}
                 alt={'Character visual reference for ' + character.name}/>}
             <button className="secondary-button" disabled={visualBusy}
-              onClick={() => void saveCharacterReference()}>Save visual reference</button>
+              onClick={() => void saveCharacterReference()}>{t('reader.saveReference')}</button>
           </div>}
           {editingCharacterId && <button className="secondary-button" onClick={() => {
             setEditingCharacterId(null);
             setCharacter({ name: '', appearance: '', outfit: '', distinguishing_features: '' });
-          }}>Cancel editing</button>}
+          }}>{t('reader.cancelEditing')}</button>}
 
           {active.origin_story_id && <p className="noble-inspector-hint">
-            This story is an independent branch. Future decisions will not change the original.
+            {t('reader.branchHint')}
           </p>}
         </>}
         {tab === 'history' && <>
-          <h4>Search story memories</h4>
+          <h4>{t('reader.memorySearch')}</h4>
           <p className="noble-inspector-hint">Search older player actions beyond the recent-turn window. The results exclude private author secrets and AI-generated prose, and are limited to this branch.</p>
-          <label className="noble-inspector-field">Search story memories
+          <label className="noble-inspector-field">{t('reader.memorySearch')}
             <input aria-label="Search story memories" value={memoryQuery}
               maxLength={500} placeholder="medallion, library, promise..."
               onChange={e => { setMemoryQuery(e.target.value); setMemoryResults(null); }}/>
@@ -803,10 +803,10 @@ export function VisualReader({
                 <button className="secondary-button" onClick={() => {
                   const turn = turns.find(turn => turn.id === entry.turn_id);
                   if (turn) focusTurn(turn);
-                }}>View scene</button>}
+                }}>{t('reader.viewScene')}</button>}
             </div>)}
           </div>}
-          <h4>Scene history</h4>
+          <h4>{t('reader.sceneHistory')}</h4>
           {turns.length ? turns.map((turn, i) =>
             <div key={turn.id} className="noble-inspector-turn">
               <button className="noble-inspector-turn-jump" onClick={() => focusTurn(turn)}>
@@ -815,60 +815,59 @@ export function VisualReader({
               </button>
               <button className="noble-inspector-branch" disabled={generating || updating}
                 title="Safely rewind without changing the original story"
-                onClick={() => setRewindTurn(turn)}><RotateCcw size={14}/> Rewind here</button>
-            </div>) : <p>No scenes have been generated yet.</p>}
+                onClick={() => setRewindTurn(turn)}><RotateCcw size={14}/> {t('reader.rewind')}</button>
+            </div>) : <p>{t('reader.noScenes')}</p>}
         </>}
         {tab === 'gallery' && <>
-          <h4>Scene and location</h4>
+          <h4>{t('reader.sceneLocation')}</h4>
           {visual && <p className="noble-inspector-hint">
             {visual.current_scene.detection === 'heuristic' ?
               'Location change detected from text: verify the location.' :
               'Location confirmed for this story.'}
             {' '}Registered scenes: {visual.scenes.length}.
           </p>}
-          <label className="noble-inspector-field">Current location
+          <label className="noble-inspector-field">{t('reader.currentLocation')}
             <input aria-label="Current location" value={sceneLocation} maxLength={120}
               onChange={e => setSceneLocation(e.target.value)}/></label>
           <button className="secondary-button" disabled={visualBusy || sceneLocation.trim().length < 2}
-            onClick={() => void saveSceneLocation()}><Check size={15}/> Confirm scene</button>
-          <h4>Illustration plan</h4>
-          <p className="noble-inspector-hint">Plan each scene before requesting
-            an image. The selected cast is saved for each scene.</p>
+            onClick={() => void saveSceneLocation()}><Check size={15}/> {t('reader.confirmScene')}</button>
+          <h4>{t('reader.illustrationPlan')}</h4>
+          <p className="noble-inspector-hint">{t('reader.illustrationPlanHint')}</p>
           {scenePlan && <>
-            <label className="noble-inspector-field">Shot type
+            <label className="noble-inspector-field">{t('reader.shotType')}
               <select aria-label="Scene shot" value={scenePlan.shot}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, shot: e.target.value as ScenePlan['shot'],
                 } : plan)}>
-                <option value="wide">Wide</option>
-                <option value="medium">Medium</option>
-                <option value="closeup">Close-up</option>
+                <option value="wide">{t('reader.wide')}</option>
+                <option value="medium">{t('reader.medium')}</option>
+                <option value="closeup">{t('reader.closeup')}</option>
               </select>
             </label>
-            <label className="noble-inspector-field">Scene lighting
+            <label className="noble-inspector-field">{t('reader.lighting')}
               <select aria-label="Scene lighting" value={scenePlan.lighting}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, lighting: e.target.value as ScenePlan['lighting'],
                 } : plan)}>
-                <option value="natural">Natural</option>
-                <option value="sunset">Atardecer</option>
-                <option value="night">Noche</option>
-                <option value="interior">Interior</option>
-                <option value="dramatic">Dramatic</option>
+                <option value="natural">{t('reader.natural')}</option>
+                <option value="sunset">{t('reader.sunset')}</option>
+                <option value="night">{t('reader.night')}</option>
+                <option value="interior">{t('reader.interior')}</option>
+                <option value="dramatic">{t('reader.dramatic')}</option>
               </select>
             </label>
-            <label className="noble-inspector-field">Mood
+            <label className="noble-inspector-field">{t('reader.mood')}
               <input aria-label="Visual mood" maxLength={160} value={scenePlan.mood}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, mood: e.target.value,
                 } : plan)}/></label>
-            <label className="noble-inspector-field">Composition and action
+            <label className="noble-inspector-field">{t('reader.composition')}
               <textarea aria-label="Scene direction" rows={3} maxLength={900}
                 value={scenePlan.direction}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, direction: e.target.value,
                 } : plan)}/></label>
-            <p className="noble-inspector-hint">Visible characters (maximum 6)</p>
+            <p className="noble-inspector-hint">{t('reader.visibleCharacters')}</p>
             {visual?.characters.map(person => <label key={person.id}
                 className="noble-inspector-field noble-cast-choice">
               <input type="checkbox" aria-label={'Visible character ' + person.name}
@@ -878,12 +877,12 @@ export function VisualReader({
                 onChange={e => toggleVisibleCharacter(person.id, e.target.checked)}/>
               {person.name}
             </label>)}
-            <label className="noble-inspector-field">Reference character
+            <label className="noble-inspector-field">{t('reader.referenceCharacter')}
               <select aria-label="Visual focus" value={scenePlan.reference_character_id || ''}
                 onChange={e => setScenePlan(plan => plan ? {
                   ...plan, reference_character_id: e.target.value || null,
                 } : plan)}>
-                <option value="">No automatic reference</option>
+                <option value="">{t('reader.noAutomaticRef')}</option>
                 {visual?.characters.filter(person =>
                   scenePlan.visible_character_ids.includes(person.id)).map(person =>
                   <option key={person.id} value={person.id}>
@@ -893,21 +892,21 @@ export function VisualReader({
             </label>
             <button className="secondary-button" disabled={visualBusy}
               onClick={() => void saveComposition()}>
-              <Check size={15}/> Save scene plan
+              <Check size={15}/> {t('reader.saveScenePlan')}
             </button>
           </>}
-          <h4>Visual director and background cache</h4>
+          <h4>{t('reader.visualDirector')}</h4>
           <p className="noble-inspector-hint">Deterministically choose whether to reuse an imported background or suggest new artwork. Context includes location, time, weather, framing, and lighting; emotions do not change the background key. Previewing never runs a model.</p>
-          <label className="noble-inspector-field">Visual change type
+          <label className="noble-inspector-field">{t('reader.visualChange')}
             <select aria-label="Visual director intent" value={directorIntent}
               onChange={event => {
                 setDirectorIntent(event.target.value as VisualDirectorIntent);
                 setDirectorPreview(null);
               }}>
-              <option value="auto">Automatic / same scene</option>
-              <option value="background">Find background</option>
-              <option value="emotion">Change character expression</option>
-              <option value="event">Special event illustration</option>
+              <option value="auto">{t('reader.sameScene')}</option>
+              <option value="background">{t('reader.findBackground')}</option>
+              <option value="emotion">{t('reader.changeExpression')}</option>
+              <option value="event">{t('reader.specialEvent')}</option>
             </select>
           </label>
           <button className="secondary-button" disabled={directorBusy}
@@ -931,21 +930,21 @@ export function VisualReader({
             {directorPreview.background_cached && directorPreview.background_asset_id &&
               <button className="secondary-button" disabled={directorBusy}
                 onClick={() => void reuseDirectorBackground()}>
-                <Image size={16}/> Reuse background without generating
+                <Image size={16}/> {t('reader.reuseBackground')}
               </button>}
             {!directorPreview.background_cached && visual?.selected_asset_id &&
               visual.assets.some(asset => asset.id === visual.selected_asset_id &&
                 asset.origin === 'manual') &&
               <button className="secondary-button" disabled={directorBusy}
                 onClick={() => void registerDirectorBackground(visual.selected_asset_id!)}>
-                <Check size={16}/> Register manual background for this context
+                <Check size={16}/> {t('reader.registerBackground')}
               </button>}
             <p className="noble-inspector-hint">The director recommends actions. Expressions and event illustrations require separate sprites or explicit generation. No image has been generated automatically. A caption-matched Creator Studio asset may take visual priority.</p>
           </div>}
           <h4>Versioned gallery ({visual?.assets.length || 0})</h4>
           {active.scene_image_url ? <img className="noble-gallery-image"
             src={active.scene_image_url} alt={'Illustration of ' + active.title}/> :
-            <p>There is no illustration in this story yet.</p>}
+            <p>{t('reader.emptyGallery')}</p>}
           {!!visual?.assets.length && <div className="noble-version-gallery">
             {visual.assets.map(asset => <div key={asset.id} className={'noble-art-version ' +
               (asset.selected ? 'is-selected' : '')}>
@@ -963,16 +962,16 @@ export function VisualReader({
             </div>)}
           </div>}
           <button className="secondary-button" disabled={updating}
-            onClick={() => fileRef.current?.click()}><UploadCloud size={16}/> Import illustration</button>
+            onClick={() => fileRef.current?.click()}><UploadCloud size={16}/> {t('reader.importIllustration')}</button>
           {imageMode !== 'off' && <>
-            <label className="noble-inspector-field">Describe the scene to illustrate
+            <label className="noble-inspector-field">{t('reader.describeScene')}
               <textarea rows={4} minLength={8} maxLength={2400}
                 value={imagePrompt} onChange={e => setImagePrompt(e.target.value)}
                 placeholder="Characters, location, lighting, expression, and visual style..."/></label>
-            <label className="noble-inspector-field">Reference image (optional)
+            <label className="noble-inspector-field">{t('reader.referenceImage')}
               <select aria-label="Visual reference" value={referenceAssetId}
                 onChange={e => setReferenceAssetId(e.target.value)}>
-                <option value="">No reference · text to image</option>
+                <option value="">{t('reader.noReference')}</option>
                 {visual?.assets.map(asset =>
                   <option key={asset.id} value={asset.id}>
                     {asset.origin === 'comfyui' ? 'AI illustration' : 'Imported'}
@@ -992,14 +991,14 @@ export function VisualReader({
                 ComfyUI uses this image as an img2img starting point. Lower denoise usually preserves more composition but does not guarantee facial identity.
               </p>
             </>}
-            <label className="noble-inspector-field">Seed (optional, for reproducible results)
+            <label className="noble-inspector-field">{t('reader.imageSeed')}
               <input aria-label="Image seed" type="number" min={0} step={1}
                 value={imageSeed} onChange={e => setImageSeed(e.target.value)}
                 placeholder="Random if left blank"/></label>
             <button className="secondary-button" disabled={visualBusy || imagePrompt.trim().length < 8}
-              onClick={() => void previewIllustrationPrompt()}>View complete prompt and profiles</button>
+              onClick={() => void previewIllustrationPrompt()}>{t('reader.completePrompt')}</button>
             {previewPrompt && <div className="noble-prompt-preview">
-              <strong>Prompt sent to ComfyUI</strong><p>{previewPrompt}</p>
+              <strong>{t('reader.comfyPrompt')}</strong><p>{previewPrompt}</p>
             </div>}
             <div className="noble-inspector-field">
               <label>
@@ -1028,7 +1027,7 @@ export function VisualReader({
               </p>}
             </div>
             <label className="noble-inspector-field">
-              <span>Ignore minimum free VRAM reserve for this request only</span>
+              <span>{t('reader.lowVram')}</span>
               <input type="checkbox" checked={allowLowVram}
                 onChange={e => setAllowLowVram(e.target.checked)}/>
             </label>
@@ -1041,7 +1040,7 @@ export function VisualReader({
           <p className="noble-inspector-hint">Illustrations are generated only when requested. Connect ComfyUI and configure a checkpoint under Settings → Images. Stories remain playable without images.</p>
         </>}
         {tab === 'reader' && <>
-          <h4>Reader layout</h4>
+          <h4>{t('reader.layout')}</h4>
           <p>Three views share the same saved turns. VN highlights artwork, Book prioritizes prose, and Chat separates player actions from narration. The selected view persists across restarts.</p>
           {prefs && <div className="noble-reader-layout-options">
             <button className={prefs.reader_layout === 'immersive' ? 'selected' : ''}
@@ -1059,9 +1058,9 @@ export function VisualReader({
           </div>}
           <p className="noble-inspector-hint">When focus is outside an input: Alt+1 VN, Alt+2 Book, Alt+3 Chat, Alt+B backlog, Alt+H hide interface. Esc closes the backlog or restores the interface when shortcuts are enabled.</p>
           <button className="secondary-button" onClick={() => setBacklogOpen(true)}>
-            <History size={16}/> Open reading backlog
+            <History size={16}/> {t('reader.backlog')}
           </button>
-          {voiceEnabled && <label className="noble-inspector-field">Narrator voice
+          {voiceEnabled && <label className="noble-inspector-field">{t('reader.voice')}
             <select value={voiceId} disabled={synthesizing} onChange={e => setVoiceId(e.target.value)}>
               {voices?.voices.map(voice => <option key={voice.id} value={voice.id}>{voice.name}</option>)}
             </select>
@@ -1080,13 +1079,13 @@ export function VisualReader({
       <section className="noble-backlog-dialog" role="dialog" aria-modal="true"
         aria-label="Story backlog">
         <header className="noble-backlog-heading">
-          <div><span className="overline"><History size={15}/> READING HISTORY</span>
-            <h2>Story backlog</h2>
+          <div><span className="overline"><History size={15}/> {t('reader.readingHistory')}</span>
+            <h2>{t('reader.storyBacklog')}</h2>
             <p>{turns.length} scenes loaded from this route. Turns from other branches are not mixed in.</p></div>
           <button className="icon-button" aria-label="Close backlog"
             onClick={() => setBacklogOpen(false)}><X size={19}/></button>
         </header>
-        <label className="noble-backlog-search">Search loaded scenes
+        <label className="noble-backlog-search">{t('reader.searchLoaded')}
           <input type="search" aria-label="Search backlog" maxLength={150}
             value={backlogQuery} onChange={event => setBacklogQuery(event.target.value)}
             placeholder="Player action, dialogue, or narration..."/>
@@ -1098,7 +1097,7 @@ export function VisualReader({
               {' · '}{active.protagonist_name}</strong>
               <button className="secondary-button" onClick={() => {
                 setBacklogOpen(false); focusTurn(turn);
-              }}>Go to scene</button></div>
+              }}>{t('reader.goToScene')}</button></div>
             {turn.input_text && <p className="noble-backlog-player">{turn.input_text}</p>}
             <p className="noble-backlog-narrator"><NarrativeText text={turn.assistant_text}/></p>
           </article>)}
@@ -1113,12 +1112,12 @@ export function VisualReader({
       <section className="noble-rewind-dialog" role="dialog"
         aria-modal="true" aria-label="Confirm rewind">
         <div className="noble-rewind-header">
-          <div><span className="overline"><RotateCcw size={15}/> TIMELINE</span>
-            <h2>Return to this point</h2></div>
+          <div><span className="overline"><RotateCcw size={15}/> {t('reader.timeline')}</span>
+            <h2>{t('reader.returnPoint')}</h2></div>
           <button className="icon-button" aria-label="Cancel rewind"
             onClick={() => setRewindTurn(null)}><X size={19}/></button>
         </div>
-        <p>A <strong>separate branch</strong> will be created from the selected turn. The original story and all later turns remain intact.</p>
+        <p>A <strong>{t('reader.separateBranch')}</strong> will be created from the selected turn. The original story and all later turns remain intact.</p>
         <div className="noble-rewind-selected">
           <strong>Turn {turns.findIndex(t => t.id === rewindTurn.id) + 1}</strong>
           <p>{rewindTurn.input_text || rewindTurn.assistant_text.slice(0, 180)}</p>
@@ -1127,7 +1126,7 @@ export function VisualReader({
         </div>
         <div className="noble-rewind-checkpoint" role="status">
           {rewindLoading || !rewindPreview ?
-            <span><LoaderCircle className="rotating" size={15}/> Checking saved snapshots...</span> :
+            <span><LoaderCircle className="rotating" size={15}/> {t('reader.snapshots')}</span> :
             <>
               <div><BookOpen size={15}/>
                 {rewindPreview.lore ?
@@ -1143,7 +1142,7 @@ export function VisualReader({
         </div>
         <div className="noble-rewind-actions">
           <button className="secondary-button" onClick={() => setRewindTurn(null)}>
-            Stay here
+            {t('reader.stayHere')}
           </button>
           <button className="primary-button" disabled={rewindLoading || generating || updating}
             onClick={() => {
@@ -1151,7 +1150,7 @@ export function VisualReader({
               setRewindTurn(null);
               setInspectorOpen(false);
               onFork(selected);
-            }}><GitBranch size={16}/> Create branch from this turn</button>
+            }}><GitBranch size={16}/> {t('reader.createBranch')}</button>
         </div>
       </section>
     </div>}
