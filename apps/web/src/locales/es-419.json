@@ -1672,5 +1672,15 @@
   "visualPrep.generateBackground": "Generar fondo inicial",
   "visualPrep.generating": "Generando con ComfyUI...",
   "visualPrep.backgroundSaved": "El fondo inicial quedó guardado y seleccionado en la galería.",
-  "visualPrep.noAuto": "Consultar o actualizar esta lista no ejecuta ningún modelo de IA."
+  "visualPrep.noAuto": "Consultar o actualizar esta lista no ejecuta ningún modelo de IA.",
+  "visualPrep.reviewCoverTitle": "Revisar una ilustración guardada como portada",
+  "visualPrep.reviewCoverHint": "Selecciona una imagen de la galería, revísala y aprueba explícitamente una copia como portada. La ilustración original se conserva.",
+  "visualPrep.galleryImage": "Ilustración de galería para revisar",
+  "visualPrep.galleryPreviewAlt": "Ilustración seleccionada para revisar como portada",
+  "visualPrep.coverName": "Nombre de portada editorial",
+  "visualPrep.coverCaption": "Descripción de la portada editorial",
+  "visualPrep.defaultCoverCaption": "Ilustración revisada de la galería para la portada",
+  "visualPrep.approveAsCover": "Aprobar y usar como portada",
+  "visualPrep.coverApproved": "La ilustración revisada quedó guardada y seleccionada como portada.",
+  "visualPrep.coverReselected": "Se volvió a seleccionar la portada que ya habías aprobado."
 }

@@ -1672,5 +1672,15 @@
   "visualPrep.generateBackground": "Generate opening background",
   "visualPrep.generating": "Generating with ComfyUI...",
   "visualPrep.backgroundSaved": "Opening background saved and selected in the illustration gallery.",
-  "visualPrep.noAuto": "Viewing or refreshing this checklist does not invoke an AI model."
+  "visualPrep.noAuto": "Viewing or refreshing this checklist does not invoke an AI model.",
+  "visualPrep.reviewCoverTitle": "Review a saved illustration as a cover",
+  "visualPrep.reviewCoverHint": "Select an existing gallery image, inspect it, and explicitly approve a copy as the story cover. The source illustration remains unchanged.",
+  "visualPrep.galleryImage": "Gallery illustration to review",
+  "visualPrep.galleryPreviewAlt": "Selected illustration for cover review",
+  "visualPrep.coverName": "Editorial cover name",
+  "visualPrep.coverCaption": "Editorial cover description",
+  "visualPrep.defaultCoverCaption": "Reviewed gallery illustration for the story cover",
+  "visualPrep.approveAsCover": "Approve and use as cover",
+  "visualPrep.coverApproved": "The reviewed illustration was saved and selected as the story cover.",
+  "visualPrep.coverReselected": "The previously approved cover has been selected again."
 }

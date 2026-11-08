@@ -2,21 +2,29 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Image as ImageIcon, LoaderCircle, RefreshCcw, Sparkles } from 'lucide-react';
 import { api } from './api';
-import type { Story, VisualPreparationPlan } from './types';
+import type { Story, VisualAsset, VisualPreparationPlan } from './types';
 
 /** Author-only review surface. Rendering is *never* automatic on mount or refresh. */
 export function CreatorVisualPreparation({
-  storyId, assetRevision, onGenerated, onOpenCharacters,
+  storyId, storyTitle, galleryAssets, assetRevision,
+  onGenerated, onCoverApproved, onOpenCharacters,
 }: {
   storyId: string;
+  storyTitle: string;
+  galleryAssets: VisualAsset[];
   assetRevision: string;
   onGenerated: (story: Story) => void;
+  onCoverApproved: (story: Story) => Promise<void>;
   onOpenCharacters: () => void;
 }) {
   const { t } = useTranslation();
   const [plan, setPlan] = useState<VisualPreparationPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [coverApproving, setCoverApproving] = useState(false);
+  const [coverGalleryId, setCoverGalleryId] = useState('');
+  const [coverLabel, setCoverLabel] = useState(storyTitle);
+  const [coverCaption, setCoverCaption] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -27,6 +35,9 @@ export function CreatorVisualPreparation({
     setPlan(null);
     setError('');
     setNotice('');
+    setCoverGalleryId('');
+    setCoverLabel(storyTitle);
+    setCoverCaption('');
   }, [storyId]);
   useEffect(() => {
     let alive = true;
@@ -65,6 +76,38 @@ export function CreatorVisualPreparation({
   }
 
   const backgroundPending = Boolean(plan?.steps.some(item => item.kind === 'background'));
+  const coverPending = Boolean(plan?.steps.some(item => item.kind === 'cover'));
+  const reviewedGallery = galleryAssets.find(item => item.id === coverGalleryId) ||
+    galleryAssets.find(item => item.selected) || galleryAssets[0];
+  const selectionId = reviewedGallery?.id || '';
+  useEffect(() => {
+    setCoverCaption('');
+  }, [storyId]);
+  useEffect(() => {
+    if (reviewedGallery && !coverCaption.trim()) {
+      setCoverCaption((reviewedGallery.prompt || t('visualPrep.defaultCoverCaption')).slice(0, 220));
+    }
+  }, [reviewedGallery?.id, storyId]);
+
+  async function approveCover() {
+    if (!coverPending || !selectionId || coverApproving || generating ||
+        coverLabel.trim().length < 1 || coverCaption.trim().length < 3) return;
+    const story = storyId;
+    setCoverApproving(true); setError(''); setNotice('');
+    try {
+      const result = await api.approveGalleryCover(story, {
+        gallery_asset_id: selectionId,
+        label: coverLabel.trim(), caption: coverCaption.trim(),
+      });
+      await onCoverApproved(result.story);
+      setNotice(t(result.reused ? 'visualPrep.coverReselected' : 'visualPrep.coverApproved'));
+      setRevision(n => n + 1);
+    } catch (exc) {
+      setError((exc as Error).message);
+    } finally {
+      setCoverApproving(false);
+    }
+  }
   return <section className="noble-visual-prep" aria-label={t('visualPrep.title')}>
     <header className="noble-visual-prep-header">
       <div>
@@ -101,6 +144,44 @@ export function CreatorVisualPreparation({
           </button>}
         </li>)}
       </ol>}
+      {coverPending && !plan.has_started && galleryAssets.length > 0 &&
+        <div className="noble-visual-prep-cover">
+          <h4>{t('visualPrep.reviewCoverTitle')}</h4>
+          <p>{t('visualPrep.reviewCoverHint')}</p>
+          <label>{t('visualPrep.galleryImage')}
+            <select aria-label={t('visualPrep.galleryImage')}
+              disabled={coverApproving || generating}
+              value={selectionId}
+              onChange={e => {
+                setCoverGalleryId(e.target.value);
+                const chosen = galleryAssets.find(item => item.id === e.target.value);
+                setCoverCaption((chosen?.prompt || t('visualPrep.defaultCoverCaption')).slice(0, 220));
+              }}>
+              {galleryAssets.map(asset => <option key={asset.id} value={asset.id}>
+                {asset.origin === 'comfyui' ? 'ComfyUI' : t('reader.imported')} · {asset.id.slice(0, 8)}
+              </option>)}
+            </select>
+          </label>
+          {reviewedGallery && <img src={reviewedGallery.url}
+            alt={t('visualPrep.galleryPreviewAlt')} loading="lazy"/>}
+          <label>{t('visualPrep.coverName')}
+            <input aria-label={t('visualPrep.coverName')} maxLength={100}
+              disabled={coverApproving || generating}
+              value={coverLabel} onChange={e => setCoverLabel(e.target.value)}/>
+          </label>
+          <label>{t('visualPrep.coverCaption')}
+            <textarea aria-label={t('visualPrep.coverCaption')} rows={3} maxLength={220}
+              disabled={coverApproving || generating} value={coverCaption}
+              onChange={e => setCoverCaption(e.target.value)}/>
+          </label>
+          <button type="button" className="primary-button"
+            disabled={coverApproving || generating || loading ||
+              coverLabel.trim().length < 1 || coverCaption.trim().length < 3}
+            onClick={() => void approveCover()}>
+            {coverApproving && <LoaderCircle className="rotating" size={16}/>}
+            {t('visualPrep.approveAsCover')}
+          </button>
+        </div>}
       {backgroundPending && !plan.has_started &&
         <div className="noble-visual-prep-generate">
           <label>{t('visualPrep.backgroundPrompt')}

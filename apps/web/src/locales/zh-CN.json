@@ -1672,5 +1672,15 @@
   "visualPrep.generateBackground": "生成初始背景",
   "visualPrep.generating": "正在通过 ComfyUI 生成……",
   "visualPrep.backgroundSaved": "初始背景已保存，并在插图库中选中。",
-  "visualPrep.noAuto": "查看或刷新此清单不会运行任何 AI 模型。"
+  "visualPrep.noAuto": "查看或刷新此清单不会运行任何 AI 模型。",
+  "visualPrep.reviewCoverTitle": "审核图库中的插图作为封面",
+  "visualPrep.reviewCoverHint": "选择并检查一张图库图像，明确批准创建封面副本。原始插图不会更改。",
+  "visualPrep.galleryImage": "要审核的图库插图",
+  "visualPrep.galleryPreviewAlt": "已选择用于封面审核的插图",
+  "visualPrep.coverName": "封面名称",
+  "visualPrep.coverCaption": "封面说明",
+  "visualPrep.defaultCoverCaption": "经过审核的图库封面插图",
+  "visualPrep.approveAsCover": "批准并用作封面",
+  "visualPrep.coverApproved": "审核后的插图已保存并设为故事封面。",
+  "visualPrep.coverReselected": "已重新选择之前批准的封面。"
 }

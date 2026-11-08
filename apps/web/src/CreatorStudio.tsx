@@ -560,6 +560,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               storyId={active.id} characters={characters}/> :
             section === 'media' ? <div className="creator-fields creator-media-library">
               <CreatorVisualPreparation storyId={active.id}
+                storyTitle={active.title} galleryAssets={galleryAssets}
                 assetRevision={assets.map(asset => asset.id).join(',') +
                   '|' + (active.cover_asset_id || '') +
                   '|' + galleryAssets.map(item => item.id).join(',')}
@@ -569,6 +570,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   void api.visualState(story.id).then(result => {
                     if (storyGuard.current === story.id) setGalleryAssets(result.assets);
                   }).catch(() => { /* Selected image remains available in the reader. */ });
+                }}
+                onCoverApproved={async story => {
+                  if (storyGuard.current !== story.id) return;
+                  rememberStory(story);
+                  const result = await api.creatorAssets(story.id);
+                  if (storyGuard.current === story.id) setAssets(result.assets);
                 }}
                 onOpenCharacters={() => setSection('cast')}/>
               <div className="creator-section-intro">

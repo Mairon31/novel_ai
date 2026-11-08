@@ -208,6 +208,10 @@ export const api = {
     '/runtime/kobold/activate', { method: 'POST' }),
   creatorAssets: (storyId: string) => request<{ assets: CreatorMediaAsset[] }>(
     '/stories/' + encodeURIComponent(storyId) + '/creator/assets'),
+  approveGalleryCover: (storyId: string, body: {
+    gallery_asset_id: string; label: string; caption: string;
+  }) => request<{ story: Story; asset: CreatorMediaAsset; reused: boolean }>(
+    '/stories/' + encodeURIComponent(storyId) + '/creator/cover/from-gallery', json(body)),
   setStoryCover: (storyId: string, assetId: string | null) => request<Story>(
     '/stories/' + encodeURIComponent(storyId) + '/creator/cover',
     { method: 'PUT', body: JSON.stringify({ asset_id: assetId }) }),
