@@ -66,7 +66,7 @@ class NeuralMatteTests(unittest.TestCase):
 
     def test_unknown_mode_rejected(self):
         original, mask = data()
-        with self.assertRaisesRegex(ValueError, "desconocido"):
+        with self.assertRaisesRegex(ValueError, "Unknown neural background removal engine"):
             transparent_sprite_from_matte(original, mask, "any_unknown")
 
 

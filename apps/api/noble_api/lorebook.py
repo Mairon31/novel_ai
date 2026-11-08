@@ -219,7 +219,7 @@ class LorebookService:
                                  "SELECT id,config_json FROM creator_characters "
                                  "WHERE story_id=?", (story_id,)
                              ) if row["id"] in visible_ids]
-                text = ("[Private knowledge of present characters:  +
+                text = ("[Private knowledge of present characters: " +
                         ", ".join(names) + "]\n" + text)
             cost = len(text) + 2
             if used + cost > budget_chars:

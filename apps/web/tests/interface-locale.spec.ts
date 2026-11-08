@@ -17,7 +17,7 @@ test('UI locale persists across reload and leaves the story language untouched',
 
   await settings.selectOption('es-419');
   await expect(page.getByRole('heading', { name: 'Configuración' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Biblioteca', exact: true })).toBeVisible();
+  await expect(page.locator('.nav-item').first()).toContainText('Biblioteca');
   await expect(page.getByRole('combobox', { name: 'Idioma de narración' })).toHaveValue(original);
   await expect(page.locator('html')).toHaveAttribute('lang', 'es-419');
   await page.reload();
@@ -25,12 +25,12 @@ test('UI locale persists across reload and leaves the story language untouched',
   await expect(page.getByRole('heading', { name: 'Configuración' })).toBeVisible();
 
   await top.selectOption('pt-BR');
-  await expect(page.getByRole('button', { name: 'Biblioteca', exact: true })).toBeVisible();
+  await expect(page.locator('.nav-item').first()).toContainText('Biblioteca');
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
   await top.selectOption('zh-CN');
-  await expect(page.getByRole('button', { name: '书库', exact: true })).toBeVisible();
+  await expect(page.locator('.nav-item').first()).toContainText('书库');
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
   await top.selectOption('en');
-  await expect(page.getByRole('button', { name: 'Library', exact: true })).toBeVisible();
+  await expect(page.locator('.nav-item').first()).toContainText('Library');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });

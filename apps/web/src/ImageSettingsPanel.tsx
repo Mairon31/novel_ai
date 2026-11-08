@@ -69,7 +69,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       setSamplerOptions(options);
       if (!options.online) setError(options.error || 'Could not query KSampler');
       else setMessage('ComfyUI: ' + options.sampler_name.length +
-        ' muestreadores y ' + options.scheduler.length + ' planificadores admitidos.');
+        ' supported samplers and ' + options.scheduler.length + ' schedulers.');
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }

@@ -47,7 +47,7 @@ test('author art library overlays caption-matched background and transparent spr
   await expect(page.getByRole('button', { name: /Images \(2\)/ })).toBeVisible();
   await expect(page.getByText('Expression: joy · Pose: waving')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Aperturas' }).click();
+  await page.getByRole('button', { name: 'Openings' }).click();
   await page.getByLabel('New opening').fill(
     'Llegaron al castillo iluminado en la ciudad. Aira sonríe y se acerca a Luna.');
   await page.getByRole('button', { name: 'Add opening' }).click();
