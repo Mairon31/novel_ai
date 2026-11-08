@@ -22,7 +22,7 @@ test('reader preserves unsent input and selected mode per story without creating
   await page.goto('/#/historia/' + b + '/leer');
   await expect(page.locator('.noble-reader-layout')).toBeVisible();
   await expect(message).toHaveValue('');
-  await expect(toolbar.getByRole('button', { name: 'Act' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(toolbar.getByRole('button', { name: 'Act', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await toolbar.getByRole('button', { name: 'Observe' }).click();
   await message.fill('Examine the lantern and the worn marks on the wall.');
 
