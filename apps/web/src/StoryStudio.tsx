@@ -6,6 +6,7 @@ import { VisualReader } from './VisualReader';
 import { StoryDetail } from './StoryDetail';
 import { VisualStartGate } from './VisualStartGate';
 import { streamFailure } from './apiErrors';
+import { readReaderDraft, saveReaderDraft, clearReaderDraft } from './readerDraftPersistence';
 import { StoryHub } from './StoryHub';
 import type { BranchTree, CreatorBlueprint, CreatorCharacter, CreatorMediaAsset, GenerationEvent, Story, StoryTurn, VisualPreflightStatus } from './types';
 
@@ -47,6 +48,31 @@ export function StoryStudio({
   const [createStep, setCreateStep] = useState<'story' | 'protagonist'>('story');
   const [mode, setMode] = useState<StoryTurn['mode']>('do');
   const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    if (!active?.id) {
+      setDraft('');
+      setMode('do');
+      return;
+    }
+    const saved = readReaderDraft(active.id);
+    setDraft(saved?.text || '');
+    setMode(saved?.mode || 'do');
+  }, [active?.id]);
+
+  function updateComposerText(value: string) {
+    setDraft(value);
+    if (active) saveReaderDraft(active.id, {
+      text: value, mode: mode === 'continue' ? 'do' : mode,
+    });
+  }
+  function updateComposerMode(value: StoryTurn['mode']) {
+    if (value === 'continue') return;
+    setMode(value);
+    if (active) saveReaderDraft(active.id, {
+      text: draft, mode: value,
+    });
+  }
   const [streamText, setStreamText] = useState('');
   const [generating, setGenerating] = useState(false);
   // Store the phase key so in-flight status responds to UI locale changes.
@@ -244,7 +270,10 @@ export function StoryStudio({
           setTurns(old => old.some(t => t.id === evt.data.turn.id) ?
             old : [...old, evt.data.turn]);
           setStreamText('');
-          setDraft('');
+          if (activeStoryId.current === active.id) {
+            setDraft('');
+            clearReaderDraft(active.id);
+          }
           setStories(old => old.map(s => s.id === active.id ?
             { ...s, updated_at: Date.now() / 1000 } : s));
         }
@@ -442,7 +471,7 @@ export function StoryStudio({
       </div>
     </div>}
     {active && reading && (visualStartBlocked ? startGate : <VisualReader active={active} turns={turns}
-      mode={mode} setMode={setMode} draft={draft} setDraft={setDraft}
+      mode={mode} setMode={updateComposerMode} draft={draft} setDraft={updateComposerText}
       streamText={streamText} generating={generating} generationMessage={t(generationMessageKey)}
       onCancel={cancelGeneration} onFork={createBranch} notice={notice} error={error}
       onSubmit={continueOnly => void submit(continueOnly)}
