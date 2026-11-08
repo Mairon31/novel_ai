@@ -43,7 +43,7 @@ export function VoiceSettingsPanel() {
       const nextUrl = URL.createObjectURL(blob);
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = nextUrl; setPreviewUrl(nextUrl);
-      setMessage('Sample generated. Press Play to listen.');
+      setMessage(t('feedback.voiceSampleReady'));
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setPreviewBusy(false); }
@@ -89,7 +89,7 @@ export function VoiceSettingsPanel() {
     try {
       await api.installPiperVoice(voiceId);
       await refreshVoiceDownloads();
-      setMessage('Voice installation started; progress will appear below.');
+      setMessage(t('feedback.voiceStarted'));
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setVoiceAction(null); }
@@ -100,8 +100,8 @@ export function VoiceSettingsPanel() {
     try {
       await api.controlPiperVoice(job.id, action);
       await refreshVoiceDownloads();
-      setMessage(action === 'pause' ? 'Download paused.' :
-        action === 'resume' ? 'Download resumed.' : 'Installation canceled.');
+      setMessage(t(action === 'pause' ? 'feedback.downloadPaused' :
+        action === 'resume' ? 'feedback.downloadResumed' : 'feedback.installCanceled'));
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setVoiceAction(null); }
@@ -112,7 +112,7 @@ export function VoiceSettingsPanel() {
     setBusy(true); setError(''); setMessage('');
     try {
       setVoicePreferences(await api.saveSpeechPreferences(voicePreferences.default_voice_id));
-      setMessage('Default reader voice saved.');
+      setMessage(t('feedback.voiceDefaultSaved'));
     } catch (exc) {
       setError((exc as Error).message);
     } finally { setBusy(false); }
@@ -125,7 +125,7 @@ export function VoiceSettingsPanel() {
       const saved = await api.savePiperSynthesisConfig(synthesisConfig);
       setSynthesisConfig(saved); setSavedSynthesis(saved);
       clearPreview();
-      setMessage('Piper settings saved for future synthesis.');
+      setMessage(t('feedback.piperSaved'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -141,7 +141,7 @@ export function VoiceSettingsPanel() {
     setSetup(current => current ? { ...current, tts_enabled: enabled, tts_autoread: false } : current);
     try {
       setSetup(await api.patchSettings({ tts_enabled: enabled, tts_autoread: false }));
-      setMessage(enabled ? 'TTS enabled only for explicit Listen actions.' : 'TTS disabled.');
+      setMessage(t(enabled ? 'feedback.ttsEnabled' : 'feedback.ttsDisabled'));
     } catch (exc) {
       setSetup(previous);
       setError((exc as Error).message);

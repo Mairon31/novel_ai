@@ -48,7 +48,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       setToken(''); setName(''); setUrl('');
       await refresh(); setSelected(item.id);
       setProbe(null); setModel('');
-      setMessage('Worker registered. Check its connection before activation.');
+      setMessage(t('feedback.workerRegistered'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -61,9 +61,9 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       setProbe(status);
       if (status.online) {
         setModel(status.models[0] || '');
-        setMessage('Worker authenticated. ' + status.models.length + ' models advertised.');
+        setMessage(t('feedback.workerAuthenticated', { count: status.models.length }));
       } else {
-        setError(status.error || 'The worker is not responding or rejects the token.');
+        setError(status.error || t('feedback.workerUnavailable'));
       }
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
@@ -75,7 +75,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     try {
       const result = await api.activateWorker(selected, model);
       onActivated();
-      setMessage('Remote narrator activated: ' + result.model + '. Open Library to use it.');
+      setMessage(t('feedback.workerActivated', { model: result.model }));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -86,7 +86,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     try {
       const result = await api.benchmarkWorker(selected, model);
       setBenchmark(result);
-      if (!result.success) setError(result.error || 'Worker benchmark failed');
+      if (!result.success) setError(result.error || t('feedback.workerBenchmarkFailed'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -98,18 +98,18 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       await api.removeWorker(selected);
       await refresh();
       setProbe(null); setModel('');
-      setMessage('Worker removed. Its stored token was cleared.');
+      setMessage(t('feedback.workerRemoved'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
 
   return <div className="workspace-panel noble-worker-manager">
     <h3><Cloud size={18}/> {t('workers.title')}</h3>
-    <p>Connect another PC or an eligible Colab session through a protected Cloudflare tunnel. Remote GPU inference handles narrative generation while story history stays on this computer.</p>
+    <p>{t('workers.connectionHint')}</p>
 
     <div className="noble-worker-form">
       <label className="workspace-pref-field">{t('workers.name')}
-        <input aria-label={t('workers.name')} placeholder="My Colab GPU" value={name}
+        <input aria-label={t('a11y.workerName')} placeholder="My Colab GPU" value={name}
           onChange={e => setName(e.target.value)} maxLength={80}/></label>
       <label className="workspace-pref-field">{t('workers.url')}
         <input aria-label={t('a11y.workerUrl')} placeholder="https://my-gpu.trycloudflare.com"
@@ -197,7 +197,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     {error && <p role="alert" className="narrative-error">{error}</p>}
     {message && <p role="status" className="narrative-saved"><CheckCircle2 size={15}/>{message}</p>}
     <div className="workspace-note"><ShieldCheck size={17}/>
-      The tunnel must authenticate all bearer requests. Noble AI rejects workers accepting invalid tokens. Only compatible LLM endpoints are supported; Colab is not started automatically and no files are shared.
+      {t('workers.securityHint')}
     </div>
     <p className="noble-worker-guide"><Server size={15}/> Worker setup: run Noble AI's authenticated proxy on the GPU computer and expose only that proxy
       with cloudflared. <a target="_blank" rel="noreferrer"

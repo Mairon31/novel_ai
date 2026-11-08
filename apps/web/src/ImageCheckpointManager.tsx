@@ -63,7 +63,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
       await api.checkpointInstall({repo_id: catalog.repo_id,
         filename, revision: catalog.revision});
       await refresh();
-      setMessage('Download started. SHA-256 and file format will be verified before publishing.');
+      setMessage(t('feedback.checkpointStarted'));
     } catch (e) { setError((e as Error).message); }
     finally { setChanging(null); }
   }
@@ -74,8 +74,8 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
     try {
       await api.checkpointControl(job.id, action);
       await refresh();
-      setMessage(action === 'pause' ? 'Download paused.' :
-        action === 'resume' ? 'Download resumed.' : 'Download canceled.');
+      setMessage(t(action === 'pause' ? 'feedback.downloadPaused' :
+        action === 'resume' ? 'feedback.downloadResumed' : 'feedback.downloadCanceled'));
     } catch (e) { setError((e as Error).message); }
     finally { setChanging(null); }
   }

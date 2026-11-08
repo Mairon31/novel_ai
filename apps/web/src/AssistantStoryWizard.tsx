@@ -99,7 +99,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         instruction: regenerationInstruction.trim(),
       });
       if (revisionRef.current !== revisionAtStart) {
-        setError('The draft changed during the request. The result was not applied to protect your edits.');
+        setError(t('feedback.wizardDraftChanged'));
         return;
       }
       setPreviousDraft(draft);
@@ -141,7 +141,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <div>
         <span className="overline"><Sparkles size={15}/> {t('wizard.label')}</span>
         <h2>{t('wizard.title')}</h2>
-        <p>Generate a playable story foundation with public plot, private narrator secrets, four characters, three Lorebook entries, and three openings. Review and edit everything before saving it.</p>
+        <p>{t('wizard.intro')}</p>
       </div>
       <button className="secondary-button" onClick={onCancel} disabled={!!busy}
         type="button"><X size={16}/> {t('wizard.close')}</button>
@@ -149,7 +149,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
     <div className="creator-ai-fields">
       <label>{t('wizard.idea')}
         <textarea aria-label="Story idea" rows={5} maxLength={2500}
-          placeholder="Describe the conflict, world rules, choices, and characters you have in mind..."
+          placeholder={t('wizard.ideaPlaceholder')}
           value={idea} onChange={e => { setIdea(e.target.value); reset(); }}/>
       </label>
       <div className="creator-ai-row">
@@ -159,12 +159,12 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
         </label>
         <label>{t('wizard.genre')}
           <input aria-label="AI story genre" maxLength={80}
-            value={genre} placeholder="Mystery, fantasy, romance..."
+            value={genre} placeholder={t('wizard.genrePlaceholder')}
             onChange={e => { setGenre(e.target.value); reset(); }}/>
         </label>
         <label>{t('wizard.tone')}
           <input aria-label="AI story tone" maxLength={120}
-            value={tone} placeholder="Suspenseful, melancholic..."
+            value={tone} placeholder={t('wizard.tonePlaceholder')}
             onChange={e => { setTone(e.target.value); reset(); }}/>
         </label>
       </div>
@@ -174,9 +174,9 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
           disabled={!!busy || idea.trim().length < 30 || !protagonist.trim()}>
           {busy === 'draft' ? <LoaderCircle size={16} className="rotating"/> :
             <Sparkles size={16}/>}
-          {busy === 'draft' ? 'Generating plot, cast, and Lorebook...' : 'Generate proposal'}
+          {t(busy === 'draft' ? 'wizard.generatingProposal' : 'wizard.generateProposal')}
         </button>
-        <small>Uses the narrator configured in Settings. Draft generation does not download additional models or save a story. Illustrations and voices can be added afterward.</small>
+        <small>{t('wizard.modelHint')}</small>
       </div>
     </div>
 

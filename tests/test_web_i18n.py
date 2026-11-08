@@ -27,5 +27,37 @@ class InterfaceLocaleTests(unittest.TestCase):
                                      set(PLACEHOLDERS.findall(value)), key)
 
 
+    def test_react_translation_keys_exist_in_english_catalog(self):
+        """All static t('key') references in React must resolve to catalog entries."""
+        english = json.loads((BASE / "en.json").read_text("utf-8"))
+        key_call = re.compile(r"""\bt\(\s*(['"])([^'"]+)\1""")
+        missing = []
+        references = 0
+        for source in sorted(BASE.parent.glob("*.tsx")):
+            for match in key_call.finditer(source.read_text("utf-8")):
+                key = match.group(2)
+                if key.endswith("."):
+                    # Dynamic key prefix, e.g. t('nav.' + page), checked at runtime.
+                    continue
+                references += 1
+                if key not in english:
+                    missing.append(f"{source.name}: {key}")
+        self.assertGreater(references, 300)
+        self.assertEqual(missing, [], "\n".join(missing))
+
+    def test_action_feedback_uses_translatable_keys(self):
+        """Prevent new hardcoded feedback messages in the localized panels."""
+        panels = ("ImageCheckpointManager", "ComfyRuntimePanel", "ImageSettingsPanel",
+                  "RemoteWorkers", "RuntimeManager", "VoiceSettingsPanel",
+                  "StoryStudio", "WorldStateEditor", "AssistantStoryWizard")
+        hardcoded = re.compile(r"""\b(?:setMessage|setNotice)\(\s*(['"])([^'"]+)\1""")
+        errors = []
+        for panel in panels:
+            source = BASE.parent / (panel + ".tsx")
+            for match in hardcoded.finditer(source.read_text("utf-8")):
+                errors.append(f"{panel}: {match.group(2)}")
+        self.assertEqual(errors, [], "\n".join(errors))
+
+
 if __name__ == "__main__":
     unittest.main()

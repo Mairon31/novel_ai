@@ -41,7 +41,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
         gpu_layers: gpuLayers, contextsize: contextSize, port,
       });
       setStatus(result);
-      setMessage('Process started. The model will appear ready when KoboldCpp responds.');
+      setMessage(t('feedback.runtimeStarted'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -49,7 +49,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     setBusy(true); setError(''); setMessage('');
     try {
       setStatus(await api.koboldStop());
-      setMessage('Noble AI-managed KoboldCpp stopped.');
+      setMessage(t('feedback.runtimeStopped'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -58,7 +58,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     try {
       const config = await api.koboldActivate();
       onActivated();
-      setMessage('Active narrator: ' + config.model + '. You can now open Library.');
+      setMessage(t('feedback.runtimeActivated', { model: config.model }));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }

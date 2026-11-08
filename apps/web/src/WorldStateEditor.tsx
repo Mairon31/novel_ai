@@ -82,10 +82,10 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       setDocument(result);
       setDraft(result.state);
       setInventoryInput(result.state.inventory.join('\n'));
-      setNotice('State confirmed. The next turn will snapshot these values.');
+      setNotice(t('feedback.worldSaved'));
     } catch (cause) {
       setError((cause as Error).message +
-        ' If this was edited in another tab, reload before saving.');
+        ' ' + t('feedback.worldConflict'));
     } finally { setBusy(false); }
   }
 
@@ -118,7 +118,7 @@ export function WorldStateEditor({ storyId, characters }: Props) {
   return <div className="creator-fields world-state-editor" aria-label="World state">
     <div className="creator-section-intro">
       <h3>{t('world.title')}</h3>
-      <p>Explicitly update location, present characters, inventory, and facts. The narrator cannot silently promote assumptions into canon. Each turn stores a snapshot for restoring branches.</p>
+      <p>{t('world.editorHint')}</p>
       <small>Saved revision: {document.revision} · Changes are validated before saving</small>
     </div>
 

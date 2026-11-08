@@ -59,8 +59,8 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     try {
       const result = await api.imageStatus();
       setStatus(result);
-      if (!result.online) setError(result.error || 'ComfyUI is not responding');
-      else setMessage('ComfyUI connected. Available checkpoints: ' + result.checkpoints.length);
+      if (!result.online) setError(result.error || t('feedback.imageUnavailable'));
+      else setMessage(t('feedback.imageConnected', { count: result.checkpoints.length }));
     } catch (exc) { setError((exc as Error).message); }
     finally { setBusy(false); }
   }
@@ -69,7 +69,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     try {
       const options = await api.imageSamplerOptions();
       setSamplerOptions(options);
-      if (!options.online) setError(options.error || 'Could not query KSampler');
+      if (!options.online) setError(options.error || t('feedback.samplerUnavailable'));
       else setMessage(t('image.samplingStatus', { samplers: options.sampler_name.length,
         schedulers: options.scheduler.length }));
     } catch (exc) { setError((exc as Error).message); }
@@ -100,11 +100,11 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
     <ComfyRuntimePanel onRuntimeStarted={url => {
       setImage(previous => previous ? { ...previous, base_url: url } : previous);
       setStatus(null);
-      setMessage('Noble AI-managed ComfyUI started at ' + url);
+      setMessage(t('feedback.imageStartedAt', { url }));
     }}/>
     <div className="workspace-panel">
       <h3><Image size={18}/> {t('image.comfyScenes')}</h3>
-      <p>You can start an existing ComfyUI installation here or connect an external one. A compatible checkpoint is required. The reader's Illustrate action replaces the current scene only after a successful render.</p>
+      <p>{t('image.comfyConnectionHint')}</p>
       <label className="workspace-pref-field">{t('image.policy')}
         <select value={imageMode} disabled={busy}
           onChange={e => onImageMode(e.target.value as Settings['image_mode'])}>
@@ -197,17 +197,17 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
           samplerOptions.scheduler.includes(image.scheduler)
           ? 'compatible selection' : 'this selection is unavailable in the current ComfyUI instance'}.
       </p>}
-      <p className="noble-inspector-hint">Style affects the actual image prompt; sampler and scheduler settings change KSampler inputs. Non-default choices are verified against ComfyUI before generation.</p>
+      <p className="noble-inspector-hint">{t('image.samplerHint')}</p>
       {status?.online && <p>Detected checkpoint(s): {status.checkpoints.length}. The model will load when you select Illustrate.</p>}
     </div>
     <ImageCheckpointManager availableInComfy={status?.online ? status.checkpoints : []}
       onSelectCheckpoint={name => {
         change('checkpoint', name);
-        setMessage('Checkpoint selected. Save image settings to apply it.');
+        setMessage(t('feedback.checkpointSelected'));
       }}/>
     <div className="workspace-panel">
       <h3>{t('image.gpuMemory')}</h3>
-      <p>Check observed free VRAM with nvidia-smi. You can warn or block ComfyUI requests below a configured reserve. This does not estimate a checkpoint's actual memory requirements or stop other processes.</p>
+      <p>{t('image.vramHint')}</p>
       {resourceStatus && <p role="status">
         {resourceStatus.selected_gpu
           ? resourceStatus.selected_gpu.name + ' · ' +

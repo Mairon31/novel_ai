@@ -84,7 +84,7 @@ export function StoryStudio({
         if (!alive) return;
         setActive(null);
         setReading(false);
-        setError('Could not open story link: ' + exc.message);
+        setError(t('feedback.storyLinkError', { error: exc.message }));
       });
     }
     return () => { alive = false; };
@@ -157,7 +157,7 @@ export function StoryStudio({
       setStories(previous => [story, ...previous]);
       setActive(story); setReading(true);
       onRouteChange?.(story.id, true);
-      setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice('Story created. You can begin when ready.');
+      setCreating(false); setCreateStep('story'); setTitle(''); setPremise(''); setProtagonistName(''); setNotice(t('feedback.storyCreated'));
     } catch (exc) { setError((exc as Error).message); }
     finally { setLoading(false); }
   }
@@ -168,7 +168,7 @@ export function StoryStudio({
     const requestId = crypto.randomUUID();
     controller.current = controllerLocal;
     inFlight.current = { storyId: active.id, requestId };
-    setGenerating(true); setGenerationMessage('Preparing narrator...'); setStreamText(''); setNotice(''); setError('');
+    setGenerating(true); setGenerationMessage(t('feedback.storyPreparingNarrator')); setStreamText(''); setNotice(''); setError('');
     let complete = false;
     try {
       await api.streamTurn(active.id, {
@@ -234,7 +234,7 @@ export function StoryStudio({
       setReading(true);
       onRouteChange?.(copy.id, true);
       setDraft('');
-      setNotice('Branch created. Continue along a different path without modifying the original story.');
+      setNotice(t('feedback.storyBranchCreated'));
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }
@@ -257,7 +257,7 @@ export function StoryStudio({
     abortCurrentNarration();
     setGenerating(false);
     setStreamText('');
-    setNotice('Cancellation requested. You can continue once the narrator becomes available.');
+    setNotice(t('feedback.storyCancelRequested'));
   }
 
   function selectStory(story: Story) {
@@ -398,7 +398,7 @@ export function StoryStudio({
           placeholder="Where it happens, what the world is like, and how your adventure begins..."/>
       </> : <>
         <div className="noble-create-character"><div className="noble-create-avatar"><Feather size={33}/></div>
-          <span>YOU ARE PLAYING AS...</span></div>
+          <span>{t('story.playingAsLabel')}</span></div>
         <h2>{t("library.namePrompt")}</h2>
         <p>{t("library.nameDescription")}</p>
         <label className="form-label" htmlFor="story-protagonist">{t("library.protagonistName")}</label>

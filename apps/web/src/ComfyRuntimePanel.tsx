@@ -59,7 +59,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     setBusy(true); setError(''); setMessage('');
     try {
       setValidation(await api.comfyRuntimeValidate(config));
-      setMessage('ComfyUI installation and Python executable verified.');
+      setMessage(t('feedback.comfyVerified'));
     } catch (e) { setValidation(null); setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -68,7 +68,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     try {
       const result = await api.comfyRuntimeSave(config);
       setSaved(result); setConfig(result);
-      setValidation(null); setMessage('ComfyUI settings saved.');
+      setValidation(null); setMessage(t('feedback.comfyLaunchSaved'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -78,7 +78,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     try {
       const result = await api.comfyRuntimeStart();
       setStatus(result); onRuntimeStarted(result.base_url);
-      setMessage('ComfyUI started. Check diagnostics until it reports Ready.');
+      setMessage(t('feedback.comfyStarted'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -86,7 +86,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
     setBusy(true); setError(''); setMessage('');
     try {
       setStatus(await api.comfyRuntimeStop());
-      setMessage('Noble AI-managed ComfyUI process stopped.');
+      setMessage(t('feedback.comfyStopped'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -99,7 +99,7 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
 
   return <div className="workspace-panel comfy-runtime-panel">
     <h3><Terminal size={18}/> {t('comfy.title')}</h3>
-    <p>Use an existing ComfyUI installation and its local Python environment. Noble AI manages only the processes it starts, without downloading code or launching ComfyUI just by opening Settings.</p>
+    <p>{t('comfy.runtimeHint')}</p>
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">{t('comfy.directory')}
         <input aria-label="Local ComfyUI directory" value={config.install_dir}
