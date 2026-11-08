@@ -63,7 +63,7 @@ class ReaderModesTests(unittest.TestCase):
 
     def test_new_modes_have_separate_consequences_and_no_telepathy(self):
         expected = {
-            "think": ("not audible dialogue", "Other characters do not learn"),
+            "think": ("NOT audible dialogue", "Other characters do not learn"),
             "observe": ("perceptible", "do not have the protagonist act"),
             "interact": ("attempt rather than guaranteed", "NPC goals"),
         }
