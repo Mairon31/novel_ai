@@ -300,7 +300,7 @@ class CheckpointInstaller:
                     response.raise_for_status()
                     raise ValueError("No checkpoint was received")
                 if response.headers.get("content-encoding", "identity").lower() != "identity":
-                    raise ValueError("Respuesta binaria comprimida inesperada")
+                    raise ValueError("Unexpected compressed binary checkpoint response")
                 append = False
                 if response.status_code == 206:
                     match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)",

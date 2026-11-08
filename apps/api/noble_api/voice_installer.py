@@ -228,7 +228,7 @@ class VoiceInstaller:
                     response.raise_for_status()
                     raise RuntimeError("Server did not deliver a complete voice file")
                 if response.headers.get("content-encoding", "identity").lower() != "identity":
-                    raise RuntimeError("Respuesta binaria comprimida inesperadamente")
+                    raise RuntimeError("Unexpected compressed binary voice response")
                 append = offset > 0 and response.status_code == 206
                 if response.status_code == 206:
                     match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)",

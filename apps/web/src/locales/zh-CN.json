@@ -838,5 +838,6 @@
   "settings.detail.concise": "简短有力",
   "settings.detail.detectAuto": "自动检测",
   "settings.detail.notInstalled": "未安装",
-  "settings.detail.notFound": "未找到"
+  "settings.detail.notFound": "未找到",
+  "runtime.useNarrator": "设为叙事模型"
 }

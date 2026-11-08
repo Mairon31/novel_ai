@@ -126,7 +126,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
       {status?.status === 'ready' && <button className="primary-button" disabled={busy}
         onClick={() => void activate()}>
         {busy ? <LoaderCircle className="rotating" size={16}/> : <CheckCircle2 size={16}/>}
-        Usar como narrador</button>}
+        {t('runtime.useNarrator')}</button>}
     </div>
   </section>;
 }

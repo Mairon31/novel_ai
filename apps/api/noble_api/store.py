@@ -268,7 +268,7 @@ class Store:
 
     def assign(self, role, installed_id):
         if role not in ROLE_NAMES:
-            raise ValueError("Rol desconocido")
+            raise ValueError("Unknown model role")
         with self._conn() as conn:
             model = conn.execute("SELECT * FROM installed WHERE id=?",
                                  (installed_id,)).fetchone()

@@ -838,5 +838,6 @@
   "settings.detail.concise": "Breve e dinâmico",
   "settings.detail.detectAuto": "Detectar automaticamente",
   "settings.detail.notInstalled": "Não instalado",
-  "settings.detail.notFound": "Não encontrado"
+  "settings.detail.notFound": "Não encontrado",
+  "runtime.useNarrator": "Usar como narrador"
 }

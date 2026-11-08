@@ -148,7 +148,7 @@ class NarrativeService:
             """)
             fields = [row[1] for row in db.execute("PRAGMA table_info(stories)")]
             if "protagonist_name" not in fields:
-                db.execute("ALTER TABLE stories ADD COLUMN protagonist_name TEXT NOT NULL DEFAULT 'Protagonista'")
+                db.execute("ALTER TABLE stories ADD COLUMN protagonist_name TEXT NOT NULL DEFAULT 'Protagonist'")
             if "canon" not in fields:
                 db.execute("ALTER TABLE stories ADD COLUMN canon TEXT NOT NULL DEFAULT ''")
             if "origin_story_id" not in fields:
