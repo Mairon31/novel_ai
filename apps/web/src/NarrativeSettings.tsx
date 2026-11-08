@@ -11,7 +11,7 @@ const defaultConfig: NarrativeConfig = {
 };
 
 export function NarrativeSettings() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [config, setConfig] = useState<NarrativeConfig>(defaultConfig);
   const [status, setStatus] = useState<ProviderModels | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,10 +71,9 @@ export function NarrativeSettings() {
       if (probe) {
         const info = await api.narrativeModels();
         setStatus(info);
-        setSaved(info.online ? 'Local connection verified.' :
-          'Settings saved; the engine is not responding yet.');
+        setSaved(t(info.online ? 'narrative.connectionVerified' : 'narrative.connectionPending'));
       } else {
-        setSaved('Narrative parameters saved.');
+        setSaved(t('narrative.parametersSaved'));
       }
     } catch (exc) {
       setError((exc as Error).message);
@@ -90,8 +89,9 @@ export function NarrativeSettings() {
     try {
       await api.saveNarrativeConfig(config);
       const result = await api.prepareNarrator();
-      setSaved('Model prepared: ' + result.model + ' · ' +
-        (result.duration_ms / 1000).toFixed(1) + ' s. You can begin your story.');
+      setSaved(t('narrative.modelPrepared', {
+        model: result.model, seconds: (result.duration_ms / 1000).toFixed(1),
+      }));
     } catch (exc) { setError((exc as Error).message); }
     finally {
       window.clearInterval(ticker); setPreparing(false); setWorking(false);
@@ -113,10 +113,10 @@ export function NarrativeSettings() {
             setConfig(current => ({ ...current, provider, device: 'auto',
               base_url: provider === 'ollama' ? 'http://127.0.0.1:11434' : provider === 'koboldcpp' ? 'http://127.0.0.1:5001' : 'https://openrouter.ai/api/v1', worker_id: '', model: '' }));
           }}>
-            <option value="ollama">Ollama (API local)</option>
-            <option value="koboldcpp">KoboldCpp (API compatible)</option>
-            <option value="openrouter">OpenRouter (API models)</option>
-            <option value="worker" disabled={!config.worker_id}>Remote GPU worker (Network & Workers)</option>
+            <option value="ollama">{t('narrative.ollamaLabel')}</option>
+            <option value="koboldcpp">{t('narrative.koboldLabel')}</option>
+            <option value="openrouter">{t('narrative.openRouterLabel')}</option>
+            <option value="worker" disabled={!config.worker_id}>{t('narrative.workerLabel')}</option>
           </select>
         </label>
         <label>{t('narrative.address')}
@@ -130,7 +130,7 @@ export function NarrativeSettings() {
           <datalist id="noble-local-models">
             {status?.models.map(item => <option key={item} value={item}/>)}
           </datalist>
-          {status?.online && <small>Models found: {status.models.length}. Enter or select a model from the local catalog.</small>}
+          {status?.online && <small>{t('narrative.modelsFound', { count: status.models.length })}</small>}
         </label>
         <label>{t('narrative.temperature')} <span className="field-value">{config.temperature.toFixed(2)}</span>
           <input type="range" min={0} max={2} step={0.05} value={config.temperature}
@@ -164,7 +164,7 @@ export function NarrativeSettings() {
         </label>
         <label>{t('narrative.context')}
           <select value={config.num_ctx} onChange={e => update('num_ctx', Number(e.target.value))}>
-            {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n.toLocaleString('es-CR')} tokens</option>)}
+            {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n.toLocaleString(i18n.language)} tokens</option>)}
           </select>
         </label>
         <label>{t('narrative.device')} <span className="field-value">Ollama</span>
@@ -176,13 +176,13 @@ export function NarrativeSettings() {
         </label>
       </div>
       {config.provider === 'koboldcpp' && <p className="narrative-helper">
-        KoboldCpp GPU layers are configured in Runtime settings. Additional Top-K, penalties, and reasoning settings are not exposed by the current adapter.
+        {t('narrative.koboldHint')}
       </p>}
-      {config.provider === 'openrouter' && <p className="narrative-helper">Requests go to OpenRouter and may incur charges. Save your key under Settings → Providers; vision and reasoning depend on the remote model.</p>}
-      {config.provider === 'worker' && <p className="narrative-helper">This model was activated under Network & Workers. The remote server manages its hardware; Noble AI sends only the authenticated narrative request.</p>}
+      {config.provider === 'openrouter' && <p className="narrative-helper">{t('narrative.openRouterHint')}</p>}
+      {config.provider === 'worker' && <p className="narrative-helper">{t('narrative.workerHint')}</p>}
       {status && <div className={'narrative-connect ' + (status.online ? 'connected' : 'disconnected')}>
         <Cpu size={17}/>
-        <span>{status.online ? 'Server available' : 'Cannot connect to the server'}
+        <span>{t(status.online ? 'narrative.serverAvailable' : 'narrative.serverUnavailable')}
           {status.error ? ' — ' + status.error : ''}</span>
       </div>}
       {error && <p className="narrative-error" role="alert">{error}</p>}
@@ -191,21 +191,21 @@ export function NarrativeSettings() {
         <button className="secondary-button" disabled={working}
           onClick={() => void persist(true)}>
           {working ? <LoaderCircle className="rotating" size={16}/> : <PlugZap size={16}/>}
-          Save and test connection</button>
+          {t('narrative.saveAndTest')}</button>
         <button className="primary-button" disabled={working}
           onClick={() => void persist(false)}><Save size={16}/> {t('narrative.saveParameters')}</button>
         <button className="secondary-button"
           disabled={working || !config.model || config.provider === 'openrouter'}
           onClick={() => void prepare()}>
           {preparing ? <LoaderCircle size={16} className="rotating"/> : <Cpu size={16}/>}
-          {preparing ? 'Preparing model… ' + prepareElapsed + ' s' : 'Prepare model now'}
+          {preparing ? t('narrative.preparing', { seconds: prepareElapsed }) : t('narrative.prepareModel')}
         </button>
       </div>
-      <p className="narrative-helper">“Prepare model now” runs a short inference only when you press the button; it does not add a turn to story history. The first load may take longer. This does not apply to remote OpenRouter APIs.</p>
-      <p className="narrative-helper"><RefreshCw size={14}/> Models installed from Model Hub need a local runtime. Ollama can load a model on generation, while KoboldCpp can be started from Noble AI. OpenRouter runs remotely, and workers use an authenticated external GPU.</p>
+      <p className="narrative-helper">{t('narrative.prepareHint')}</p>
+      <p className="narrative-helper"><RefreshCw size={14}/> {t('narrative.runtimeHint')}</p>
       <section className="narrative-context-inspector" aria-label={t('narrative.inspect')}>
         <h3>{t('narrative.inspect')}</h3>
-        <p className="narrative-helper">Inspect the exact messages prepared for the provider before generation. It includes private Creator context: use it only to inspect your own stories. It neither runs models nor saves turns.</p>
+        <p className="narrative-helper">{t('narrative.inspectorHint')}</p>
         {stories.length ? <>
           <div className="narrative-settings-grid">
             <label>{t('narrative.storyToInspect')}
@@ -240,15 +240,16 @@ export function NarrativeSettings() {
           {inspectorError && <p role="alert" className="narrative-error">{inspectorError}</p>}
           {inspectorData && <div role="status" className="creator-hint">
             <strong>{t('narrative.estimatedBudget')}</strong>
-            <p>{inspectorData.estimated_prompt_tokens} estimated input tokens + {inspectorData.reserved_output_tokens} reserved output tokens / {inspectorData.context_window_tokens} configured context-window tokens.</p>
+            <p>{t('narrative.estimatedTokens', { input: inspectorData.estimated_prompt_tokens,
+              output: inspectorData.reserved_output_tokens, context: inspectorData.context_window_tokens })}</p>
             {inspectorData.estimated_overflow && <p role="alert">
               {t('narrative.overflow')}
             </p>}
-            <p>Token counts are estimated from characters, not the model's tokenizer. KV cache is not measured, and the provider does not guarantee the supported context length.</p>
+            <p>{t('narrative.tokensHint')}</p>
             <details>
               <summary>{t('narrative.sectionBreakdown')}</summary>
               <ul>{inspectorData.sections.map((block, i) => <li key={i}>
-                {block.name}: {block.characters} characters · ~{block.approx_tokens} tokens
+                {block.name}: {t('narrative.sectionStats', { characters: block.characters, tokens: block.approx_tokens })}
               </li>)}</ul>
             </details>
             <details>

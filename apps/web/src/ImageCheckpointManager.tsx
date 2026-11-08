@@ -85,8 +85,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
 
   return <div className="workspace-panel noble-checkpoint-installer">
     <h3><Download size={18}/> {t('checkpoint.title')}</h3>
-    <p>Find a public Hugging Face repository containing a
-      <code> .safetensors</code>. Noble AI downloads it to its model directory and installs it only after verifying SHA-256 and file structure.</p>
+    <p>{t('checkpoint.installerHint')}</p>
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">{t('checkpoint.repo')}
         <input aria-label={t('checkpoint.repo')} placeholder="author/model"
@@ -107,11 +106,11 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
       </button>
     </div>
 
-    {catalog && <div className="noble-voice-library" aria-label="Repository models">
+    {catalog && <div className="noble-voice-library" aria-label={t('a11y.checkpointRepositories')}>
       <h4>{catalog.repo_id}</h4>
-      <p>Reported license: {catalog.license}. Revision: <code>{catalog.revision.slice(0,12)}</code>.
-        Models requiring special access or lacking a verifiable hash are excluded.</p>
-      {!catalog.models.length && <p>No installable individual checkpoints with a published size and SHA-256 were found at the repository root.</p>}
+      <p>{t('checkpoint.licenseInfo', { license: catalog.license,
+        revision: catalog.revision.slice(0,12) })}</p>
+      {!catalog.models.length && <p>{t('checkpoint.emptyCatalog')}</p>}
       {catalog.models.map(model => {
         const job = jobs.find(j => j.repo_id === current && j.filename === model.filename &&
           !['cancelled'].includes(j.status));
@@ -119,21 +118,21 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
         return <div className="noble-voice-card" key={model.filename}>
           <div className="noble-voice-main">
             <strong>{model.filename}</strong>
-            <span>{formatted(model.size_bytes)} · Published SHA-256 ·
-              {model.installed ? ' Installed in Noble' : ' Not installed'}</span>
+            <span>{formatted(model.size_bytes)} · {t('checkpoint.publishedHash')} ·
+              {t(model.installed ? 'checkpoint.installedInNoble' : 'checkpoint.notInstalled')}</span>
             <a href={model.model_card} rel="noopener noreferrer" target="_blank">
-              {t('checkpoint.title')}</a>
+              {t('model.card')}</a>
           </div>
           <button className="secondary-button" type="button"
             disabled={model.installed || !!changing || !!running || !!job && job.status === 'paused'}
             onClick={() => void install(model.filename)}>
-            {model.installed ? 'Installed' : 'Install checkpoint'}
+            {t(model.installed ? 'checkpoint.installedShort' : 'checkpoint.installAction')}
           </button>
         </div>;
       })}
     </div>}
 
-    {jobs.length > 0 && <div className="noble-voice-library" aria-label="Image model transfers">
+    {jobs.length > 0 && <div className="noble-voice-library" aria-label={t('a11y.imageTransfers')}>
       <h4>{t('checkpoint.recent')}</h4>
       {jobs.map(job => {
         const active = ['queued','downloading','verifying'].includes(job.status);
@@ -142,10 +141,10 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
         return <div className="noble-voice-card" key={job.id}>
           <div className="noble-voice-main">
             <strong>{job.filename}</strong>
-            <span>{job.repo_id} · {job.status} ·
+            <span>{job.repo_id} · {t('jobs.' + job.status, { defaultValue: job.status })} ·
               {formatted(job.received_bytes)} / {formatted(job.expected_size)}</span>
             {job.error && <span role="alert">{job.error}</span>}
-            <progress aria-label={'Download of ' + job.filename} max={100} value={pct}/>
+            <progress aria-label={t('a11y.downloadFile', { filename: job.filename })} max={100} value={pct}/>
           </div>
           {active && <button className="secondary-button" type="button"
             disabled={!!changing} onClick={() => void control(job, 'pause')}>{t('checkpoint.pause')}</button>}
@@ -160,7 +159,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
     </div>}
 
     {installed && <>
-      <h4>Checkpoints managed by Noble AI ({installed.models.length})</h4>
+      <h4>{t('checkpoint.installed', { count: installed.models.length })}</h4>
       {installed.models.map(model => {
         // ComfyUI on Windows may report native backslash paths. Preserve the
         // exact spelling reported by the provider when saving the selection.
@@ -171,17 +170,17 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
           <div className="noble-voice-main">
             <strong>{model.filename}</strong>
             <span>{model.repo_id} · {formatted(model.size_bytes)} ·
-              {usable ? ' Detected by ComfyUI' : ' ComfyUI has not recognized it yet'}</span>
+              {usable ? t('checkpoint.detected') : t('checkpoint.notRecognized')}</span>
           </div>
           <button className="secondary-button" type="button" disabled={!usable}
             onClick={() => { if (discovered) onSelectCheckpoint(discovered); }}>
-            {usable ? <><Check size={16}/> {t('checkpoint.select')}</> : 'Waiting for ComfyUI'}
+            {usable ? <><Check size={16}/> {t('checkpoint.select')}</> : t('checkpoint.waiting')}
           </button>
         </div>;
       })}
-      <p className="noble-inspector-hint">Initial integration: for ComfyUI to recognize these files, start it with the indicated argument and then select Find checkpoints. Noble AI does not automatically install or restart ComfyUI.</p>
+      <p className="noble-inspector-hint">{t('checkpoint.comfyGuide')}</p>
       <code className="noble-model-path">--extra-model-paths-config "{installed.config_path}"</code>
-      <p>Models: <code>{installed.model_dir}</code></p>
+      <p>{t('checkpoint.modelDir')} <code>{installed.model_dir}</code></p>
     </>}
     {(error || message) && <p role="status"
       className={error ? 'narrative-error' : 'narrative-saved'}>{error || message}</p>}

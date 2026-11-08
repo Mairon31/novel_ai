@@ -157,7 +157,7 @@ export function VoiceSettingsPanel() {
       {error || <><Check size={15}/>{message}</>}</p>}
     <div className="workspace-panel">
       <h3><Volume2 size={18}/> {t('voice.localPiper')}</h3>
-      <p>Install a Latin American Spanish voice from the catalog or manually add the <code>.onnx</code> and its configuration <code>.onnx.json</code>. Synthesis runs only when you press Listen.</p>
+      <p>{t('voice.installHint')}</p>
       <div className="noble-voice-library" aria-label="Piper voice catalog">
         <h4>{t('voice.latinVoices')}</h4>
         <p className="noble-inspector-hint">{t('voice.installDescription')}</p>
@@ -171,7 +171,7 @@ export function VoiceSettingsPanel() {
             <div className="noble-voice-main">
               <strong>{voice.name}</strong>
               <span>{voice.language} · {voice.quality} · {status === 'installed' ?
-                'Installed' : status || 'Available to install'}</span>
+                t('jobs.installed') : status ? t('jobs.' + status, { defaultValue: status }) : t('jobs.availableToInstall')}</span>
               <a href={voice.model_card} target="_blank" rel="noopener noreferrer">
                 {t('voice.viewLicense')}</a>
             </div>

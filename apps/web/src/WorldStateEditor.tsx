@@ -115,11 +115,11 @@ export function WorldStateEditor({ storyId, characters }: Props) {
   const canSave = draft.facts.every(fact =>
     fact.text.trim().length >= 10 && (fact.public || fact.witness_character_ids.length > 0));
 
-  return <div className="creator-fields world-state-editor" aria-label="World state">
+  return <div className="creator-fields world-state-editor" aria-label={t('a11y.worldState')}>
     <div className="creator-section-intro">
       <h3>{t('world.title')}</h3>
       <p>{t('world.editorHint')}</p>
-      <small>Saved revision: {document.revision} · Changes are validated before saving</small>
+      <small>{t('world.savedRevision', { revision: document.revision })}</small>
     </div>
 
     {error && <p className="narrative-error" role="alert">{error}</p>}
@@ -129,23 +129,23 @@ export function WorldStateEditor({ storyId, characters }: Props) {
       <h4>{t('world.sceneSituation')}</h4>
       <div className="creator-double">
         <label>{t('world.location')}
-          <input aria-label="World location" maxLength={200} value={draft.location}
+          <input aria-label={t('a11y.worldLocation')} maxLength={200} value={draft.location}
             placeholder="Star Harbor..."
             onChange={event => patch({ location: event.target.value })}/>
         </label>
         <label>{t('world.time')}
-          <input aria-label="World time of day" maxLength={80} value={draft.time_of_day}
-            placeholder="Anochecer, madrugada..."
+          <input aria-label={t('a11y.worldTime')} maxLength={80} value={draft.time_of_day}
+            placeholder={t('world.timePlaceholder')}
             onChange={event => patch({ time_of_day: event.target.value })}/>
         </label>
       </div>
       <label>{t('world.weather')}
-        <input aria-label="World weather" maxLength={100} value={draft.weather}
-          placeholder="Lluvia, despejado, tormenta..."
+        <input aria-label={t('a11y.worldWeather')} maxLength={100} value={draft.weather}
+          placeholder={t('world.weatherPlaceholder')}
           onChange={event => patch({ weather: event.target.value })}/>
       </label>
       <label>{t('world.inventory')}
-        <textarea aria-label="World inventory" rows={4} value={inventoryInput}
+        <textarea aria-label={t('a11y.worldInventory')} rows={4} value={inventoryInput}
           onChange={event => { setInventoryInput(event.target.value); setNotice(''); }}
           placeholder="Silver key\nOld map"/>
       </label>

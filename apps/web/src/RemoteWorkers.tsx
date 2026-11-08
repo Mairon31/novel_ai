@@ -117,7 +117,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
           spellCheck={false}/></label>
       <label className="workspace-pref-field">{t('workers.token')}
         <input aria-label={t('a11y.workerToken')} type="password" autoComplete="off"
-          placeholder="Secret token with at least 12 characters" value={token}
+          placeholder={t('workers.tokenPlaceholder')} value={token}
           maxLength={512} onChange={e => setToken(e.target.value)}/></label>
       <button className="secondary-button" disabled={busy || name.trim().length < 2
         || !url.startsWith('https://') || token.trim().length < 12} onClick={() => void add()}>
@@ -133,7 +133,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <div className="noble-worker-controls-actions">
         <button className="secondary-button" disabled={busy || !selected} onClick={() => void verify()}>
           {busy ? <LoaderCircle size={16} className="rotating"/> : <PlugZap size={16}/>}
-          Test connection</button>
+          {t('workers.testConnection')}</button>
         <button className="secondary-button" disabled={busy || !selected}
           onClick={() => void remove()}><Trash2 size={16}/> {t('common.remove')}</button>
       </div>
@@ -154,15 +154,14 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <button className="secondary-button" disabled={busy || !model}
         onClick={() => void measure()}>
         {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCw size={16}/>}
-        Measure real response</button>
+        {t('workers.measureReal')}</button>
       {benchmark && <div className="noble-worker-benchmark" role="status">
-        <strong>{benchmark.success ? 'Generation test completed' : 'Test failed'}</strong>
-        <span>Time to first text: {benchmark.ttft_ms == null
-          ? 'No data' : benchmark.ttft_ms.toFixed(0) + ' ms'}</span>
-        <span>Total duration: {benchmark.duration_ms.toFixed(0)} ms</span>
-        <span>Output characters: {benchmark.output_characters}</span>
-        <small>This is one test request. For p50/p95 latency and sampled VRAM
-          use the Colab notebook benchmark.</small>
+        <strong>{t(benchmark.success ? 'workers.generationCompleted' : 'workers.testFailed')}</strong>
+        <span>{benchmark.ttft_ms == null ? t('workers.noData') :
+          t('workers.ttftDisplay', { duration: benchmark.ttft_ms.toFixed(0) })}</span>
+        <span>{t('workers.durationDisplay', { duration: benchmark.duration_ms.toFixed(0) })}</span>
+        <span>{t('workers.outputChars', { count: benchmark.output_characters })}</span>
+        <small>{t('workers.benchmarkHint')}</small>
       </div>}
 
     </div>}
@@ -170,17 +169,17 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
       <h4>{t('workers.status')}</h4>
       <div className="noble-worker-health-stats">
         <div><span>{t('workers.connection')}</span><strong>{probe.latency_ms === undefined
-          ? 'Unavailable' : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
+          ? t('common.unavailable') : probe.latency_ms.toFixed(0) + ' ms'}</strong></div>
         <div><span>{t('workers.engine')}</span><strong>{probe.health?.engine_status === 'ready'
-          ? 'Available' : probe.health?.engine_status === 'unavailable'
-            ? 'No response' : 'No telemetry'}</strong></div>
+          ? t('workers.statusAvailable') : probe.health?.engine_status === 'unavailable'
+            ? t('workers.noResponse') : t('workers.noTelemetry')}</strong></div>
         <div><span>{t('workers.ttfb')}</span><strong>
           {probe.health?.last_ttft_ms == null
-            ? 'No data' : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
+            ? t('workers.noData') : probe.health.last_ttft_ms.toFixed(0) + ' ms'}
         </strong></div>
         <div><span>{t('workers.completed')}</span><strong>
           {probe.health ? probe.health.completed_requests + ' / ' +
-            probe.health.failed_requests : 'No data'}
+            probe.health.failed_requests : t('workers.noData')}
         </strong></div>
       </div>
       {probe.health?.gpu?.map(gpu => <div className="noble-worker-gpu" key={gpu.index}>
@@ -191,7 +190,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
         }}/></div>
       </div>)}
       <p className="noble-worker-health-note">
-        Metrics reflect the latest probe, not continuous benchmarking. Refresh them using Test connection.
+        {t('workers.metricsHint')}
       </p>
     </div>}
     {error && <p role="alert" className="narrative-error">{error}</p>}

@@ -320,7 +320,7 @@ export function StoryStudio({
             {restoring ? t('library.restoringBackup') : t('library.importBackup')}
           </button>
           <input ref={archiveFile} type="file" hidden accept=".zip,.noble.zip"
-            aria-label="Noble backup file"
+            aria-label={t('a11y.storyBackupFile')}
             onChange={event => {
               const file = event.currentTarget.files?.[0];
               event.currentTarget.value = '';
@@ -384,18 +384,18 @@ export function StoryStudio({
     {creating && <div className="welcome-scrim"><section className="welcome-panel" role="dialog"
       aria-modal="true" aria-label={t("library.createDialog")}>
       <div className="story-create-heading"><div className="welcome-icon"><Feather size={29}/></div>
-        <button aria-label="Close story creator" className="icon-button" onClick={() => setCreating(false)}><X size={19}/></button></div>
-      <span className="overline">{createStep === 'story' ? 'STEP 1 / 2 · THE WORLD' : 'STEP 2 / 2 · YOUR CHARACTER'}</span>
+        <button aria-label={t('a11y.storyCloseCreator')} className="icon-button" onClick={() => setCreating(false)}><X size={19}/></button></div>
+      <span className="overline">{t(createStep === 'story' ? 'story.stepWorld' : 'story.stepCharacter')}</span>
       {createStep === 'story' ? <>
         <h2>{t("library.startNew")}</h2>
         <p>{t("library.defineOpening")}</p>
         <label className="form-label" htmlFor="story-title">{t("library.title")}</label>
         <input id="story-title" className="story-create-input" maxLength={100} value={title}
-          onChange={e => setTitle(e.target.value)} placeholder="For example: The Forest of Spirits"/>
+          onChange={e => setTitle(e.target.value)} placeholder={t('story.titlePlaceholder')}/>
         <label className="form-label" htmlFor="story-premise">{t("library.worldPremise")}</label>
         <textarea id="story-premise" className="story-create-input" value={premise}
           onChange={e => setPremise(e.target.value)} rows={5} maxLength={4000}
-          placeholder="Where it happens, what the world is like, and how your adventure begins..."/>
+          placeholder={t('story.premisePlaceholder')}/>
       </> : <>
         <div className="noble-create-character"><div className="noble-create-avatar"><Feather size={33}/></div>
           <span>{t('story.playingAsLabel')}</span></div>
@@ -404,7 +404,7 @@ export function StoryStudio({
         <label className="form-label" htmlFor="story-protagonist">{t("library.protagonistName")}</label>
         <input id="story-protagonist" className="story-create-input noble-name-input"
           value={protagonistName} maxLength={60} autoFocus
-          onChange={e => setProtagonistName(e.target.value)} placeholder="Choose your character's name"/>
+          onChange={e => setProtagonistName(e.target.value)} placeholder={t('story.namePlaceholder')}/>
       </>}
       {error && <p className="narrative-error" role="alert">{error}</p>}
       {createStep === 'story' ? <button className="primary-button full"
