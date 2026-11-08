@@ -70,6 +70,7 @@ class InterfaceLocaleTests(unittest.TestCase):
             "modelFitUi": ("unknown", "full_gpu", "partial_offload", "cpu",
                            "too_large", "unsupported"),
             "reader": ("summary", "history", "gallery", "uiUx"),
+            "storySse": ("preparing", "connecting", "streaming"),
         }
         for language in LANGUAGES:
             catalog = json.loads((BASE / (language + ".json")).read_text("utf-8"))

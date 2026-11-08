@@ -1609,5 +1609,8 @@
   "reader.directorReasonEvent": "Evento solicitado: una ilustración CG nueva sin reemplazar el fondo.",
   "reader.directorReasonEmotion": "Solo cambia la expresión; se reutiliza el fondo registrado.",
   "reader.directorReasonReused": "Hay un fondo manual registrado con el mismo lugar, hora, clima, encuadre e iluminación.",
-  "reader.directorReasonNew": "No hay un fondo registrado para estas condiciones; se requiere solicitar la generación de una imagen."
+  "reader.directorReasonNew": "No hay un fondo registrado para estas condiciones; se requiere solicitar la generación de una imagen.",
+  "storySse.preparing": "Preparando el contexto de la historia...",
+  "storySse.connecting": "Conectando con el modelo narrador...",
+  "storySse.streaming": "Generando narración..."
 }

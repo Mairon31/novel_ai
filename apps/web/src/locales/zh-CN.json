@@ -1609,5 +1609,8 @@
   "reader.directorReasonEvent": "请求的事件：创建新的 CG 插图而不替换背景。",
   "reader.directorReasonEmotion": "仅更换表情，复用已登记的背景。",
   "reader.directorReasonReused": "已有与当前地点、时间、天气、镜头和光照匹配的手动背景。",
-  "reader.directorReasonNew": "没有符合这些条件的已登记背景；需要明确请求生成图像。"
+  "reader.directorReasonNew": "没有符合这些条件的已登记背景；需要明确请求生成图像。",
+  "storySse.preparing": "正在准备故事上下文...",
+  "storySse.connecting": "正在连接叙事模型...",
+  "storySse.streaming": "正在生成叙述..."
 }

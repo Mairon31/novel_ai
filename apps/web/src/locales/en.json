@@ -1609,5 +1609,8 @@
   "reader.directorReasonEvent": "Requested event: new CG illustration without replacing the background.",
   "reader.directorReasonEmotion": "Only the expression changes; the registered background is reused.",
   "reader.directorReasonReused": "Manual background registered for the same location, time, weather, shot, and lighting.",
-  "reader.directorReasonNew": "No background registered for these conditions; explicit image generation is required."
+  "reader.directorReasonNew": "No background registered for these conditions; explicit image generation is required.",
+  "storySse.preparing": "Preparing story context...",
+  "storySse.connecting": "Connecting to narrator model...",
+  "storySse.streaming": "Generating narration..."
 }

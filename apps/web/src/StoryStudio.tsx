@@ -176,7 +176,8 @@ export function StoryStudio({
         input_text: continueOnly ? '' : draft.trim(),
         request_id: requestId,
       }, controllerLocal.signal, (evt: GenerationEvent) => {
-        if (evt.event === 'status') setGenerationMessage(evt.data.message);
+        if (evt.event === 'status') setGenerationMessage(
+          t('storySse.' + evt.data.phase, { defaultValue: evt.data.message }));
         if (evt.event === 'delta') setStreamText(text => text + evt.data.text);
         if (evt.event === 'error') throw new Error(evt.data.message);
         if (evt.event === 'done') {
