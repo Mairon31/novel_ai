@@ -79,7 +79,7 @@ class AgencyContractTests(unittest.TestCase):
                 self.assertIn("Keep the guardian suspicious and allow refusal", system)
                 self.assertIn("The old map belongs to Mira", system)
                 self.assertIn("never invent additional decisions", system)
-                self.assertIn("not automatically validate", system)
+                self.assertIn("Do not make NPCs flatter", system)
                 self.assertEqual(packet[-1]["role"], "user")
                 self.assertIn("Give me the map", packet[-1]["content"])
 
