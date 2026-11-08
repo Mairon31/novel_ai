@@ -65,15 +65,15 @@ If the session has only GitHub repository access and cannot run code, still writ
 
 | Item | Value |
 | --- | --- |
-| Fully verified functional SHA | `91e93622e5796a6681e3d66f82de6b9e408e297d` |
-| Successful full CI run | [#42461637154](https://github.com/Mairon31/novel_ai/actions/runs/42461637154) |
+| Last fully verified repository SHA | `e87bd89a6a8c8f81f562e7a1124607a2bdd20dfc` (N-22 code was last changed in `91e9362`) |
+| Successful full CI run | [#42461993185](https://github.com/Mairon31/novel_ai/actions/runs/42461993185) |
 | Evidence at that exact SHA | **419/419 Python**, **102/102 Playwright** desktop/mobile, Vite build PASS |
 | Most recent milestone | N-22 opt-in visual first-turn readiness gate + explicit reversible text-only choice |
 | Previous documentation checkpoint | `e87bd89a6a8c8f81f562e7a1124607a2bdd20dfc` |
 | CI trigger policy commit | `1d65511eb55ef0ce003c047d32f79c8b465a476a` |
 | Policy/docs verification | **NOT RUN** by design; changes only to workflow/docs, no functional code modified |
 
-The baseline does **not** certify any future code committed after it. Always inspect the current `master` SHA and the open batch before asserting tests passed.
+The passing baseline verifies code through `e87bd89a` under the previous per-commit workflow. It does **not** certify any future code committed after it. Always inspect the current `master` SHA and the open batch before asserting tests passed.
 
 ## Batch B001 — OPEN (0/5)
 
