@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2, Image as ImageIcon, LoaderCircle, RefreshCcw, Sparkles } from 'lucide-react';
+import { CheckCircle2, Image as ImageIcon, LoaderCircle, RefreshCcw } from 'lucide-react';
 import { api } from './api';
+import { CreatorImageJobQueue } from './CreatorImageJobQueue';
 import type { Story, VisualAsset, VisualPreparationPlan } from './types';
 
 /** Author-only review surface. Rendering is *never* automatic on mount or refresh. */
@@ -20,7 +21,6 @@ export function CreatorVisualPreparation({
   const { t } = useTranslation();
   const [plan, setPlan] = useState<VisualPreparationPlan | null>(null);
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [coverApproving, setCoverApproving] = useState(false);
   const [coverGalleryId, setCoverGalleryId] = useState('');
   const [coverLabel, setCoverLabel] = useState(storyTitle);
@@ -55,25 +55,6 @@ export function CreatorVisualPreparation({
     return () => { alive = false; };
   }, [storyId, assetRevision, revision]);
 
-  async function renderFirstBackground() {
-    if (generating || !plan || plan.has_started ||
-        !plan.steps.some(step => step.kind === 'background') ||
-        prompt.trim().length < 8) return;
-    const story = storyId;
-    setGenerating(true); setError(''); setNotice('');
-    try {
-      // Existing renderer provides real ComfyUI status, GPU policy, persistence
-      // and gallery selection. No fake job state and no automatic requests.
-      const generated = await api.illustrate(story, prompt.trim());
-      onGenerated(generated.story);
-      setNotice(t('visualPrep.backgroundSaved'));
-      setRevision(n => n + 1);
-    } catch (exc) {
-      setError((exc as Error).message);
-    } finally {
-      setGenerating(false);
-    }
-  }
 
   const backgroundPending = Boolean(plan?.steps.some(item => item.kind === 'background'));
   const coverPending = Boolean(plan?.steps.some(item => item.kind === 'cover'));
@@ -90,7 +71,7 @@ export function CreatorVisualPreparation({
   }, [reviewedGallery?.id, storyId]);
 
   async function approveCover() {
-    if (!coverPending || !selectionId || coverApproving || generating ||
+    if (!coverPending || !selectionId || coverApproving ||
         coverLabel.trim().length < 1 || coverCaption.trim().length < 3) return;
     const story = storyId;
     setCoverApproving(true); setError(''); setNotice('');
@@ -115,7 +96,7 @@ export function CreatorVisualPreparation({
         <p>{t('visualPrep.explain')}</p>
       </div>
       <button type="button" className="secondary-button"
-        disabled={loading || generating} onClick={() => setRevision(n => n + 1)}>
+        disabled={loading} onClick={() => setRevision(n => n + 1)}>
         <RefreshCcw size={15}/> {t('visualPrep.refresh')}
       </button>
     </header>
@@ -139,7 +120,7 @@ export function CreatorVisualPreparation({
             <p>{item.prompt}</p>
           </details>}
           {item.kind === 'character' && <button type="button"
-            className="secondary-button" disabled={generating} onClick={onOpenCharacters}>
+            className="secondary-button" disabled={coverApproving} onClick={onOpenCharacters}>
             {t('visualPrep.openCast')}
           </button>}
         </li>)}
@@ -150,7 +131,7 @@ export function CreatorVisualPreparation({
           <p>{t('visualPrep.reviewCoverHint')}</p>
           <label>{t('visualPrep.galleryImage')}
             <select aria-label={t('visualPrep.galleryImage')}
-              disabled={coverApproving || generating}
+              disabled={coverApproving}
               value={selectionId}
               onChange={e => {
                 setCoverGalleryId(e.target.value);
@@ -166,16 +147,16 @@ export function CreatorVisualPreparation({
             alt={t('visualPrep.galleryPreviewAlt')} loading="lazy"/>}
           <label>{t('visualPrep.coverName')}
             <input aria-label={t('visualPrep.coverName')} maxLength={100}
-              disabled={coverApproving || generating}
+              disabled={coverApproving}
               value={coverLabel} onChange={e => setCoverLabel(e.target.value)}/>
           </label>
           <label>{t('visualPrep.coverCaption')}
             <textarea aria-label={t('visualPrep.coverCaption')} rows={3} maxLength={220}
-              disabled={coverApproving || generating} value={coverCaption}
+              disabled={coverApproving} value={coverCaption}
               onChange={e => setCoverCaption(e.target.value)}/>
           </label>
           <button type="button" className="primary-button"
-            disabled={coverApproving || generating || loading ||
+            disabled={coverApproving || loading ||
               coverLabel.trim().length < 1 || coverCaption.trim().length < 3}
             onClick={() => void approveCover()}>
             {coverApproving && <LoaderCircle className="rotating" size={16}/>}
@@ -187,16 +168,11 @@ export function CreatorVisualPreparation({
           <label>{t('visualPrep.backgroundPrompt')}
             <textarea aria-label={t('visualPrep.backgroundPrompt')}
               rows={4} maxLength={2400} value={prompt}
-              disabled={generating} onChange={e => setPrompt(e.target.value)}/>
+              disabled={coverApproving} onChange={e => setPrompt(e.target.value)}/>
           </label>
           <p>{t('visualPrep.generationExplicit')}</p>
-          <button className="primary-button" type="button"
-            disabled={generating || loading || prompt.trim().length < 8}
-            onClick={() => void renderFirstBackground()}>
-            {generating ? <LoaderCircle className="rotating" size={16}/> :
-              <Sparkles size={16}/>}
-            {generating ? t('visualPrep.generating') : t('visualPrep.generateBackground')}
-          </button>
+          <CreatorImageJobQueue storyId={storyId} prompt={prompt}
+            disabled={loading || coverApproving} onGenerated={onGenerated}/>
         </div>}
       <small>{t('visualPrep.noAuto')}</small>
     </>}
