@@ -83,6 +83,55 @@ class AgencyContractTests(unittest.TestCase):
                 self.assertEqual(packet[-1]["role"], "user")
                 self.assertIn("Give me the map", packet[-1]["content"])
 
+    def test_story_freedom_modes_are_validated_and_shape_context(self):
+        builder = self.app().state.narrative
+        base = self.prefix + "/creator"
+        initial = self.client.get(base).json()
+        self.assertEqual(initial["freedom_mode"], "flexible")
+        all_rules = {}
+        for mode, expectation in (
+            ("guided", "Story freedom: GUIDED"),
+            ("flexible", "Story freedom: FLEXIBLE"),
+            ("strict", "Story freedom: STRICT"),
+        ):
+            with self.subTest(mode=mode):
+                selected = self.client.put(base, json={
+                    "freedom_mode": mode,
+                    "guidelines": "The guardian can refuse unreasonable requests.",
+                })
+                self.assertEqual(selected.status_code, 200, selected.text)
+                self.assertEqual(selected.json()["freedom_mode"], mode)
+                story = builder.get_story(self.id)
+                system = builder.messages(story, "Open the gate", "do")[0]["content"]
+                self.assertIn(expectation, system)
+                self.assertIn("The guardian can refuse unreasonable requests.", system)
+                self.assertIn("Player agency:", system)
+                all_rules[mode] = system
+        self.assertNotEqual(all_rules["guided"], all_rules["strict"])
+        rejected = self.client.put(base, json={"freedom_mode": "unrestricted"})
+        self.assertEqual(rejected.status_code, 422, rejected.text)
+        self.assertEqual(self.client.get(base).json()["freedom_mode"], "strict")
+
+    def test_existing_blueprint_without_freedom_mode_uses_flexible_default(self):
+        config = self.client.put(self.prefix + "/creator", json={
+            "guidelines": "Keep the map hidden from strangers.",
+            "freedom_mode": "strict",
+        })
+        self.assertEqual(config.status_code, 200, config.text)
+        with self.app().state.narrative.store._conn() as db:
+            db.execute(
+                "UPDATE creator_blueprints SET config_json=? WHERE story_id=?",
+                ('{"guidelines":"Keep the map hidden from strangers."}', self.id))
+        recovered = self.client.get(self.prefix + "/creator")
+        self.assertEqual(recovered.status_code, 200, recovered.text)
+        self.assertEqual(recovered.json()["freedom_mode"], "flexible")
+        self.assertEqual(recovered.json()["visual_start"], "text")
+        self.assertEqual(recovered.json()["guidelines"],
+                         "Keep the map hidden from strangers.")
+        narrative = self.app().state.narrative
+        system = narrative.messages(narrative.get_story(self.id), "Continue", "continue")[0]["content"]
+        self.assertIn("Story freedom: FLEXIBLE", system)
+
     def app(self):
         return self.cm.app
 
