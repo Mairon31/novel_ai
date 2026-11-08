@@ -75,13 +75,13 @@ If the session has only GitHub repository access and cannot run code, still writ
 
 The passing baseline verifies code through `e87bd89a` under the previous per-commit workflow. It does **not** certify any future code committed after it. Always inspect the current `master` SHA and the open batch before asserting tests passed.
 
-## Batch B001 — OPEN (0/5)
+## Batch B001 — OPEN (1/5)
 
 Count **functional implementations**, not Git commits. Enter the TODO ID, relevant commit(s), tests written, and executed result into the first unused slot. A documentation-only handoff does not count.
 
 | Unit | TODO / scope | Commit(s) | Tests written / executed | State |
 | --- | --- | --- | --- | --- |
-| 1 | — | — | NOT RUN | OPEN |
+| 1 | N-22 — deterministic initial visual asset plan, author-facing media checklist, editable prompt and explicit ComfyUI background generation | `f614631`, `f56b4da` | `tests/test_visual_preflight.py` (API, no hidden plot, gallery selection), `apps/web/tests/visual-preparation.spec.ts` (desktop/mobile, no implicit render). **NOT RUN**: deferred to B001 full batch. | IMPLEMENTED / UNVERIFIED |
 | 2 | — | — | NOT RUN | OPEN |
 | 3 | — | — | NOT RUN | OPEN |
 | 4 | — | — | NOT RUN | OPEN |
@@ -89,7 +89,7 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 
 **Batch boundary commit:** not yet chosen.  
 **Full batch workflow:** NOT RUN.  
-**Outstanding failures:** none known at the baseline; new code has not been added in B001.
+**Outstanding failures:** none known at the baseline. The first new implementation is committed but its newly added tests have **NOT RUN**, so browser/runtime regressions remain possible. Re-evaluate at B001 full batch.
 
 Possible next priorities: N-22 image-preparation pipeline beyond the readiness gate, N-18 narrative orchestration, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
 

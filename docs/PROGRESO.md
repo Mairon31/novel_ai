@@ -964,3 +964,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 - Workflow/documentation-only policy edit: CI **NOT RUN by design**. New functional work will accumulate in the batch ledger rather than consuming full CI minutes per commit.
 
 - Updated the durable recovery checkpoint to the **latest completed success under the old per-push workflow**: [CI #42461993185](https://github.com/Mairon31/novel_ai/actions/runs/42461993185) on `e87bd89a`, with 419 Python and 102 Playwright PASS. The subsequent CI-policy and document commits intentionally triggered no further runs.
+
+## 2026-11-08 — B001 1/5: N-22 initial visual preparation plan (NOT RUN)
+
+- Commits `f614631`, `f56b4da` implement a read-only plan of missing cover/background/neutral-cast visuals from the saved preflight, with suggested prompts formed from player-visible story metadata (no private AI plot). Creator Studio's Media panel now offers an editable opening-background prompt and explicit action routed through the **existing** ComfyUI `illustrate` API, which persists the selected scene-gallery version. Cover selection and reviewed sprite drafts remain separate; **no generation on page load**.
+- New tests `tests/test_visual_preflight.py` (plan, redaction, gallery-selected asset) and `apps/web/tests/visual-preparation.spec.ts` (no implicit Comfy call, error case) are committed. **CI: NOT RUN**, under the five-implementation test batch policy. Physical ComfyUI rendering and persistent asynchronous queues have not been verified and remain pending.
+- Ledger: `docs/CI_BATCHES_AND_SESSION_RECOVERY.md` B001 **1/5**, awaiting four more independent implementation units before full verification.
