@@ -111,7 +111,7 @@ class CreateStory(BaseModel):
         low, high = bounds[info.field_name]
         if not low <= len(cleaned) <= high:
             raise ValueError(f"{info.field_name} must contain {low}–{high} visible characters")
-        allowed_controls = {"\\n", "\\t"} if info.field_name == "premise" else set()
+        allowed_controls = {"\n", "\t"} if info.field_name == "premise" else set()
         if any(ord(char) < 32 and char not in allowed_controls or ord(char) == 127
                for char in cleaned):
             raise ValueError(f"{info.field_name} contains an unsupported control character")
