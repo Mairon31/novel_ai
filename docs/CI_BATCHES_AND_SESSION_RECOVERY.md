@@ -78,15 +78,15 @@ If the session has only GitHub repository access and cannot run code, still writ
 
 | Item | Value |
 | --- | --- |
-| Last fully verified repository SHA | `21a9ae40a114027dfe5e96c960f08bfddaf174e7` (5-unit B001 plus fixes, explicit full-batch trigger) |
-| Successful full CI run | [#42465459245](https://github.com/Mairon31/novel_ai/actions/runs/42465459245) |
-| Evidence at that exact SHA | **436/436 Python**, **110/110 Playwright** desktop/mobile, frontend build PASS |
-| Most recent milestone | B001 5/5: initial visual plans, agency contract, reviewed gallery cover, story freedom modes, NPC goals/refusals |
+| Last fully verified repository SHA | `bd69a037b620c688b9059c763e0ff4f21999e53c` (five B002 units plus the consolidated fixes) |
+| Successful full CI run | [#42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582) |
+| Evidence at that exact SHA | **451/451 Python**, **122/122 Playwright** desktop/mobile, frontend Vite build PASS |
+| Most recent milestone | B002 5/5: persistent image jobs, arc milestones, six reader modes, local draft recovery and story settings |
 | Previous documentation checkpoint | `e87bd89a6a8c8f81f562e7a1124607a2bdd20dfc` |
 | CI trigger policy commit | `1d65511eb55ef0ce003c047d32f79c8b465a476a` |
 | Policy/docs verification | **NOT RUN** by design; changes only to workflow/docs, no functional code modified |
 
-The new successful full-batch baseline verifies code through `21a9ae40`. Earlier baseline: `e87bd89a`, [CI #42461993185](https://github.com/Mairon31/novel_ai/actions/runs/42461993185) (419 Python + 102 Playwright PASS). It does **not** certify any future code committed after the new baseline. Always inspect the current `master` SHA and the open batch before asserting tests passed.
+The new successful full-batch baseline verifies code through `bd69a037`. Previous B001 baseline: `21a9ae40`; earlier baseline: `e87bd89a`, [CI #42461993185](https://github.com/Mairon31/novel_ai/actions/runs/42461993185) (419 Python + 102 Playwright PASS). It does **not** certify any future code committed after the new baseline. Always inspect the current `master` SHA and the open batch before asserting tests passed.
 
 ## Batch B001 — CLOSED (5/5; FULL CI PASS)
 
@@ -107,21 +107,37 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 
 Possible next priorities: N-22 persistent image generation queue and reviewed cover generation, N-18 scene-beat planning and model-based semantic evaluation, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
 
-## Batch B002 — READY FOR FULL CI (5/5)
+## Batch B002 — CLOSED (5/5; FULL CI PASS)
 
 The five verified B001 implementations above are **not** part of this new batch. Record only independently completed new functional units below; do not trigger CI until five units or a critical P0 exception.
 
 | Unit | TODO / scope | Commit(s) | Tests written / executed | State |
 | --- | --- | --- | --- | --- |
-| 1 | N-22 — SQLite-backed opt-in ComfyUI image jobs, idempotent request UUID, persistent seed, restart recovery, cancel/retry, and Creator Studio job polling | `a4fd0d1`, `a565571`, `53f9e69`, `c38bd5d`, `f4339f2`, `a61f952`, `1cbcf9d`, `3153cc9`, `df31191` | New `tests/test_image_jobs.py` and `apps/web/tests/image-job-recovery.spec.ts`, updated `visual-preparation.spec.ts`; all **NOT RUN** until B002. Four-language catalog parity checked structurally (1,719 keys each after unit 2); active queue capped at 8 jobs, with admission test. | IMPLEMENTED / UNVERIFIED |
-| 2 | N-18 — editorial arc milestones (planned/active/resolved) in Creator Blueprint, private narrator prompt and creator UI; clone and legacy editing compatibility | `2018265`, `e365955`, `cb0cec1` | Added `tests/test_creator_arc_beats.py` + `apps/web/tests/creator-arc-beats.spec.ts`; **NOT RUN** until B002 full CI. | IMPLEMENTED / UNVERIFIED |
-| 3 | N-19 — six semantic reader composer modes: speak, act, think, observe, interact, narrate, with actual distinct narrator directives, input hints, history labels and responsive keyboard/mobile controls | `efa2870`, `47c6c24`, `90a0f0a`, `88d1926` | `tests/test_reader_interaction_modes.py`, `apps/web/tests/reader-interaction-modes.spec.ts` added; **NOT RUN**. E2E/semantic model verification deferred to B002 full CI. | IMPLEMENTED / UNVERIFIED |
-| 4 | N-19 — browser-local per-story reader compose draft and selected interaction mode, 14-day expiry, validation, corruption recovery, and cleanup after a completed turn | `c9bc7b9`, `08b9582` | Added `apps/web/tests/reader-draft-recovery.spec.ts` (two browser cases), **NOT RUN** until B002 full CI. No user text sent to a new server endpoint. | IMPLEMENTED / UNVERIFIED |
-| 5 | N-19 — story-specific narrative freedom reader settings with an atomic PATCH that preserves Creator Blueprint text, beats, and global preferences | `eee6e33`, `8c6b32b`, `75d4d1c`, `f46c536`, `91e4cb1` | Added `tests/test_reader_story_settings.py` and `apps/web/tests/reader-story-settings.spec.ts`; **NOT RUN** until B002 verification. | IMPLEMENTED / UNVERIFIED |
+| 1 | N-22 — SQLite-backed opt-in ComfyUI image jobs, idempotent request UUID, persistent seed, restart recovery, cancel/retry, and Creator Studio job polling | `a4fd0d1`, `a565571`, `53f9e69`, `c38bd5d`, `f4339f2`, `a61f952`, `1cbcf9d`, `3153cc9`, `df31191` | [CI #42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582): full B002 batch **451/451 Python + 122/122 Playwright PASS**, including the committed relevant regression tests. Live GPU/model semantics not tested. | VERIFIED IN B002 |
+| 2 | N-18 — editorial arc milestones (planned/active/resolved) in Creator Blueprint, private narrator prompt and creator UI; clone and legacy editing compatibility | `2018265`, `e365955`, `cb0cec1` | [CI #42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582): full B002 batch **451/451 Python + 122/122 Playwright PASS**, including the committed relevant regression tests. Live GPU/model semantics not tested. | VERIFIED IN B002 |
+| 3 | N-19 — six semantic reader composer modes: speak, act, think, observe, interact, narrate, with actual distinct narrator directives, input hints, history labels and responsive keyboard/mobile controls | `efa2870`, `47c6c24`, `90a0f0a`, `88d1926` | [CI #42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582): full B002 batch **451/451 Python + 122/122 Playwright PASS**, including the committed relevant regression tests. Live GPU/model semantics not tested. | VERIFIED IN B002 |
+| 4 | N-19 — browser-local per-story reader compose draft and selected interaction mode, 14-day expiry, validation, corruption recovery, and cleanup after a completed turn | `c9bc7b9`, `08b9582` | [CI #42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582): full B002 batch **451/451 Python + 122/122 Playwright PASS**, including the committed relevant regression tests. Live GPU/model semantics not tested. | VERIFIED IN B002 |
+| 5 | N-19 — story-specific narrative freedom reader settings with an atomic PATCH that preserves Creator Blueprint text, beats, and global preferences | `eee6e33`, `8c6b32b`, `75d4d1c`, `f46c536`, `91e4cb1` | [CI #42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582): full B002 batch **451/451 Python + 122/122 Playwright PASS**, including the committed relevant regression tests. Live GPU/model semantics not tested. | VERIFIED IN B002 |
 
-**B002 full CI attempt 1:** [Run #42469429842](https://github.com/Mairon31/novel_ai/actions/runs/42469429842), trigger SHA `6893b57febc68133f0fadf3705a469cfd0ae104d`: Python 451 tests, **2 FAIL + 6 ERROR** (new narrator-mode line mapping and i18n dynamic key). Repairs in `94f3284`, `2f726e0`, `bb2f1c2`, including context inspector support for the new modes. **Browser completed with 120/122 PASS; 2 failures** in the same new `reader-draft-recovery.spec.ts` assertion on desktop/mobile (Playwright's partial "Act" label matched "Interact" as well). Fixed with `d036d94` using `exact: true`. B002 remains OPEN/UNVERIFIED; one consolidated full retry is required on corrected code.  
-**B002 implementation boundary:** `91e4cb1de8b0fecddee1f0ff887966c4b9abc929` (all five functional units before documentation/trigger).  
+**B002 full CI attempt 1:** [Run #42469429842](https://github.com/Mairon31/novel_ai/actions/runs/42469429842), trigger SHA `6893b57febc68133f0fadf3705a469cfd0ae104d`: Python 451 tests, **2 FAIL + 6 ERROR** (new narrator-mode line mapping and i18n dynamic key). Repairs in `94f3284`, `2f726e0`, `bb2f1c2`, including context inspector support for the new modes. **Browser completed with 120/122 PASS; 2 failures** in the same new `reader-draft-recovery.spec.ts` assertion on desktop/mobile (Playwright's partial "Act" label matched "Interact" as well). Fixed with `d036d94` using `exact: true`. B002 first attempt FAILED as recorded; superseded by passing second attempt. Consolidated fixes were included in [#42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582).  
+**B002 implementation boundary:** `91e4cb1de8b0fecddee1f0ff887966c4b9abc929` (all five functional units before documentation/trigger).
+**B002 final verified SHA:** `bd69a037b620c688b9059c763e0ff4f21999e53c`.
+**B002 successful attempt 2:** [Run #42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582) **451/451 Python + 122/122 Playwright desktop/mobile PASS**; frontend build PASS. Includes fixes `94f3284`, `2f726e0`, `bb2f1c2`, `d036d94`.  
 **Local verification limitation:** a network test from the working container could not resolve `github.com`, so a full local clone/build was unavailable. No GitHub Actions run was started by interim commits.
+
+## Batch B003 — OPEN (0/5)
+
+The fully verified B002 units above are not part of B003. Record only independently completed features; no full CI until five units or a critical issue.
+
+| Unit | TODO / scope | Commit(s) | Tests written / executed | State |
+| --- | --- | --- | --- | --- |
+| 1 | — | — | NOT RUN | OPEN |
+| 2 | — | — | NOT RUN | OPEN |
+| 3 | — | — | NOT RUN | OPEN |
+| 4 | — | — | NOT RUN | OPEN |
+| 5 | — | — | NOT RUN | OPEN |
+
+**B003 full CI:** NOT RUN. **Last verified full CI:** [#42469975582](https://github.com/Mairon31/novel_ai/actions/runs/42469975582) at `bd69a037`.
 
 ## Resume procedure after an interrupted session
 
