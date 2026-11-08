@@ -7,6 +7,7 @@ import {
   Sparkles, UploadCloud, UserRound, X, GitBranch, RotateCcw, Download, EyeOff, History,
 } from 'lucide-react';
 import { api } from './api';
+import { ReaderStoryFreedom } from './ReaderStoryFreedom';
 import type { Story, StoryTurn, WorkspacePreferences, SpeechVoices, VisualState, VisualCharacterDraft, ScenePlan, ScenePlanInput, ScenePresentation, LorebookTurnSnapshot, WorldTurnSnapshot, EpisodicSearch, VisualDirectorPreview, VisualDirectorIntent } from './types';
 
 type Tab = 'summary' | 'history' | 'gallery' | 'reader';
@@ -1065,6 +1066,7 @@ export function VisualReader({
           <p className="noble-inspector-hint">{t('reader.imageHint')}</p>
         </>}
         {tab === 'reader' && <>
+          <ReaderStoryFreedom storyId={active.id}/>
           <h4>{t('reader.layout')}</h4>
           <p>{t('reader.layoutHint')}</p>
           {prefs && <div className="noble-reader-layout-options">

@@ -288,6 +288,10 @@ export const api = {
   deleteCreatorAsset: (storyId: string, assetId: string) =>
     request<void>('/stories/' + encodeURIComponent(storyId) + '/creator/assets/' +
       encodeURIComponent(assetId), { method: 'DELETE' }),
+  storyFreedom: (id: string, freedom_mode: CreatorBlueprint['freedom_mode']) =>
+    request<CreatorBlueprint>(
+      '/stories/' + encodeURIComponent(id) + '/creator/freedom',
+      { method: 'PATCH', body: JSON.stringify({ freedom_mode }) }),
   creatorBlueprint: (id: string) => request<CreatorBlueprint>(
     '/stories/' + encodeURIComponent(id) + '/creator'),
   visualPreflight: (id: string) => request<VisualPreflightStatus>(
