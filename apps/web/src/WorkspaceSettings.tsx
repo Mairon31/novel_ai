@@ -372,7 +372,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
           <div className="workspace-panel">
             <h3><LockKeyhole size={17}/> {t('settings.detail.networkStatus')}</h3>
             {network ? <p>{network.mode === 'loopback_only'
-              ? t('settings.networkLoopbackExplanation') : network.message}</p> : <p>{t('settings.detail.checkingNetwork')}</p>}
+              ? t('settings.networkLoopbackExplanation') : t('settings.networkUnknown')}</p> : <p>{t('settings.detail.checkingNetwork')}</p>}
             <div className="workspace-service-row"><strong>{t('settings.detail.localServer')}</strong><span>127.0.0.1:8000</span><b>{t('settings.detail.active')}</b></div>
             <div className="workspace-service-row"><strong>{t('settings.detail.mobileAccess')}</strong><span>{t('settings.detail.authPending')}</span><b>{t('settings.detail.blocked')}</b></div>
             <div className="workspace-service-row"><strong>{t('settings.detail.otherWorkers')}</strong><span>{t('settings.detail.remoteLLM')}</span><b>{t('settings.detail.registration')}</b></div>

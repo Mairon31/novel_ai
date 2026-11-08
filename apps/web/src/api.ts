@@ -437,11 +437,11 @@ export const api = {
   },
 };
 export function size(bytes?: number | null): string {
-  if (bytes == null) return 'Unknown size';
+  if (bytes == null) return i18n.t('apiClient.unknownSize');
   if (bytes < 1024) return String(bytes) + ' B';
   const unit = Math.floor(Math.log(bytes) / Math.log(1024));
   return (bytes / Math.pow(1024, unit)).toFixed(1) + ' ' + ['B', 'KB', 'MB', 'GB', 'TB'][unit];
 }
-export function downloads(n: CatalogEntry, locale = 'en'): string {
+export function downloads(n: CatalogEntry, locale = i18n.language): string {
   return new Intl.NumberFormat(locale, { notation: 'compact' }).format(n.downloads);
 }

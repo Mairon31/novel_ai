@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { BackendDiagnostic } from './BackendDiagnostic';
 import { formatUiNumber } from './i18n';
 import { useEffect, useState } from 'react';
 import { Check, Download, LoaderCircle, RefreshCcw } from 'lucide-react';
@@ -142,9 +143,9 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
         return <div className="noble-voice-card" key={job.id}>
           <div className="noble-voice-main">
             <strong>{job.filename}</strong>
-            <span>{job.repo_id} · {t('jobs.' + job.status, { defaultValue: job.status })} ·
+            <span>{job.repo_id} · {t('jobs.' + job.status, { defaultValue: t('jobs.unknown') })} ·
               {formatted(job.received_bytes)} / {formatted(job.expected_size)}</span>
-            {job.error && <span role="alert">{job.error}</span>}
+            {job.error && <BackendDiagnostic detail={job.error}/>}
             <progress aria-label={t('a11y.downloadFile', { filename: job.filename })} max={100} value={pct}/>
           </div>
           {active && <button className="secondary-button" type="button"

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n, { formatUiNumber } from './i18n';
 import { InterfaceLanguageSelector } from './InterfaceLanguageSelector';
+import { BackendDiagnostic } from './BackendDiagnostic';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2, Compass,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
@@ -39,10 +40,10 @@ const menu: Array<{ id: Page; icon: typeof BookOpen }> = [
 ];
 const terminal = ['completed', 'failed', 'cancelled', 'paused'];
 function humanStatus(job: DownloadJob) {
-  return i18n.t('jobs.' + job.status, { defaultValue: job.status });
+  return i18n.t('jobs.' + job.status, { defaultValue: i18n.t('jobs.unknown') });
 }
 function localizedFitNote(fit: ModelFitVariant): string {
-  return i18n.t('modelFitUi.' + fit.fit, { defaultValue: fit.note });
+  return i18n.t('modelFitUi.' + fit.fit, { defaultValue: i18n.t('modelFitUi.unknown') });
 }
 function ErrorNote({ message, close }: { message: string; close: () => void }) {
   const { t } = useTranslation();
@@ -685,7 +686,7 @@ export default function App() {
               <div className="progress-track"><div style={{ width: pct + '%' }}/></div>
               <div className="progress-label"><span>{size(job.received_bytes)} / {size(job.expected_size)}</span>
                 <span>{job.expected_size ? pct + '%' : t('model.unknownTotal')}</span></div>
-              {job.error && <p className="job-error">{job.error}</p>}
+              {job.error && <BackendDiagnostic detail={job.error} className="job-error"/>}
               <div className="download-controls">
                 {['queued', 'downloading'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'pause')}><Pause size={16}/> {t('downloads.pause')}</button>}
                 {['paused', 'failed', 'cancelled'].includes(job.status) && <button disabled={busy} onClick={() => void manageDownload(job.id, 'resume')}><Play size={16}/> {t('downloads.resume')}</button>}

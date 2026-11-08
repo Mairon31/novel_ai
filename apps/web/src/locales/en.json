@@ -1626,5 +1626,10 @@
   "apiClient.serviceUnavailable": "The service is temporarily unavailable.",
   "apiClient.networkError": "Could not connect to the Noble AI server. Check that it is running.",
   "apiClient.storyNotFound": "The story could not be found.",
-  "apiClient.generationError": "The narrator could not finish generating this turn."
+  "apiClient.generationError": "The narrator could not finish generating this turn.",
+  "apiClient.backgroundTaskFailed": "This task could not be completed.",
+  "apiClient.showTechnicalDetails": "Show technical details",
+  "apiClient.unknownSize": "Unknown size",
+  "jobs.unknown": "Unknown status",
+  "settings.networkUnknown": "The server reported an unrecognized network mode. Review diagnostics before sharing this workspace."
 }

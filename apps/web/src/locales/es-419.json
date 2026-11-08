@@ -1626,5 +1626,10 @@
   "apiClient.serviceUnavailable": "El servicio no está disponible temporalmente.",
   "apiClient.networkError": "No se pudo conectar al servidor de Noble AI. Comprueba que esté en ejecución.",
   "apiClient.storyNotFound": "No se encontró la historia.",
-  "apiClient.generationError": "El narrador no pudo terminar de generar este turno."
+  "apiClient.generationError": "El narrador no pudo terminar de generar este turno.",
+  "apiClient.backgroundTaskFailed": "No se pudo completar esta tarea.",
+  "apiClient.showTechnicalDetails": "Mostrar detalles técnicos",
+  "apiClient.unknownSize": "Tamaño desconocido",
+  "jobs.unknown": "Estado desconocido",
+  "settings.networkUnknown": "El servidor informó un modo de red no reconocido. Revisa sus diagnósticos antes de compartir este espacio de trabajo."
 }

@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { BackendDiagnostic } from './BackendDiagnostic';
 import { formatUiNumber } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { Check, LoaderCircle, RefreshCcw, Volume2 } from 'lucide-react';
@@ -183,7 +184,7 @@ export function VoiceSettingsPanel() {
             <div className="noble-voice-main">
               <strong>{voice.name}</strong>
               <span>{voice.language} · {voice.quality} · {status === 'installed' ?
-                t('jobs.installed') : status ? t('jobs.' + status, { defaultValue: status }) : t('jobs.availableToInstall')}</span>
+                t('jobs.installed') : status ? t('jobs.' + status, { defaultValue: t('jobs.unknown') }) : t('jobs.availableToInstall')}</span>
               <a href={voice.model_card} target="_blank" rel="noopener noreferrer">
                 {t('voice.viewLicense')}</a>
             </div>
@@ -191,7 +192,8 @@ export function VoiceSettingsPanel() {
               <progress aria-label={t('voiceUi.progress', { name: voice.name })} value={percent} max={100}/>
               <small>{percent}% · {formatUiNumber(job.received_bytes / 1024 / 1024, 1)} /
                 {formatUiNumber(job.total_bytes / 1024 / 1024, 1)} MiB
-                {job.error ? ' · ' + job.error : ''}</small>
+                </small>
+              {job.error && <BackendDiagnostic detail={job.error}/>}
             </div>}
             <div className="settings-buttons">
               {status === 'installed' ? <span>{t('voice.readySelect')}</span> :

@@ -1626,5 +1626,10 @@
   "apiClient.serviceUnavailable": "服务暂时不可用。",
   "apiClient.networkError": "无法连接到 Noble AI 服务器，请确认服务器正在运行。",
   "apiClient.storyNotFound": "找不到该故事。",
-  "apiClient.generationError": "叙事模型无法完成本轮生成。"
+  "apiClient.generationError": "叙事模型无法完成本轮生成。",
+  "apiClient.backgroundTaskFailed": "无法完成此任务。",
+  "apiClient.showTechnicalDetails": "显示技术详情",
+  "apiClient.unknownSize": "大小未知",
+  "jobs.unknown": "未知状态",
+  "settings.networkUnknown": "服务器报告了无法识别的网络模式。共享工作区前请检查诊断信息。"
 }

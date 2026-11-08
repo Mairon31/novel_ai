@@ -198,5 +198,28 @@ class InterfaceLocaleTests(unittest.TestCase):
         self.assertNotIn("throw new Error(evt.data.message)", studio)
 
 
+    def test_background_job_diagnostics_do_not_bypass_i18n(self):
+        """Task status copy is localized; the original backend detail is opt-in."""
+        keys = ("apiClient.backgroundTaskFailed", "apiClient.showTechnicalDetails",
+                "apiClient.unknownSize", "jobs.unknown", "settings.networkUnknown")
+        for language in LANGUAGES:
+            catalog = json.loads((BASE / (language + ".json")).read_text("utf-8"))
+            for key in keys:
+                self.assertIn(key, catalog)
+                self.assertTrue(catalog[key].strip())
+        component = (BASE.parent / "BackendDiagnostic.tsx").read_text("utf-8")
+        self.assertIn("t('apiClient.backgroundTaskFailed')", component)
+        self.assertIn("t('apiClient.showTechnicalDetails')", component)
+        self.assertIn("<details>", component)
+        for filename in ("App.tsx", "ImageCheckpointManager.tsx", "VoiceSettingsPanel.tsx"):
+            source = (BASE.parent / filename).read_text("utf-8")
+            with self.subTest(filename=filename):
+                self.assertIn("<BackendDiagnostic detail={job.error}", source)
+                self.assertNotIn("{job.error}</", source)
+                self.assertNotIn("+ job.error", source)
+        self.assertNotIn("return 'Unknown size'", (BASE.parent / "api.ts").read_text("utf-8"))
+        self.assertNotIn(" : network.message", (BASE.parent / "WorkspaceSettings.tsx").read_text("utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
