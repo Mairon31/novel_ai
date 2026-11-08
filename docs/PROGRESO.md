@@ -1031,3 +1031,9 @@ No se añadieron bitácoras ni advertencias internas a la portada pública READM
 
 - `readerDraftPersistence.ts` stores schema-checked, 14-day-expiring browser-local drafts keyed by UUID story, with a 3000-character bound and rejection of corrupt/future/oversized data. `StoryStudio.tsx` now restores both the text and narration mode per story when navigating or reloading, saves only on user input/mode changes (to avoid cross-story effect races), and clears the draft after a confirmed narrative turn. Server API/history is unchanged; localStorage cannot be assumed private from scripts sharing the origin.
 - Playwright tests `apps/web/tests/reader-draft-recovery.spec.ts` cover story separation, persistence, expiry and bad JSON. All tests **NOT RUN** under B002. Commits `c9bc7b9`, `08b9582`. B002 4/5: one more independently completed implementation before a single full batch CI.
+
+## 2026-11-08 — B002 5/5: reader-level narrative freedom controls (NOT RUN)
+
+- Added atomic story-only `PATCH /api/v1/stories/{story_id}/creator/freedom` to update guided/flexible/strict narrative boundaries without replacing the full Creator Blueprint, author-only context, arc milestones, or global preferences. The VN reader's UI/UX inspector now exposes the per-story setting. Story changes reset the inspector so controls cannot accidentally target a previous story. Added en/es-419/pt-BR/zh-CN strings.
+- Tests added: `tests/test_reader_story_settings.py` (atomic preservation, validation, story scoping, narrator context) and `apps/web/tests/reader-story-settings.spec.ts` (reader UI, reload, story isolation). **NOT RUN**; B002 reached **5/5** with `91e4cb1`. Related commits: `eee6e33`, `8c6b32b`, `75d4d1c`, `f46c536`, `91e4cb1`.
+- Full B002 CI now due as **one explicit batch run**. The current connected environment cannot resolve `github.com` from the shell, so no local clone/build was possible. No routine intermediate pushes triggered Actions.

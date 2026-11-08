@@ -107,7 +107,7 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 
 Possible next priorities: N-22 persistent image generation queue and reviewed cover generation, N-18 scene-beat planning and model-based semantic evaluation, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
 
-## Batch B002 — OPEN (4/5)
+## Batch B002 — READY FOR FULL CI (5/5)
 
 The five verified B001 implementations above are **not** part of this new batch. Record only independently completed new functional units below; do not trigger CI until five units or a critical P0 exception.
 
@@ -117,10 +117,11 @@ The five verified B001 implementations above are **not** part of this new batch.
 | 2 | N-18 — editorial arc milestones (planned/active/resolved) in Creator Blueprint, private narrator prompt and creator UI; clone and legacy editing compatibility | `2018265`, `e365955`, `cb0cec1` | Added `tests/test_creator_arc_beats.py` + `apps/web/tests/creator-arc-beats.spec.ts`; **NOT RUN** until B002 full CI. | IMPLEMENTED / UNVERIFIED |
 | 3 | N-19 — six semantic reader composer modes: speak, act, think, observe, interact, narrate, with actual distinct narrator directives, input hints, history labels and responsive keyboard/mobile controls | `efa2870`, `47c6c24`, `90a0f0a`, `88d1926` | `tests/test_reader_interaction_modes.py`, `apps/web/tests/reader-interaction-modes.spec.ts` added; **NOT RUN**. E2E/semantic model verification deferred to B002 full CI. | IMPLEMENTED / UNVERIFIED |
 | 4 | N-19 — browser-local per-story reader compose draft and selected interaction mode, 14-day expiry, validation, corruption recovery, and cleanup after a completed turn | `c9bc7b9`, `08b9582` | Added `apps/web/tests/reader-draft-recovery.spec.ts` (two browser cases), **NOT RUN** until B002 full CI. No user text sent to a new server endpoint. | IMPLEMENTED / UNVERIFIED |
-| 5 | — | — | NOT RUN | OPEN |
+| 5 | N-19 — story-specific narrative freedom reader settings with an atomic PATCH that preserves Creator Blueprint text, beats, and global preferences | `eee6e33`, `8c6b32b`, `75d4d1c`, `f46c536`, `91e4cb1` | Added `tests/test_reader_story_settings.py` and `apps/web/tests/reader-story-settings.spec.ts`; **NOT RUN** until B002 verification. | IMPLEMENTED / UNVERIFIED |
 
-**B002 full CI:** NOT RUN.  
-**B002 implementation boundary:** not chosen.
+**B002 full CI:** PENDING explicit single batch request (dedicated `.github/ci-batches/full-request.txt`); do not claim PASS yet.  
+**B002 implementation boundary:** `91e4cb1de8b0fecddee1f0ff887966c4b9abc929` (all five functional units before documentation/trigger).  
+**Local verification limitation:** a network test from the working container could not resolve `github.com`, so a full local clone/build was unavailable. No GitHub Actions run was started by interim commits.
 
 ## Resume procedure after an interrupted session
 
