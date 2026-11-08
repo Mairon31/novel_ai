@@ -554,13 +554,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               onClick={() => setSection('media')}><ImageIcon size={17}/> {t("creator.images", { count: assets.length })}</button>
           </nav>
 
-          {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Loading content...</div> :
+          {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> {t('creator.contentLoading')}</div> :
             section === 'world' ? <WorldStateEditor
               storyId={active.id} characters={characters}/> :
             section === 'media' ? <div className="creator-fields creator-media-library">
               <div className="creator-section-intro">
-                <h3>Covers, backgrounds, and characters</h3>
-                <p>Choose a fixed library cover and prepare scene backgrounds and transparent character portraits. No images are generated automatically.</p>
+                <h3>{t('creator.covers')}</h3>
+                <p>{t('creator.coversHint')}</p>
               </div>
               <div className="creator-cover-preview" aria-label="Current editorial cover">
                 <div className="creator-cover-preview-art">
@@ -569,12 +569,11 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <BookOpen size={42} aria-hidden="true"/>}
                 </div>
                 <div className="creator-cover-preview-copy">
-                  <span className="overline">STORY COVER</span>
+                  <span className="overline">{t('creator.storyCover')}</span>
                   <strong>{active.cover_image_url ? 'Custom cover' : 'No custom cover'}</strong>
-                  <p>Shown in Library and story details.
-                    It does not change when you continue or generate a scene.</p>
+                  <p>{t('creator.coverHint')}</p>
                   {active.cover_asset_id && <button className="secondary-button" disabled={working}
-                    onClick={() => void chooseCover(null)}>Remove cover</button>}
+                    onClick={() => void chooseCover(null)}>{t('creator.removeCover')}</button>}
                 </div>
               </div>
               <div className="creator-media-grid">
@@ -594,9 +593,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <div>
                       {asset.kind === 'cover' && asset.id !== active.cover_asset_id &&
                         <button className="secondary-button" disabled={working}
-                          onClick={() => void chooseCover(asset.id)}>Use as cover</button>}
+                          onClick={() => void chooseCover(asset.id)}>{t('creator.useCover')}</button>}
                       <button className="secondary-button" disabled={working}
-                        onClick={() => editAsset(asset)}>Edit description</button>
+                        onClick={() => editAsset(asset)}>{t('creator.editDescription')}</button>
                       <button aria-label={'Delete image ' + asset.label}
                         className="creator-media-delete" disabled={working}
                         onClick={() => void deleteMediaAsset(asset)}><Trash2 size={15}/></button>
@@ -604,65 +603,65 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </div>
                 </article>)}
                 {assets.length === 0 && <div className="creator-media-empty">
-                  <ImageIcon size={30}/><strong>No visual assets yet.</strong>
-                  <p>Import a background or character portrait to prepare your visual novel.</p>
+                  <ImageIcon size={30}/><strong>{t('creator.emptyAssets')}</strong>
+                  <p>{t('creator.importAssetHint')}</p>
                 </div>}
               </div>
               <div className="creator-media-form">
                 <h4>{editingAsset ? 'Edit asset' : 'Add visual asset'}</h4>
                 {!editingAsset && <div className="creator-double">
-                  <label>Asset type
+                  <label>{t('creator.assetType')}
                     <select aria-label="Visual asset type" value={mediaKind}
                       onChange={e => setMediaKind(e.target.value as CreatorMediaAsset['kind'])}>
-                      <option value="cover">Editorial cover</option>
-                      <option value="background">Scene background</option>
-                      <option value="foreground">Character / foreground</option>
+                      <option value="cover">{t('creator.coverAsset')}</option>
+                      <option value="background">{t('creator.backgroundAsset')}</option>
+                      <option value="foreground">{t('creator.foregroundAsset')}</option>
                     </select>
                   </label>
-                  {mediaKind === 'foreground' && <label>Linked character (optional)
+                  {mediaKind === 'foreground' && <label>{t('creator.linkedCharacter')}
                     <select aria-label="Image character" value={mediaCharacter}
                       onChange={e => setMediaCharacter(e.target.value)}>
-                      <option value="">None</option>
+                      <option value="">{t('creator.none')}</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
                     </select>
                   </label>}
                 </div>}
                 {mediaKind === 'foreground' && <div className="creator-double">
-                  <label>Sprite expression
+                  <label>{t('creator.spriteExpression')}
                     <select aria-label="Sprite expression" value={mediaExpression}
                       onChange={e => setMediaExpression(e.target.value as SpriteExpression)}>
-                      <option value="neutral">Neutral</option>
-                      <option value="joy">Joy</option>
-                      <option value="anger">Anger</option>
-                      <option value="sadness">Sadness</option>
-                      <option value="surprise">Surprise</option>
+                      <option value="neutral">{t('creator.neutral')}</option>
+                      <option value="joy">{t('creator.joy')}</option>
+                      <option value="anger">{t('creator.anger')}</option>
+                      <option value="sadness">{t('creator.sadness')}</option>
+                      <option value="surprise">{t('creator.surprise')}</option>
                     </select>
                   </label>
-                  <label>Pose (identifier)
+                  <label>{t('creator.pose')}
                     <input aria-label="Sprite pose" maxLength={32} value={mediaPose}
                       onChange={e => setMediaPose(e.target.value)}
                       placeholder="standing, sitting, waving..."/>
                   </label>
                 </div>}
-                <label>Name
+                <label>{t('creator.name')}
                   <input aria-label="Image name" maxLength={100} value={mediaLabel}
                     placeholder="Throne room, Aira smiling..."
                     onChange={e => setMediaLabel(e.target.value)}/></label>
-                <label>Caption for matching the scene
+                <label>{t('creator.sceneCaption')}
                   <textarea aria-label="Image description" maxLength={220} rows={3}
                     value={mediaCaption} onChange={e => setMediaCaption(e.target.value)}
                     placeholder="Dark forest at night, Aira smiling in the tavern..."/>
-                  <small>Describe specific places and emotions. This caption is not sent to a model.</small>
+                  <small>{t('creator.sceneCaptionHint')}</small>
                 </label>
-                {!editingAsset && <label>PNG, JPEG, or WebP file (up to 12 MiB)
+                {!editingAsset && <label>{t('creator.fileRequirements')}
                   <input type="file" aria-label="Visual asset file"
                     accept="image/png,image/jpeg,image/webp"
                     onChange={e => setMediaFile(e.target.files?.[0] || null)}/>
                   {mediaKind === 'foreground' && <small>
-                    PNG transparency is preserved so characters can be layered over the background.
+                    {t('creator.alphaHint')}
                   </small>}
                   {mediaKind === 'cover' && <small>
-                    The cover is saved as WebP and selected automatically upon import.
+                    {t('creator.coverSavedHint')}
                   </small>}
                 </label>}
                 <div className="creator-actions">
@@ -673,41 +672,41 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     onClick={() => void saveMediaAsset()}><UploadCloud size={16}/>
                     {editingAsset ? t("common.save") : t("creator.importImage")}</button>
                   {editingAsset && <button className="secondary-button"
-                    onClick={resetMediaEditor}>Cancel editing</button>}
+                    onClick={resetMediaEditor}>{t('creator.cancelEditing')}</button>}
                 </div>
               </div>
               <div className="creator-media-form">
-                <h4>Import expression sheet</h4>
+                <h4>{t('creator.importSheet')}</h4>
                 <p>A grid of five transparent cells in this order: neutral, joy, anger, sadness, surprise. The reader reuses each PNG without generating images when advancing.</p>
                 <div className="creator-double">
-                  <label>Sheet character
+                  <label>{t('creator.sheetCharacter')}
                     <select aria-label="Expression-sheet character"
                       value={sheetCharacter} onChange={e => setSheetCharacter(e.target.value)}>
-                      <option value="">Select a character</option>
+                      <option value="">{t('creator.selectCharacter')}</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
                     </select>
                   </label>
-                  <label>Cell layout
+                  <label>{t('creator.cellLayout')}
                     <select aria-label="Sheet layout" value={sheetLayout}
                       onChange={e => setSheetLayout(e.target.value as 'horizontal' | 'vertical')}>
-                      <option value="horizontal">One row of five</option>
-                      <option value="vertical">One column of five</option>
+                      <option value="horizontal">{t('creator.oneRow')}</option>
+                      <option value="vertical">{t('creator.oneColumn')}</option>
                     </select>
                   </label>
                 </div>
                 <div className="creator-double">
-                  <label>Scene context
+                  <label>{t('creator.sceneContext')}
                     <input aria-label="Sheet context" maxLength={220}
                       value={sheetCaption} onChange={e => setSheetCaption(e.target.value)}
                       placeholder="Aira castillo cristal"/>
                   </label>
-                  <label>Shared pose
+                  <label>{t('creator.sharedPose')}
                     <input aria-label="Sheet pose" maxLength={32}
                       value={sheetPose} onChange={e => setSheetPose(e.target.value)}
                       placeholder="standing"/>
                   </label>
                 </div>
-                <label>Transparent PNG or WebP sheet (maximum 12 MiB)
+                <label>{t('creator.sheetFile')}
                   <input type="file" aria-label="Expression-sheet file"
                     accept="image/png,image/webp"
                     onChange={e => setSheetFile(e.target.files?.[0] || null)}/>
@@ -720,47 +719,47 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </button>
               </div>
               <div className="creator-media-form">
-                <h4>Generate expressions with AI · review first</h4>
+                <h4>{t('creator.generateExpressions')}</h4>
                 <p>ComfyUI generates five separate portraits, one per request. Noble AI removes the background and rejects low-quality cutouts. Images remain drafts until you approve all five previews.</p>
                 <div className="creator-double">
-                  <label>Character for AI
+                  <label>{t('creator.characterForAI')}
                     <select aria-label="NPC for expression generation" value={draftCharacter}
                       onChange={event => {
                         setDraftCharacter(event.target.value);
                         setDraftSpriteReference('');
                       }}>
-                      <option value="">Select an NPC</option>
+                      <option value="">{t('creator.selectNPC')}</option>
                       {characters.map(npc => <option key={npc.id} value={npc.id}>{npc.name}</option>)}
                     </select>
                   </label>
-                  <label>Generated sprite pose
+                  <label>{t('creator.generatedPose')}
                     <input aria-label="NPC generation pose" maxLength={32}
                       value={draftPose} onChange={event => setDraftPose(event.target.value)}/>
                   </label>
                 </div>
-                <label>Caption to match sprites during the story
+                <label>{t('creator.spriteCaption')}
                   <input aria-label="AI sprite context" maxLength={220}
                     value={draftCaption} onChange={event => setDraftCaption(event.target.value)}
                     placeholder="Aira in the ancient library"/>
                 </label>
-                <label>Expression art style
+                <label>{t('creator.artStyle')}
                   <input aria-label="AI sprite style" maxLength={220}
                     value={draftStyle} onChange={event => setDraftStyle(event.target.value)}/>
                 </label>
                 <div className="creator-double">
-                  <label>Optional seed (defaults to NPC seed)
+                  <label>{t('creator.optionalSeed')}
                     <input type="number" aria-label="AI sprite seed"
                       min={0} step={1} value={draftSeed}
                       onChange={event => setDraftSeed(event.target.value)}
                       placeholder="Visual DNA seed"/>
                   </label>
-                  <label>Gallery reference (optional)
+                  <label>{t('creator.galleryReference')}
                     <select aria-label="AI sprite reference"
                       value={draftReference} onChange={event => {
                         setDraftReference(event.target.value);
                         if (event.target.value) setDraftSpriteReference('');
                       }}>
-                      <option value="">No Gallery reference</option>
+                      <option value="">{t('creator.noReference')}</option>
                       {galleryAssets.map(asset => <option value={asset.id} key={asset.id}>
                         {asset.origin === 'comfyui' ? 'ComfyUI' : 'Imported'} · {asset.id.slice(0, 8)}
                       </option>)}
@@ -768,13 +767,13 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </label>
                 </div>
                 <div className="creator-double">
-                  <label>Approved sprite of the same NPC (optional)
+                  <label>{t('creator.approvedReference')}
                     <select aria-label="AI reference sprite" value={draftSpriteReference}
                       onChange={event => {
                         setDraftSpriteReference(event.target.value);
                         if (event.target.value) setDraftReference('');
                       }}>
-                      <option value="">Do not use an approved sprite</option>
+                      <option value="">{t('creator.noApproved')}</option>
                       {assets.filter(item => item.kind === 'foreground' &&
                         item.character_id === draftCharacter).map(item =>
                         <option value={item.id} key={item.id}>
@@ -782,7 +781,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         </option>)}
                     </select>
                   </label>
-                  <label>Reference mode
+                  <label>{t('creator.referenceMode')}
                     <select aria-label="AI reference mode"
                       value={draftReferenceMode}
                       onChange={event => setDraftReferenceMode(
@@ -826,12 +825,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </p>
                 </>}
                 <div className="creator-double">
-                  <label>Background removal method
+                  <label>{t('creator.backgroundRemoval')}
                     <select aria-label="AI sprite background removal"
                       value={draftCutoutMode}
                       onChange={event => setDraftCutoutMode(
                         event.target.value as NeuralCutoutMode)}>
-                      <option value="chroma_green">Green screen · fast, no extra model</option>
+                      <option value="chroma_green">{t('creator.greenScreen')}</option>
                       <option value="neural_rmbg2">RMBG 2.0 · neural mask</option>
                       <option value="neural_birefnet_portrait">BiRefNet Portrait · portraits</option>
                       <option value="neural_birefnet_matting">BiRefNet Matting · transparency</option>
@@ -872,7 +871,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       (!Number.isFinite(draftAdapterWeight) ||
                        draftAdapterWeight < 0.1 || draftAdapterWeight > 1.5))}
                   onClick={() => void startSpriteDraft()}>
-                  <Sparkles size={16}/> Prepare five-expression draft
+                  <Sparkles size={16}/> {t('creator.prepareDraft')}
                 </button>
                 {draftProgress && <p role="status" className="creator-hint">
                   <LoaderCircle className="rotating" size={15}/> {draftProgress}
@@ -920,7 +919,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </div>
                   {!!draft.alignment_warnings?.length && <div className="creator-hint"
                       role="status" aria-label="Silhouette warnings">
-                    <strong>Significant framing differences detected</strong>
+                    <strong>{t('creator.framingDifferences')}</strong>
                     <p>{draft.alignment_warnings.join('; ')}</p>
                     <p>This comparison only measures the position and scale of the
                       silhouette; it does not verify facial identity. Regenerate visibly different variants or confirm that you have reviewed them.</p>
@@ -937,7 +936,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <div className="creator-actions">
                     <button className="secondary-button" disabled={working || draft.ready_count === 5}
                       onClick={() => void generateSprites(draft)}>
-                      <Sparkles size={16}/> Generate missing expressions
+                      <Sparkles size={16}/> {t('creator.generateMissing')}
                     </button>
                     <button className="primary-button" disabled={working ||
                         draft.ready_count !== 5 ||
@@ -947,7 +946,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     </button>
                     <button className="secondary-button" disabled={working}
                       onClick={() => void discardSprites(draft)}>
-                      <Trash2 size={15}/> Discard draft
+                      <Trash2 size={15}/> {t('creator.discardDraft')}
                     </button>
                   </div>
                 </section>)}
@@ -955,7 +954,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             </div> :
             section === 'lorebook' ? <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Lorebook · conditional knowledge</h3>
+                <h3>{t('creator.lorebookKnowledge')}</h3>
                 <p>Store secrets, locations, and rules that activate when trigger words appear in player actions or recent scenes. This text is private to the narrator; each branch keeps its own copy.</p>
               </div>
               <div className="creator-character-list">
@@ -973,10 +972,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       : ' · General knowledge'}</p>
                   <p>{entry.content.slice(0, 170)}{entry.content.length > 170 ? '…' : ''}</p>
                   <button className="secondary-button" disabled={working}
-                    onClick={() => editLorebook(entry)}>Edit entry</button>
+                    onClick={() => editLorebook(entry)}>{t('creator.editEntry')}</button>
                 </div>)}
                 {!lorebookEntries.length && <p className="creator-placeholder">
-                  No entries yet. Add facts that should be recalled only in relevant scenes.</p>}
+                  {t('creator.noLoreEntries')}</p>}
               </div>
               <div className="creator-media-form">
                 <h4>{editingLorebook ? 'Edit Lorebook entry' : 'New Lorebook entry'}</h4>
@@ -986,57 +985,57 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       ...v, title: e.target.value,
                     }))} placeholder="Crystal forest, secret pact..."/>
                 </label>
-                <label>Facts the narrator should remember
+                <label>{t('creator.factsRemember')}
                   <textarea aria-label="Lorebook content" rows={5} maxLength={3500}
                     value={lorebookDraft.content} onChange={e => setLorebookDraft(v => ({
                       ...v, content: e.target.value,
                     }))} placeholder="Describe world rules, secrets, or canonical facts."/>
                 </label>
                 <div className="creator-double">
-                  <label>Primary keys (comma-separated)
+                  <label>{t('creator.primaryKeys')}
                     <input aria-label="Lorebook keys" value={loreKeysInput}
                       onChange={e => setLoreKeysInput(e.target.value)}
                       placeholder="forest, ruins, map"/>
                   </label>
-                  <label>Optional secondary keys
+                  <label>{t('creator.secondaryKeys')}
                     <input aria-label="Secondary Lorebook keys" value={loreSecondaryInput}
                       onChange={e => setLoreSecondaryInput(e.target.value)}
                       placeholder="night, guard"/>
                   </label>
                 </div>
                 <div className="creator-double">
-                  <label>Priority (0–100)
+                  <label>{t('creator.priority')}
                     <input aria-label="Lorebook priority" type="number" min={0} max={100}
                       value={lorebookDraft.priority}
                       onChange={e => setLorebookDraft(v => ({ ...v,
                         priority: Number(e.target.value),
                       }))}/>
                   </label>
-                  <label>Secondary activation
+                  <label>{t('creator.secondaryActivation')}
                     <select aria-label="Lorebook secondary condition"
                       value={lorebookDraft.secondary_mode}
                       onChange={e => setLorebookDraft(v => ({
                         ...v, secondary_mode: e.target.value as 'any'|'all',
                       }))}>
-                      <option value="any">Any</option>
-                      <option value="all">All</option>
+                      <option value="any">{t('creator.any')}</option>
+                      <option value="all">{t('creator.all')}</option>
                     </select>
                   </label>
                 </div>
-                <label>Who may know this fact
+                <label>{t('creator.knowledgeVisibility')}
                   <select aria-label="Lorebook visibility"
                     value={lorebookDraft.visibility}
                     onChange={e => setLorebookDraft(v => ({
                       ...v, visibility: e.target.value as 'world' | 'witnesses',
                       witness_character_ids: [],
                     }))}>
-                    <option value="world">Public world knowledge</option>
-                    <option value="witnesses">Present witnesses only</option>
+                    <option value="world">{t('creator.publicKnowledge')}</option>
+                    <option value="witnesses">{t('creator.presentWitnesses')}</option>
                   </select>
                 </label>
                 {lorebookDraft.visibility === 'witnesses' && <fieldset>
-                  <legend>Characters who know this fact</legend>
-                  {!characters.length && <p>Create characters in the Characters section first.</p>}
+                  <legend>{t('creator.witnessCharacters')}</legend>
+                  {!characters.length && <p>{t('creator.createCharactersFirst')}</p>}
                   {characters.map(person => <label key={person.id} className="creator-lore-toggle">
                     <input type="checkbox" aria-label={'Witness ' + person.name}
                       checked={lorebookDraft.witness_character_ids.includes(person.id)}
@@ -1051,14 +1050,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </fieldset>}
                 <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.enabled}
                   onChange={e => setLorebookDraft(v => ({...v, enabled: e.target.checked}))}/>
-                  Entry enabled</label>
+                  {t('creator.entryEnabled')}</label>
                 <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.always_active}
                   onChange={e => setLorebookDraft(v => ({...v, always_active: e.target.checked}))}/>
-                  Always active (no keys)</label>
+                  {t('creator.alwaysActive')}</label>
                 <label className="creator-lore-toggle"><input type="checkbox" checked={lorebookDraft.match_whole_words}
                   onChange={e => setLorebookDraft(v => ({
                     ...v, match_whole_words: e.target.checked,
-                  }))}/> Match whole words</label>
+                  }))}/> {t('creator.wholeWords')}</label>
                 <div className="creator-actions">
                   <button className="primary-button" disabled={working ||
                     lorebookDraft.title.trim().length < 2 ||
@@ -1069,14 +1068,14 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     {editingLorebook ? 'Update Lorebook' : 'Create Lorebook entry'}
                   </button>
                   {editingLorebook && <button className="secondary-button"
-                    onClick={resetLorebookEditor}>Cancel editing</button>}
+                    onClick={resetLorebookEditor}>{t('creator.cancelEditing')}</button>}
                 </div>
               </div>
               <div className="creator-media-form">
-                <h4>Check activation before playing</h4>
+                <h4>{t('creator.checkActivation')}</h4>
                 <p>Enter an action or phrase to preview which entries the narrator would receive and the actual character budget used (maximum 6,000 characters).
                   The preview uses character presence saved in World State.</p>
-                <label>Simulate an action
+                <label>{t('creator.simulateAction')}
                   <textarea rows={3} aria-label="Simulate Lorebook activation"
                     maxLength={3000} value={loreQuery}
                     onChange={e => { setLoreQuery(e.target.value); setLorePreview(null); }}
@@ -1084,7 +1083,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </label>
                 <button className="secondary-button" disabled={working}
                   onClick={() => void previewLorebookActivation()}>
-                  <BookKey size={16}/> Preview Lorebook
+                  <BookKey size={16}/> {t('creator.previewLorebook')}
                 </button>
                 {lorePreview && <div role="status" className="creator-hint">
                   <strong>{lorePreview.entries.length} activated entries</strong>
@@ -1094,7 +1093,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   {lorePreview.entries.map(entry => <p key={entry.id}>
                     {entry.title} · priority {entry.priority}</p>)}
                   {!!lorePreview.context && <details className="creator-lorebook-preview">
-                    <summary>View exact context sent to narrator</summary>
+                    <summary>{t('creator.exactContext')}</summary>
                     <pre>{lorePreview.context}</pre>
                   </details>}
                 </div>}
@@ -1102,16 +1101,16 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             </div> :
             section === 'story' ? <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Story identity and plot</h3>
-                <p>The public description introduces the world; private plot and author guidelines are sent to the narrator, not displayed to the player.</p>
+                <h3>{t('creator.storyIdentity')}</h3>
+                <p>{t('creator.publicPrivateHint')}</p>
               </div>
               <div className="creator-double">
-                <label>Genre
+                <label>{t('creator.genre')}
                   <input aria-label="Story genre" value={blueprint.genre}
                     maxLength={80} placeholder="Fantasy, romance, mystery..."
                     onChange={e => update('genre', e.target.value)}/>
                 </label>
-                <label >Language
+                <label >{t('creator.language')}
                   <select aria-label="Story language" value={blueprint.language}
                     onChange={e => update('language', e.target.value)}>
                     <option value="es-419">Latin American Spanish</option>
@@ -1121,36 +1120,36 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   </select>
                 </label>
               </div>
-              <label>Short synopsis for readers
+              <label>{t('creator.synopsis')}
                 <textarea rows={3} aria-label="Reader synopsis" maxLength={250}
                   value={blueprint.synopsis} onChange={e => update('synopsis', e.target.value)}
                   placeholder="What players see when they discover the story."/>
               </label>
-              <label>Player-facing plot
+              <label>{t('creator.visiblePlot')}
                 <textarea rows={5} maxLength={4000} aria-label="Visible plot"
                   value={blueprint.player_plot}
                   onChange={e => update('player_plot', e.target.value)}
                   placeholder="Starting point, situation, and expectations without spoilers."/>
               </label>
-              <label>Private AI context
+              <label>{t('creator.privateContext')}
                 <textarea rows={8} maxLength={12000} aria-label="Private AI context"
                   value={blueprint.ai_plot}
                   onChange={e => update('ai_plot', e.target.value)}
                   placeholder="World rules, relationships, secrets, and events the narrator should know."/>
-                <small>Not shown directly in the story, but it influences narration.</small>
+                <small>{t('creator.privateHint')}</small>
               </label>
-              <label>Narrative guidelines
+              <label>{t('creator.guidelines')}
                 <textarea rows={5} maxLength={4000} aria-label="Narration guidelines"
                   value={blueprint.guidelines}
                   onChange={e => update('guidelines', e.target.value)}
                   placeholder="Style, pace, NPC agency, and continuity details..."/>
               </label>
-              <label>Persistent reminder
+              <label>{t('creator.reminder')}
                 <textarea rows={3} maxLength={1200} aria-label="Persistent reminder"
                   value={blueprint.reminder} onChange={e => update('reminder', e.target.value)}
                   placeholder="A short instruction that matters on every turn."/>
               </label>
-              <label>Tags (comma-separated)
+              <label>{t('creator.tags')}
                 <input maxLength={500} aria-label="Story tags" value={tagsInput}
                   onChange={e => setTagsInput(e.target.value)} placeholder="isekai, adventure, magic"/>
               </label>
@@ -1159,8 +1158,8 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               </button>
             </div> : section === 'cast' ? <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Novel characters</h3>
-                <p>Define NPC personality, history, and dialogue style separately from their visual profiles.</p>
+                <h3>{t('creator.novelCharacters')}</h3>
+                <p>{t('creator.npcHint')}</p>
               </div>
               <div className="creator-character-list">
                 {characters.map(person => <button key={person.id}
@@ -1169,48 +1168,47 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     <small>{person.personality || person.description}</small></span>
                   <ChevronRight size={16}/></button>)}
               </div>
-              <label>Name
+              <label>{t('creator.name')}
                 <input aria-label="NPC name" maxLength={80}
                   value={character.name} onChange={e => setCharacter(v => ({...v,name:e.target.value}))}/>
               </label>
-              <label>Linked visual profile (optional)
+              <label>{t('creator.visualLink')}
                 <select aria-label="NPC visual profile"
                   value={character.visual_character_id || ''}
                   onChange={e => setCharacter(v => ({
                     ...v, visual_character_id: e.target.value || null,
                   }))}>
-                  <option value="">Unlinked (match by name in unplanned prompts)</option>
+                  <option value="">{t('creator.unlinked')}</option>
                   {visualCharacters.map(visual => <option value={visual.id} key={visual.id}>
                     {visual.name}
                   </option>)}
                 </select>
-                <small>Link this NPC to a Gallery identity so their visual DNA
-                  follows the selected character in scene plans.</small>
+                <small>{t('creator.linkHint')}</small>
               </label>
-              <label>Background and description
+              <label>{t('creator.background')}
                 <textarea rows={5} maxLength={3000} aria-label="NPC description"
                   value={character.description} onChange={e => setCharacter(v => ({
                     ...v,description:e.target.value,
                   }))}/>
               </label>
-              <label>Personality and motivations
+              <label>{t('creator.personality')}
                 <textarea rows={4} maxLength={1500} aria-label="NPC personality"
                   value={character.personality} onChange={e => setCharacter(v => ({
                     ...v,personality:e.target.value,
                   }))}/>
               </label>
-              <label>Dialogue examples
+              <label>{t('creator.dialogueExamples')}
                 <textarea rows={4} maxLength={3000} aria-label="Dialogue examples"
                   value={character.dialogue_examples} onChange={e => setCharacter(v => ({
                     ...v,dialogue_examples:e.target.value,
                   }))} placeholder="Speech patterns, typical expressions, and responses."/>
               </label>
               <div className="creator-media-form">
-                <h4>Canonical visual identity</h4>
+                <h4>{t('creator.canonicalIdentity')}</h4>
                 <p>Appearance tags and seeds become fixed once saved.
                   A LoRA is an optional reference to a local model file; it does not
                   run inference or download models.</p>
-                <label>Appearance tags (comma-separated)
+                <label>{t('creator.appearanceTags')}
                   <input aria-label="Visual tags" maxLength={1040}
                     value={dnaTagsInput} disabled={!!editingCharacter &&
                       characters.some(npc => npc.id === editingCharacter &&
@@ -1219,7 +1217,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     placeholder="black hair, green eyes, blue coat"/>
                 </label>
                 <div className="creator-double">
-                  <label>Visual seed
+                  <label>{t('creator.visualSeed')}
                     <input type="number" min={0} max={4294967295} step={1}
                       aria-label="Visual seed" value={character.visual_dna.seed ?? ''}
                       disabled={!!editingCharacter && characters.some(npc =>
@@ -1228,7 +1226,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                         ...prev.visual_dna, seed: e.target.value === '' ? null : Number(e.target.value),
                       }}))}/>
                   </label>
-                  <label>LoRA local (.safetensors)
+                  <label>{t('creator.lora')}
                     <input aria-label="LoRA visual" maxLength={160}
                       value={character.visual_dna.lora_name || ''}
                       onChange={e => setCharacter(prev => ({...prev, visual_dna: {
@@ -1236,7 +1234,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       }}))} placeholder="character.safetensors"/>
                   </label>
                 </div>
-                <label>LoRA strength (0–2)
+                <label>{t('creator.loraStrength')}
                   <input type="number" min={0} max={2} step={0.05}
                     aria-label="LoRA strength" value={character.visual_dna.lora_strength}
                     onChange={e => setCharacter(prev => ({...prev, visual_dna: {
@@ -1251,13 +1249,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                 </button>
                 {editingCharacter && <button className="secondary-button" onClick={() => {
                   setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');
-                }}><X size={15}/> Cancel editing</button>}
+                }}><X size={15}/> {t('creator.cancelEditing')}</button>}
               </div>
             </div> : <div className="creator-fields">
               <div className="creator-section-intro">
-                <h3>Different ways to begin</h3>
-                <p>Prepare up to six opening scenes. The player can choose
-                  one to begin. You can use <code>{'{{user}}'}</code> to refer to the protagonist.</p>
+                <h3>{t('creator.differentOpenings')}</h3>
+                <p>{t('creator.openingHint')} <code>{'{{user}}'}</code> to refer to the protagonist.</p>
               </div>
               {blueprint.opening_scenarios.map((opening,index) =>
                 <div className="creator-opening" key={index}>
@@ -1272,10 +1269,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                       blueprint.opening_scenarios.map((v,i)=>i===index?e.target.value:v))}/>
                   <button className="secondary-button" disabled={working || opening.trim().length<15}
                     onClick={() => void startOpening(index)}>
-                    <BookOpen size={15}/> Use as story opening
+                    <BookOpen size={15}/> {t('creator.useOpening')}
                   </button>
                 </div>)}
-              <label>Write another opening
+              <label>{t('creator.anotherOpening')}
                 <textarea rows={5} aria-label="New opening" maxLength={3000}
                   value={openingDraft} onChange={e=>setOpeningDraft(e.target.value)}
                   placeholder="Describe the opening scene as the player should read it."/>
@@ -1286,9 +1283,9 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onClick={() => {
                     update('opening_scenarios',[...blueprint.opening_scenarios, openingDraft.trim()]);
                     setOpeningDraft('');
-                  }}><Plus size={16}/> Add opening</button>
+                  }}><Plus size={16}/> {t('creator.addOpening')}</button>
                 <button className="primary-button" disabled={working}
-                  onClick={() => void saveBlueprint()}><Save size={16}/> Save openings</button>
+                  onClick={() => void saveBlueprint()}><Save size={16}/> {t('creator.saveOpenings')}</button>
               </div>
               <p className="creator-hint">Save the openings before selecting a starting scene.
                 A story with saved turns is never overwritten automatically.</p>
@@ -1298,10 +1295,10 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
     </div>
     {createNew && <div className="welcome-scrim">
       <section className="welcome-panel" role="dialog" aria-modal="true" aria-label="Create story project">
-        <div className="story-create-heading"><span className="overline">NEW STORY</span>
+        <div className="story-create-heading"><span className="overline">{t('creator.newStory')}</span>
           <button aria-label="Close project" className="icon-button"
             onClick={() => setCreateNew(false)}><X size={18}/></button></div>
-        <h2>Create your next world</h2>
+        <h2>{t('creator.nextWorld')}</h2>
         <p>Create the project first. Dedicated tools are available afterward for
           plot, characters, and openings.</p>
         <label className="form-label">Title
