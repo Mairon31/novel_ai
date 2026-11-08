@@ -185,7 +185,7 @@ export function AssistantStoryWizard({ onCreated, onCancel }: Props) {
       <div className="creator-ai-preview-head">
         <span className="overline"><Check size={14}/> {t('wizard.completed')}</span>
         <h3>{t('wizard.review')}</h3>
-        <small>Model: {model} · not saved yet</small>
+        <small>{t('wizardUi.modelUnsaved', { model })}</small>
       </div>
       <label>{t('wizard.draftTitle')}
         <input aria-label={t('uiField.assistantStoryWizard.editableGeneratedTitle')} maxLength={100} value={draft.title}

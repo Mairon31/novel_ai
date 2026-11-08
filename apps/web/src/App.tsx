@@ -582,9 +582,7 @@ export default function App() {
                   </strong></div>
                   <div><span>{t('model.freeDisk')}</span><strong>{hardware?.storage_free_gb ?? '—'} GB</strong></div>
                 </div>
-                <p>Open a model to compare its variants. Noble AI estimates weight sizes,
-                  context memory, and runtime headroom. These estimates do not
-                  guarantee engine compatibility or performance.</p>
+                <p>{t('model.assessmentHint')}</p>
                 <div className="hub-hardware-legend">
                   <span>{t('model.fullGpu')}</span><span>{t('model.partial')}</span>
                   <span>{t('model.cpu')}</span><span>{t('model.insufficient')}</span>
@@ -605,11 +603,11 @@ export default function App() {
               </div>
               <div className="hub-storage-metrics">
                 <div><span>{t('model.registered')}</span><strong>{size(modelStorage.installed.bytes)}</strong>
-                  <small>{modelStorage.installed.count} in the registry</small></div>
+                  <small>{t('modelUi.registryCount', { amount: modelStorage.installed.count })}</small></div>
                 <div><span>{t('model.partialDownloads')}</span><strong>{size(modelStorage.partial.bytes)}</strong>
-                  <small>{modelStorage.partial.count} with .part files</small></div>
+                  <small>{t('modelUi.partialCount', { amount: modelStorage.partial.count })}</small></div>
                 <div><span>{t('model.availableSpace')}</span><strong>{size(modelStorage.disk.free_bytes)}</strong>
-                  <small>Capacity: {size(modelStorage.disk.total_bytes)}</small></div>
+                  <small>{t('modelUi.capacity', { size: size(modelStorage.disk.total_bytes) })}</small></div>
               </div>
               <div className="hub-storage-meter" role="meter" aria-label={t('app.diskSpaceOccupied')}
                 aria-valuemin={0} aria-valuemax={100}
@@ -621,13 +619,12 @@ export default function App() {
                 <div className="hub-storage-partial" style={{width: modelStorage.disk.total_bytes > 0 ?
                     (modelStorage.partial.bytes / modelStorage.disk.total_bytes * 100) + '%' : '0%'}}/>
               </div>
-              <p>The inventory includes registered files and incomplete downloads.
-                Disk capacity also includes other files on this computer.</p>
+              <p>{t('model.inventoryHint')}</p>
               {!!modelStorage.items.length && <details className="hub-storage-files">
-                <summary>View counted files ({modelStorage.items.length})</summary>
+                <summary>{t('modelUi.viewFiles', { amount: modelStorage.items.length })}</summary>
                 <div>{modelStorage.items.map(item => <div key={item.id}>
                   <span title={item.repo_id}>{item.name}
-                    {!item.file_present ? ' · Missing' : item.kind === 'partial' ? ' · Partial' : ''}</span>
+                    {!item.file_present ? ' · ' + t('modelUi.fileMissing') : item.kind === 'partial' ? ' · ' + t('modelUi.filePartial') : ''}</span>
                   <strong>{size(item.size_bytes)}</strong>
                 </div>)}</div>
               </details>}

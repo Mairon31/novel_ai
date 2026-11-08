@@ -154,21 +154,20 @@ export function ComfyRuntimePanel({ onRuntimeStarted }: Props) {
       </button>
     </div>
     <p role="status">
-      {t('comfy.status')} <strong>{status?.status === 'ready' ? 'Ready' :
-        status?.status === 'starting' ? 'Starting' :
-        status?.status === 'exited' ? 'Exited' : 'Stopped'}</strong>.
-      {status?.owns_process ? ' Noble AI manages this process.' :
-        ' Noble does not manage any external process.'}
-      {status?.pid ? ' PID ' + status.pid + '.' : ''}
+      {t('comfy.status')} <strong>{t(status?.status === 'ready' ? 'comfyUi.ready' :
+        status?.status === 'starting' ? 'comfyUi.starting' :
+        status?.status === 'exited' ? 'comfyUi.exited' : 'comfyUi.stopped')}</strong>.
+      {' '}{t(status?.owns_process ? 'comfyUi.managed' : 'comfyUi.unmanaged')}
+      {status?.pid ? ' ' + t('comfyUi.pid', { pid: status.pid }) : ''}
     </p>
     {status?.diagnostics && <p role="status">
-      ComfyUI version: {status.diagnostics.comfyui_version || 'unknown'}.
-      {' '}Devices: {status.diagnostics.devices.map(x => x.name).join(', ') || 'not reported'}.
+      {t('comfyUi.version', { version: status.diagnostics.comfyui_version || t('comfyUi.unknown') })}
+      {' '}{t('comfyUi.devices', { devices: status.diagnostics.devices.map(x => x.name).join(', ') || t('comfyUi.notReported') })}
     </p>}
     {dirty && <p role="status">{t('comfy.unsaved')}</p>}
     {validation && <p role="status">
-      Python: <code>{validation.python_executable}</code>.
-      {' '}Noble AI models: <code>{validation.model_paths_config}</code>.
+      {t('comfyUi.python')} <code>{validation.python_executable}</code>.
+      {' '}{t('comfyUi.modelsPath')} <code>{validation.model_paths_config}</code>.
     </p>}
     {logs && <div className="noble-comfy-log">
       <h4>{t('comfy.latestLogs')}</h4>

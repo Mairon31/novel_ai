@@ -701,7 +701,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   <label>{t('creator.sharedPose')}
                     <input aria-label={t('uiField.creatorStudio.sheetPose')} maxLength={32}
                       value={sheetPose} onChange={e => setSheetPose(e.target.value)}
-                      placeholder="standing"/>
+                      placeholder={t('creatorUi.posePlaceholder')}/>
                   </label>
                 </div>
                 <label>{t('creator.sheetFile')}

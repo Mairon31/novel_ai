@@ -56,16 +56,16 @@ export function UpdatesSettingsPanel({ prefs, parentBusy, onChangeChannel, onAut
             {release && <div className="workspace-release-card">
               {release.check_success ? release.release ? <>
                 <strong>{release.release.name}</strong>
-                <span>Release found for channel {release.channel}.</span>
+                <span>{t('updatesUi.found', { channel: release.channel })}</span>
                 {release.release.url && <a href={release.release.url} target="_blank" rel="noreferrer">
                   {t('updates.view')} <ExternalLink size={14}/></a>}
-              </> : <span>No releases published for channel {release.channel}.</span> :
+              </> : <span>{t('updatesUi.none', { channel: release.channel })}</span> :
                 <span>{release.message}</span>}
             </div>}
             <p>{t('updates.sourceLimit')}</p>
             <button className="secondary-button" disabled={busy} onClick={() => void refreshReleases()}>
               {busy ? <LoaderCircle size={16} className="rotating"/> : <RefreshCcw size={16}/>}
-              Check for updates</button>
+              {t('updatesUi.check')}</button>
           </div>
   </div>;
 }
