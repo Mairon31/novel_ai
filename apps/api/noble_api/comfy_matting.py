@@ -47,9 +47,9 @@ def inject_matte(nodes: dict, mode: str) -> dict:
     MaskToImage and combine in Noble instead of trusting an opaque PNG.
     """
     if mode not in MODELS:
-        raise ValueError("Proveedor de fondo neuronal desconocido")
+        raise ValueError("Unknown neural background removal provider")
     if any(key in nodes for key in ("23", "24", "25")):
-        raise ValueError("Conflicto de identificadores de nodos de matte")
+        raise ValueError("Matting node ID conflict")
     spec = MODELS[mode]
     inputs = {
         "image": ["6", 0], "model": spec["model"],

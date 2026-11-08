@@ -30,7 +30,7 @@ def validate_upstream(url: str) -> str:
                 or not x.port or x.port < 1024 or x.port > 65535
                 or x.path not in ("", "/") or x.username or x.password
                 or x.query or x.fragment):
-            raise ValueError("Upstream fuera de loopback")
+            raise ValueError("Upstream must be a loopback address")
     except (ValueError, AttributeError) as exc:
         raise ValueError("NOBLE_WORKER_UPSTREAM must be a local HTTP URL with a port") from exc
     return url.rstrip("/")

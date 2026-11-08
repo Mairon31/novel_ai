@@ -85,7 +85,7 @@ test('image checkpoint install is explicit, resumable and only selectable when C
   await expect(page.getByText('ComfyUI has not recognized it yet')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Waiting for ComfyUI' })).toBeDisabled();
   await page.getByRole('button', { name: 'Find checkpoints', exact: true }).click();
-  await expect(page.getByText('Detectado en ComfyUI')).toBeVisible();
+  await expect(page.getByText('Detected by ComfyUI')).toBeVisible();
   await page.getByRole('button', { name: 'Select checkpoint' }).click();
   await expect(page.getByLabel('Checkpoint')).toHaveValue(comfyReportedName);
   await page.getByRole('button', { name: 'Save image settings' }).click();

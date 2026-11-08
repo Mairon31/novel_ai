@@ -134,7 +134,7 @@ def _list_owned_files(narrative, ids: set[str]) -> list[tuple[str, Path]]:
                 verified = _owned_file(root, relative, ids)
                 found.append((relative, verified))
                 if len(found) > MAX_FILES:
-                    raise ValueError("Demasiados recursos visuales en respaldo")
+                    raise ValueError("Too many visual assets in the backup")
             # Files in progress (*.part) are deliberately not included.
     return found
 
@@ -178,7 +178,7 @@ def build_archive(narrative, story_id: str) -> bytes:
         raw = json.dumps(manifest, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":")).encode("utf-8")
         if len(raw) > MAX_MANIFEST_BYTES:
-            raise ValueError("Metadatos de respaldo demasiado grandes")
+            raise ValueError("Backup metadata exceeds the size limit")
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_out:
             zip_out.writestr("manifest.json", raw)
@@ -200,10 +200,10 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
         if len(names) != len(set(names)) or not names or names[0] != "manifest.json":
             raise ValueError("Duplicate ZIP entry or missing initial manifest")
         if len(names) > MAX_FILES + 1:
-            raise ValueError("Demasiados archivos en respaldo")
+            raise ValueError("Too many files in the backup")
         head = infos[0]
         if head.file_size > MAX_MANIFEST_BYTES:
-            raise ValueError("Manifest demasiado grande")
+            raise ValueError("Manifest exceeds the size limit")
         try:
             manifest = json.loads(source.read(head))
         except (ValueError, RuntimeError, OSError, zipfile.BadZipFile) as exc:
@@ -215,7 +215,7 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
             raise ValueError("Incompatible backup version")
         table_data = manifest.get("tables")
         if not isinstance(table_data, dict) or set(table_data) != set(TABLES):
-            raise ValueError("Tablas de respaldo inesperadas o ausentes")
+            raise ValueError("Unexpected or missing backup tables")
         stories = table_data["stories"]
         if not isinstance(stories, list) or not 1 <= len(stories) <= MAX_STORIES:
             raise ValueError("Invalid story set")
@@ -247,10 +247,10 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                     raise ValueError("Unsupported backup table: " + table)
                 total_rows += len(records)
                 if total_rows > MAX_ROWS:
-                    raise ValueError("Demasiadas filas en respaldo")
+                    raise ValueError("Too many records in the backup")
                 for record in records:
                     if not isinstance(record, dict):
-                        raise ValueError("Columnas ajenas o incompatibles en " + table)
+                        raise ValueError("Unknown or incompatible columns in " + table)
                     # Older v1 backups predate sprite variants and/or generated
                     # provenance. Each listed field has a safe, exact default.
                     if table == "creator_media_assets":
@@ -265,7 +265,7 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                             and set(record) == columns - {"render_details_json"}):
                         record["render_details_json"] = "{}"
                     if set(record) != columns:
-                        raise ValueError("Columnas ajenas o incompatibles en " + table)
+                        raise ValueError("Unknown or incompatible columns in " + table)
                     if table == "visual_assets":
                         normalized_render_details(record["render_details_json"])
                     if table == "creator_media_assets":
@@ -273,7 +273,7 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                             raise ValueError("Invalid editorial origin")
                         raw = record["generation_json"]
                         if not isinstance(raw, str) or len(raw) > 4096:
-                            raise ValueError("Procedencia de sprite demasiado grande")
+                            raise ValueError("Sprite provenance exceeds the size limit")
                         try:
                             generation = normalize_sprite_generation(json.loads(raw))
                         except (ValueError, TypeError) as exc:
@@ -294,7 +294,7 @@ def _inspect_zip(payload: bytes, narrative) -> tuple[dict, list[tuple[str, bytes
                     raise ValueError("Turn outside the story set")
         file_list = manifest.get("files")
         if not isinstance(file_list, list) or len(file_list) != len(names)-1:
-            raise ValueError("Listado de archivos incompleto")
+            raise ValueError("Incomplete backup file list")
         data_files: list[tuple[str, bytes]] = []
         total = 0
         for idx, file in enumerate(file_list, 1):
@@ -392,7 +392,7 @@ def _copy_archive_ids(manifest: dict, files: list[tuple[str, bytes]]
                 else:
                     new_row[column] = value
             if table == "stories":
-                new_row["title"] = (new_row["title"][:88].rstrip() + " (copia)")
+                new_row["title"] = (new_row["title"][:88].rstrip() + " (copy)")
             copied_rows.append(new_row)
         copied_tables[table] = copied_rows
 

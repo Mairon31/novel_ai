@@ -156,6 +156,7 @@ class StoryArchiveTests(unittest.TestCase):
         before = self.counts(self.src)
         existing = self.restore(data, self.a)
         self.assertEqual(existing.status_code, 409, existing.text)
+        self.assertIn("Story already exists:", existing.json()["detail"])
         self.assertEqual(self.counts(self.src), before)
         first = self.restore(data)
         self.assertEqual(first.status_code, 201, first.text)
@@ -237,6 +238,7 @@ class StoryArchiveTests(unittest.TestCase):
         self.assertEqual(family["root_story_id"], new_root)
         self.assertEqual(len(family["branches"]), 2)
         copied_child = self.a.get(f"/api/v1/stories/{new_child}").json()
+        self.assertTrue(copied_child["title"].endswith(" (copy)"))
         self.assertEqual(copied_child["origin_story_id"], new_root)
         self.assertEqual(len(self.a.get(
             f"/api/v1/stories/{new_child}/turns").json()["turns"]), 2)

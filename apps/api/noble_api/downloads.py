@@ -173,7 +173,7 @@ class DownloadManager:
             # A failed crash-reconciliation conflict must not be bypassed by
             # manually pressing Resume: never overwrite the existing final.
             if target.exists() or target.is_symlink():
-                raise RuntimeError("Ya existe un GGUF final; resolver conflicto antes de reanudar")
+                raise RuntimeError("A completed GGUF already exists; resolve the conflict before resuming")
             if not self.store.transition_download(
                     job_id, ("queued",), "downloading", error=None):
                 return

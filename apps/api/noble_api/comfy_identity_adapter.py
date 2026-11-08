@@ -31,7 +31,7 @@ def inject_ipadapter(nodes: dict, reference_name: str, preset: str,
     if not re.fullmatch(r"[A-Za-z0-9_.-]{1,180}", reference_name):
         raise ValueError("Invalid IPAdapter reference image name")
     if any(node in nodes for node in ("20", "21", "22")):
-        raise ValueError("IDs de nodos de IPAdapter ocupados")
+        raise ValueError("IPAdapter node IDs 20-22 are already in use")
     model = nodes["5"]["inputs"]["model"]
     nodes["20"] = {"class_type": "IPAdapterUnifiedLoader", "inputs": {
         "model": model, "preset": preset}}
@@ -51,7 +51,7 @@ def _required(node: object, fields: set[str], name: str) -> dict:
     field = node.get("input")
     needed = field.get("required") if isinstance(field, dict) else None
     if not isinstance(needed, dict) or not fields.issubset(needed):
-        raise ValueError("Esquema de nodo incompatible: " + name)
+        raise ValueError("Incompatible node schema: " + name)
     return needed
 
 
@@ -96,7 +96,7 @@ async def identity_adapter_status(base_url: str, transport=None) -> dict:
                     raise ValueError("Invalid IPAdapter catalog: " + folder)
                 counts[folder] = len(names)
             if not all(counts.values()):
-                raise ValueError("Instala modelos IPAdapter y CLIP Vision compatibles")
+                raise ValueError("Install compatible IPAdapter and CLIP Vision models")
         return {"available": True, "presets": presets,
                 "model_count": counts["ipadapter"],
                 "clip_vision_count": counts["clip_vision"], "error": None}

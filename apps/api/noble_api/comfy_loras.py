@@ -54,7 +54,7 @@ def selected_character_loras(visual, story_id: str, prompt: str) -> list[dict]:
         if not active:
             continue
         if name.casefold() in ambiguous:
-            raise ValueError("Nombre de NPC ambiguo: " + name)
+            raise ValueError("Ambiguous NPC name: " + name)
         dna = row.get("visual_dna") or {}
         if not isinstance(dna, dict):
             continue

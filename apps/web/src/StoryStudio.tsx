@@ -41,7 +41,7 @@ export function StoryStudio({
   const [draft, setDraft] = useState('');
   const [streamText, setStreamText] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [generationMessage, setGenerationMessage] = useState('Preparando narrador...');
+  const [generationMessage, setGenerationMessage] = useState('Preparing narrator...');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
@@ -139,8 +139,10 @@ export function StoryStudio({
       setActive(null);
       setReading(false);
       onRouteChange?.(null, false);
-      setNotice((result.imported_as_copy ? 'Copia independiente creada: ' : 'Respaldo restaurado: ') +
-        result.restored_stories + ' stories and ' + result.restored_files + ' assets.');
+      const storyLabel = result.restored_stories === 1 ? 'story' : 'stories';
+      const assetLabel = result.restored_files === 1 ? 'asset' : 'assets';
+      setNotice(`${result.imported_as_copy ? 'Separate copy created' : 'Backup restored'}: ` +
+        `${result.restored_stories} ${storyLabel} and ${result.restored_files} ${assetLabel}.`);
     } catch (e) { setError((e as Error).message); }
     finally { setRestoring(false); }
   }
@@ -164,7 +166,7 @@ export function StoryStudio({
     const requestId = crypto.randomUUID();
     controller.current = controllerLocal;
     inFlight.current = { storyId: active.id, requestId };
-    setGenerating(true); setGenerationMessage('Preparando narrador...'); setStreamText(''); setNotice(''); setError('');
+    setGenerating(true); setGenerationMessage('Preparing narrator...'); setStreamText(''); setNotice(''); setError('');
     let complete = false;
     try {
       await api.streamTurn(active.id, {

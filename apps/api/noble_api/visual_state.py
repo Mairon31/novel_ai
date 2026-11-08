@@ -656,7 +656,7 @@ class VisualState:
         raw_details = json.dumps(details, ensure_ascii=False,
                                  sort_keys=True, allow_nan=False)
         if len(raw_details) > 4096:
-            raise ValueError("Metadatos de render demasiado largos")
+            raise ValueError("Render metadata exceeds the length limit")
         scene = self.scene(story_id)
         transformed = image_bytes_to_webp(raw)
         digest = hashlib.sha256(transformed).hexdigest()

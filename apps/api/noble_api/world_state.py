@@ -121,7 +121,7 @@ class WorldStateService:
         if len(set(references)) != len(references):
             raise ValueError("Duplicate present characters")
         if len(result["relationships"]) > 30 or len(result["flags"]) > 60:
-            raise ValueError("Demasiadas relaciones o indicadores de estado")
+            raise ValueError("Too many relationships or state flags")
         for identity, relation in result["relationships"].items():
             try:
                 clean_id = str(uuid.UUID(identity))
@@ -137,12 +137,12 @@ class WorldStateService:
         for fact in result["facts"]:
             fact["text"] = fact["text"].strip()
             if len(fact["text"]) < 10:
-                raise ValueError("Texto de hecho demasiado corto")
+                raise ValueError("Fact text is too short")
             if fact["id"] in fact_ids:
                 raise ValueError("Duplicate facts")
             fact_ids.add(fact["id"])
             if len(set(fact["witness_character_ids"])) != len(fact["witness_character_ids"]):
-                raise ValueError("Testigos duplicados")
+                raise ValueError("Duplicate witnesses")
             if not fact["public"] and not fact["witness_character_ids"]:
                 raise ValueError("A private fact requires explicit witnesses")
             references.extend(fact["witness_character_ids"])

@@ -36,20 +36,20 @@ test('library exports an archive and rejects duplicate restoration without losin
   await page.getByLabel('Noble backup file')
     .setInputFiles({ name: 'noble-family.noble.zip', mimeType: 'application/zip',
       buffer: archive });
-  await expect(page.getByRole('alert')).toContainText('ya existe');
+  await expect(page.getByRole('alert')).toContainText('already exists');
   await expect(page.locator('.noble-library-cover').filter({ hasText: title })).toBeVisible();
 
   await page.getByRole('checkbox', {
-    name: 'Importar como copia independiente (nuevos identificadores)',
+    name: 'Import as a separate copy (new identifiers)',
   }).check();
   await page.getByLabel('Noble backup file')
     .setInputFiles({ name: 'noble-family.noble.zip', mimeType: 'application/zip',
       buffer: archive });
-  await expect(page.getByRole('status')).toContainText('Copia independiente creada: 1 historias');
+  await expect(page.getByRole('status')).toContainText('Separate copy created: 1 story');
   await expect(page.locator('.noble-library-cover').filter({ hasText: title }))
     .toHaveCount(2);
   await expect(page.locator('.noble-library-cover').filter({
-    hasText: title + ' (copia)',
+    hasText: title + ' (copy)',
   })).toBeVisible();
   await page.screenshot({
     path: 'test-results/' + test.info().project.name + '-archive-guard.png',

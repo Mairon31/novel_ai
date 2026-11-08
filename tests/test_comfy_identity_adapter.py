@@ -106,6 +106,8 @@ class AdapterGraphTests(unittest.TestCase):
             result = asyncio.run(identity_adapter_status(
                 "http://127.0.0.1:8188", httpx.MockTransport(router)))
             self.assertFalse(result["available"])
+            if absent == "clip_vision":
+                self.assertIn("Install compatible IPAdapter and CLIP Vision models", result["error"])
             with self.assertRaises(HTTPException) as ctx:
                 require_ipadapter_status(result, DEFAULT_PRESET)
             self.assertEqual(ctx.exception.status_code, 422)

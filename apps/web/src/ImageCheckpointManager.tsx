@@ -87,7 +87,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
       <code> .safetensors</code>. Noble AI downloads it to its model directory and installs it only after verifying SHA-256 and file structure.</p>
     <div className="workspace-field-grid">
       <label className="workspace-pref-field">Hugging Face repository
-        <input aria-label="Hugging Face repository" placeholder="autor/modelo"
+        <input aria-label="Hugging Face repository" placeholder="author/model"
           value={repo} disabled={busy || !!changing}
           onChange={e => { setRepo(e.target.value); setCatalog(null); }}/>
       </label>
@@ -169,7 +169,7 @@ export function ImageCheckpointManager({ availableInComfy, onSelectCheckpoint }:
           <div className="noble-voice-main">
             <strong>{model.filename}</strong>
             <span>{model.repo_id} · {formatted(model.size_bytes)} ·
-              {usable ? ' Detectado en ComfyUI' : ' ComfyUI has not recognized it yet'}</span>
+              {usable ? ' Detected by ComfyUI' : ' ComfyUI has not recognized it yet'}</span>
           </div>
           <button className="secondary-button" type="button" disabled={!usable}
             onClick={() => { if (discovered) onSelectCheckpoint(discovered); }}>

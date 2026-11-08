@@ -106,7 +106,7 @@ def transparent_sprite(data: bytes) -> tuple[bytes, dict]:
     out = io.BytesIO()
     photo.save(out, "PNG", optimize=True)
     if out.tell() > MAX_MEDIA_BYTES:
-        raise ValueError("Sprite PNG demasiado grande")
+        raise ValueError("Sprite PNG exceeds the size limit")
     return out.getvalue(), {
         "method": method, "coverage": round(coverage, 4),
         "requires_author_review": True,

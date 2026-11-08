@@ -196,7 +196,7 @@ class HfCatalog:
             "/api/models/" + quote(repo_id, safe="/"), {"blobs": "true"}
         ))
         if not isinstance(data, dict):
-            raise CatalogError(502, "Respuesta de detalle inesperada")
+            raise CatalogError(502, "Unexpected model details response")
         revision = data.get("sha") or ""
         variants = []
         for item in data.get("siblings") or []:

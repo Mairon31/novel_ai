@@ -75,9 +75,9 @@ class KoboldManager:
             if not allowed or not exe.is_file():
                 raise RuntimeFailure("Select a valid KoboldCpp executable (.exe or koboldcpp-linux-x64)")
             if not (-1 <= gpu_layers <= 256):
-                raise RuntimeFailure("Capas GPU fuera de rango (-1 a 256)")
+                raise RuntimeFailure("GPU layers must be between -1 and 256")
             if not (512 <= contextsize <= 32768):
-                raise RuntimeFailure("Contexto fuera de rango (512 a 32768)")
+                raise RuntimeFailure("Context size must be between 512 and 32768")
             if not (1024 <= port <= 65535) or port in (4173, 5173, 8000):
                 raise RuntimeFailure("Invalid port or one reserved for Noble AI")
             model = self.store.installed_one(installed_id)
