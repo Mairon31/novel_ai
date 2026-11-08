@@ -18,7 +18,7 @@
 
 Workflow: [Noble AI · batched verification](../.github/workflows/p0-docs.yml).
 
-**Ordinary `master` pushes and PR updates no longer start this workflow.** It uses only `workflow_dispatch` (manual) and an optional explicitly pushed `qa-batch-*` tag.
+**Ordinary `master` pushes and PR updates no longer start this workflow.** It uses `workflow_dispatch` (manual), an explicitly pushed `qa-batch-*` tag, or a `master` push changing ONLY the dedicated CI request path `.github/ci-batches/full-request.txt`. The third option is intended for connected GitHub tooling that can commit but cannot invoke `workflow_dispatch`.
 
 ### Manual: default way to close a batch
 
@@ -36,6 +36,19 @@ Scopes:
 | Optional live probe | Public Hugging Face API probe, nonblocking | Only when deliberately requested |
 
 A passing `quick` workflow does not validate browser interactions. The old preliminary selected Playwright pass was removed because the full suite already covers those tests.
+
+### Connector-friendly explicit trigger (no manual workflow dispatcher required)
+
+When a batch reaches 5/5 and the GitHub connection cannot start a workflow
+directly, make **one final commit modifying only**
+`.github/ci-batches/full-request.txt` with an updated batch ID, the last
+implementation SHA, and a clear reason. GitHub's path-filtered `push` runs
+the full workflow **once** against the *trigger commit SHA*. The sentinel
+path MUST NOT be edited for normal development. A later docs update will
+not start another run.
+
+This keeps the entire repo on `master`; it is not a new branch. Never
+combine this request with the manual or tag trigger for the same batch.
 
 ### Alternative explicit trigger: one QA tag
 
@@ -75,7 +88,7 @@ If the session has only GitHub repository access and cannot run code, still writ
 
 The passing baseline verifies code through `e87bd89a` under the previous per-commit workflow. It does **not** certify any future code committed after it. Always inspect the current `master` SHA and the open batch before asserting tests passed.
 
-## Batch B001 — OPEN (4/5)
+## Batch B001 — READY FOR FULL CI (5/5)
 
 Count **functional implementations**, not Git commits. Enter the TODO ID, relevant commit(s), tests written, and executed result into the first unused slot. A documentation-only handoff does not count.
 
@@ -85,11 +98,11 @@ Count **functional implementations**, not Git commits. Enter the TODO ID, releva
 | 2 | N-18 — deterministic narrator agency and causal consequence policy for four interaction modes and consecutive continuation pacing | `fcf7164`, `1f8516d` | `tests/test_narrative_agency.py` (prompt construction, author-guidelines preservation, mode-specific rules). **NOT RUN**: deferred to B001 batch; no semantic LLM inference benchmark. | IMPLEMENTED / UNVERIFIED |
 | 3 | N-22 — explicitly reviewed gallery-to-cover promotion (SHA-verified story-owned source, durable idempotent mapping, original preserved) | `a85d3dd`, `b77ace5`, `8d8b1cf` | `tests/test_gallery_cover_approval.py` and `apps/web/tests/gallery-cover-approval.spec.ts` created; **NOT RUN**, scheduled for B001 final CI. | IMPLEMENTED / UNVERIFIED |
 | 4 | N-18 — guided/flexible/strict story freedom modes persisted in Creator Blueprint, with legacy defaults and narrative policy integration | `5f03d3b`, `bee5cbf` | Added API/contract tests in `test_narrative_agency.py`, Playwright `creator-freedom.spec.ts`; **NOT RUN**, pending B001 full. | IMPLEMENTED / UNVERIFIED |
-| 5 | — | — | NOT RUN | OPEN |
+| 5 | N-18 — author-defined NPC independent goals and refusal conditions stored per character, with legacy-update preservation and private narrator context | `de9a704`, `673e473` | `tests/test_npc_agency_profiles.py` and `apps/web/tests/npc-agency.spec.ts` written; **NOT RUN** until the single full B001 verification. | IMPLEMENTED / UNVERIFIED |
 
-**Batch boundary commit:** not yet chosen.  
-**Full batch workflow:** NOT RUN.  
-**Outstanding failures:** none known at the baseline. The first two implementations are committed, but their newly added tests have **NOT RUN**, so runtime regressions remain possible. Four-language catalogs were parsed and compared for keys/interpolations without launching GitHub Actions. Re-evaluate at B001 full batch.
+**Batch boundary implementation commit:** `673e47363a1f3f7ee89edaa53ebd0b83334ae526`.  
+**Full batch workflow:** PENDING explicit request using `.github/ci-batches/full-request.txt` after recording this checklist.  
+**Outstanding failures:** none known at the last verified baseline; all 5 new units remain **NOT RUN**. A static catalog comparison found **1,694 keys per language**, all key sets and interpolations equal. Static parity does not prove UI runtime correctness.
 
 Possible next priorities: N-22 persistent image generation queue and reviewed cover generation, N-18 scene-beat planning and model-based semantic evaluation, and N-07 Creator Studio work. The deferred i18n audit remains in `TODO.md` as I18N-01 through I18N-07; do not restart a full translation round without instructions.
 
@@ -97,7 +110,7 @@ Possible next priorities: N-22 persistent image generation queue and reviewed co
 
 1. Inspect `origin/master`, `AGENTS.md`, this file, `TODO.md`, and the end of `docs/PROGRESO.md`. Do not assume a previous assistant statement was pushed; verify exact commits and GitHub Actions conclusions.
 2. Compare current HEAD with the **fully verified SHA** above. Reconcile the open ledger against actual commits: completed implementations, unrun tests, open errors, and remaining tasks.
-3. Continue working **directly on `master`**, without making extra branches. For each completed unit, update the corresponding slot and report any targeted test as PASS/FAIL/NOT RUN.
+3. Continue working **directly on `master`**, without making extra branches. For each completed unit, update the corresponding slot and report any targeted test as PASS/FAIL/NOT RUN. If the ledger is at 5/5 and no run exists yet, submit the dedicated CI request-file commit rather than starting new implementations.
 4. On reaching five completed units, run **one** full GitHub Actions job at the batch boundary (or advance QA for a critical P0 exception). Wait for the actual conclusion before checking off any CI-dependent milestone.
 5. If the run fails, preserve logs, fix failures without launching multiple full runs, and revalidate the final corrected SHA. If successful, record evidence and begin B002 at 0/5.
 6. Keep product rules intact: local-first, API diagnostics in English, authored story text untouched, i18n global audit deferred, and no fabricated GPU/CI evidence.

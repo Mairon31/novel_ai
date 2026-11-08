@@ -1,6 +1,7 @@
 name: Noble AI · batched verification
 
-# No regular push/PR CI. Start a batch deliberately after five implementations.
+# No regular push/PR CI. Only the dedicated batch request file, an explicit
+# qa-batch-* tag, or manual workflow_dispatch can request a full verification.
 on:
   workflow_dispatch:
     inputs:
@@ -22,8 +23,14 @@ on:
         type: boolean
         default: false
   push:
+    branches:
+      - master
     tags:
       - 'qa-batch-*'
+    # Branch pushes are filtered. GitHub skips paths filters for tag pushes.
+    # Touch only this dedicated file after five completed implementations.
+    paths:
+      - '.github/ci-batches/full-request.txt'
 
 permissions:
   contents: read
