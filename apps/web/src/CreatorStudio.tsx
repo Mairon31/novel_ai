@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, BookOpen, Check, ChevronRight, Feather, FileText, LoaderCircle,
   Plus, Save, Sparkles, UserRound, Users, Image as ImageIcon, UploadCloud, Trash2, X, BookKey, Globe2,
@@ -38,6 +39,7 @@ interface Props {
 }
 
 export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: Props) {
+  const { t } = useTranslation();
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [section, setSection] = useState<Section>('story');
@@ -477,22 +479,22 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
   return <section className="creator-studio" aria-label="Story creation studio">
     <div className="creator-heading">
       <button className="creator-return" onClick={onOpenLibrary}>
-        <ArrowLeft size={16}/> Library
+        <ArrowLeft size={16}/> {t("nav.inicio")}
       </button>
       <span className="overline"><Feather size={15}/> NOBLE CREATOR STUDIO</span>
-      <h1>Build stories with purpose.</h1>
-      <p>Keep player-visible information separate from the narrator's private knowledge. Design characters, world rules, openings, and tone without mixing the editor into the reader.</p>
+      <h1>{t("creator.title")}</h1>
+      <p>{t("creator.description")}</p>
     </div>
 
     <div className="creator-layout">
       <aside className="creator-projects" aria-label="Stories to create">
         <div className="creator-projects-head">
-          <div><span className="overline">YOUR WORLDS</span><strong>Projects</strong></div>
-          <button title="New project" aria-label="Create project" onClick={() => setCreateNew(true)}>
+          <div><span className="overline">{t("creator.yourWorlds")}</span><strong>{t("creator.projects")}</strong></div>
+          <button title={t("creator.newProject")} aria-label={t("creator.createProject")} onClick={() => setCreateNew(true)}>
             <Plus size={18}/>
           </button>
         </div>
-        {loading && !active && <p className="creator-placeholder"><LoaderCircle size={15} className="rotating"/> Loading...</p>}
+        {loading && !active && <p className="creator-placeholder"><LoaderCircle size={15} className="rotating"/> {t("common.loading")}</p>}
         {stories.map(story => <button className={'creator-project ' +
           (active?.id === story.id ? 'is-selected' : '')} key={story.id}
           onClick={() => {
@@ -503,12 +505,12 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
           <small>{story.protagonist_name || 'Protagonist'}</small></span><ChevronRight size={15}/>
         </button>)}
         {!stories.length && !loading && <p className="creator-placeholder">
-          No stories yet. Create your first project to build its world.</p>}
+          {t("creator.noStories")}</p>}
         <button className="creator-new" onClick={() => {
           setActive(null); setAssistantVisible(true);
-        }}><Sparkles size={17}/> Create with AI</button>
+        }}><Sparkles size={17}/> {t("creator.createWithAI")}</button>
         <button className="creator-new" onClick={() => setCreateNew(true)}>
-          <Plus size={17}/> New project
+          <Plus size={17}/> {t("creator.newProject")}
         </button>
       </aside>
 
@@ -523,33 +525,33 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             onStoryChange?.(saved.id);
           }}/>
         : !active ? <div className="creator-welcome">
-          <Sparkles size={40}/><h2>Select a story to edit</h2>
-          <p>Write the player-facing plot, private model context, character profiles, and story openings here.</p>
+          <Sparkles size={40}/><h2>{t("creator.selectToEdit")}</h2>
+          <p>{t("creator.selectDescription")}</p>
           <button className="primary-button" onClick={() => setCreateNew(true)}>
-            <Plus size={16}/> Create new story
+            <Plus size={16}/> {t("creator.createStory")}
           </button>
         </div> : <>
           <div className="creator-editor-title">
-            <div><span className="overline">EDITING PROJECT</span>
+            <div><span className="overline">{t("creator.editing")}</span>
               <h2>{active.title}</h2>
               <small>The player controls {active.protagonist_name || 'Protagonist'}.</small></div>
             <button className="secondary-button" onClick={onOpenLibrary}>
-              <BookOpen size={15}/> Go to Library
+              <BookOpen size={15}/> {t("creator.goLibrary")}
             </button>
           </div>
           <nav className="creator-editor-tabs" aria-label="Creator tools">
             <button className={section === 'story' ? 'selected' : ''}
-              onClick={() => setSection('story')}><FileText size={17}/> Plot and context</button>
+              onClick={() => setSection('story')}><FileText size={17}/> {t("creator.plot")}</button>
             <button className={section === 'cast' ? 'selected' : ''}
-              onClick={() => setSection('cast')}><Users size={17}/> Characters ({characters.length})</button>
+              onClick={() => setSection('cast')}><Users size={17}/> {t("creator.characters", { count: characters.length })}</button>
             <button className={section === 'lorebook' ? 'selected' : ''}
-              onClick={() => setSection('lorebook')}><BookKey size={17}/> Lorebook ({lorebookEntries.length})</button>
+              onClick={() => setSection('lorebook')}><BookKey size={17}/> {t("creator.lorebook", { count: lorebookEntries.length })}</button>
             <button className={section === 'world' ? 'selected' : ''}
-              onClick={() => setSection('world')}><Globe2 size={17}/> World state</button>
+              onClick={() => setSection('world')}><Globe2 size={17}/> {t("creator.world")}</button>
             <button className={section === 'openings' ? 'selected' : ''}
-              onClick={() => setSection('openings')}><Feather size={17}/> Openings</button>
+              onClick={() => setSection('openings')}><Feather size={17}/> {t("creator.openings")}</button>
             <button className={section === 'media' ? 'selected' : ''}
-              onClick={() => setSection('media')}><ImageIcon size={17}/> Images ({assets.length})</button>
+              onClick={() => setSection('media')}><ImageIcon size={17}/> {t("creator.images", { count: assets.length })}</button>
           </nav>
 
           {loading ? <div className="loading"><LoaderCircle className="rotating" size={17}/> Loading content...</div> :
@@ -669,7 +671,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                     (mediaKind === 'foreground' && !/^[a-z0-9_-]{1,32}$/.test(mediaPose.trim().toLowerCase())) ||
                     (!editingAsset && !mediaFile)}
                     onClick={() => void saveMediaAsset()}><UploadCloud size={16}/>
-                    {editingAsset ? 'Save description' : 'Import image'}</button>
+                    {editingAsset ? t("common.save") : t("creator.importImage")}</button>
                   {editingAsset && <button className="secondary-button"
                     onClick={resetMediaEditor}>Cancel editing</button>}
                 </div>
@@ -714,7 +716,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   disabled={working || !sheetCharacter || sheetCaption.trim().length < 3 ||
                     !/^[a-z0-9_-]{1,32}$/.test(sheetPose.trim().toLowerCase()) || !sheetFile}
                   onClick={() => void importSheet()}><UploadCloud size={16}/>
-                  Import five expressions
+                  {t("creator.importExpressions")}
                 </button>
               </div>
               <div className="creator-media-form">
@@ -1153,7 +1155,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
                   onChange={e => setTagsInput(e.target.value)} placeholder="isekai, adventure, magic"/>
               </label>
               <button className="primary-button" disabled={working} onClick={() => void saveBlueprint()}>
-                <Save size={16}/>{working ? 'Saving...' : 'Save plot and context'}
+                <Save size={16}/>{working ? t('common.loading') : t('creator.savePlot')}
               </button>
             </div> : section === 'cast' ? <div className="creator-fields">
               <div className="creator-section-intro">
@@ -1245,7 +1247,7 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
               <div className="creator-actions">
                 <button className="primary-button" disabled={working || !character.name.trim() ||
                     character.description.trim().length < 20} onClick={() => void saveCharacter()}>
-                  <Save size={16}/>{editingCharacter ? 'Update character' : 'Add character'}
+                  <Save size={16}/>{editingCharacter ? t('common.edit') : t('creator.addCharacter')}
                 </button>
                 {editingCharacter && <button className="secondary-button" onClick={() => {
                   setEditingCharacter(null); setCharacter(blankCharacter); setDnaTagsInput('');

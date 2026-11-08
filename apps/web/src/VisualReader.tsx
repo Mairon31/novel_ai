@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowRight, BookOpen, Camera, Check, ChevronRight, Cpu, Eye, Feather,
   Image, LoaderCircle, MessageSquareText, Palette, Send, Settings2, Volume2, Square,
@@ -46,6 +47,7 @@ export function VisualReader({
   active, turns, mode, draft, streamText, generating, generationMessage, onCancel, onFork,
   notice, error, setDraft, setMode, onSubmit, onCreate, onSettings, onUpdateStory,
 }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('summary');
   const [rewindTurn, setRewindTurn] = useState<StoryTurn | null>(null);
   const [rewindPreview, setRewindPreview] = useState<{
@@ -620,7 +622,7 @@ export function VisualReader({
             aria-label="Export story as EPUB"><BookOpen size={17}/></a>
           <button title="View backlog (Alt+B)" aria-label="Open backlog"
             onClick={() => setBacklogOpen(true)}><History size={17}/></button>
-          <button title="Show story details" aria-label="Open story details"
+          <button title="Show story details" aria-label={t("reader.openDetails")}
             onClick={() => setInspectorOpen(open => !open)}><Eye size={17}/></button>
           <button title="Configure narrator" aria-label="Configure narrator" onClick={onSettings}>
             <Settings2 size={18}/></button>
@@ -695,7 +697,7 @@ export function VisualReader({
     <aside className={'noble-reader-inspector ' + (inspectorOpen ? 'is-open' : '')}>
       <header className="noble-inspector-header"><div><span className="overline">MY STORY</span>
         <h3>{active.title}</h3></div>
-        <button aria-label="Close details" onClick={() => setInspectorOpen(false)}>
+        <button aria-label={t("reader.closeDetails")} onClick={() => setInspectorOpen(false)}>
           <X size={18}/></button></header>
       <nav className="noble-inspector-tabs" aria-label="Visual novel panel">
         {tabs.map(item => <button key={item.id}
@@ -721,7 +723,7 @@ export function VisualReader({
               value={canon} onChange={e => setCanon(e.target.value)}
               placeholder="Example: Aira knows the castle's secret. Nobody else knows yet."/></label>
           <button className="secondary-button" disabled={updating || canon === (active.canon || '')}
-            onClick={() => void saveCanon()}><Check size={15}/> Save canon</button>
+            onClick={() => void saveCanon()}><Check size={15}/> {t("reader.saveCanon")}</button>
           <h4>Status</h4>
           <p>{turns.length} saved scenes · latest model: {turns.at(-1)?.model || 'Not started'}</p>
           <h4>Visual identity profiles</h4>
@@ -788,11 +790,11 @@ export function VisualReader({
           <button className="secondary-button" disabled={memoryBusy || memoryQuery.trim().length < 2}
             onClick={() => void findStoryMemory()}>
             {memoryBusy ? <LoaderCircle size={15} className="rotating"/> : <BookOpen size={15}/>}
-            Search entire story
+            {t("reader.searchMemory")}
           </button>
           {memoryError && <p role="alert" className="narrative-error">{memoryError}</p>}
           {memoryResults && <div role="status" className="creator-hint">
-            <strong>{memoryResults.episodes.length} memories found</strong>
+            <strong>{t("reader.memoriesFound", { count: memoryResults.episodes.length })}</strong>
             <p>{memoryResults.fts5 ? 'SQLite FTS5 index' : 'Local lexical search'}
               · Player input only</p>
             {memoryResults.episodes.map(entry => <div className="noble-inspector-turn" key={entry.turn_id}>
@@ -1068,7 +1070,7 @@ export function VisualReader({
             (voices?.available && voices.voices.length ? 'Piper synthesizes only when you select Listen.' :
               'Install Piper and add an ONNX voice under Settings → Voice / TTS.') :
             'Speech is disabled. Enable it under Settings → Voice / TTS.'}</p>
-          <button className="secondary-button" onClick={onSettings}><Cpu size={16}/> More settings</button>
+          <button className="secondary-button" onClick={onSettings}><Cpu size={16}/> {t('common.settings')}</button>
         </>}
       </div>
     </aside>

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { InterfaceLanguageSelector } from './InterfaceLanguageSelector';
 import {
   ArrowUpRight, ArrowRight, Check, Cpu, Download, Globe2, Image,
   KeyRound, Keyboard, Languages, LoaderCircle, LockKeyhole, MonitorCog,
@@ -32,30 +34,30 @@ function tabFromHash(): Tab {
 }
 
 const tabs: { id: Tab; label: string; icon: typeof Settings2 }[] = [
-  { id: 'overview', label: 'Overview', icon: Settings2 },
-  { id: 'narration', label: 'Narration', icon: SlidersHorizontal },
-  { id: 'images', label: 'Images', icon: Image },
-  { id: 'voice', label: 'Voice / TTS', icon: Volume2 },
-  { id: 'languages', label: 'Languages and translation', icon: Languages },
-  { id: 'providers', label: 'Providers', icon: Globe2 },
-  { id: 'appearance', label: 'Appearance', icon: Palette },
-  { id: 'runtimes', label: 'Runtimes', icon: Cpu },
-  { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard },
-  { id: 'network', label: 'Network & Workers', icon: Server },
-  { id: 'about', label: 'About Noble AI', icon: MonitorCog },
-  { id: 'updates', label: 'Updates', icon: Download },
+  { id: 'overview', label: 'settings.overview', icon: Settings2 },
+  { id: 'narration', label: 'settings.narration', icon: SlidersHorizontal },
+  { id: 'images', label: 'settings.images', icon: Image },
+  { id: 'voice', label: 'settings.voice', icon: Volume2 },
+  { id: 'languages', label: 'settings.languages', icon: Languages },
+  { id: 'providers', label: 'settings.providers', icon: Globe2 },
+  { id: 'appearance', label: 'settings.appearance', icon: Palette },
+  { id: 'runtimes', label: 'settings.runtimes', icon: Cpu },
+  { id: 'shortcuts', label: 'settings.shortcuts', icon: Keyboard },
+  { id: 'network', label: 'settings.network', icon: Server },
+  { id: 'about', label: 'settings.about', icon: MonitorCog },
+  { id: 'updates', label: 'settings.updates', icon: Download },
 ];
 
 const settingGroups: {title:string; description:string; sections:Tab[]}[] = [
-  {title:'OVERVIEW', description:'Quick access to your preferences',
+  {title:'settings.group.overview', description:'settings.group.overviewDescription',
     sections:['overview']},
-  {title:'INTELLIGENCE',description:'Narrator and providers',
+  {title:'settings.group.intelligence',description:'settings.group.intelligenceDescription',
     sections:['narration','providers','languages']},
-  {title:'MEDIA CREATION',description:'Image generation and voices',
+  {title:'settings.group.media',description:'settings.group.mediaDescription',
     sections:['images','voice']},
-  {title:'APPLICATION',description:'Preferences and tools',
+  {title:'settings.group.application',description:'settings.group.applicationDescription',
     sections:['appearance','shortcuts','runtimes']},
-  {title:'CONNECTIONS AND SYSTEM',description:'Network, devices, and version',
+  {title:'settings.group.connections',description:'settings.group.connectionsDescription',
     sections:['network','about','updates']},
 ];
 
@@ -74,6 +76,7 @@ interface Props {
 }
 
 export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrativeRevision, onNarratorActivated }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>(tabFromHash);
   // Each settings tab has its own reloadable hash route. Browser Back/Forward
   // and direct links update the selected tab without remounting the workspace.
@@ -127,7 +130,7 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
       window.dispatchEvent(new CustomEvent('noble-shortcuts-changed', { detail: next.shortcuts_enabled }));
       if (field === 'accent' || field === 'font_scale' || field === 'reader_layout')
         applyAppearance(next);
-      setFeedback('Preference saved.');
+      setFeedback(t('settings.preferenceSaved'));
     } catch (e) { setError((e as Error).message); }
     finally { setBusy(false); }
   }
@@ -160,80 +163,80 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
   }
 
   return <section className="hub workspace-settings">
-    <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> CUSTOMIZABLE STUDIO</div>
-      <h1>Settings<span className="title-dot">.</span></h1>
-      <p>Engines, languages, reader preferences, diagnostics, and future remote connections in one place.</p>
+    <div className="page-heading"><div className="eyebrow"><Settings2 size={14}/> {t("settings.customizable")}</div>
+      <h1>{t("settings.title")}<span className="title-dot">.</span></h1>
+      <p>{t("settings.subtitle")}</p>
     </div>
     <div className="workspace-settings-shell">
-      <nav aria-label="Settings sections" className="workspace-settings-tabs">
+      <nav aria-label={t("settings.sections")} className="workspace-settings-tabs">
         {settingGroups.map(group => <div className="settings-nav-group" key={group.title}>
-          <span className="settings-nav-label">{group.title}</span>
-          <small>{group.description}</small>
+          <span className="settings-nav-label">{t(group.title)}</span>
+          <small>{t(group.description)}</small>
           {group.sections.map(id => {
             const item = tabs.find(candidate => candidate.id === id)!;
             return <button key={item.id} className={tab === item.id ? 'selected' : ''}
               aria-current={tab === item.id ? 'page' : undefined}
               onClick={() => selectTab(item.id)}>
-              <item.icon size={17}/>{item.label}</button>;
+              <item.icon size={17}/>{t(item.label)}</button>;
           })}
         </div>)}
       </nav>
       <div className="workspace-settings-body">
-        {!prefs && <div className="loading"><LoaderCircle className="rotating" size={18}/> Loading preferences...</div>}
+        {!prefs && <div className="loading"><LoaderCircle className="rotating" size={18}/> {t("settings.loadingPreferences")}</div>}
         {error && <p className="narrative-error" role="alert">{error}</p>}
         {feedback && <p className="narrative-saved" role="status"><Check size={16}/>{feedback}</p>}
 
         {tab === 'overview' && <div className="workspace-settings-overview">
           <div className="setting-section-intro">
-            <span className="overline">STUDIO CONTROLS</span>
-            <h2>Your workspace, your way</h2>
-            <p>Configure each system separately. Narrator settings are independent from visuals, networking, and installed models.</p>
+            <span className="overline">{t("settings.studioControls")}</span>
+            <h2>{t("settings.workspace")}</h2>
+            <p>{t("settings.workspaceDescription")}</p>
           </div>
           <div className="workspace-settings-snapshot">
-            <div><Languages size={17}/><small>Narration language</small>
+            <div><Languages size={17}/><small>{t("settings.narrationLanguage")}</small>
               <strong>{prefs?.target_language === 'es-419' ? 'Latin American Spanish' :
                 prefs?.target_language || 'Loading...'}</strong></div>
-            <div><Volume2 size={17}/><small>Illustrations</small>
-              <strong>{imageMode === 'off' ? 'Disabled' :
-                imageMode === 'manual' ? 'On demand' : 'Per scene'}</strong></div>
+            <div><Volume2 size={17}/><small>{t("settings.illustrations")}</small>
+              <strong>{imageMode === 'off' ? t('common.disabled') :
+                imageMode === 'manual' ? t('settings.onDemand') : t('settings.perScene')}</strong></div>
             <div><KeyRound size={17}/><small>OpenRouter</small>
-              <strong>{credential?.configured ? 'Key configured' : 'No key'}</strong></div>
-            <div><Cpu size={17}/><small>Local version</small>
+              <strong>{credential?.configured ? t('settings.keyConfigured') : t('settings.noKey')}</strong></div>
+            <div><Cpu size={17}/><small>{t("settings.localVersion")}</small>
               <strong>{about?.version || 'Loading...'}</strong></div>
           </div>
           <div className="workspace-settings-overview-grid">
             {[
-              {id:'narration',title:'Narrative engine',summary:'Connect your LLM, context, settings, and model.'},
-              {id:'images',title:'Images',summary:'ComfyUI, illustrations, checkpoints, and GPU.'},
-              {id:'voice',title:'Voice / TTS',summary:'Piper, voice models, and audio previews.'},
-              {id:'providers',title:'Services and keys',summary:'External accounts, providers, and credentials.'},
-              {id:'languages',title:'Languages and style',summary:'Latin American Spanish, translation, and narration.'},
-              {id:'appearance',title:'Reader appearance',summary:'Theme, visual novel layout, and typography.'},
-              {id:'runtimes',title:'Models and executables',summary:'Installed packages and engine diagnostics.'},
-              {id:'network',title:'Remote GPUs and network',summary:'Workers, secure connections, and local networking.'},
-              {id:'shortcuts',title:'Keyboard shortcuts',summary:'Shortcuts for navigating and playing.'},
-              {id:'about',title:'About Noble AI',summary:'Application version, build, and data.'},
-              {id:'updates',title:'Updates',summary:'Release channel and update checks.'},
+              {id:'narration',title:'settings.narrativeEngine',summary:'settings.card.narration'},
+              {id:'images',title:'settings.images',summary:'settings.card.images'},
+              {id:'voice',title:'settings.voice',summary:'settings.card.voice'},
+              {id:'providers',title:'settings.providers',summary:'settings.card.providers'},
+              {id:'languages',title:'settings.languages',summary:'settings.card.languages'},
+              {id:'appearance',title:'settings.appearance',summary:'settings.card.appearance'},
+              {id:'runtimes',title:'settings.runtimes',summary:'settings.card.runtimes'},
+              {id:'network',title:'settings.network',summary:'settings.card.network'},
+              {id:'shortcuts',title:'settings.shortcuts',summary:'settings.card.shortcuts'},
+              {id:'about',title:'settings.about',summary:'settings.card.about'},
+              {id:'updates',title:'settings.updates',summary:'settings.card.updates'},
             ].map(item => {
               const section = tabs.find(candidate => candidate.id === item.id)!;
               return <button className="workspace-overview-card" key={item.id}
                 onClick={() => selectTab(section.id)}>
                 <span className="workspace-overview-icon"><section.icon size={22}/></span>
-                <span><strong>{item.title}</strong><small>{item.summary}</small></span>
+                <span><strong>{t(item.title)}</strong><small>{t(item.summary)}</small></span>
                 <ArrowRight size={17}/>
               </button>;
             })}
           </div>
           <div className="workspace-panel workspace-overview-storage">
-            <h3>Model storage</h3>
-            <code title={modelsDir}>{modelsDir || 'Path not available yet'}</code>
-            <p>Manage paths and executables in their respective sections.</p>
+            <h3>{t("settings.modelStorage")}</h3>
+            <code title={modelsDir}>{modelsDir || t('settings.pathUnavailable')}</code>
+            <p>{t("settings.managePaths")}</p>
           </div>
         </div>}
 
         {tab === 'narration' && <>
-          <div className="setting-section-intro"><h2>Narrative engine</h2>
-            <p>Choose a local LLM or a hosted API. Configure sampling, reasoning, and context.</p></div>
+          <div className="setting-section-intro"><h2>{t("settings.narrativeEngine")}</h2>
+            <p>{t("settings.narrativeEngineDescription")}</p></div>
           <NarrativeSettings key={narrativeRevision}/>
           <RuntimeManager onActivated={onNarratorActivated}/>
         </>}
@@ -242,21 +245,24 @@ export function WorkspaceSettings({ modelsDir, imageMode, onImageMode, narrative
         {tab === 'voice' && <VoiceSettingsPanel/>}
 
         {tab === 'languages' && prefs && <>
-          <div className="setting-section-intro"><h2>Language and translation</h2>
-            <p>This preference applies to the narrator prompt on each turn; it is not a separate translation engine.</p></div>
+          <div className="setting-section-intro"><h2>{t("settings.languageTitle")}</h2>
+            <p>{t("settings.languageDescription")}</p></div>
+          <div className="workspace-panel"><InterfaceLanguageSelector/>
+            <p className="noble-inspector-hint">{t("settings.uiLanguageDescription")}</p>
+            <small>{t("settings.uiLanguageHint")}</small></div>
           <div className="workspace-panel workspace-field-grid">
-            {option('Output language', prefs.target_language, [
+            {option(t('settings.outputLanguage'), prefs.target_language, [
               ['es-419', 'Latin American Spanish'], ['en', 'English'], ['ja', '日本語'],
               ['ko', '한국어'], ['pt-BR', 'Português brasileiro'], ['fr', 'Français'],
             ], v => void update('target_language', v))}
-            {option('Incoming content language', prefs.source_language, [
+            {option(t('settings.inputLanguage'), prefs.source_language, [
               ['auto', 'Detect automatically'], ['es', 'Español'], ['en', 'English'],
               ['ja', 'Japanese'], ['ko', 'Korean'], ['pt', 'Portuguese'], ['fr', 'French'],
             ], v => void update('source_language', v))}
-            {option('Multilingual handling', prefs.translation_mode, [
+            {option(t('settings.translationMode'), prefs.translation_mode, [
               ['off', 'Standard narration'], ['target_output', 'Preserve meaning and respond in the target language'],
             ], v => void update('translation_mode', v))}
-            {option('Narration style', prefs.narration_style, [
+            {option(t('settings.narrationStyle'), prefs.narration_style, [
               ['natural', 'Natural and conversational'], ['literary', 'Literary and descriptive'],
               ['concise', 'Brief and dynamic'],
             ], v => void update('narration_style', v))}

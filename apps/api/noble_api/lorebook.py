@@ -176,7 +176,7 @@ class LorebookService:
             if world is not None else set()
         )
         owner = self.narrative.get_story(story_id)
-        protagonist_name = owner.get("protagonist_name") or "Protagonista"
+        protagonist_name = owner.get("protagonist_name") or "Protagonist"
         ordered = sorted(
             current,
             key=lambda entry: (-entry["priority"], entry["created_at"], entry["id"]),
@@ -219,7 +219,7 @@ class LorebookService:
                                  "SELECT id,config_json FROM creator_characters "
                                  "WHERE story_id=?", (story_id,)
                              ) if row["id"] in visible_ids]
-                text = ("[Conocimiento privado de personajes presentes: " +
+                text = ("[Private knowledge of present characters:  +
                         ", ".join(names) + "]\n" + text)
             cost = len(text) + 2
             if used + cost > budget_chars:

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { InterfaceLanguageSelector } from './InterfaceLanguageSelector';
 import {
   ArrowDownToLine, ArrowRight, BookOpen, Check, CheckCircle2, Compass,
   ChevronDown, CircleAlert, Cloud, Cpu, Database, Download, ExternalLink,
@@ -73,6 +75,7 @@ function ModelFitBadge({ fit }: { fit: ModelFitVariant }) {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const [route, setRoute] = useState<WorkspaceRoute>(
     () => parseWorkspaceHash(window.location.hash));
   const [page, setPage] = useState<Page>(
@@ -450,35 +453,36 @@ export default function App() {
       ? 'model-inspector-active' : '')}>
     <aside className={'sidebar ' + (navOpen ? 'sidebar-open' : '')}>
       <div className="brand"><div className="brand-mark"><Sparkles size={22}/></div>
-        <div className="brand-text"><strong>Noble AI</strong><small>LOCAL STORY STUDIO</small></div>
-        <button className="mobile-dismiss icon-button" onClick={() => setNavOpen(false)} aria-label="Close menu"><X size={18}/></button>
+        <div className="brand-text"><strong>Noble AI</strong><small>{t("nav.localStudio")}</small></div>
+        <button className="mobile-dismiss icon-button" onClick={() => setNavOpen(false)} aria-label={t("nav.closeMenu")}><X size={18}/></button>
       </div>
-      <div className="nav-label">WORKSPACE</div>
-      <nav className="nav-menu" aria-label="Sections">
+      <div className="nav-label">{t("nav.workspace")}</div>
+      <nav className="nav-menu" aria-label={t("nav.sections")}>
         {menu.map(item => <button key={item.id} onClick={() => changePage(item.id)}
           className={'nav-item ' + (page === item.id ? 'nav-active' : '')}>
-          <item.icon size={19}/><span>{item.label}</span>
+          <item.icon size={19}/><span>{t("nav." + item.id)}</span>
           {item.id === 'descargas' && activeJobs > 0 && <b className="counter">{activeJobs}</b>}
         </button>)}
       </nav>
       <div className="sidebar-bottom">
         <div className="device-card"><div className="device-icon"><Cpu size={18}/></div>
-          <div><strong>{hardware?.gpus[0]?.name || 'CPU / no NVIDIA detected'}</strong>
+          <div><strong>{hardware?.gpus[0]?.name || t('nav.cpuNotDetected')}</strong>
             <small>{hardware?.gpus[0]
               ? Math.round(hardware.gpus[0].vram_total_mb / 1024) + ' GB VRAM'
-              : 'Diagnostics available'}</small></div>
+              : t('nav.diagnosticsAvailable')}</small></div>
         </div>
         <p className="sidebar-footer">P1 PROTOTYPE <span>·</span> LOCAL-FIRST</p>
       </div>
     </aside>
-    {navOpen && <button aria-label="Close navigation" className="mobile-overlay" onClick={() => setNavOpen(false)}/>}
+    {navOpen && <button aria-label={t("nav.closeMenu")} className="mobile-overlay" onClick={() => setNavOpen(false)}/>}
     <div className="work-area">
       <header className="topbar">
-        <button className="mobile-menu icon-button" aria-label="Open menu" onClick={() => setNavOpen(true)}><Menu size={23}/></button>
-        <div className="breadcrumb">Noble AI <span>/</span> <strong>{menu.find(m => m.id === page)?.label}</strong></div>
+        <button className="mobile-menu icon-button" aria-label={t("nav.openMenu")} onClick={() => setNavOpen(true)}><Menu size={23}/></button>
+        <div className="breadcrumb">Noble AI <span>/</span> <strong>{t("nav." + page)}</strong></div>
         <div className="top-actions">
+          <InterfaceLanguageSelector compact/>
           <span className="service-state"><i className={health?.status === 'ok' ? 'dot-green' : 'dot-red'}/>{health ? 'API local' : 'Offline'}</span>
-          <button className="icon-button" title="Refresh" aria-label="Refresh data" onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
+          <button className="icon-button" title={t("common.refresh")} aria-label={t("nav.refreshData")} onClick={() => { void refreshDownloads().catch(e => setError(e.message)); }}><RefreshCw size={18}/></button>
         </div>
       </header>
       <main className="content" data-ready={ready ? "yes" : "no"}>

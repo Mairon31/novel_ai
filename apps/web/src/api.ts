@@ -367,7 +367,7 @@ export const api = {
     }
     return response.json();
   },
-  createStory: (title: string, premise: string, protagonist_name = 'Protagonista') => request<Story>(
+  createStory: (title: string, premise: string, protagonist_name = 'Protagonist') => request<Story>(
     '/stories', { method: 'POST', body: JSON.stringify({ title, premise, protagonist_name }) }),
   forkStory: (storyId: string, until_turn_id: string | null = null) => request<Story>(
     '/stories/' + encodeURIComponent(storyId) + '/fork',

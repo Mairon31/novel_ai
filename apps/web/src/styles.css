@@ -1437,3 +1437,13 @@
   white-space: pre-wrap; overflow-wrap: anywhere; font-size: .79rem;
 }
 .comfy-runtime-panel .workspace-pref-field input { min-width: 0; }
+
+/* Interface language selector: no story or model preference is changed here. */
+.noble-interface-language{display:flex;align-items:center;gap:10px;min-width:0}
+.noble-interface-language label{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:650;color:#bec2da;flex:none}
+.noble-interface-language label svg{color:#b5a4ff}
+.noble-interface-language select{background:#181d30;color:#f0effe;border:1px solid #484568;border-radius:10px;padding:9px 11px;max-width:100%;min-width:174px;font-size:12px}
+.noble-interface-language select:focus-visible{outline:2px solid #aa97ff;outline-offset:2px}
+.noble-interface-language.is-compact select{min-width:0;width:164px;max-width:24vw}
+@media(max-width:780px){.noble-interface-language.is-compact label{display:none}.noble-interface-language.is-compact select{width:123px;max-width:31vw;padding:8px 6px}.top-actions{gap:6px}}
+@media(max-width:400px){.noble-interface-language.is-compact select{max-width:108px}.topbar{padding-left:14px;padding-right:14px}}

@@ -103,7 +103,7 @@ class LorebookWitnessTests(unittest.TestCase):
         activated = self.preview()
         self.assertEqual(len(activated["entries"]), 1)
         self.assertEqual(activated["entries"][0]["visibility"], "witnesses")
-        self.assertIn("Conocimiento privado de personajes presentes: Aira",
+        self.assertIn("Private knowledge of present characters: Aira",
                       activated["context"])
         self.assertIn("llave del sello", activated["context"])
         prompt = self.app.state.narrative.messages(story, "Toco el sello.", "do")

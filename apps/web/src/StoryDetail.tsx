@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, ArrowRight, BookOpen, CalendarDays, Clock3, Feather, GitBranch,
   Image as ImageIcon, PencilLine, Play, UserRound, Users, Download,
@@ -22,9 +23,9 @@ interface Props {
   onChooseBranch: (storyId: string) => void;
 }
 
-function date(value: number) {
+function date(value: number, locale: string) {
   if (!value || !Number.isFinite(value)) return 'Date unavailable';
-  return new Intl.DateTimeFormat('es-419', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' })
     .format(new Date(value * 1000));
 }
 
@@ -37,6 +38,7 @@ export function StoryDetail({
   story, turns, metadata, characters, media, openingBusy, error,
   onBack, onContinue, onEdit, onStartOpening, branches, onChooseBranch,
 }: Props) {
+  const { t, i18n } = useTranslation();
   const last = turns.at(-1);
   const description = metadata?.synopsis.trim() || story.premise;
   const publicPlot = metadata?.player_plot.trim();
@@ -49,7 +51,7 @@ export function StoryDetail({
       style={heroArt ? { backgroundImage: 'url("' + heroArt + '")' } : undefined}>
       <div className="noble-story-cover-shade"/>
       <button className="noble-story-detail-back" onClick={onBack} disabled={openingBusy}>
-        <ArrowLeft size={18}/> Return to library
+        <ArrowLeft size={18}/> {t("library.returnLibrary")}
       </button>
       {!heroArt && <div className="noble-story-cover-empty"><BookOpen size={76}/></div>}
       <div className="noble-story-detail-heading">
@@ -66,16 +68,16 @@ export function StoryDetail({
         <div className="noble-story-detail-actions">
           {openings.length ? <button className="primary-button" onClick={() =>
             document.getElementById('noble-story-openings')?.scrollIntoView({ behavior: 'smooth' })}>
-            <Play size={17}/> Choose an opening <ArrowRight size={16}/>
+            <Play size={17}/> {t('reader.chooseOpening')} <ArrowRight size={16}/>
           </button> : <button className="primary-button" onClick={onContinue}>
-            <Play size={17}/> {turns.length ? 'Continue story' : 'Start story'} <ArrowRight size={16}/>
+            <Play size={17}/> {turns.length ? t('reader.continueStory') : t('reader.startStory')} <ArrowRight size={16}/>
           </button>}
           <button className="secondary-button" onClick={onEdit}>
-            <PencilLine size={16}/> Edit in Creator Studio
+            <PencilLine size={16}/> {t("reader.editCreator")}
           </button>
           <a className="secondary-button" role="link"
             href={'/api/v1/stories/' + encodeURIComponent(story.id) + '/archive.noble.zip'}
-            download="noble-family.noble.zip" aria-label="Download full backup">
+            download="noble-family.noble.zip" aria-label={t("reader.downloadBackup")}>
             <Download size={16}/> Back up story and branches
           </a>
         </div>
@@ -85,9 +87,9 @@ export function StoryDetail({
     <div className="noble-story-detail-body">
       <div className="noble-story-detail-overview">
         <div><UserRound size={18}/><span>Protagonist</span><strong>{story.protagonist_name || 'Not assigned'}</strong></div>
-        <div><BookOpen size={18}/><span>Story turns</span><strong>{turns.length}</strong></div>
-        <div><CalendarDays size={18}/><span>Created</span><strong>{date(story.created_at)}</strong></div>
-        <div><Clock3 size={18}/><span>Updated</span><strong>{date(story.updated_at)}</strong></div>
+        <div><BookOpen size={18}/><span>{t("reader.storyTurns")}</span><strong>{turns.length}</strong></div>
+        <div><CalendarDays size={18}/><span>Created</span><strong>{date(story.created_at, i18n.language)}</strong></div>
+        <div><Clock3 size={18}/><span>Updated</span><strong>{date(story.updated_at, i18n.language)}</strong></div>
       </div>
       <article className="noble-story-detail-resume">
         <span className="overline">{last ? 'YOUR ADVENTURE' : 'THE WORLD'}</span>

@@ -124,7 +124,7 @@ def transparent_sprite_from_matte(
     from .comfy_matting import MODELS
 
     if mode not in MODELS:
-        raise ValueError("Motor neuronal desconocido")
+        raise ValueError("Unknown neural background removal engine")
     if (not 0 < len(image_bytes) <= MAX_MEDIA_BYTES or
             not 0 < len(mask_bytes) <= MAX_MEDIA_BYTES):
         raise ValueError("Image or mask exceeds the 12 MiB limit")

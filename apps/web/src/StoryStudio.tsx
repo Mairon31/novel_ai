@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, Feather, LoaderCircle, Plus, X, Upload } from 'lucide-react';
 import { api } from './api';
 import { VisualReader } from './VisualReader';
@@ -19,6 +20,7 @@ export function StoryStudio({
   onOpenSettings, onReadingChange, onEditStory,
   routeStoryId, routeReading = false, onRouteChange,
 }: StoryStudioProps) {
+  const { t } = useTranslation();
   const [stories, setStories] = useState<Story[]>([]);
   const [active, setActive] = useState<Story | null>(null);
   const [reading, setReading] = useState(false);
@@ -139,10 +141,10 @@ export function StoryStudio({
       setActive(null);
       setReading(false);
       onRouteChange?.(null, false);
-      const storyLabel = result.restored_stories === 1 ? 'story' : 'stories';
-      const assetLabel = result.restored_files === 1 ? 'asset' : 'assets';
-      setNotice(`${result.imported_as_copy ? 'Separate copy created' : 'Backup restored'}: ` +
-        `${result.restored_stories} ${storyLabel} and ${result.restored_files} ${assetLabel}.`);
+      const storyLabel = t(result.restored_stories === 1 ? 'library.oneStory' : 'library.manyStories');
+      const assetLabel = t(result.restored_files === 1 ? 'library.oneAsset' : 'library.manyAssets');
+      setNotice(t(result.imported_as_copy ? 'library.copyCreated' : 'library.backupRestored',
+        { count: result.restored_stories, storyLabel, assets: result.restored_files, assetLabel }));
     } catch (e) { setError((e as Error).message); }
     finally { setRestoring(false); }
   }
@@ -279,22 +281,22 @@ export function StoryStudio({
 
   return <section className={'story-studio ' + (active && reading ? 'is-reading' : 'is-library')}>
     {active && reading ? <div className="noble-reading-navigation">
-      <button className="noble-return-library" aria-label="Return to library" onClick={() => {
+      <button className="noble-return-library" aria-label={t("library.returnLibrary")} onClick={() => {
         abortCurrentNarration();
         setGenerating(false); setStreamText(''); setDraft(''); setActive(null); setReading(false);
         onRouteChange?.(null, false);
-      }}><ArrowLeft size={19}/> Library</button>
+      }}><ArrowLeft size={19}/> {t("nav.inicio")}</button>
       <div className="noble-reading-navigation-title">
-        <strong>{active.title}</strong><span>Playing as {active.protagonist_name || 'Protagonist'}</span>
+        <strong>{active.title}</strong><span>{t('library.playingAs', { name: active.protagonist_name || t('library.protagonist') })}</span>
       </div>
       {branchTree && branchTree.branches.length > 1 && <select
-        aria-label="Switch narrative branch" value={active.id} disabled={generating}
+        aria-label={t("library.switchBranch")} value={active.id} disabled={generating}
         onChange={event => void switchBranch(event.target.value, true)}>
         {branchTree.branches.map(branch => <option key={branch.id} value={branch.id}>
           {'· '.repeat(branch.depth)}{branch.title} ({branch.turn_count} turns)
         </option>)}
       </select>}
-      <button className="noble-reader-settings-link" onClick={onOpenSettings}>Settings</button>
+      <button className="noble-reader-settings-link" onClick={onOpenSettings}>{t("common.settings")}</button>
     </div> : active ? <StoryDetail story={active} turns={turns} metadata={storyMetadata}
       characters={storyCharacters} media={storyAssets} openingBusy={openingBusy || turnsLoading}
       error={error}
@@ -305,18 +307,17 @@ export function StoryStudio({
       onChooseBranch={id => void switchBranch(id)}
       onEdit={() => onEditStory?.(active.id)}/> : <div className="noble-library-home">
       <div className="noble-library-hero">
-        <div><span className="eyebrow"><Feather size={15}/> YOUR STORY UNIVERSE</span>
-          <h1>Stories to experience, not just read.</h1>
-          <p>Choose a world, continue an adventure, or create an original story.
-            Your library and reader are separate spaces.</p>
+        <div><span className="eyebrow"><Feather size={15}/> {t("library.universe")}</span>
+          <h1>{t("library.headline")}</h1>
+          <p>{t("library.description")}</p>
           <button className="primary-button" onClick={() => {
             setCreating(true); setCreateStep('story');
-          }}><Plus size={17}/> New story</button>
+          }}><Plus size={17}/> {t("library.newStory")}</button>
           {' '}
           <button className="secondary-button" disabled={restoring}
             onClick={() => archiveFile.current?.click()}>
             {restoring ? <LoaderCircle size={17} className="rotating"/> : <Upload size={17}/>}
-            {restoring ? 'Restoring backup...' : 'Import .noble.zip backup'}
+            {restoring ? t('library.restoringBackup') : t('library.importBackup')}
           </button>
           <input ref={archiveFile} type="file" hidden accept=".zip,.noble.zip"
             aria-label="Noble backup file"
@@ -328,7 +329,7 @@ export function StoryStudio({
           <label className="noble-backup-copy-choice">
             <input type="checkbox" checked={restoreAsCopy}
               onChange={event => setRestoreAsCopy(event.target.checked)}/>
-            Import as a separate copy (new identifiers)
+            {t("library.importCopy")}
           </label>
           {notice && <p className="story-notice" role="status">{notice}</p>}
           {error && <p className="narrative-error" role="alert">{error}</p>}
@@ -340,12 +341,12 @@ export function StoryStudio({
       <StoryHub onInstall={story => {
         setStories(old => [story, ...old.filter(existing => existing.id !== story.id)]);
         setActive(story); setReading(false); setCreating(false);
-        setNotice('Story installed. Choose one of the three openings to begin.');
+        setNotice(t('library.storyInstalled'));
         onRouteChange?.(story.id, false);
       }}/>
       <div className="noble-library-section-heading">
-        <div><span className="overline">YOUR COLLECTION</span><h2>My stories <small>{stories.length}</small></h2></div>
-        {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> Loading...</div>}
+        <div><span className="overline">{t("library.yourCollection")}</span><h2>{t("library.myStories")} <small>{stories.length}</small></h2></div>
+        {loading && <div className="loading"><LoaderCircle className="rotating" size={15}/> {t("common.loading")}</div>}
       </div>
       <div className="noble-library-cover-grid">
         {stories.map(s => <button key={s.id} className="noble-library-cover"
@@ -353,18 +354,18 @@ export function StoryStudio({
           <div className="noble-library-cover-art"
             style={s.cover_image_url || s.scene_image_url ? {backgroundImage:'url("'+(s.cover_image_url || s.scene_image_url)+'")'}:undefined}>
             {!(s.cover_image_url || s.scene_image_url) && <BookOpen size={38}/>}
-            <span>{s.origin_story_id ? 'Alternate branch' : 'Story'}</span>
+            <span>{s.origin_story_id ? t('library.branch') : t('library.story')}</span>
           </div>
           <div className="noble-library-cover-copy"><strong>{s.title}</strong>
-            <small>Protagonist · {s.protagonist_name || 'Unnamed'}</small>
+            <small>{t('library.protagonist')} · {s.protagonist_name || t('library.unnamed')}</small>
             <p>{s.premise}</p>
-            <div><span>Continue reading</span><ChevronRight size={17}/></div>
+            <div><span>{t("library.continueReading")}</span><ChevronRight size={17}/></div>
           </div>
         </button>)}
         {!loading && stories.length===0 && <div className="noble-library-empty">
-          <BookOpen size={38}/><h3>Your next adventure begins here</h3>
-          <p>Install a ready-made world from the catalog or create an original story.</p>
-          <button className="secondary-button" onClick={() => setCreating(true)}>Create story</button>
+          <BookOpen size={38}/><h3>{t("library.noStories")}</h3>
+          <p>{t("library.noStoriesHint")}</p>
+          <button className="secondary-button" onClick={() => setCreating(true)}>{t("library.createStory")}</button>
         </div>}
       </div>
     </div>}
@@ -381,26 +382,26 @@ export function StoryStudio({
         setStories(old => old.map(item => item.id === next.id ? next : item));
       }}/>}
     {creating && <div className="welcome-scrim"><section className="welcome-panel" role="dialog"
-      aria-modal="true" aria-label="Create a new story">
+      aria-modal="true" aria-label={t("library.createDialog")}>
       <div className="story-create-heading"><div className="welcome-icon"><Feather size={29}/></div>
         <button aria-label="Close story creator" className="icon-button" onClick={() => setCreating(false)}><X size={19}/></button></div>
       <span className="overline">{createStep === 'story' ? 'STEP 1 / 2 · THE WORLD' : 'STEP 2 / 2 · YOUR CHARACTER'}</span>
       {createStep === 'story' ? <>
-        <h2>Start a new story.</h2>
-        <p>Define the opening scene. Images and speech are generated only when requested.</p>
-        <label className="form-label" htmlFor="story-title">Title</label>
+        <h2>{t("library.startNew")}</h2>
+        <p>{t("library.defineOpening")}</p>
+        <label className="form-label" htmlFor="story-title">{t("library.title")}</label>
         <input id="story-title" className="story-create-input" maxLength={100} value={title}
           onChange={e => setTitle(e.target.value)} placeholder="For example: The Forest of Spirits"/>
-        <label className="form-label" htmlFor="story-premise">World premise</label>
+        <label className="form-label" htmlFor="story-premise">{t("library.worldPremise")}</label>
         <textarea id="story-premise" className="story-create-input" value={premise}
           onChange={e => setPremise(e.target.value)} rows={5} maxLength={4000}
           placeholder="Where it happens, what the world is like, and how your adventure begins..."/>
       </> : <>
         <div className="noble-create-character"><div className="noble-create-avatar"><Feather size={33}/></div>
           <span>YOU ARE PLAYING AS...</span></div>
-        <h2>What is your name in this story?</h2>
-        <p>This will be the name of the character you control. The narrator will respect your decisions.</p>
-        <label className="form-label" htmlFor="story-protagonist">Protagonist name</label>
+        <h2>{t("library.namePrompt")}</h2>
+        <p>{t("library.nameDescription")}</p>
+        <label className="form-label" htmlFor="story-protagonist">{t("library.protagonistName")}</label>
         <input id="story-protagonist" className="story-create-input noble-name-input"
           value={protagonistName} maxLength={60} autoFocus
           onChange={e => setProtagonistName(e.target.value)} placeholder="Choose your character's name"/>
@@ -409,11 +410,11 @@ export function StoryStudio({
       {createStep === 'story' ? <button className="primary-button full"
         disabled={loading || title.trim().length < 2 || premise.trim().length < 10}
         onClick={() => setCreateStep('protagonist')}>
-        <ArrowRight size={17}/> Choose protagonist</button> :
+        <ArrowRight size={17}/> {t("library.chooseProtagonist")}</button> :
         <div className="noble-create-actions">
-          <button className="secondary-button" onClick={() => setCreateStep('story')}>Back</button>
+          <button className="secondary-button" onClick={() => setCreateStep('story')}>{t("common.back")}</button>
           <button className="primary-button" disabled={loading || !protagonistName.trim()}
-            onClick={() => void createStory()}><ArrowRight size={17}/> Start story</button>
+            onClick={() => void createStory()}><ArrowRight size={17}/> {t("library.startStory")}</button>
         </div>}
     </section></div>}
   </section>;
