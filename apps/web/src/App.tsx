@@ -523,7 +523,7 @@ export default function App() {
                 <input aria-label={t('model.searchModels')} value={query} onChange={e => setQuery(e.target.value)}
                   placeholder="Search models, families, or authors..."/></div>
               <div className="search-role-wrap"><SlidersHorizontal size={17}/>
-                <select aria-label={t('model.title')} value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
+                <select aria-label={t('a11y.modelCategory')} value={role} onChange={e => { setRole(e.target.value as ModelRole); closeModelDetail(); }}>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select><ChevronDown size={15}/></div>
             </div>
@@ -750,7 +750,7 @@ export default function App() {
 
     {(detail || detailLoading) && <div className="modal-scrim model-detail-scrim"
       role="presentation" onClick={closeModelDetail}>
-      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label={t('model.details')} onClick={e => e.stopPropagation()}>
+      <section className="detail-panel" role="dialog" aria-modal={!dockedDetail} aria-label={t('a11y.modelDetails')} onClick={e => e.stopPropagation()}>
         <div className="detail-top"><span>{t('model.details')}</span><button className="icon-button" onClick={closeModelDetail} aria-label="Close details"><X size={19}/></button></div>
         {detailLoading ? <Loading/> : detail && <>
           <div className="noble-model-detail-heading">
@@ -918,7 +918,7 @@ export default function App() {
       </section>
     </div>}
 
-    {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label={t('setup.welcome')}>
+    {showSetup && ready && <div className="welcome-scrim"><section className="welcome-panel" role="dialog" aria-modal="true" aria-label={t('a11y.initialSetup')}>
       <div className="welcome-icon"><Sparkles size={31}/></div><span className="overline">{t('setup.welcome')}</span>
       <h2>{t('setup.title')}</h2>
       <p>{t('setup.description')}</p>

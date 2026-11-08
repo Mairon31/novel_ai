@@ -45,7 +45,7 @@ export function StoryHub({ onInstall }: Props) {
       setInstalling(null);
     }
   }
-  return <section className="noble-story-hub" aria-label={t("nav.descubrir")}>
+  return <section className="noble-story-hub" aria-label={t("a11y.storyCatalog")}>
     <header className="noble-story-hub-heading">
       <div>
         <span className="overline"><Compass size={15}/> {t("hub.storiesToBegin")}</span>
@@ -95,7 +95,7 @@ export function StoryHub({ onInstall }: Props) {
         </p>
         <label className="noble-hub-protagonist">
           {t('hub.protagonistName')}
-          <input aria-label={t("hub.protagonistName")} maxLength={60}
+          <input aria-label={t("a11y.installedProtagonist")} maxLength={60}
             value={protagonist} placeholder={chosen.protagonist}
             onChange={event => setProtagonist(event.target.value)}/>
         </label>

@@ -448,5 +448,22 @@
   "setup.noImages": "Sem imagens",
   "setup.ttsDisabled": "O TTS vem desativado por padrão. Neste protótipo, sua história não será enviada a provedores remotos.",
   "setup.incremental": "Geração de texto, imagens e voz serão integradas gradualmente.",
-  "setup.continueHub": "Continuar à central de modelos"
+  "setup.continueHub": "Continuar à central de modelos",
+  "a11y.initialSetup": "Boas-vindas e configuração inicial",
+  "a11y.modelCategory": "Categoria de modelo",
+  "a11y.modelDetails": "Detalhes do modelo",
+  "a11y.storyCatalog": "Descobrir histórias jogáveis",
+  "a11y.installedProtagonist": "Nome do protagonista da história instalada",
+  "a11y.defaultPiperVoice": "Voz padrão do Piper",
+  "a11y.piperSpeed": "Velocidade do Piper",
+  "a11y.inspectMode": "Modo para inspecionar",
+  "a11y.inspectInput": "Entrada para inspecionar",
+  "a11y.workerUrl": "URL do worker",
+  "a11y.workerToken": "Token do worker",
+  "a11y.selectWorker": "Selecionar worker",
+  "a11y.ggufToRun": "GGUF para executar",
+  "a11y.koboldPath": "Caminho do KoboldCpp",
+  "a11y.koboldLayers": "Camadas GPU do KoboldCpp",
+  "a11y.koboldContext": "Contexto do KoboldCpp",
+  "a11y.gpuReservation": "Modo de reserva de GPU"
 }

@@ -112,11 +112,11 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
         <input aria-label={t('workers.name')} placeholder="My Colab GPU" value={name}
           onChange={e => setName(e.target.value)} maxLength={80}/></label>
       <label className="workspace-pref-field">{t('workers.url')}
-        <input aria-label={t('workers.url')} placeholder="https://my-gpu.trycloudflare.com"
+        <input aria-label={t('a11y.workerUrl')} placeholder="https://my-gpu.trycloudflare.com"
           value={url} onChange={e => setUrl(e.target.value)} maxLength={256}
           spellCheck={false}/></label>
       <label className="workspace-pref-field">{t('workers.token')}
-        <input aria-label={t('workers.token')} type="password" autoComplete="off"
+        <input aria-label={t('a11y.workerToken')} type="password" autoComplete="off"
           placeholder="Secret token with at least 12 characters" value={token}
           maxLength={512} onChange={e => setToken(e.target.value)}/></label>
       <button className="secondary-button" disabled={busy || name.trim().length < 2
@@ -125,7 +125,7 @@ export function RemoteWorkers({ onActivated }: { onActivated: () => void }) {
     </div>
     <div className="noble-worker-controls">
       <label className="workspace-pref-field">{t('workers.registered')}
-        <select aria-label={t('workers.selectWorker')} value={selected} disabled={busy || loading}
+        <select aria-label={t('a11y.selectWorker')} value={selected} disabled={busy || loading}
           onChange={e => { setSelected(e.target.value); setProbe(null); setModel(''); }}>
           <option value="">{t('workers.selectWorker')}</option>
           {workers.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}

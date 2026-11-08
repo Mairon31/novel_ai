@@ -208,7 +208,7 @@ export function VoiceSettingsPanel() {
         Installed voices: {voices.voices.length} · Folder: <code>{voices.models_dir}</code></p>}
       {voicePreferences && <div className="workspace-field-grid">
         <label className="workspace-pref-field">{t('voice.defaultVoice')}
-          <select aria-label={t('voice.defaultVoice')} disabled={busy}
+          <select aria-label={t('a11y.defaultPiperVoice')} disabled={busy}
             value={voicePreferences.default_voice_id}
             onChange={e => {
               setVoicePreferences({ default_voice_id: e.target.value });
@@ -231,7 +231,7 @@ export function VoiceSettingsPanel() {
         <p>{t('voice.piperDescription')}</p>
         {synthesisConfig && <>
           <label className="workspace-pref-field">{t('voice.speed')}
-            <input aria-label={t('voice.speed')} type="number" min={0.5} max={2}
+            <input aria-label={t('a11y.piperSpeed')} type="number" min={0.5} max={2}
               step={0.05} value={synthesisConfig.length_scale} disabled={busy || previewBusy}
               onChange={e => changePiperParameter('length_scale', Number(e.target.value))}/>
             <small>{t('voice.speedHint')}</small>

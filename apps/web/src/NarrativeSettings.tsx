@@ -215,7 +215,7 @@ export function NarrativeSettings() {
               </select>
             </label>
             <label>{t('narrative.inputMode')}
-              <select aria-label={t('narrative.inputMode')} value={inspectMode}
+              <select aria-label={t('a11y.inspectMode')} value={inspectMode}
                 onChange={e => { setInspectMode(e.target.value as typeof inspectMode); setInspectorData(null); }}>
                 <option value="do">{t('narrative.action')}</option>
                 <option value="say">{t('narrative.dialogue')}</option>
@@ -225,7 +225,7 @@ export function NarrativeSettings() {
             </label>
           </div>
           <label>{t('narrative.sampleInput')}
-            <textarea aria-label={t('narrative.sampleInput')}
+            <textarea aria-label={t('a11y.inspectInput')}
               rows={2} maxLength={3000} value={inspectText}
               onChange={e => { setInspectText(e.target.value); setInspectorData(null); }}/>
           </label>

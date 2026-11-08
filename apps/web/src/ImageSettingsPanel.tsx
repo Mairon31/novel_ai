@@ -230,7 +230,7 @@ export function ImageSettingsPanel({ imageMode, onImageMode }: Props) {
       </label>}
       {resources && <div className="workspace-field-grid">
         <label className="workspace-pref-field">{t('image.mode')}
-          <select aria-label={t('image.mode')} value={resources.mode}
+          <select aria-label={t('a11y.gpuReservation')} value={resources.mode}
             onChange={e => setResources(x => x ? {
               ...x, mode: e.target.value as ResourceConfig['mode'],
             } : x)}>

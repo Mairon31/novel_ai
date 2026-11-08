@@ -448,5 +448,22 @@
   "setup.noImages": "不生成图像",
   "setup.ttsDisabled": "TTS 默认关闭。本原型不会将故事发送给远程提供商。",
   "setup.incremental": "文字生成、图像和语音功能将逐步集成。",
-  "setup.continueHub": "前往模型中心"
+  "setup.continueHub": "前往模型中心",
+  "a11y.initialSetup": "欢迎与初始设置",
+  "a11y.modelCategory": "模型类别",
+  "a11y.modelDetails": "模型详情",
+  "a11y.storyCatalog": "探索可游玩的故事",
+  "a11y.installedProtagonist": "已安装故事的主角姓名",
+  "a11y.defaultPiperVoice": "默认 Piper 语音",
+  "a11y.piperSpeed": "Piper 速度",
+  "a11y.inspectMode": "要检查的模式",
+  "a11y.inspectInput": "要检查的输入",
+  "a11y.workerUrl": "工作节点地址",
+  "a11y.workerToken": "工作节点令牌",
+  "a11y.selectWorker": "选择工作节点",
+  "a11y.ggufToRun": "要运行的 GGUF",
+  "a11y.koboldPath": "KoboldCpp 路径",
+  "a11y.koboldLayers": "KoboldCpp GPU 层数",
+  "a11y.koboldContext": "KoboldCpp 上下文",
+  "a11y.gpuReservation": "GPU 预留模式"
 }

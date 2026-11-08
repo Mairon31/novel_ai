@@ -82,7 +82,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
     {!running && <>
       <div className="narrative-settings-grid">
         <label className="settings-span"><span><HardDrive size={14}/> {t('runtime.registered')}</span>
-          <select aria-label={t('runtime.registered')} value={installedId}
+          <select aria-label={t('a11y.ggufToRun')} value={installedId}
             onChange={e => setInstalledId(e.target.value)}>
             <option value="">{t('runtime.select')}</option>
             {models.map(model => <option key={model.id} value={model.id}>
@@ -90,12 +90,12 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
           </select>
         </label>
         <label className="settings-span">{t('runtime.executable')}
-          <input aria-label={t('runtime.executable')} value={executable}
+          <input aria-label={t('a11y.koboldPath')} value={executable}
             placeholder="C:\\Tools\\koboldcpp.exe"
             onChange={e => setExecutable(e.target.value)}/>
         </label>
         <label>{t('runtime.gpuLayers')}
-          <select aria-label={t('runtime.gpuLayers')} value={gpuLayers}
+          <select aria-label={t('a11y.koboldLayers')} value={gpuLayers}
             onChange={e => setGpuLayers(Number(e.target.value))}>
             <option value={-1}>{t('runtime.autoFit')}</option>
             <option value={0}>{t('narrative.cpuOnly')}</option>
@@ -103,7 +103,7 @@ export function RuntimeManager({ onActivated }: { onActivated: () => void }) {
           </select>
         </label>
         <label>{t('runtime.contextSize')}
-          <select aria-label={t('runtime.contextSize')} value={contextSize}
+          <select aria-label={t('a11y.koboldContext')} value={contextSize}
             onChange={e => setContextSize(Number(e.target.value))}>
             {[2048, 4096, 8192, 16384, 32768].map(n => <option key={n} value={n}>{n} tokens</option>)}
           </select>

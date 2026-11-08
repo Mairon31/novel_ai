@@ -448,5 +448,22 @@
   "setup.noImages": "No images",
   "setup.ttsDisabled": "TTS is disabled by default. Your story will not be sent to remote providers in this prototype.",
   "setup.incremental": "Text generation, images, and speech will be integrated incrementally.",
-  "setup.continueHub": "Continue to Model Hub"
+  "setup.continueHub": "Continue to Model Hub",
+  "a11y.initialSetup": "Welcome and initial setup",
+  "a11y.modelCategory": "Model category",
+  "a11y.modelDetails": "Model details",
+  "a11y.storyCatalog": "Discover playable stories",
+  "a11y.installedProtagonist": "Protagonist name for installed story",
+  "a11y.defaultPiperVoice": "Default Piper voice",
+  "a11y.piperSpeed": "Piper speed",
+  "a11y.inspectMode": "Mode to inspect",
+  "a11y.inspectInput": "Input to inspect",
+  "a11y.workerUrl": "Worker URL",
+  "a11y.workerToken": "Worker token",
+  "a11y.selectWorker": "Select worker",
+  "a11y.ggufToRun": "GGUF to run",
+  "a11y.koboldPath": "KoboldCpp path",
+  "a11y.koboldLayers": "KoboldCpp GPU layers",
+  "a11y.koboldContext": "KoboldCpp context",
+  "a11y.gpuReservation": "GPU reservation mode"
 }
