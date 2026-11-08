@@ -385,6 +385,16 @@ export type VisualPreflightStatus = {
   ready: boolean; has_started: boolean; text_only: boolean;
   missing: Array<{kind: 'cover' | 'background' | 'character'; character_id?: string; name?: string}>;
 };
+export type VisualPreparationPlan = {
+  story_id: string; mode: CreatorBlueprint['visual_start'];
+  ready: boolean; has_started: boolean; text_only: boolean;
+  generation_started: false; provider_called: false;
+  steps: Array<{
+    kind: 'cover' | 'background' | 'character';
+    action: 'upload_select_cover' | 'generate_scene' | 'sprite_draft';
+    name: string | null; character_id: string | null; prompt: string;
+  }>;
+};
 export type CreatorBlueprintDraft = Omit<CreatorBlueprint, 'story_id'|'updated_at'>;
 export type VisualDNA = {
   tags: string[]; seed: number | null; lora_name: string | null; lora_strength: number;

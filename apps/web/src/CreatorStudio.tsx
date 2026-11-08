@@ -8,6 +8,7 @@ import {
 import { api } from './api';
 import { WorldStateEditor } from './WorldStateEditor';
 import { AssistantStoryWizard } from './AssistantStoryWizard';
+import { CreatorVisualPreparation } from './CreatorVisualPreparation';
 import type {
   Story, CreatorBlueprint, CreatorBlueprintDraft, CreatorCharacter, VisualCharacter,
   CreatorCharacterDraft, CreatorMediaAsset, SpriteExpression, SpriteDraft,
@@ -558,6 +559,18 @@ export function CreatorStudio({ onOpenLibrary, initialStoryId, onStoryChange }: 
             section === 'world' ? <WorldStateEditor
               storyId={active.id} characters={characters}/> :
             section === 'media' ? <div className="creator-fields creator-media-library">
+              <CreatorVisualPreparation storyId={active.id}
+                assetRevision={assets.map(asset => asset.id).join(',') +
+                  '|' + (active.cover_asset_id || '') +
+                  '|' + galleryAssets.map(item => item.id).join(',')}
+                onGenerated={story => {
+                  if (storyGuard.current !== story.id) return;
+                  rememberStory(story);
+                  void api.visualState(story.id).then(result => {
+                    if (storyGuard.current === story.id) setGalleryAssets(result.assets);
+                  }).catch(() => { /* Selected image remains available in the reader. */ });
+                }}
+                onOpenCharacters={() => setSection('cast')}/>
               <div className="creator-section-intro">
                 <h3>{t('creator.covers')}</h3>
                 <p>{t('creator.coversHint')}</p>

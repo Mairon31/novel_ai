@@ -3,6 +3,7 @@
 No remote inference, GPU, or image generation is used by these tests.
 """
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -118,6 +119,51 @@ class VisualStartTests(unittest.TestCase):
         self.assertEqual(opening.status_code, 201, opening.text)
         self.assertTrue(self.status()["has_started"])
         self.assertTrue(self.status()["ready"])
+
+    def test_preparation_plan_uses_player_visible_context_and_never_runs_provider(self):
+        prefix = self.prefix + "/visual-preflight/plan"
+        initial = self.client.get(prefix)
+        self.assertEqual(initial.status_code, 200, initial.text)
+        self.assertEqual(initial.json()["steps"], [])
+        self.client.put(self.prefix + "/creator", json={
+            "visual_start": "cover_background",
+            "player_plot": "The harbor is covered in blue fog every morning.",
+            "ai_plot": "PRIVATE: the guardian is secretly the lost emperor.",
+            "guidelines": "PRIVATE: do not reveal the hidden identity.",
+        })
+        before = self.client.get(self.prefix + "/turns").json()["turns"]
+        result = self.client.get(prefix)
+        self.assertEqual(result.status_code, 200, result.text)
+        state = result.json()
+        self.assertEqual([x["kind"] for x in state["steps"]], ["cover", "background"])
+        self.assertEqual([x["action"] for x in state["steps"]],
+                         ["upload_select_cover", "generate_scene"])
+        self.assertFalse(state["ready"])
+        self.assertFalse(state["generation_started"])
+        self.assertFalse(state["provider_called"])
+        self.assertIn("blue fog", state["steps"][1]["prompt"])
+        self.assertNotIn("lost emperor", json.dumps(state))
+        self.assertNotIn("do not reveal", json.dumps(state))
+        self.assertEqual(before, self.client.get(self.prefix + "/turns").json()["turns"])
+        self.assertEqual(self.client.get(prefix).json(), state)
+
+    def test_plan_reflects_real_selected_files_and_character_tasks(self):
+        self.change_mode("cover_background_cast")
+        npc = self.client.post(self.prefix + "/creator/characters", json={
+            "name": "Aira", "description": "A guardian of the ruined lighthouse."
+        }).json()
+        plan = self.client.get(self.prefix + "/visual-preflight/plan").json()
+        self.assertEqual([x["kind"] for x in plan["steps"]],
+                         ["cover", "background", "character"])
+        self.assertEqual(plan["steps"][2]["character_id"], npc["id"])
+        self.assertEqual(plan["steps"][2]["action"], "sprite_draft")
+        cover = self.add("cover")
+        self.client.put(self.prefix + "/creator/cover", json={"asset_id": cover})
+        self.add("background")
+        self.add("foreground", npc["id"])
+        ready = self.client.get(self.prefix + "/visual-preflight/plan").json()
+        self.assertEqual(ready["steps"], [])
+        self.assertTrue(ready["ready"])
 
     def test_invalid_mode_and_nonexistent_story(self):
         self.assertEqual(self.change_mode("unknown").status_code, 422)

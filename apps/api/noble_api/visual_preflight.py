@@ -8,6 +8,7 @@ that choice. Bytes must exist in Noble-owned paths, not just metadata rows.
 from __future__ import annotations
 
 import json
+import re
 import time
 import uuid
 from typing import Literal
@@ -110,6 +111,68 @@ class VisualPreflight:
                 "has_started": started, "text_only": text_only,
                 "missing": missing}
 
+    def preparation_plan(self, story_id: str) -> dict:
+        """Read-only, deterministic preparation tasks for the story author.
+
+        Prompts use player-visible world information only, never private
+        ai_plot, guidelines, or secret Lorebook entries. Nothing starts ComfyUI.
+        Only verified, currently missing first-scene assets become tasks.
+        """
+        state = self.status(story_id)
+        story = self.narrative.get_story(story_id)
+        with self.store._conn() as db:
+            blueprint = db.execute(
+                "SELECT config_json FROM creator_blueprints WHERE story_id=?",
+                (story_id,)
+            ).fetchone()
+            cast = [dict(row) for row in db.execute(
+                "SELECT id,config_json FROM creator_characters WHERE story_id=?",
+                (story_id,)
+            )]
+        author = json.loads(blueprint["config_json"]) if blueprint else {}
+        # Never include author-only hidden plot or AI system instructions here.
+        visible_context = (author.get("player_plot") or author.get("synopsis") or
+                           story["premise"])
+        context = re.sub(r"\\s+", " ", str(visible_context)).strip()[:800]
+        genre = re.sub(r"\\s+", " ", str(author.get("genre") or "")).strip()[:80]
+        title = re.sub(r"\\s+", " ", story["title"]).strip()[:100]
+        world = (f"{genre} world. " if genre else "") + context
+        cast_by_id = {person["id"]: json.loads(person["config_json"])
+                      for person in cast}
+        steps = []
+        for item in state["missing"]:
+            kind = item["kind"]
+            if kind == "cover":
+                prompt = (f"Illustrated novel cover art for '{title}'. "
+                          f"Distinctive composition, atmosphere and strong focal point. "
+                          f"{world} No lettering, captions or watermarks.")
+                action = "upload_select_cover"
+            elif kind == "background":
+                prompt = (f"Initial visual novel background environment for '{title}'. "
+                          f"Wide establishing shot, location and architecture, "
+                          f"coherent lighting and perspective. {world} "
+                          "Background only; no people, text, logos or watermarks.")
+                action = "generate_scene"
+            else:
+                person = cast_by_id.get(item.get("character_id"), {})
+                appearance = re.sub(r"\\s+", " ", str(person.get("description") or "")
+                                    ).strip()[:400]
+                prompt = (f"Full-body visual novel character sprite for "
+                          f"{item.get('name') or 'character'}. Neutral expression, "
+                          f"standing pose, front view. {appearance} "
+                          "Simple clean background for transparent cutout.")
+                action = "sprite_draft"
+            steps.append({
+                "kind": kind, "action": action, "character_id": item.get("character_id"),
+                "name": item.get("name"), "prompt": prompt[:2400],
+            })
+        return {
+            "story_id": story_id, "mode": state["mode"], "ready": state["ready"],
+            "has_started": state["has_started"], "text_only": state["text_only"],
+            "steps": steps,
+            "generation_started": False, "provider_called": False,
+        }
+
     def require_ready(self, story_id: str) -> None:
         if not self.status(story_id)["ready"]:
             raise ValueError("Visual preparation required before the first story turn")
@@ -135,6 +198,13 @@ def mount_visual_preflight_routes(app, service: VisualPreflight) -> None:
     def get_status(story_id: uuid.UUID):
         try:
             return service.status(str(story_id))
+        except ValueError as exc:
+            raise HTTPException(404, str(exc)) from exc
+
+    @app.get("/api/v1/stories/{story_id}/visual-preflight/plan")
+    def get_preparation_plan(story_id: uuid.UUID):
+        try:
+            return service.preparation_plan(str(story_id))
         except ValueError as exc:
             raise HTTPException(404, str(exc)) from exc
 
